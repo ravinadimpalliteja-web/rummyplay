@@ -66,6 +66,31 @@ test("Round 13 standard Nil stays zero; only Blind Nil scores plus or minus 100"
   assert.equal(scoreBid({bid:0,tricksWon:1,mode:"blind",roundNumber:13}).bagsAdded, 1);
 });
 
+test("round-aware cumulative scoring applies Nil rules and carries bags", () => {
+  const players = [
+    {id:"a",score:0,bags:0},{id:"b",score:0,bags:0},
+    {id:"c",score:0,bags:0},{id:"d",score:0,bags:0}
+  ];
+  const round3 = applyRoundScoring(players, [
+    {bid:0,tricksWon:2},{bid:0,tricksWon:0},
+    {bid:1,tricksWon:1},{bid:1,tricksWon:0}
+  ], 3);
+  assert.equal(round3[0].roundPoints, 0);
+  assert.equal(round3[0].score, 0);
+  assert.equal(round3[0].bags, 2);
+
+  const round13 = applyRoundScoring(players, [
+    {bid:0,tricksWon:0,mode:"blind"},{bid:0,tricksWon:1,mode:"blind"},
+    {bid:0,tricksWon:0,mode:"standard"},{bid:0,tricksWon:2,mode:"standard"}
+  ], 13);
+  assert.equal(round13[0].roundNet, 100);
+  assert.equal(round13[1].roundPoints, -100);
+  assert.equal(round13[1].bags, 1);
+  assert.equal(round13[2].roundNet, 0);
+  assert.equal(round13[3].roundNet, 0);
+  assert.equal(round13[3].bags, 2);
+});
+
 test("sandbag penalty is applied at each full ten bags and carries remainder", () => {
   const players = [
     {id:"a",score:0,bags:9},{id:"b",score:0,bags:0},

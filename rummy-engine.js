@@ -30,7 +30,7 @@
     // Try every legal consecutive run, including A-2-3 and 10-J-Q-K-A.
     const runs=[];
     for(let start=0;start+n<=13;start++)runs.push(Array.from({length:n},(_,i)=>start+i));
-    if(n>=3&&n<=5)runs.push([...Array.from({length:n-1},(_,i)=>9+i),0]); // 10-J-Q-K-A window
+    if(n>=3&&n<=5){const start=14-n;runs.push([...Array.from({length:n-1},(_,i)=>start+i),0]);} // Q-K-A through 10-J-Q-K-A
     return runs.some(run=>fixedRanks.every(r=>run.includes(r))&&run.length-fixedRanks.length===wilds.length);
   }
   function setGroup(cards,wildRank){
@@ -90,9 +90,9 @@
   function deal(roomCapacity=2,random=Math.random){
     const deckCount=deckCountForCapacity(roomCapacity),stock=shuffle(createDeck(deckCount),random);
     let indicator=stock.pop();
-    if(indicator.joker){const replacement=stock.findIndex(c=>!c.joker);if(replacement>=0){const old=indicator;indicator=stock[replacement];stock[replacement]=old;stock.splice(stock.indexOf(old),1);}}
+    if(indicator.joker){stock.push(indicator);const replacement=stock.findIndex(c=>!c.joker);indicator=stock.splice(replacement,1)[0];}
     const hands=Array.from({length:roomCapacity},()=>stock.splice(0,13));
-    let up=stock.pop();if(up&&up.joker){const i=stock.findIndex(c=>!c.joker);if(i>=0){const old=up;up=stock[i];stock[i]=old;stock.splice(stock.indexOf(old),1);}}
+    let up=stock.pop();if(up&&up.joker){stock.push(up);const i=stock.findIndex(c=>!c.joker);up=stock.splice(i,1)[0];}
     return{stock,hands,discard:up?[up]:[],wildCard:indicator,wildRank:rankOf(indicator),deckCount,roomCapacity};
   }
   root.RummyEngine={RANKS,SUITS,createDeck,shuffle,deal,deckCountForCapacity,classifyGroup,validateHand,penalty,isWild};

@@ -71,6 +71,12 @@ test("two impure sequences without a pure sequence cannot be declared",()=>{
     card("j",0,11),card("k",1,11),card("l",2,11),card("m",3,11)];
   assert.equal(E.validateHand(hand,4).valid,false);
 });
+test("declaration rejects duplicate physical card IDs",()=>{
+  const hand=Array.from({length:13},(_,i)=>card("physical-"+i,i%4,i%13));
+  hand[12]={...hand[0]};
+  assert.equal(E.validateHand(hand,8).valid,false);
+  assert.match(E.validateHand(hand,8).reason,/duplicate physical card/i);
+});
 test("declaration requires exactly 13 cards",()=>{
   assert.equal(E.validateHand([card("a",0,0)],8).valid,false);
 });

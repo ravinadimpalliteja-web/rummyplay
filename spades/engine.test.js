@@ -74,6 +74,7 @@ test("Round 13 standard Nil stays zero; only Blind Nil scores plus or minus 100"
   assert.equal(scoreBid({bid:0,tricksWon:0,mode:"blind",roundNumber:13}).points, 100);
   assert.equal(scoreBid({bid:0,tricksWon:1,mode:"blind",roundNumber:13}).points, -100);
   assert.equal(scoreBid({bid:0,tricksWon:1,mode:"blind",roundNumber:13}).bagsAdded, 1);
+  assert.throws(() => scoreBid({bid:1,tricksWon:1,mode:"blind",roundNumber:12}), /only in round 13/);
 });
 
 test("round-aware cumulative scoring applies Nil rules and carries bags", () => {

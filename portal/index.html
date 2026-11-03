@@ -590,14 +590,14 @@ body:has(#page-spades.active) #page-spades .demo-log{padding:1px 4px!important;f
 </style>
 
 <style id="spades-fullscreen-layout">
-/* Spades full-screen playfield: no oval/table surface or decorative rim. */
-#page-spades.spades-demo{width:100%;max-width:none;margin:0;padding:0}
-#page-spades.spades-demo>.panel{width:100%;min-height:calc(100vh - 150px);padding:14px clamp(12px,2vw,28px) 20px;background:transparent;border:0;border-radius:0;box-shadow:none}
+/* Spades full-screen playfield: force-remove all oval-table styling from earlier rules. */
+#page-spades.spades-demo{width:100%!important;max-width:none!important;margin:0!important;padding:0!important;border-radius:0!important}
+#page-spades.spades-demo>.panel{width:100%!important;min-height:calc(100vh - 150px)!important;padding:14px clamp(12px,2vw,28px) 20px!important;background:transparent!important;background-image:none!important;border:0!important;border-radius:0!important;box-shadow:none!important}
 #page-spades .spades-stage{width:100%;min-height:calc(100vh - 190px);padding:0;display:flex;flex-direction:column}
 #page-spades .spades-meta{position:relative;inset:auto;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 0 12px}
 #page-spades .spades-meta span{background:#102c23;border-color:#456653}
-#page-spades .demo-table{position:relative;isolation:isolate;flex:1;width:100%;min-height:430px;margin:0;padding:18px 5%;border:0;border-radius:0;background:transparent;box-shadow:none;grid-template-columns:minmax(130px,1fr) minmax(220px,1.5fr) minmax(130px,1fr);grid-template-rows:84px minmax(190px,1fr) 100px;gap:12px}
-#page-spades .demo-table:before{content:none}
+#page-spades .demo-table{position:relative!important;isolation:isolate;display:grid!important;flex:1;width:100%!important;min-height:430px!important;margin:0!important;padding:18px 5%!important;border:0!important;border-radius:0!important;background:transparent!important;background-image:none!important;box-shadow:none!important;grid-template-columns:minmax(130px,1fr) minmax(220px,1.5fr) minmax(130px,1fr)!important;grid-template-rows:84px minmax(190px,1fr) 100px!important;gap:12px!important}
+#page-spades .demo-table:before,#page-spades .demo-table:after{content:none!important;display:none!important;border:0!important;background:none!important;box-shadow:none!important}
 #page-spades .seat{z-index:1;background:linear-gradient(145deg,#102f25,#0a211a);border:1px solid #496c57;border-radius:14px;box-shadow:0 6px 18px #0003}
 #page-spades .seat.north{grid-column:2;grid-row:1;justify-self:center;align-self:start}
 #page-spades .seat.west{grid-column:1;grid-row:2;justify-self:start;align-self:center}
@@ -631,6 +631,15 @@ body:has(#page-spades.active) #page-spades .demo-log{padding:1px 4px!important;f
  #page-spades #spadesHand{justify-content:flex-start;gap:2px;min-height:88px;padding:8px 0;overflow-x:auto}
  #page-spades #spadesHand .playing-card{width:clamp(42px,10vw,54px)!important;min-width:clamp(42px,10vw,54px)!important;height:clamp(62px,14vw,76px)!important;min-height:clamp(62px,14vw,76px)!important;flex-basis:clamp(42px,10vw,54px)!important}
  #page-spades .spades-meta{font-size:11px}
+}
+
+/* Final high-specificity guard against legacy oval-table rules. */
+#page-spades .spades-stage .demo-table,
+#page-spades.spades-demo .spades-stage .demo-table{border-radius:0!important;border:0!important;background:transparent!important;background-image:none!important;box-shadow:none!important}
+#page-spades .spades-stage .demo-table:before,
+#page-spades .spades-stage .demo-table:after{display:none!important;content:none!important}
+@media(max-width:760px){
+ #page-spades .spades-stage .demo-table{border-radius:0!important;border:0!important;background:transparent!important;background-image:none!important;box-shadow:none!important}
 }
 </style>
 

@@ -28,7 +28,8 @@ function groupType(ids){
  if(sameRank&&uniqueSuits&&cards.length<=4)return 'set';
  return 'invalid';
 }
-function hasSecondLife(){const types=groups.map(g=>groupType(g));return types.includes('pure')&&types.filter(t=>t==='pure'||t==='sequence').length>=2;}\nfunction handReady(){
+function hasSecondLife(){const types=groups.map(g=>groupType(g));return types.includes('pure')&&types.filter(t=>t==='pure'||t==='sequence').length>=2;}
+function handReady(){
  if(hand.length!==13)return false;
  const covered=new Set(),types=[];
  for(const g of groups){if(g.some(id=>covered.has(id)))return false;g.forEach(id=>covered.add(id));types.push(groupType(g));}

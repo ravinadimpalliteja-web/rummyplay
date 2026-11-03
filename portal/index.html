@@ -135,6 +135,71 @@ button,input{font:inherit}button{cursor:pointer}.shell{max-width:1180px;margin:a
  #page-spades #spadesHand{justify-content:flex-start;gap:5px;min-height:100px}
 }
 
+/* Royal Club Spades — avatar-led oval table */
+#page-spades.spades-demo{max-width:1440px;width:100%;padding:0 8px;margin:10px auto}
+#page-spades .pagehead{padding:12px 0 16px}
+#page-spades.spades-demo>.panel{padding:18px;background:linear-gradient(145deg,#0a241b,#071b15);border:1px solid #345b43;border-radius:22px}
+#page-spades .spades-stage{position:relative;padding:0 0 4px}
+#page-spades .spades-meta{position:absolute;z-index:3;left:18px;top:16px;display:grid;gap:8px;color:#f3e5c1;font-size:13px}
+#page-spades .spades-meta span{padding:8px 12px;border:1px solid #567451;border-radius:10px;background:#061d17e8}
+#page-spades .demo-table{position:relative;isolation:isolate;min-height:440px;margin:0 0 16px;padding:26px 17%;border:8px solid #5b351d;border-radius:240px;background:radial-gradient(ellipse at center,#07553b 0%,#06412e 54%,#03291e 100%);box-shadow:inset 0 0 0 3px #d5ad58,inset 0 0 0 7px #281b12,inset 0 0 55px #00180f,0 13px 28px #0008;grid-template-columns:minmax(90px,.7fr) minmax(240px,1.6fr) minmax(90px,.7fr);grid-template-rows:72px minmax(130px,1fr) 72px;gap:10px}
+#page-spades .demo-table:before{content:"";position:absolute;inset:8px;border:1px solid #d4ae5b;border-radius:220px;pointer-events:none;z-index:-1}
+#page-spades .seat{position:relative;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:9px;min-height:0;height:66px;padding:7px 10px;background:#031c16df;border:1px solid #8aab83;border-radius:15px;overflow:visible}
+#page-spades .seat-avatar{width:54px;height:54px;flex:0 0 54px;border-radius:50%;object-fit:cover;border:3px solid #e4c77d;box-shadow:0 2px 10px #0008;background:#234b39}
+#page-spades .seat-info{min-width:0;text-align:center}
+#page-spades .seat strong{font-size:14px;white-space:nowrap}
+#page-spades .seat small{font-size:11px;white-space:nowrap;color:#e3e7dd}
+#page-spades .seat .demo-help{font-size:10px}
+#page-spades .seat-online{position:absolute;width:12px;height:12px;border-radius:50%;background:#65e17b;border:2px solid #08251d;right:4px;bottom:4px}
+#page-spades .seat.north{grid-column:2;grid-row:1;justify-self:center;min-width:190px}
+#page-spades .seat.west{grid-column:1;grid-row:2;justify-self:start;min-width:170px}
+#page-spades .seat.east{grid-column:3;grid-row:2;justify-self:end;min-width:170px}
+#page-spades .seat.south{grid-column:2;grid-row:3;justify-self:center;min-width:190px}
+#page-spades .seat.center{grid-column:2;grid-row:2;align-self:center;justify-self:center;width:100%;height:auto;min-height:130px;display:flex;flex-direction:column;background:transparent;border:0;box-shadow:none}
+#page-spades .seat.center .table-mark{display:grid;justify-items:center;color:#b79b50;opacity:.72}
+#page-spades .seat.center .table-mark span{font-size:72px;line-height:.9}
+#page-spades .seat.center .table-mark strong{font:22px Georgia,serif;letter-spacing:.18em}
+#page-spades .seat.center small{font-size:11px}
+#page-spades .seat.active-turn{border:2px solid #f0d47d;box-shadow:0 0 0 3px #e5c56a2b,0 0 18px #e5c56a44}
+#page-spades .seat.center.active-turn{border:0;box-shadow:none}
+#page-spades .spades-score-panel{position:absolute;right:18px;top:16px;z-index:3;width:210px;padding:10px 12px;background:#031c16e8;border:1px solid #567451;border-radius:12px}
+#page-spades .spades-score-panel .eyebrow{margin-bottom:6px}
+#page-spades .spades-score-panel .demo-score{margin:0;border:0;background:transparent}
+#page-spades .spades-score-panel .demo-score th,#page-spades .spades-score-panel .demo-score td{font-size:10px;padding:4px 5px}
+#page-spades .spades-score-panel .demo-score th:nth-child(4),#page-spades .spades-score-panel .demo-score td:nth-child(4){display:none}
+#page-spades .spades-hand-panel{background:linear-gradient(180deg,#0b2a20,#061b15)!important;border:1px solid #4e6d4e!important}
+#page-spades #spadesHand{min-height:150px;gap:0;justify-content:center;flex-wrap:nowrap;overflow-x:auto;padding:18px 8px 12px}
+#page-spades #spadesHand .playing-card{width:76px!important;min-width:76px!important;height:112px!important;min-height:112px!important;flex:0 0 76px;margin-left:-5px;border-radius:10px!important}
+#page-spades #spadesHand .playing-card:first-child{margin-left:0}
+#page-spades .demo-controls{justify-content:center;padding:10px 14px;border:1px solid #826d3f;border-radius:14px;background:#061d17}
+#page-spades .demo-controls .btn.gold{min-width:150px}
+@media(max-width:900px){
+ #page-spades .spades-meta{position:static;display:flex;flex-wrap:wrap;margin:0 0 8px}
+ #page-spades .spades-score-panel{position:static;width:100%;margin:0 0 10px}
+ #page-spades .demo-table{min-height:350px;padding:18px 8%;border-width:5px;border-radius:170px;grid-template-columns:90px minmax(100px,1fr) 90px;grid-template-rows:64px minmax(120px,1fr) 64px}
+ #page-spades .seat{height:58px;padding:5px;gap:5px}
+ #page-spades .seat-avatar{width:42px;height:42px;flex-basis:42px}
+ #page-spades .seat.north,#page-spades .seat.south{min-width:155px}
+ #page-spades .seat.west,#page-spades .seat.east{min-width:0;width:100%;flex-direction:column;height:auto;min-height:88px}
+ #page-spades .seat.center .table-mark span{font-size:52px}
+ #page-spades .seat.center .table-mark strong{font-size:16px}
+ #page-spades #spadesHand{justify-content:flex-start}
+}
+@media(max-width:560px){
+ #page-spades.spades-demo{padding:0}
+ #page-spades.spades-demo>.panel{padding:10px}
+ #page-spades .demo-table{min-height:300px;padding:12px 5px;border-radius:120px;grid-template-columns:68px minmax(80px,1fr) 68px;grid-template-rows:56px minmax(105px,1fr) 56px;gap:4px}
+ #page-spades .seat{height:52px;gap:3px}
+ #page-spades .seat-avatar{width:34px;height:34px;flex-basis:34px;border-width:2px}
+ #page-spades .seat.north,#page-spades .seat.south{min-width:130px}
+ #page-spades .seat.west,#page-spades .seat.east{min-height:78px}
+ #page-spades .seat strong{font-size:11px}
+ #page-spades .seat small{font-size:9px}
+ #page-spades .seat.center .table-mark span{font-size:42px}
+ #page-spades .seat.center .table-mark strong{font-size:13px}
+ #page-spades #spadesHand .playing-card{width:58px!important;min-width:58px!important;height:86px!important;min-height:86px!important;flex-basis:58px;margin-left:-9px}
+ #page-spades #spadesHand .playing-card:first-child{margin-left:0}
+}
 </style>
 </head>
 <body>
@@ -161,11 +226,10 @@ button,input{font:inherit}button{cursor:pointer}.shell{max-width:1180px;margin:a
 <section class="page" id="page-rummy"><div class="pagehead"><div class="eyebrow">Royal Club · Game room</div><h1>Rummy</h1><p>Choose your format and enter the Rummy room lobby.</p></div><div class="panel"><div class="lobbygrid"><div class="lobbyoption"><div class="eyebrow">Create a table</div><h3>Create a Rummy room</h3><p>Set up a private table for your registered friends. Rummy formats and table settings will be available here.</p><button class="btn gold" onclick="showNotice('Rummy room creation will be connected when the Rummy module is implemented.')">Create room</button></div><div class="lobbyoption"><div class="eyebrow">Join a table</div><h3>Join with room code</h3><p>Have an invitation? Enter the room code supplied by your host.</p><div class="formrow"><input class="field" id="rummyCode" placeholder="Enter room code" maxlength="12"><button class="btn" onclick="showNotice('Room-code joining will be connected with the multiplayer backend.')">Join</button></div></div></div><div class="notice" id="rummyNotice">This is the portal's Rummy entry page. The full Rummy lobby and gameplay will be integrated as a separate module after Spades.</div></div></section>
 <section class="page spades-demo" id="page-spades"><div class="pagehead"><div class="eyebrow">Royal Club · Local prototype</div><h1>Solo Progressive Spades</h1><p>Play a practice match against three temporary test seats. This is a local rules prototype, not online multiplayer.</p></div>
 <div class="panel"><div class="demo-top"><div><div class="eyebrow">13-round ladder</div><h2 id="spadesRoundTitle">Ready to deal · Round 1</h2></div><button class="btn gold" id="spadesStart" onclick="startSpadesDemo()">Start practice match</button></div>
-<div class="demo-help">You control South. The other three seats are automated test players for development only. A Blind bidder's full hand is exposed to all players for that round.</div>
-<div class="demo-table" id="spadesTable"><div class="seat north"><strong>North · Test player</strong><small>Waiting for deal</small></div><div class="seat west"><strong>West · Test player</strong><small>Waiting for deal</small></div><div class="seat east"><strong>East · Test player</strong><small>Waiting for deal</small></div><div class="seat center"><strong>South · You</strong><small>Start a practice match</small></div></div>
+<div class="spades-stage"><div class="spades-meta"><span id="spadesRoundMeta">♧ &nbsp;Round 1 / 13</span><span>♠ &nbsp;Trump: Spades</span></div><div class="demo-table" id="spadesTable"><div class="seat north"><strong>North · Test player</strong><small>Waiting for deal</small></div><div class="seat west"><strong>West · Test player</strong><small>Waiting for deal</small></div><div class="seat east"><strong>East · Test player</strong><small>Waiting for deal</small></div><div class="seat center"><strong>Current trick</strong></div><div class="seat south"><strong>South · You</strong><small>Waiting for deal</small></div></div><div class="spades-score-panel"><div class="eyebrow">Scoreboard</div><div id="spadesScoreboard"></div></div></div>
 <div class="panel" style="padding:14px"><div class="eyebrow">Your hand</div><div class="card-row" id="spadesHand"><span class="muted">Your cards will appear here.</span></div>
 <div class="demo-controls" id="spadesControls"></div><div class="demo-log" id="spadesLog" aria-live="polite">Press Start practice match to begin.</div>
-<div class="eyebrow" style="margin-top:16px">Match scoreboard</div><div id="spadesScoreboard"></div></div></div>
+</div></div>
 <div class="notice">Local prototype only: no account, room, network connection or real registered players. Test players are temporary and will not be part of the final product.</div></section>
 <section class="page" id="page-friends"><div class="pagehead"><div class="eyebrow">Your circle</div><h1>Friends</h1><p>Build your private club and invite people to your tables.</p></div><div class="panel"><div class="lobbyoption"><h3>Friends and invitations</h3><p>Friend requests, player search, online status and game invitations will be added with registered accounts and backend services.</p><button class="btn gold" onclick="openAuth()">Sign in to continue</button></div></div></section>
 <section class="page" id="page-profile"><div class="pagehead"><div class="eyebrow">Your club identity</div><h1>Player profile</h1></div><div class="profilegrid"><div class="panel profilecard"><div class="profilebig" id="profileAvatar">G</div><h3 id="profileName">Guest preview</h3><div class="muted">Royal Club player</div><button class="btn small" onclick="openAuth()">Set up account</button></div><div class="panel"><div class="eyebrow">Your activity</div><h3 style="font:24px Georgia,serif">Game statistics</h3><div class="statgrid"><div class="stat"><strong>—</strong><span>Games played</span></div><div class="stat"><strong>—</strong><span>Wins</span></div><div class="stat"><strong>—</strong><span>Friends</span></div></div><p class="muted" style="font-size:12px;margin-top:15px">Statistics will appear after account and game-history services are connected.</p></div></div></section>
@@ -206,7 +270,7 @@ async function spBotsPlayDemo(){const g=spGame;let guard=0;while(g&&g.phase==="p
 function spFinishRoundDemo(){const g=spGame;const results=g.players.map(p=>{const bid=p.bid||0,w=p.tricks,m=p.mode;let pts=0,bags=0;if(bid===0){const round13BlindNil=g.round===13&&m==="blind";pts=round13BlindNil?(w===0?100:-100):0;if(w>0)bags=w}else if(w<bid)pts=-bid*(m==="blind"?20:10);else{bags=w-bid;pts=bid*(m==="blind"?20:10)+bags}let total=p.bags+bags,penalty=0;while(total>=10){total-=10;penalty+=100}return{pts,bags:total,penalty,net:pts-penalty}});g.players.forEach((p,i)=>{Object.assign(p,{roundPoints:results[i].pts,bagPenalty:results[i].penalty,roundNet:results[i].net,bags:results[i].bags,score:p.score+results[i].net})});g.phase="score";g.scoreStarted=Date.now();spRenderDemo();spSetLog("Round "+g.round+" complete. Scoreboard will remain available for 15 seconds.");if(g.scoreTimer)clearTimeout(g.scoreTimer);g.scoreTimer=setTimeout(()=>{if(spGame===g&&g.phase==="score")spContinue()},15000);}
 function spContinue(){const g=spGame;if(!g||g.phase!=="score")return;if(g.scoreTimer)clearTimeout(g.scoreTimer);if(g.round===13){g.phase="finished";spRenderDemo();return}g.round++;g.dealer=(g.dealer+1)%4;spDealDemo()}
 function spSetLog(t){const el=document.getElementById("spadesLog");if(el)el.textContent=t}
-function spRenderDemo(){const g=spGame;if(!g)return;document.getElementById("spadesRoundTitle").textContent=g.phase==="finished"?"Match complete · Round 13":"Round "+g.round+" of 13 · "+g.phase;const table=document.getElementById("spadesTable");table.innerHTML=g.players.map((p,i)=>{const active=g.phase==="playing"&&g.turn===i;const exposed=g.blindIndex===i;const cards=exposed?p.hand.map(spCardText).join(" "):p.hand.map(()=>"▰").join(" ");return '<div class="seat '+spSeatClass[i]+(active?' active-turn':'')+'"><strong>'+p.name+'</strong><small>'+(p.bid===null?"Not bid":(p.mode==="blind"?"BLIND ":"")+"Bid "+p.bid)+" · Tricks "+p.tricks+'</small><div class="demo-help">'+(exposed?"Exposed hand: ":"Cards: ")+cards+'</div></div>'}).join("")+'<div class="seat center"><strong>Current trick</strong><div class="card-row">'+g.trick.map(x=>'<span class="playing-card trick-card '+(["hearts","diamonds"].includes(x.card.suit)?"red":"")+'">'+spCardFace(x.card)+'</span>').join("")+'</div><small>'+(g.phase==="playing"?"Turn: "+g.players[g.turn].name:"")+'</small></div>';
+function spRenderDemo(){const g=spGame;if(!g)return;document.getElementById("spadesRoundTitle").textContent=g.phase==="finished"?"Match complete · Round 13":"Round "+g.round+" of 13 · "+g.phase;document.getElementById("spadesRoundMeta").textContent="♧  Round "+g.round+" / 13";const table=document.getElementById("spadesTable");table.innerHTML=g.players.map((p,i)=>{const active=g.phase==="playing"&&g.turn===i;const exposed=g.blindIndex===i;const avatarIds=[12,7,32,48];const cards=exposed?p.hand.map(spCardText).join(" "):p.hand.map(()=>"▰").join(" ");return '<div class="seat '+spSeatClass[i]+(active?' active-turn':'')+'"><img class="seat-avatar" src="https://i.pravatar.cc/100?img='+avatarIds[i]+'" alt="'+p.name+' profile photo"><div class="seat-info"><strong>'+p.name+'</strong><small>'+(p.bid===null?"Bid —":(p.mode==="blind"?"BLIND ":"")+"Bid "+p.bid)+' · Tricks '+p.tricks+'</small>'+(exposed?'<div class="demo-help">Exposed: '+cards+'</div>':'')+'</div><span class="seat-online"></span></div>'}).join("")+'<div class="seat center"><div class="table-mark"><span>♠</span><strong>SPADES</strong></div><div class="card-row">'+g.trick.map(x=>'<span class="playing-card trick-card '+(["hearts","diamonds"].includes(x.card.suit)?"red":"")+'">'+spCardFace(x.card)+'</span>').join("")+'</div><small>'+(g.phase==="playing"?"Turn: "+g.players[g.turn].name:"Current trick")+'</small></div>'
 const hand=document.getElementById("spadesHand");const maySeeHand=g.phase!=="bidding"||(g.turn===2&&(g.round<=12||g.humanBidMode==="standard"));hand.innerHTML=maySeeHand?g.players[2].hand.map(c=>'<button class="playing-card '+(["hearts","diamonds"].includes(c.suit)?"red":"")+'" '+(g.phase!=="playing"||g.turn!==2||!spLegal(g.players[2].hand,c)?"disabled":"")+' onclick="spPlayHuman(\''+c.id+'\')">'+spCardFace(c)+'</button>').join("")||'<span class="muted">No cards remaining.</span>':'<span class="muted">Choose Standard or Blind before viewing your cards.</span>';
 const controls=document.getElementById("spadesControls");if(g.phase==="bidding"&&g.turn===2){if(g.round<=12){controls.innerHTML='<span class="demo-help">Standard bid · choose 0 to '+g.round+'.</span><label>Bid <select id="spBid">'+Array.from({length:g.round+1},(_,i)=>'<option value="'+i+'">'+i+'</option>').join("")+'</select></label><button class="btn gold" onclick="spSubmitBid()">Submit bid</button>'}else if(!g.humanBidMode){controls.innerHTML='<span class="demo-help">Round 13 · choose your bidding mode.</span><button class="btn" onclick="spChooseBidMode(&quot;standard&quot;)">Standard bid</button><button class="btn" onclick="spChooseBidMode(&quot;blind&quot;)">Blind bid</button>'}else{controls.innerHTML='<label>Bid <select id="spBid">'+Array.from({length:g.round+1},(_,i)=>'<option value="'+i+'">'+i+'</option>').join("")+'</select></label><span class="demo-help">'+(g.humanBidMode==="blind"?"Blind hand remains hidden until your bid is submitted.":"Your hand is visible for a standard bid.")+'</span><button class="btn gold" onclick="spSubmitBid()">Submit bid</button>'}}else if(g.phase==="score"){controls.innerHTML='<button class="btn gold" onclick="spContinue()">'+(g.round===13?"Show final result":"Continue to next round")+'</button>'}else if(g.phase==="finished"){controls.innerHTML='<button class="btn gold" onclick="startSpadesDemo()">Play again</button>'}else controls.innerHTML='<span class="demo-help">'+(g.phase==="playing"?"Waiting for your turn…":"Waiting for deal…")+'</span>';
 document.getElementById("spadesScoreboard").innerHTML='<table class="demo-score"><thead><tr><th>Player</th><th>Bid</th><th>Tricks</th><th>Round net</th><th>Bags</th><th>Total</th></tr></thead><tbody>'+g.players.map(p=>'<tr><td>'+p.name+'</td><td>'+(p.bid===null?"—":(p.mode==="blind"?"Blind ":"")+p.bid)+'</td><td>'+p.tricks+'</td><td>'+(p.roundNet??"—")+'</td><td>'+p.bags+'</td><td>'+p.score+'</td></tr>').join("")+'</tbody></table>'+(g.phase==="finished"?"<h3>Winner: "+g.players.slice().sort((a,b)=>b.score-a.score||b.bags-a.bags)[0].name+"</h3>":"")}

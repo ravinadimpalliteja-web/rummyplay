@@ -147,13 +147,13 @@ export function scoreBid({ bid, tricksWon, mode = "standard", roundNumber = 1 })
   };
 }
 
-export function applyRoundScoring(players, roundResults) {
+export function applyRoundScoring(players, roundResults, roundNumber = 1) {
   if (!Array.isArray(players) || players.length !== PLAYER_COUNT ||
       !Array.isArray(roundResults) || roundResults.length !== PLAYER_COUNT) {
     throw new Error("Exactly four players and four round results are required");
   }
   return players.map((player, index) => {
-    const result = scoreBid({ ...roundResults[index], roundNumber: roundResults[index].roundNumber || 1 });
+    const result = scoreBid({ ...roundResults[index], roundNumber });
     let bags = (player.bags || 0) + result.bagsAdded;
     let penalty = 0;
     while (bags >= BAGS_PER_PENALTY) {

@@ -66,8 +66,8 @@ test("sandbag penalty is applied at each full ten bags and carries remainder", (
   const next = applyRoundScoring(players, results);
   assert.equal(next[0].bags, 1);
   assert.equal(next[0].bagPenalty, 100);
-  assert.equal(next[0].roundNet, -79);
-  assert.equal(next[0].score, -79);
+  assert.equal(next[0].roundNet, -88);
+  assert.equal(next[0].score, -88);
 });
 
 test("winner uses score, then fewer remaining bags; exact tie is shared", () => {

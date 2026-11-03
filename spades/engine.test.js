@@ -51,23 +51,23 @@ test("standard and blind scoring examples match the agreed rules", () => {
     points:21,bagsAdded:1,success:true,nil:false
   });
   assert.equal(scoreBid({bid:3,tricksWon:5}).points, 32);
-  assert.equal(scoreBid({bid:2,tricksWon:1,mode:"blind"}).points, -40);
-  assert.equal(scoreBid({bid:2,tricksWon:4,mode:"blind"}).points, 42);
+  assert.equal(scoreBid({bid:2,tricksWon:1,mode:"blind",roundNumber:13}).points, -40);
+  assert.equal(scoreBid({bid:2,tricksWon:4,mode:"blind",roundNumber:13}).points, 42);
 });
 
-test("Nil bids score zero through round 12 and tricks taken become bags", () => {
+test("Zero bids score zero through round 12 and tricks taken become bags", () => {
   assert.deepEqual(scoreBid({bid:0,tricksWon:0,roundNumber:1}), {
     points:0,bagsAdded:0,success:true,nil:true
   });
   assert.deepEqual(scoreBid({bid:0,tricksWon:2,roundNumber:3}), {
     points:0,bagsAdded:2,success:false,nil:true
   });
-  assert.equal(scoreBid({bid:0,tricksWon:0,mode:"blind",roundNumber:12}).points, 0);
-  assert.equal(scoreBid({bid:0,tricksWon:1,mode:"blind",roundNumber:12}).points, 0);
+  assert.equal(scoreBid({bid:0,tricksWon:0,mode:"standard",roundNumber:12}).points, 0);
+  assert.equal(scoreBid({bid:0,tricksWon:1,mode:"standard",roundNumber:12}).points, 0);
   assert.equal(scoreBid({bid:0,tricksWon:1,mode:"blind",roundNumber:12}).bagsAdded, 1);
 });
 
-test("Round 13 standard Nil stays zero; only Blind Nil scores plus or minus 100", () => {
+test("Round 13 standard zero stays zero; blind zero follows the current special scoring rule", () => {
   assert.equal(scoreBid({bid:0,tricksWon:0,roundNumber:13}).points, 0);
   assert.equal(scoreBid({bid:0,tricksWon:2,roundNumber:13}).points, 0);
   assert.equal(scoreBid({bid:0,tricksWon:2,roundNumber:13}).bagsAdded, 2);
@@ -118,7 +118,7 @@ test("sandbag penalty is applied at each full ten bags and carries remainder", (
   assert.equal(next[0].score, -88);
 });
 
-test("winner uses score, then fewer remaining bags; exact tie is shared", () => {
+test("winner uses score, then more remaining bags; exact tie is shared", () => {
   const players = [
     {id:"a",score:100,bags:4},{id:"b",score:100,bags:2},
     {id:"c",score:90,bags:0},{id:"d",score:80,bags:0}

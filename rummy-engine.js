@@ -49,10 +49,15 @@
 
   function setGroup(cards, wildRank) {
     if (cards.length < 3 || cards.length > 4) return false;
-    const naturals = cards.filter(c => !isWild(c, wildRank));
-    if (!naturals.length) return false;
-    const rank = rankOf(naturals[0]);
-    return naturals.every(c => rankOf(c)===rank) && unique(naturals.map(suitOf));
+    // Try each rank as the set rank. A wild-rank card may be used naturally
+    // when it matches that rank, or as a substitute when it does not.
+    for (let target=0; target<13; target++) {
+      const naturals=cards.filter(c => !isPrintedJoker(c) && rankOf(c)===target);
+      const substitutes=cards.filter(c => isPrintedJoker(c) || (rankOf(c)!==target && isWild(c,wildRank)));
+      if (naturals.length+substitutes.length!==cards.length || naturals.length===0) continue;
+      if (unique(naturals.map(suitOf))) return true;
+    }
+    return false;
   }
 
   function classifyGroup(cards, wildRank) {

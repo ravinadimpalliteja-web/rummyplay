@@ -59,6 +59,8 @@
   }
   function validateHand(cards,wildRank){
     if(!Array.isArray(cards)||cards.length!==13)return{valid:false,reason:"A declaration must contain exactly 13 cards.",groups:[]};
+    if(cards.some(c=>!c||typeof c.id!=="string")||!unique(cards.map(c=>c.id)))
+      return{valid:false,reason:"A hand cannot contain a missing or duplicate physical card.",groups:[]};
     const n=cards.length,full=(1<<n)-1,candidates=[];
     for(let mask=1;mask<=full;mask++){
       const count=popcount(mask);if(count<3||count>13)continue;

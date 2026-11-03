@@ -115,16 +115,21 @@ export function resolveTrick(trick, leader) {
   return { winner, winningCard: winningPlay.card };
 }
 
-export function scoreBid({ bid, tricksWon, mode = "standard" }) {
+export function scoreBid({ bid, tricksWon, mode = "standard", roundNumber = 1 }) {
   if (!Number.isInteger(bid) || bid < 0 || !Number.isInteger(tricksWon) || tricksWon < 0) {
     throw new TypeError("bid and tricksWon must be non-negative integers");
   }
   if (mode !== "standard" && mode !== "blind") throw new TypeError("Unknown bid mode");
+  if (!Number.isInteger(roundNumber) || roundNumber < 1 || roundNumber > TOTAL_ROUNDS) {
+    throw new RangeError("roundNumber must be between 1 and 13");
+  }
 
   if (bid === 0) {
     const success = tricksWon === 0;
-    const points = success ? (mode === "blind" ? 200 : 100) :
-      (mode === "blind" ? -200 : -100);
+    // Nil bids score zero throughout rounds 1–12. In round 13, only Blind Nil
+    // earns +100 for taking no tricks or -100 for taking one or more tricks.
+    const specialRound13BlindNil = roundNumber === 13 && mode === "blind";
+    const points = specialRound13BlindNil ? (success ? 100 : -100) : 0;
     return { points, bagsAdded: success ? 0 : tricksWon, success, nil: true };
   }
 
@@ -148,7 +153,7 @@ export function applyRoundScoring(players, roundResults) {
     throw new Error("Exactly four players and four round results are required");
   }
   return players.map((player, index) => {
-    const result = scoreBid(roundResults[index]);
+    const result = scoreBid({ ...roundResults[index], roundNumber: roundResults[index].roundNumber || 1 });
     let bags = (player.bags || 0) + result.bagsAdded;
     let penalty = 0;
     while (bags >= BAGS_PER_PENALTY) {

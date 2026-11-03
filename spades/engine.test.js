@@ -34,9 +34,11 @@ test("dealer rotates clockwise", () => {
   assert.deepEqual(sequence, [3,0,1,2,3,0,1,2,3,0,1,2]);
 });
 
-test("bids are bounded by the round and accept standard or blind", () => {
+test("bids are bounded by the round; Blind is available only in round 13", () => {
   assert.equal(validateBid(3, 3, "standard"), true);
-  assert.equal(validateBid(3, 3, "blind"), true);
+  assert.equal(validateBid(3, 3, "blind"), false);
+  assert.equal(validateBid(0, 13, "standard"), true);
+  assert.equal(validateBid(0, 13, "blind"), true);
   assert.equal(validateBid(4, 3, "standard"), false);
   assert.equal(validateBid(-1, 3), false);
 });

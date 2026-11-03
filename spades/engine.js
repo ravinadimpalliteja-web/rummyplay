@@ -29,7 +29,7 @@ export function getRoundDealer(previousDealer, roundNumber) {
   if (!Number.isInteger(roundNumber) || roundNumber < 1 || roundNumber > TOTAL_ROUNDS) {
     throw new RangeError("roundNumber must be between 1 and 13");
   }
-  if (previousDealer == null) return 0;
+  if (previousDealer == null) return Math.min(PLAYER_COUNT - 1, Math.floor(random() * PLAYER_COUNT));
   return (previousDealer + 1) % PLAYER_COUNT;
 }
 

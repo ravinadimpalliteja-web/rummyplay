@@ -18,6 +18,9 @@ test("2, 4 and 6 player deals give each player 13 cards", () => {
 test("pure sequence is accepted", () => {
   assert.equal(E.classifyGroup([card("a",0,0),card("b",0,1),card("c",0,2)],8),"pure");
 });
+test("Ace can be high in a 10-J-Q-K-A pure sequence", () => {
+  assert.equal(E.classifyGroup([card("10",0,9),card("J",0,10),card("Q",0,11),card("K",0,12),card("A",0,0)],8),"pure");
+});
 test("printed joker cannot make a pure sequence", () => {
   assert.equal(E.classifyGroup([card("a",0,0),joker,card("c",0,2)],8),"sequence");
 });

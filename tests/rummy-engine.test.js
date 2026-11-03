@@ -39,6 +39,9 @@ test("pure sequence is accepted",()=>{
 test("wild-rank card can count naturally in a pure sequence",()=>{
   assert.equal(E.classifyGroup([card("a",0,5),card("b",0,6),card("c",0,7)],6),"pure");
 });
+test("Ace can be high in a Q-K-A pure sequence",()=>{
+  assert.equal(E.classifyGroup([card("Q",0,11),card("K",0,12),card("A",0,0)],8),"pure");
+});
 test("Ace can be high in a 10-J-Q-K-A pure sequence",()=>{
   assert.equal(E.classifyGroup([card("10",0,9),card("J",0,10),card("Q",0,11),card("K",0,12),card("A",0,0)],8),"pure");
 });

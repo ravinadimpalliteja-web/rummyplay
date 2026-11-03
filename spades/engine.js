@@ -120,6 +120,7 @@ export function scoreBid({ bid, tricksWon, mode = "standard", roundNumber = 1 })
     throw new TypeError("bid and tricksWon must be non-negative integers");
   }
   if (mode !== "standard" && mode !== "blind") throw new TypeError("Unknown bid mode");
+  if (mode === "blind" && roundNumber !== 13) throw new RangeError("Blind bidding is available only in round 13");
   if (!Number.isInteger(roundNumber) || roundNumber < 1 || roundNumber > TOTAL_ROUNDS) {
     throw new RangeError("roundNumber must be between 1 and 13");
   }

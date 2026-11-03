@@ -86,6 +86,55 @@ button,input{font:inherit}button{cursor:pointer}.shell{max-width:1180px;margin:a
  #page-spades .demo-score th,#page-spades .demo-score td{padding:9px 7px;font-size:12px}
 }
 
+
+/* Royal Club Spades: compact seats and premium card faces */
+#page-spades .demo-table{
+ min-height:340px!important;
+ grid-template-columns:minmax(105px,.72fr) minmax(220px,1.55fr) minmax(105px,.72fr)!important;
+ grid-template-rows:76px minmax(128px,auto) 76px!important;
+ padding:16px!important;gap:10px!important;
+}
+#page-spades .seat{
+ min-height:0!important;height:auto!important;padding:9px 8px!important;
+ border-radius:12px!important;gap:3px!important;
+}
+#page-spades .seat strong{font-size:14px!important}
+#page-spades .seat small,#page-spades .seat .demo-help{font-size:11px!important;line-height:1.2!important}
+#page-spades .seat.north{grid-column:2!important;grid-row:1!important}
+#page-spades .seat.west{grid-column:1!important;grid-row:2!important}
+#page-spades .seat.east{grid-column:3!important;grid-row:2!important}
+#page-spades .seat.south{grid-column:2!important;grid-row:3!important}
+#page-spades .seat.center{grid-column:2!important;grid-row:2!important;min-height:128px!important;padding:10px!important}
+#page-spades .seat.center .card-row{gap:8px;margin-top:6px}
+#page-spades .playing-card{
+ position:relative;display:inline-flex!important;flex-direction:column;align-items:flex-start;justify-content:flex-start;
+ width:70px!important;min-width:70px!important;height:100px!important;min-height:100px!important;flex:0 0 70px;
+ padding:8px 9px!important;overflow:hidden;border:1px solid #d6c9ad!important;border-radius:9px!important;
+ background:linear-gradient(145deg,#fffefa 0%,#f6f0e3 72%,#e9dfca 100%)!important;
+ color:#17251e!important;font-family:Georgia,serif;font-size:20px!important;font-weight:700;line-height:1.05;
+ box-shadow:0 5px 12px #0005,inset 0 0 0 2px #ffffffa8!important;
+}
+#page-spades .playing-card.red{color:#bd3434!important}
+#page-spades .playing-card .card-rank{font-size:19px;font-weight:800;line-height:1}
+#page-spades .playing-card .card-suit{align-self:center;font-size:37px;line-height:1;margin:auto 0}
+#page-spades .playing-card .card-corner{position:absolute;right:7px;bottom:6px;font-size:10px;opacity:.8;transform:rotate(180deg)}
+#page-spades .playing-card:disabled{opacity:1!important}
+#page-spades .playing-card.selected{transform:translateY(-7px);outline:2px solid #e4c779}
+#page-spades .playing-card.trick-card{width:62px!important;min-width:62px!important;height:88px!important;min-height:88px!important;flex-basis:62px}
+#page-spades .playing-card.trick-card .card-suit{font-size:30px}
+#page-spades #spadesHand{display:flex;flex-wrap:nowrap;justify-content:center;align-items:flex-end;gap:7px;overflow-x:auto;padding:16px 5px 10px;min-height:125px}
+@media(max-width:760px){
+ #page-spades .demo-table{min-height:280px!important;grid-template-columns:minmax(74px,.7fr) minmax(120px,1.3fr) minmax(74px,.7fr)!important;grid-template-rows:62px minmax(112px,auto) 62px!important;padding:9px!important;gap:6px!important}
+ #page-spades .seat{padding:7px 4px!important}
+ #page-spades .seat strong{font-size:12px!important}
+ #page-spades .seat small,#page-spades .seat .demo-help{font-size:10px!important}
+ #page-spades .seat.center{min-height:112px!important}
+ #page-spades .playing-card{width:57px!important;min-width:57px!important;height:82px!important;min-height:82px!important;flex-basis:57px;padding:6px!important;font-size:17px!important}
+ #page-spades .playing-card .card-rank{font-size:16px}
+ #page-spades .playing-card .card-suit{font-size:29px}
+ #page-spades #spadesHand{justify-content:flex-start;gap:5px;min-height:100px}
+}
+
 </style>
 </head>
 <body>
@@ -142,6 +191,7 @@ const spNames=["North · Test","East · Test","South · You","West · Test"];
 const spSeatClass=["north","east","south","west"];
 const spSymbol={clubs:"♣",diamonds:"♦",hearts:"♥",spades:"♠"};
 function spCardText(c){return c.rank+spSymbol[c.suit]}
+function spCardFace(c){const red=["hearts","diamonds"].includes(c.suit);return '<span class="card-rank">'+c.rank+'</span><span class="card-suit">'+spSymbol[c.suit]+'</span><span class="card-corner">'+c.rank+spSymbol[c.suit]+'</span>'}
 function spNewDeck(){return SP_SUITS.flatMap(s=>SP_RANKS.map((r,i)=>({id:s+"-"+r,suit:s,rank:r,value:i+2})))}
 function spShuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function startSpadesDemo(){spGame={round:1,dealer:Math.floor(Math.random()*4),players:spNames.map((name,i)=>({id:"p"+i,name,score:0,bags:0,hand:[],bid:null,mode:"standard",tricks:0})),trick:[],tricksDone:0,leader:1,turn:1,spadesBroken:false,phase:"bidding",bidsDone:0,history:[],blindIndex:null};spDealDemo()}
@@ -156,8 +206,8 @@ async function spBotsPlayDemo(){const g=spGame;let guard=0;while(g&&g.phase==="p
 function spFinishRoundDemo(){const g=spGame;const results=g.players.map(p=>{const bid=p.bid||0,w=p.tricks,m=p.mode;let pts=0,bags=0;if(bid===0){const round13BlindNil=g.round===13&&m==="blind";pts=round13BlindNil?(w===0?100:-100):0;if(w>0)bags=w}else if(w<bid)pts=-bid*(m==="blind"?20:10);else{bags=w-bid;pts=bid*(m==="blind"?20:10)+bags}let total=p.bags+bags,penalty=0;while(total>=10){total-=10;penalty+=100}return{pts,bags:total,penalty,net:pts-penalty}});g.players.forEach((p,i)=>{Object.assign(p,{roundPoints:results[i].pts,bagPenalty:results[i].penalty,roundNet:results[i].net,bags:results[i].bags,score:p.score+results[i].net})});g.phase="score";g.scoreStarted=Date.now();spRenderDemo();spSetLog("Round "+g.round+" complete. Scoreboard will remain available for 15 seconds.");if(g.scoreTimer)clearTimeout(g.scoreTimer);g.scoreTimer=setTimeout(()=>{if(spGame===g&&g.phase==="score")spContinue()},15000);}
 function spContinue(){const g=spGame;if(!g||g.phase!=="score")return;if(g.scoreTimer)clearTimeout(g.scoreTimer);if(g.round===13){g.phase="finished";spRenderDemo();return}g.round++;g.dealer=(g.dealer+1)%4;spDealDemo()}
 function spSetLog(t){const el=document.getElementById("spadesLog");if(el)el.textContent=t}
-function spRenderDemo(){const g=spGame;if(!g)return;document.getElementById("spadesRoundTitle").textContent=g.phase==="finished"?"Match complete · Round 13":"Round "+g.round+" of 13 · "+g.phase;const table=document.getElementById("spadesTable");table.innerHTML=g.players.map((p,i)=>{const active=g.phase==="playing"&&g.turn===i;const exposed=g.blindIndex===i;const cards=exposed?p.hand.map(spCardText).join(" "):p.hand.map(()=>"▰").join(" ");return '<div class="seat '+spSeatClass[i]+(active?' active-turn':'')+'"><strong>'+p.name+'</strong><small>'+(p.bid===null?"Not bid":(p.mode==="blind"?"BLIND ":"")+"Bid "+p.bid)+" · Tricks "+p.tricks+'</small><div class="demo-help">'+(exposed?"Exposed hand: ":"Cards: ")+cards+'</div></div>'}).join("")+'<div class="seat center"><strong>Current trick</strong><div class="card-row">'+g.trick.map(x=>'<span class="playing-card">'+spCardText(x.card)+'</span>').join("")+'</div><small>'+(g.phase==="playing"?"Turn: "+g.players[g.turn].name:"")+'</small></div>';
-const hand=document.getElementById("spadesHand");const maySeeHand=g.phase!=="bidding"||(g.turn===2&&(g.round<=12||g.humanBidMode==="standard"));hand.innerHTML=maySeeHand?g.players[2].hand.map(c=>'<button class="playing-card '+(["hearts","diamonds"].includes(c.suit)?"red":"")+'" '+(g.phase!=="playing"||g.turn!==2||!spLegal(g.players[2].hand,c)?"disabled":"")+' onclick="spPlayHuman(\''+c.id+'\')">'+spCardText(c)+'</button>').join("")||'<span class="muted">No cards remaining.</span>':'<span class="muted">Choose Standard or Blind before viewing your cards.</span>';
+function spRenderDemo(){const g=spGame;if(!g)return;document.getElementById("spadesRoundTitle").textContent=g.phase==="finished"?"Match complete · Round 13":"Round "+g.round+" of 13 · "+g.phase;const table=document.getElementById("spadesTable");table.innerHTML=g.players.map((p,i)=>{const active=g.phase==="playing"&&g.turn===i;const exposed=g.blindIndex===i;const cards=exposed?p.hand.map(spCardText).join(" "):p.hand.map(()=>"▰").join(" ");return '<div class="seat '+spSeatClass[i]+(active?' active-turn':'')+'"><strong>'+p.name+'</strong><small>'+(p.bid===null?"Not bid":(p.mode==="blind"?"BLIND ":"")+"Bid "+p.bid)+" · Tricks "+p.tricks+'</small><div class="demo-help">'+(exposed?"Exposed hand: ":"Cards: ")+cards+'</div></div>'}).join("")+'<div class="seat center"><strong>Current trick</strong><div class="card-row">'+g.trick.map(x=>'<span class="playing-card trick-card '+(["hearts","diamonds"].includes(x.card.suit)?"red":"")+'">'+spCardFace(x.card)+'</span>').join("")+'</div><small>'+(g.phase==="playing"?"Turn: "+g.players[g.turn].name:"")+'</small></div>';
+const hand=document.getElementById("spadesHand");const maySeeHand=g.phase!=="bidding"||(g.turn===2&&(g.round<=12||g.humanBidMode==="standard"));hand.innerHTML=maySeeHand?g.players[2].hand.map(c=>'<button class="playing-card '+(["hearts","diamonds"].includes(c.suit)?"red":"")+'" '+(g.phase!=="playing"||g.turn!==2||!spLegal(g.players[2].hand,c)?"disabled":"")+' onclick="spPlayHuman(\''+c.id+'\')">'+spCardFace(c)+'</button>').join("")||'<span class="muted">No cards remaining.</span>':'<span class="muted">Choose Standard or Blind before viewing your cards.</span>';
 const controls=document.getElementById("spadesControls");if(g.phase==="bidding"&&g.turn===2){if(g.round<=12){controls.innerHTML='<span class="demo-help">Standard bid · choose 0 to '+g.round+'.</span><label>Bid <select id="spBid">'+Array.from({length:g.round+1},(_,i)=>'<option value="'+i+'">'+i+'</option>').join("")+'</select></label><button class="btn gold" onclick="spSubmitBid()">Submit bid</button>'}else if(!g.humanBidMode){controls.innerHTML='<span class="demo-help">Round 13 · choose your bidding mode.</span><button class="btn" onclick="spChooseBidMode(&quot;standard&quot;)">Standard bid</button><button class="btn" onclick="spChooseBidMode(&quot;blind&quot;)">Blind bid</button>'}else{controls.innerHTML='<label>Bid <select id="spBid">'+Array.from({length:g.round+1},(_,i)=>'<option value="'+i+'">'+i+'</option>').join("")+'</select></label><span class="demo-help">'+(g.humanBidMode==="blind"?"Blind hand remains hidden until your bid is submitted.":"Your hand is visible for a standard bid.")+'</span><button class="btn gold" onclick="spSubmitBid()">Submit bid</button>'}}else if(g.phase==="score"){controls.innerHTML='<button class="btn gold" onclick="spContinue()">'+(g.round===13?"Show final result":"Continue to next round")+'</button>'}else if(g.phase==="finished"){controls.innerHTML='<button class="btn gold" onclick="startSpadesDemo()">Play again</button>'}else controls.innerHTML='<span class="demo-help">'+(g.phase==="playing"?"Waiting for your turn…":"Waiting for deal…")+'</span>';
 document.getElementById("spadesScoreboard").innerHTML='<table class="demo-score"><thead><tr><th>Player</th><th>Bid</th><th>Tricks</th><th>Round net</th><th>Bags</th><th>Total</th></tr></thead><tbody>'+g.players.map(p=>'<tr><td>'+p.name+'</td><td>'+(p.bid===null?"—":(p.mode==="blind"?"Blind ":"")+p.bid)+'</td><td>'+p.tricks+'</td><td>'+(p.roundNet??"—")+'</td><td>'+p.bags+'</td><td>'+p.score+'</td></tr>').join("")+'</tbody></table>'+(g.phase==="finished"?"<h3>Winner: "+g.players.slice().sort((a,b)=>b.score-a.score||b.bags-a.bags)[0].name+"</h3>":"")}
 </script>

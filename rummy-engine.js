@@ -18,7 +18,7 @@
     if(vals.every((v,i)=>i===0||v===vals[i-1]+1))return true;
     // Ace may be low (A-2-3) or high (10-J-Q-K-A).
     const aceLow = vals[0]===0 && vals.every((v,i)=>i===0||v===vals[i-1]+1);
-    const aceHigh = vals.length>=3 && vals[0]===0 && vals[1]===9 &&
+    const aceHigh = vals.length>=3 && vals[0]===0 && vals[1]>=9 &&
       vals.slice(2).every((v,i)=>v===vals[i+1]+1);
     return aceLow || aceHigh;
   }

@@ -314,7 +314,7 @@ body:has(#page-spades.active) #page-spades .seat:not(.center){position:absolute!
 body:has(#page-spades.active) #page-spades .seat.north{top:5%;left:50%;transform:translateX(-50%)}
 body:has(#page-spades.active) #page-spades .seat.west{left:3%;top:43%;transform:translateY(-50%)}
 body:has(#page-spades.active) #page-spades .seat.east{right:3%;top:43%;transform:translateY(-50%)}
-body:has(#page-spades.active) #page-spades .seat.south{bottom:27%;left:50%;transform:translateX(-50%)}
+body:has(#page-spades.active) #page-spades .seat.south{bottom:clamp(118px,20vh,154px);left:50%;transform:translateX(-50%)}
 body:has(#page-spades.active) #page-spades .seat:not(.center) .seat-info{align-items:center!important;text-align:center!important;background:#05271dc9!important;border:1px solid #b99a5470;padding:3px 9px!important;border-radius:999px!important}
 body:has(#page-spades.active) #page-spades .seat:not(.center) .seat-avatar{width:42px!important;height:42px!important;flex-basis:42px!important}
 body:has(#page-spades.active) #page-spades .seat.center{position:absolute!important;left:50%;top:43%;transform:translate(-50%,-50%);width:40%;height:34%;min-height:0!important;display:block!important;background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important}
@@ -329,7 +329,7 @@ body:has(#page-spades.active) #page-spades .spades-meta{position:absolute!import
 body:has(#page-spades.active) #page-spades .spades-status-badges>span{font-size:11px!important;padding:5px 10px!important}
 body:has(#page-spades.active) #page-spades .scores-toggle{font-size:11px!important;padding:6px 11px!important}
 body:has(#page-spades.active) #page-spades .scores-popover{top:42px!important;right:4%!important}
-body:has(#page-spades.active) #page-spades .hand-panel{position:absolute!important;z-index:4;left:8%;right:8%;bottom:10px;width:84%;padding:8px 12px 6px!important;margin:0!important;background:linear-gradient(180deg,#08271fe8,#041b14f2)!important;border:1px solid #b99a5470!important;border-radius:16px!important;box-shadow:0 8px 25px #00150d99!important}
+body:has(#page-spades.active) #page-spades .hand-panel{display:block!important;visibility:visible!important;opacity:1!important;position:absolute!important;z-index:8!important;left:8%;right:8%;bottom:10px;width:84%;max-height:190px;overflow:visible;padding:6px 10px 4px!important;margin:0!important;background:linear-gradient(180deg,#08271fe8,#041b14f2)!important;border:1px solid #b99a5470!important;border-radius:16px!important;box-shadow:0 8px 25px #00150d99!important}
 body:has(#page-spades.active) #page-spades .hand-panel>.eyebrow{font-size:9px}
 body:has(#page-spades.active) #page-spades #spadesHand{min-height:0!important;height:clamp(90px,15vh,130px);padding:8px 2px 4px!important;gap:0!important;overflow-x:auto!important;justify-content:center!important;align-items:flex-end!important}
 body:has(#page-spades.active) #page-spades #spadesHand .playing-card{width:clamp(42px,5.1vw,70px)!important;min-width:clamp(42px,5.1vw,70px)!important;height:clamp(64px,9.2vw,100px)!important;min-height:clamp(64px,9.2vw,100px)!important;flex:0 0 clamp(42px,5.1vw,70px)!important;margin-left:clamp(-19px,-1.3vw,-7px)!important;padding:6px!important}
@@ -350,7 +350,7 @@ body:has(#page-spades.active) #page-spades>.notice{display:none}
  body:has(#page-spades.active) #page-spades .seat.north{top:6%}
  body:has(#page-spades.active) #page-spades .seat.west{left:1%;top:39%}
  body:has(#page-spades.active) #page-spades .seat.east{right:1%;top:39%}
- body:has(#page-spades.active) #page-spades .seat.south{bottom:30%}
+ body:has(#page-spades.active) #page-spades .seat.south{bottom:clamp(100px,18vh,126px)}
  body:has(#page-spades.active) #page-spades .seat:not(.center) .seat-avatar{width:30px!important;height:30px!important;flex-basis:30px!important}
  body:has(#page-spades.active) #page-spades .seat:not(.center) .seat-avatar:before{width:8px!important;height:8px!important;top:5px!important}
  body:has(#page-spades.active) #page-spades .seat:not(.center) .seat-avatar:after{width:17px!important;height:10px!important;bottom:3px!important}
@@ -361,7 +361,7 @@ body:has(#page-spades.active) #page-spades>.notice{display:none}
  body:has(#page-spades.active) #page-spades .spades-meta{width:calc(100% - 18px);top:8px!important}
  body:has(#page-spades.active) #page-spades .spades-status-badges>span{font-size:8px!important;padding:3px 6px!important}
  body:has(#page-spades.active) #page-spades .scores-toggle{font-size:9px!important;padding:4px 7px!important}
- body:has(#page-spades.active) #page-spades .hand-panel{left:2%;right:2%;width:96%;bottom:6px;padding:5px!important}
+ body:has(#page-spades.active) #page-spades .hand-panel{display:block!important;visibility:visible!important;opacity:1!important;left:2%;right:2%;width:96%;bottom:6px;max-height:150px;padding:4px!important}
  body:has(#page-spades.active) #page-spades #spadesHand{height:clamp(76px,13vh,100px)!important;justify-content:flex-start!important}
  body:has(#page-spades.active) #page-spades #spadesHand .playing-card{width:clamp(31px,9vw,43px)!important;min-width:clamp(31px,9vw,43px)!important;height:clamp(48px,14vw,64px)!important;min-height:clamp(48px,14vw,64px)!important;flex-basis:clamp(31px,9vw,43px)!important;margin-left:clamp(-18px,-4vw,-12px)!important}
  body:has(#page-spades.active) #page-spades #spadesHand .playing-card .card-rank{font-size:12px}

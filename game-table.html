@@ -18,7 +18,7 @@ const ROOM_CAPACITY=4;let deck=[],hand=[],open=[],selected=new Set(),groups=[],p
 const $=id=>document.getElementById(id);
 function makeDeck(){let d=[];for(let cp=0;cp<2;cp++)for(let si=0;si<4;si++)for(let ri=0;ri<13;ri++)d.push({id:cp+'-'+si+'-'+ri,si,ri,suit:suits[si].s,rank:ranks[ri],red:suits[si].red});d.push({id:'joker-a',joker:true,rank:'JOKER',suit:'★',si:4,ri:13},{id:'joker-b',joker:true,rank:'JOKER',suit:'★',si:4,ri:13});return d}
 function shuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-function start(){const deal=RummyEngine.deal(ROOM_CAPACITY);deck=deal.stock;wildCard=deal.wildCard;wildRank=deal.wildRank;hand=deal.hands[0];open=deal.discard;selected.clear();groups=[];penalty=0;phase='draw';render();say('New deal ready for a '+ROOM_CAPACITY+'-seat room using '+deal.deckCount+' decks. Open Joker: '+RummyEngine.RANKS[wildRank]+'. Draw a card to begin.')}wildRank=wildCard.ri;hand=deck.splice(0,13);open=[deck.pop()];selected.clear();groups=[];penalty=0;phase='draw';render();say('New deal ready. Wild joker rank: '+RummyEngine.RANKS[wildRank]+'. Draw a card to begin.')}
+function start(){const deal=RummyEngine.deal(ROOM_CAPACITY);deck=deal.stock;wildCard=deal.wildCard;wildRank=deal.wildRank;hand=deal.hands[0];open=deal.discard;selected.clear();groups=[];penalty=0;phase='draw';render();say('New deal ready for a '+ROOM_CAPACITY+'-seat room using '+deal.deckCount+' decks. Open Joker: '+RummyEngine.RANKS[wildRank]+'. Draw a card to begin.')}
 function groupFor(id){return groups.findIndex(g=>g.includes(id))}
 function groupType(ids){
  const cards=ids.map(id=>hand.find(c=>c.id===id)).filter(Boolean);

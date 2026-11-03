@@ -571,6 +571,23 @@ body:has(#page-spades.active) #page-spades .demo-log{padding:1px 4px!important;f
  body:has(#page-spades.active) #page-spades #spadesHand .playing-card .pip-layout{inset:12px 3px!important;font-size:7px!important}
 }
 </style>
+<style>
+/* Clean, predictable playing-card faces: no overlapping suit/rank artwork. */
+#page-spades .playing-card{position:relative!important;overflow:hidden!important;box-sizing:border-box!important;background:linear-gradient(145deg,#fffefa,#f4f0e6)!important;border:1px solid #d7d0c2!important;color:#17251e!important}
+#page-spades .playing-card.red{color:#c62835!important}
+#page-spades .playing-card .card-corner{position:absolute!important;display:flex!important;flex-direction:column!important;align-items:center!important;gap:0!important;z-index:3!important;font-family:Georgia,serif!important;line-height:.9!important}
+#page-spades .playing-card .card-corner-top{top:5px!important;left:6px!important}
+#page-spades .playing-card .card-corner-bottom{right:6px!important;bottom:5px!important;transform:rotate(180deg)!important}
+#page-spades .playing-card .card-corner b{font-size:clamp(10px,1vw,14px)!important;font-weight:700!important}
+#page-spades .playing-card .card-corner i{font-size:clamp(9px,.9vw,12px)!important;font-style:normal!important}
+#page-spades .playing-card .card-ace{position:absolute!important;left:50%!important;top:50%!important;transform:translate(-50%,-50%)!important;font-size:clamp(28px,3vw,43px)!important;line-height:1!important}
+#page-spades .playing-card .pip-layout{position:absolute!important;inset:22px 8px 20px!important;display:grid!important;grid-template-columns:1fr 1fr!important;grid-template-rows:repeat(5,1fr)!important;align-items:center!important;justify-items:center!important;font-family:Georgia,serif!important;font-size:clamp(10px,1.15vw,16px)!important;line-height:1!important}
+#page-spades .playing-card .pip-layout span{display:block!important;position:static!important;line-height:1!important}
+#page-spades .playing-card .court-art{position:absolute!important;inset:24px 8px!important;border:1px solid #c7b98e!important;border-radius:5px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:2px!important;background:repeating-linear-gradient(45deg,#fffdf7 0 5px,#eee8d9 5px 7px)!important}
+#page-spades .playing-card .court-rank{font:700 clamp(19px,2vw,29px)/1 Georgia,serif!important}
+#page-spades .playing-card .court-suit{font:clamp(22px,2.3vw,32px)/1 Georgia,serif!important}
+#page-spades .playing-card .court-caption{font:700 7px/1 Arial,sans-serif!important;letter-spacing:.14em!important}
+</style>
 </head>
 <body>
 <header class="topbar"><div class="shell topinner">
@@ -624,7 +641,25 @@ const spNames=["North · Test","East · Test","South · You","West · Test"];
 const spSeatClass=["north","east","south","west"];
 const spSymbol={clubs:"♣",diamonds:"♦",hearts:"♥",spades:"♠"};
 function spCardText(c){return c.rank+spSymbol[c.suit]}
-function spCardFace(c){const suit=spSymbol[c.suit],rank=c.rank;const corner='<span class="card-corner card-corner-top"><b>'+rank+'</b><i>'+suit+'</i></span><span class="card-corner card-corner-bottom"><b>'+rank+'</b><i>'+suit+'</i></span>';if(rank==='A')return corner+'<span class="card-suit">'+suit+'</span>';if(['J','Q','K'].includes(rank))return corner+'<span class="face-mark"><b>'+rank+'</b></span>';const n=Number(rank);const positions={2:[[1,1],[4,3]],3:[[1,1],[2,2],[4,3]],4:[[1,1],[1,3],[4,1],[4,3]],5:[[1,1],[1,3],[2,2],[4,1],[4,3]],6:[[1,1],[1,3],[2,1],[2,3],[4,1],[4,3]],7:[[1,1],[1,3],[2,1],[2,3],[3,2],[4,1],[4,3]],8:[[1,1],[1,3],[2,1],[2,3],[3,1],[3,3],[4,1],[4,3]],9:[[1,1],[1,3],[2,1],[2,3],[3,2],[4,1],[4,3],[2,2],[3,2]],10:[[1,1],[1,3],[2,1],[2,3],[3,1],[3,3],[4,1],[4,3],[2,2],[3,2]]};const cells=(positions[n]||[]).map(([r,col])=>'<span style="grid-row:'+r+';grid-column:'+col+'">'+suit+'</span>').join('');return corner+'<span class="pip-layout">'+cells+'</span>'}
+function spCardFace(c){
+ const suit=spSymbol[c.suit],rank=c.rank;
+ const corner='<span class="card-corner card-corner-top"><b>'+rank+'</b><i>'+suit+'</i></span><span class="card-corner card-corner-bottom"><b>'+rank+'</b><i>'+suit+'</i></span>';
+ if(rank==='A')return corner+'<span class="card-ace">'+suit+'</span>';
+ if(['J','Q','K'].includes(rank))return corner+'<span class="court-art court-'+rank.toLowerCase()+'"><span class="court-rank">'+rank+'</span><span class="court-suit">'+suit+'</span><span class="court-caption">'+(rank==='J'?'JACK':rank==='Q'?'QUEEN':'KING')+'</span></span>';
+ const positions={
+  2:[[1,1],[5,2]],
+  3:[[1,1],[3,2],[5,1]],
+  4:[[1,1],[1,2],[5,1],[5,2]],
+  5:[[1,1],[1,2],[3,1],[5,1],[5,2]],
+  6:[[1,1],[1,2],[2,1],[4,2],[5,1],[5,2]],
+  7:[[1,1],[1,2],[2,1],[3,2],[4,1],[5,1],[5,2]],
+  8:[[1,1],[1,2],[2,1],[2,2],[4,1],[4,2],[5,1],[5,2]],
+  9:[[1,1],[1,2],[2,1],[3,2],[3,1],[4,2],[5,1],[5,2],[2,2]],
+  10:[[1,1],[1,2],[2,1],[2,2],[3,1],[3,2],[4,1],[4,2],[5,1],[5,2]]
+ };
+ const cells=(positions[Number(rank)]||[]).map(([r,col])=>'<span style="grid-row:'+r+';grid-column:'+col+'">'+suit+'</span>').join('');
+ return corner+'<span class="pip-layout pip-count-'+rank+'">'+cells+'</span>';
+}
 function spNewDeck(){return SP_SUITS.flatMap(s=>SP_RANKS.map((r,i)=>({id:s+"-"+r,suit:s,rank:r,value:i+2})))}
 function spShuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function startSpadesDemo(){spGame={round:1,dealer:Math.floor(Math.random()*4),players:spNames.map((name,i)=>({id:"p"+i,name,score:0,bags:0,hand:[],bid:null,mode:"standard",tricks:0})),trick:[],tricksDone:0,leader:1,turn:1,spadesBroken:false,phase:"bidding",bidsDone:0,history:[],roundHistory:[],blindIndex:null};spDealDemo()}

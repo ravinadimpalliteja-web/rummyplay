@@ -21,9 +21,17 @@ test("progressive deal gives N cards to each of four players", () => {
 });
 
 test("dealer rotates clockwise", () => {
-  assert.equal(getRoundDealer(null, 1), 0);
+  assert.equal(getRoundDealer(null, 1, () => 0), 0);
+  assert.equal(getRoundDealer(null, 1, () => 0.99), 3);
   assert.equal(getRoundDealer(0, 2), 1);
   assert.equal(getRoundDealer(3, 3), 0);
+  let dealer = 2;
+  const sequence = [];
+  for (let round = 2; round <= 13; round += 1) {
+    dealer = getRoundDealer(dealer, round);
+    sequence.push(dealer);
+  }
+  assert.deepEqual(sequence, [3,0,1,2,3,0,1,2,3,0,1,2]);
 });
 
 test("bids are bounded by the round and accept standard or blind", () => {

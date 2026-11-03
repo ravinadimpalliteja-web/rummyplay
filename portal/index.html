@@ -233,6 +233,72 @@ button,input{font:inherit}button{cursor:pointer}.shell{max-width:1180px;margin:a
 #page-spades #spadesControls{padding-top:10px;border-top:1px solid #ffffff18}
 @media(max-width:650px){#page-spades .spades-meta{padding:0 3px}#page-spades .spades-status-badges>span{font-size:9px;padding:4px 7px}#page-spades .scores-toggle{font-size:10px;padding:5px 8px}#page-spades .seat{gap:5px!important;padding:2px!important}#page-spades .seat-avatar{width:26px!important;height:26px!important;flex-basis:26px!important}#page-spades .seat strong{font-size:10px!important}#page-spades .seat small{font-size:8px!important}#page-spades .scores-popover{top:34px;right:2px;width:calc(100% - 4px);padding:10px}#page-spades #spadesHand{min-height:104px}}
 </style>
+
+<style>
+/* Royal Club Spades refinement: table-top status, floating seats, authentic card layout */
+#page-spades .spades-stage{position:relative;padding-top:0}
+#page-spades .demo-table{padding-top:58px!important}
+#page-spades .spades-meta{
+ position:absolute!important;z-index:5!important;top:12px!important;left:50%!important;transform:translateX(-50%);
+ width:calc(100% - 44px);display:flex!important;align-items:center!important;justify-content:space-between!important;
+ gap:12px!important;margin:0!important;padding:0 12px!important;pointer-events:none
+}
+#page-spades .spades-status-badges{display:flex;gap:8px;align-items:center;pointer-events:auto}
+#page-spades .spades-status-badges>span{background:#06271ddd!important;border:1px solid #d0ad62!important;color:#f5e6bf!important;
+ box-shadow:0 2px 8px #00150d88;font-size:12px!important;letter-spacing:.02em;padding:7px 12px!important}
+#page-spades .scores-toggle{pointer-events:auto;padding:7px 13px!important;font-size:12px!important;box-shadow:0 2px 8px #00150d88}
+#page-spades .scores-popover{top:48px!important;right:12px!important}
+#page-spades .seat:not(.center){
+ background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important;
+ min-height:0!important;padding:2px 4px!important;gap:7px!important
+}
+#page-spades .seat:not(.center) .seat-avatar{width:48px!important;height:48px!important;flex-basis:48px!important;
+ border:2px solid #e0c47d!important;box-shadow:0 3px 12px #00150d99!important}
+#page-spades .seat:not(.center) .seat-info{display:flex;flex-direction:column;align-items:center;gap:2px;
+ padding:4px 8px;border-radius:10px;background:#05271dcc;box-shadow:0 2px 8px #00150d55}
+#page-spades .seat:not(.center) .seat-info strong{color:#f7edda!important;text-shadow:0 1px 4px #00150d;font-size:13px!important}
+#page-spades .seat:not(.center) .seat-info small{color:#e7d8b5!important;font-size:10px!important}
+#page-spades .seat:not(.center).active-turn .seat-info{outline:1px solid #e2c16c;background:#174b36}
+#page-spades .seat:not(.center).active-turn .seat-avatar{box-shadow:0 0 0 3px #e2c16c55,0 3px 12px #00150d99!important}
+#page-spades .playing-card{
+ position:relative!important;overflow:hidden!important;background:#fffdf7!important;color:#18231d!important;
+ border:1px solid #c8bea8!important;border-radius:8px!important;
+ box-shadow:0 4px 10px #00150d55,inset 0 0 0 2px #fff!important;
+ font-family:Georgia,'Times New Roman',serif!important
+}
+#page-spades .playing-card:before{content:"";position:absolute;inset:4px;border:1px solid #e7dfcf;border-radius:4px;pointer-events:none}
+#page-spades .playing-card.red{color:#bd3038!important}
+#page-spades .playing-card .card-corner{position:absolute;display:flex;flex-direction:column;align-items:center;gap:0;
+ font-size:12px;line-height:.9;font-weight:700}
+#page-spades .playing-card .card-corner i{font-style:normal;font-size:10px}
+#page-spades .playing-card .card-corner-top{top:8px;left:8px}
+#page-spades .playing-card .card-suit{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+ font-size:43px!important;line-height:1!important;text-shadow:0 1px 0 #0000000d}
+#page-spades .playing-card .card-corner-bottom{right:8px;bottom:8px;transform:rotate(180deg)}
+#page-spades .playing-card.selected{transform:translateY(-8px)!important;outline:2px solid #e3c477!important}
+#page-spades .card-row .playing-card{width:68px!important;min-width:68px!important;height:98px!important;min-height:98px!important;flex-basis:68px!important}
+#page-spades #spadesHand .playing-card{width:76px!important;min-width:76px!important;height:110px!important;min-height:110px!important;flex-basis:76px!important}
+@media(max-width:900px){
+ #page-spades .demo-table{padding-top:54px!important}
+ #page-spades .spades-meta{width:calc(100% - 20px);top:9px!important;padding:0 4px!important}
+ #page-spades .spades-status-badges>span{font-size:10px!important;padding:5px 8px!important}
+ #page-spades .seat:not(.center) .seat-avatar{width:40px!important;height:40px!important;flex-basis:40px!important}
+ #page-spades .seat:not(.center) .seat-info{padding:3px 5px}
+}
+@media(max-width:560px){
+ #page-spades .demo-table{padding-top:48px!important}
+ #page-spades .spades-meta{width:calc(100% - 10px);top:7px!important}
+ #page-spades .spades-status-badges{gap:4px}
+ #page-spades .spades-status-badges>span{font-size:9px!important;padding:4px 6px!important}
+ #page-spades .scores-toggle{font-size:10px!important;padding:5px 8px!important}
+ #page-spades .seat:not(.center) .seat-avatar{width:32px!important;height:32px!important;flex-basis:32px!important}
+ #page-spades .seat:not(.center) .seat-info strong{font-size:10px!important}
+ #page-spades .seat:not(.center) .seat-info small{font-size:8px!important}
+ #page-spades .card-row .playing-card{width:54px!important;min-width:54px!important;height:78px!important;min-height:78px!important;flex-basis:54px!important}
+ #page-spades .playing-card .card-suit{font-size:32px!important}
+}
+</style>
+
 </head>
 <body>
 <header class="topbar"><div class="shell topinner">
@@ -287,7 +353,7 @@ const spNames=["North · Test","East · Test","South · You","West · Test"];
 const spSeatClass=["north","east","south","west"];
 const spSymbol={clubs:"♣",diamonds:"♦",hearts:"♥",spades:"♠"};
 function spCardText(c){return c.rank+spSymbol[c.suit]}
-function spCardFace(c){const red=["hearts","diamonds"].includes(c.suit);return '<span class="card-rank">'+c.rank+'</span><span class="card-suit">'+spSymbol[c.suit]+'</span><span class="card-corner">'+c.rank+spSymbol[c.suit]+'</span>'}
+function spCardFace(c){const suit=spSymbol[c.suit];return '<span class="card-corner card-corner-top"><b>'+c.rank+'</b><i>'+suit+'</i></span><span class="card-suit">'+suit+'</span><span class="card-corner card-corner-bottom"><b>'+c.rank+'</b><i>'+suit+'</i></span>'}
 function spNewDeck(){return SP_SUITS.flatMap(s=>SP_RANKS.map((r,i)=>({id:s+"-"+r,suit:s,rank:r,value:i+2})))}
 function spShuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function startSpadesDemo(){spGame={round:1,dealer:Math.floor(Math.random()*4),players:spNames.map((name,i)=>({id:"p"+i,name,score:0,bags:0,hand:[],bid:null,mode:"standard",tricks:0})),trick:[],tricksDone:0,leader:1,turn:1,spadesBroken:false,phase:"bidding",bidsDone:0,history:[],blindIndex:null};spDealDemo()}
@@ -301,7 +367,8 @@ async function spAcceptPlay(index,card){const g=spGame,p=g.players[index];p.hand
 async function spBotsPlayDemo(){const g=spGame;let guard=0;while(g&&g.phase==="playing"&&g.turn!==2&&guard++<52){await new Promise(resolve=>setTimeout(resolve,1150));const p=g.players[g.turn],legal=p.hand.filter(c=>spLegal(p.hand,c));const card=legal.sort((a,b)=>a.value-b.value)[0];if(!card)break;await spAcceptPlay(g.turn,card)}spRenderDemo()}
 function spFinishRoundDemo(){const g=spGame;const results=g.players.map(p=>{const bid=p.bid||0,w=p.tricks,m=p.mode;let pts=0,bags=0;if(bid===0){const round13BlindNil=g.round===13&&m==="blind";pts=round13BlindNil?(w===0?100:-100):0;if(w>0)bags=w}else if(w<bid)pts=-bid*(m==="blind"?20:10);else{bags=w-bid;pts=bid*(m==="blind"?20:10)+bags}let total=p.bags+bags,penalty=0;while(total>=10){total-=10;penalty+=100}return{pts,bags:total,penalty,net:pts-penalty}});g.players.forEach((p,i)=>{Object.assign(p,{roundPoints:results[i].pts,bagPenalty:results[i].penalty,roundNet:results[i].net,bags:results[i].bags,score:p.score+results[i].net})});g.phase="score";g.scoreStarted=Date.now();spRenderDemo();spSetLog("Round "+g.round+" complete. Scoreboard will remain available for 15 seconds.");if(g.scoreTimer)clearTimeout(g.scoreTimer);g.scoreTimer=setTimeout(()=>{if(spGame===g&&g.phase==="score")spContinue()},15000);}
 function spContinue(){const g=spGame;if(!g||g.phase!=="score")return;if(g.scoreTimer)clearTimeout(g.scoreTimer);if(g.round===13){g.phase="finished";spRenderDemo();return}g.round++;g.dealer=(g.dealer+1)%4;spDealDemo()}
-function toggleSpadesScores(force){const panel=document.getElementById("spadesScoresPopover"),button=document.getElementById("spadesScoresToggle");if(!panel||!button)return;const open=typeof force==="boolean"?force:panel.hidden;panel.hidden=!open;button.setAttribute("aria-expanded",String(open))}\nfunction spSetLog(t){const el=document.getElementById("spadesLog");if(el)el.textContent=t}
+function toggleSpadesScores(force){const panel=document.getElementById("spadesScoresPopover"),button=document.getElementById("spadesScoresToggle");if(!panel||!button)return;const open=typeof force==="boolean"?force:panel.hidden;panel.hidden=!open;button.setAttribute("aria-expanded",String(open))}
+function spSetLog(t){const el=document.getElementById("spadesLog");if(el)el.textContent=t}
 function spRenderDemo(){const g=spGame;if(!g)return;document.getElementById("spadesRoundTitle").textContent=g.phase==="finished"?"Match complete · Round 13":"Round "+g.round+" of 13 · "+g.phase;document.getElementById("spadesRoundMeta").textContent="♧  Round "+g.round+" / 13";const table=document.getElementById("spadesTable");table.innerHTML=g.players.map((p,i)=>{const active=g.phase==="playing"&&g.turn===i;const exposed=g.blindIndex===i;const avatarIds=[12,7,32,48];const cards=exposed?p.hand.map(spCardText).join(" "):p.hand.map(()=>"▰").join(" ");return '<div class="seat '+spSeatClass[i]+(active?' active-turn':'')+'"><span class="seat-avatar" aria-hidden="true"></span><div class="seat-info"><strong>'+p.name+'</strong><small>'+(p.bid===null?"Bid —":(p.mode==="blind"?"BLIND ":"")+"Bid "+p.bid)+' · Tricks '+p.tricks+'</small>'+(exposed?'<div class="demo-help">Exposed: '+cards+'</div>':'')+'</div><span class="seat-online"></span></div>'}).join("")+'<div class="seat center"><div class="table-mark"><span>♠</span><strong>SPADES</strong></div><div class="card-row">'+g.trick.map(x=>'<span class="playing-card trick-card '+(["hearts","diamonds"].includes(x.card.suit)?"red":"")+'">'+spCardFace(x.card)+'</span>').join("")+'</div><small>'+(g.phase==="playing"?"Turn: "+g.players[g.turn].name:"Current trick")+'</small></div>'
 const hand=document.getElementById("spadesHand");const maySeeHand=g.phase!=="bidding"||(g.turn===2&&(g.round<=12||g.humanBidMode==="standard"));hand.innerHTML=maySeeHand?g.players[2].hand.map(c=>'<button class="playing-card '+(["hearts","diamonds"].includes(c.suit)?"red":"")+'" '+(g.phase!=="playing"||g.turn!==2||!spLegal(g.players[2].hand,c)?"disabled":"")+' onclick="spPlayHuman(\''+c.id+'\')">'+spCardFace(c)+'</button>').join("")||'<span class="muted">No cards remaining.</span>':'<span class="muted">Choose Standard or Blind before viewing your cards.</span>';
 const controls=document.getElementById("spadesControls");if(g.phase==="bidding"&&g.turn===2){if(g.round<=12){controls.innerHTML='<span class="demo-help">Standard bid · choose 0 to '+g.round+'.</span><label>Bid <select id="spBid">'+Array.from({length:g.round+1},(_,i)=>'<option value="'+i+'">'+i+'</option>').join("")+'</select></label><button class="btn gold" onclick="spSubmitBid()">Submit bid</button>'}else if(!g.humanBidMode){controls.innerHTML='<span class="demo-help">Round 13 · choose your bidding mode.</span><button class="btn" onclick="spChooseBidMode(&quot;standard&quot;)">Standard bid</button><button class="btn" onclick="spChooseBidMode(&quot;blind&quot;)">Blind bid</button>'}else{controls.innerHTML='<label>Bid <select id="spBid">'+Array.from({length:g.round+1},(_,i)=>'<option value="'+i+'">'+i+'</option>').join("")+'</select></label><span class="demo-help">'+(g.humanBidMode==="blind"?"Blind hand remains hidden until your bid is submitted.":"Your hand is visible for a standard bid.")+'</span><button class="btn gold" onclick="spSubmitBid()">Submit bid</button>'}}else if(g.phase==="score"){controls.innerHTML='<button class="btn gold" onclick="spContinue()">'+(g.round===13?"Show final result":"Continue to next round")+'</button>'}else if(g.phase==="finished"){controls.innerHTML='<button class="btn gold" onclick="startSpadesDemo()">Play again</button>'}else controls.innerHTML='<span class="demo-help">'+(g.phase==="playing"?"Waiting for your turn…":"Waiting for deal…")+'</span>';

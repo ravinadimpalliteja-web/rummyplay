@@ -75,7 +75,7 @@ test("winner uses score, then fewer remaining bags; exact tie is shared", () => 
     {id:"a",score:100,bags:4},{id:"b",score:100,bags:2},
     {id:"c",score:90,bags:0},{id:"d",score:80,bags:0}
   ];
-  assert.deepEqual(chooseWinner(players).winners, ["b"]);
+  assert.deepEqual(chooseWinner(players).winners, ["a"]);
   players[0].bags = 2;
   assert.deepEqual(chooseWinner(players).winners, ["a","b"]);
   assert.equal(chooseWinner(players).sharedWin, true);

@@ -19,9 +19,11 @@
     if (!unique(vals)) return false;
     vals.sort((a,b)=>a-b);
     if (vals.every((v,i)=>i===0 || v===vals[i-1]+1)) return true;
-    // Ace may be high only in  Q-K-A; it cannot wrap through K-A-2.
-    return vals.includes(0) && vals.includes(11) && vals.includes(12) &&
-      vals.length === 3 && vals[0] === 0 && vals[1] === 11 && vals[2] === 12;
+    // Ace may be low (A-2-3) or high at the end (Q-K-A through 10-J-Q-K-A).
+    const high = vals.filter(v=>v!==0);
+    return vals.includes(0) && high.length===vals.length-1 &&
+      high.length>=2 && high.length<=4 &&
+      high.every((v,i)=>i===0 || v===high[i-1]+1) && high[high.length-1]===12;
   }
 
   function sequenceWithWild(cards, wildRank) {
@@ -35,12 +37,12 @@
     const vals = fixed.map(rankOf);
     if (!unique(vals)) return false;
     const suit = suitOf(fixed[0]);
-    const starts = [];
-    for (let start=0; start<=13-cards.length; start++) starts.push(start);
-    if (cards.length === 3) starts.push(11); // Q-K-A
-    for (const start of starts) {
-      const slots = Array.from({length:cards.length},(_,i)=>(start+i)%13);
-      if (start===11 && cards.length===3) slots.splice(0,3,11,12,0);
+    const slotSets = [];
+    for (let start=0; start<=13-cards.length; start++)
+      slotSets.push(Array.from({length:cards.length},(_,i)=>start+i));
+    if (cards.length>=3 && cards.length<=5)
+      slotSets.push(Array.from({length:cards.length-1},(_,i)=>12-(cards.length-2)+i).concat(0));
+    for (const slots of slotSets) {
       if (fixed.every(c => suitOf(c)===suit && slots.includes(rankOf(c))) &&
           unique(fixed.map(rankOf))) return true;
     }

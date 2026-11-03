@@ -25,7 +25,7 @@ export function shuffleDeck(deck, random = Math.random) {
   return cards;
 }
 
-export function getRoundDealer(previousDealer, roundNumber) {
+export function getRoundDealer(previousDealer, roundNumber, random = Math.random) {
   if (!Number.isInteger(roundNumber) || roundNumber < 1 || roundNumber > TOTAL_ROUNDS) {
     throw new RangeError("roundNumber must be between 1 and 13");
   }

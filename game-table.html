@@ -11,35 +11,26 @@
 <div class="center"><div class="pile"><button class="deck back" id="drawpile" aria-label="Draw closed deck">R</button><small>Closed deck</small></div><div class="pile"><button class="deck face" id="discardpile" aria-label="Take open discard"></button><small>Open discard / drop to discard</small></div><div class="pile declare-pile"><button class="deck declare-zone" id="declarezone" aria-label="Drop a card here to declare">DECLARE</button><small>Declare hand</small></div></div>
 <div class="handzone"><div class="handhead"><div><b>Your hand</b> · <small id="handcount">13 cards</small></div><div class="tools"><button class="btn" id="group">GROUP SELECTED</button><button class="btn" id="sort">SORT</button></div></div><div class="hand" id="hand" aria-label="Your cards"></div><div class="actions"><button class="btn" id="draw">Draw card</button><button class="btn primary" id="discard" disabled>Discard selected</button><button class="btn" id="declare" disabled>Declare</button><button class="btn" id="newdeal">New deal</button></div><div class="hint" id="hint" aria-live="polite">Tap multiple cards to select them. Press GROUP to keep a combination together; drag cards to rearrange.</div></div></div></section>
 <div class="bottom"><span>13-card Indian Rummy · local interaction prototype</span><span>No live opponents or multiplayer server connected yet</span></div></main>
+<script src="rummy-engine.js"></script>
 <script>
 const suits=[{s:'♣',name:'Clubs',red:false},{s:'♥',name:'Hearts',red:true},{s:'♠',name:'Spades',red:false},{s:'♦',name:'Diamonds',red:true}],ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
-let deck=[],hand=[],open=[],selected=new Set(),groups=[],phase='draw',pointer=null,suppressClick=false;
+let deck=[],hand=[],open=[],selected=new Set(),groups=[],phase='draw',pointer=null,suppressClick=false,wildRank=null;
 const $=id=>document.getElementById(id);
 function makeDeck(){let d=[];for(let cp=0;cp<2;cp++)for(let si=0;si<4;si++)for(let ri=0;ri<13;ri++)d.push({id:cp+'-'+si+'-'+ri,si,ri,suit:suits[si].s,rank:ranks[ri],red:suits[si].red});d.push({id:'joker-a',joker:true,rank:'JOKER',suit:'★',si:4,ri:13},{id:'joker-b',joker:true,rank:'JOKER',suit:'★',si:4,ri:13});return d}
 function shuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-function start(){deck=shuffle(makeDeck());hand=deck.splice(0,13);open=[deck.pop()];selected.clear();groups=[];phase='draw';render();say('New demo deal ready. Draw a card to begin.')}
+function start(){deck=RummyEngine.shuffle(RummyEngine.createDeck());hand=deck.splice(0,13);open=[deck.pop()];wildRank=open[0].joker?(deck.find(c=>!c.joker)?.ri??0):open[0].ri;selected.clear();groups=[];phase='draw';render();say('New deal ready. Wild joker rank: '+RummyEngine.RANKS[wildRank]+'. Draw a card to begin.')}
 function groupFor(id){return groups.findIndex(g=>g.includes(id))}
 function groupType(ids){
- const cards=ids.map(id=>hand.find(c=>c.id===id)).filter(Boolean),wild=cards.filter(c=>c.joker),natural=cards.filter(c=>!c.joker);
- if(cards.length<3)return 'invalid';
- const seq=natural.length===0||natural.every(c=>c.si===natural[0].si);
- if(seq){const vals=natural.map(c=>c.ri).sort((a,b)=>a-b);if(new Set(vals).size!==vals.length)return 'invalid';let gaps=0;for(let i=1;i<vals.length;i++)gaps+=vals[i]-vals[i-1]-1;if(gaps<=wild.length && (vals.length?vals[vals.length-1]-vals[0]+1:0)<=cards.length-0)return natural.length===cards.length?'pure':'sequence';}
- const sameRank=natural.length>0&&natural.every(c=>c.ri===natural[0].ri),uniqueSuits=new Set(natural.map(c=>c.si)).size===natural.length;
- if(sameRank&&uniqueSuits&&cards.length<=4)return 'set';
- return 'invalid';
+ const cards=ids.map(id=>hand.find(c=>c.id===id)).filter(Boolean);
+ return RummyEngine.classifyGroup(cards,wildRank);
 }
 function hasSecondLife(){const types=groups.map(g=>groupType(g));return types.includes('pure')&&types.filter(t=>t==='pure'||t==='sequence').length>=2;}
 function handReady(){
- if(hand.length!==13)return false;
- const covered=new Set(),types=[];
- for(const g of groups){if(g.some(id=>covered.has(id)))return false;g.forEach(id=>covered.add(id));types.push(groupType(g));}
- if(covered.size!==13||types.includes('invalid'))return false;
- const sequences=types.filter(t=>t==='pure'||t==='sequence').length,pure=types.includes('pure');
- return sequences>=2&&pure;
+ return hand.length===13 && RummyEngine.validateHand(hand,wildRank).valid;
 }
 function cardHTML(c){let classes='card'+(c.red?' red':'')+(c.joker?' joker':'')+(selected.has(c.id)?' selected':'');let suit=c.joker?'★':c.suit,rank=c.joker?'JK':c.rank;return '<button type="button" class="'+classes+'" data-id="'+c.id+'" aria-label="'+rank+' '+suit+'"><span class="rank">'+rank+'</span><span class="suit">'+suit+'</span><span class="rank low">'+rank+'</span></button>'}
 function handHTML(){let html='',i=0;while(i<hand.length){let gi=groupFor(hand[i].id);if(gi<0){html+=cardHTML(hand[i++]);continue}let ids=new Set(groups[gi]);let members=[];while(i<hand.length&&ids.has(hand[i].id))members.push(cardHTML(hand[i++]));const validity=groupType(groups[gi]);html+='<div class="card-group '+(validity==='invalid'?'invalid':'valid')+'" data-group="'+gi+'" title="'+validity+'">'+members.join('')+'</div>'}return html}
-function render(){$('hand').innerHTML=handHTML();$('handcount').textContent=hand.length+' cards';$('deckcount').textContent='Deck: '+deck.length;$('selection').textContent=selected.size+' selected';let c=open.at(-1);$('discardpile').innerHTML=c?'<span>'+(c.joker?'JK':c.rank)+'</span><strong>'+c.suit+'</strong><span style="transform:rotate(180deg)">'+(c.joker?'JK':c.rank)+'</span>':'Empty';$('discardpile').classList.toggle('red',!!c?.red);$('draw').disabled=phase!=='draw'||!deck.length;$('drawpile').disabled=phase!=='draw'||!deck.length;$('discardpile').disabled=phase!=='draw'||!open.length;$('discard').disabled=phase!=='discard'||selected.size!==1;$('declare').disabled=phase!=='discard'||hand.length!==14||selected.size!==1;$('status').textContent=phase==='draw'?'Your turn · Draw a card':'Your turn · Select exactly one card to discard'}
+function render(){$('hand').innerHTML=handHTML();$('handcount').textContent=hand.length+' cards';$('deckcount').textContent='Deck: '+deck.length+' · Wild: '+(wildRank==null?'—':RummyEngine.RANKS[wildRank]);$('selection').textContent=selected.size+' selected';let c=open.at(-1);$('discardpile').innerHTML=c?'<span>'+(c.joker?'JK':c.rank)+'</span><strong>'+c.suit+'</strong><span style="transform:rotate(180deg)">'+(c.joker?'JK':c.rank)+'</span>':'Empty';$('discardpile').classList.toggle('red',!!c?.red);$('draw').disabled=phase!=='draw'||!deck.length;$('drawpile').disabled=phase!=='draw'||!deck.length;$('discardpile').disabled=phase!=='draw'||!open.length;$('discard').disabled=phase!=='discard'||selected.size!==1;$('declare').disabled=phase!=='discard'||hand.length!==14||selected.size!==1;$('status').textContent=phase==='draw'?'Your turn · Draw a card':'Your turn · Select exactly one card to discard'}
 function say(t){$('hint').textContent=t}
 function draw(fromOpen){if(phase!=='draw')return;let c=fromOpen?open.pop():deck.pop();if(!c)return;hand.push(c);phase='discard';selected.clear();render();say('Card drawn. Drag a card to Open discard, or drag one to DECLARE to attempt a declaration.')}
 function discardOne(){if(phase!=='discard'||selected.size!==1)return;let id=[...selected][0],i=hand.findIndex(c=>c.id===id);if(i<0)return;open.push(hand.splice(i,1)[0]);selected.clear();groups=groups.map(g=>g.filter(x=>x!==id)).filter(g=>g.length>1);phase='draw';render();say(handReady()?'Card discarded. All groups are valid — you can SHOW the deal.':'Card discarded. Check your groups; invalid groups glow red and valid groups glow green.')}
@@ -47,17 +38,23 @@ function normalizeGroups(){groups=groups.map(g=>g.filter(id=>hand.some(c=>c.id==
 function attemptDeclare(discardId=null){
  if(!discardId&&selected.size===1&&hand.length===14)discardId=[...selected][0];
  if(phase!=='discard'){say('Draw a card first, then you can declare.');return}
- let candidate=hand.slice();
- if(discardId) candidate=candidate.filter(c=>c.id!==discardId);
- else if(selected.size===1&&candidate.length===14) candidate=candidate.filter(c=>c.id!==[...selected][0]);
- if(candidate.length!==13){say('A declaration needs 13 cards after the final discard. Draw first, then drop one card onto DECLARE.');return}
- const ids=new Set(candidate.map(c=>c.id)),candidateGroups=groups.map(g=>g.filter(id=>ids.has(id))).filter(g=>g.length>1);
- const covered=new Set(),types=[];
- for(const g of candidateGroups){if(g.some(id=>covered.has(id)))continue;g.forEach(id=>covered.add(id));types.push(groupType(g))}
- const valid=covered.size===13&&!types.includes('invalid')&&types.filter(t=>t==='pure'||t==='sequence').length>=2&&types.includes('pure');
- if(valid){say('VALID DECLARATION — your hand meets the demo rules.');alert('Valid declaration!')}
- else{say('INVALID DECLARATION — wrong show. Need 13 cards, a pure sequence, a second separate sequence, and all remaining cards in valid groups.');alert('Invalid declaration. The hand does not meet the required combinations.')}
- if(discardId){const i=hand.findIndex(c=>c.id===discardId);if(i>=0)open.push(hand.splice(i,1)[0]);selected.clear();groups=groups.map(g=>g.filter(id=>id!==discardId)).filter(g=>g.length>1);phase='draw';render()}
+ if(!discardId && selected.size===1 && hand.length===14) discardId=[...selected][0];
+ const candidate=discardId?hand.filter(c=>c.id!==discardId):hand.slice();
+ if(candidate.length!==13){say('A declaration needs 13 cards after the final discard. Draw first, then choose the card to discard.');return}
+ const result=RummyEngine.validateHand(candidate,wildRank);
+ if(result.valid){
+   say('VALID DECLARATION — '+result.groups.map(g=>g.type).join(', ')+'.');
+   alert('Valid declaration! Your hand satisfies the Indian Rummy sequence and set rules.');
+ }else{
+   say('INVALID DECLARATION — '+result.reason);
+   alert('Invalid declaration. '+result.reason);
+ }
+ if(discardId){
+   const i=hand.findIndex(c=>c.id===discardId);
+   if(i>=0)open.push(hand.splice(i,1)[0]);
+   selected.clear();groups=groups.map(g=>g.filter(id=>id!==discardId)).filter(g=>g.length>1);
+   phase='draw';render();
+ }
 }
 function moveCards(ids,targetId,after){let moving=new Set(ids),block=hand.filter(c=>moving.has(c.id));if(!block.length)return;hand=hand.filter(c=>!moving.has(c.id));let at=targetId?hand.findIndex(c=>c.id===targetId):-1;if(at<0)at=hand.length;else if(after)at++;hand.splice(at,0,...block);normalizeGroups();render()}
 $('hand').addEventListener('click',e=>{if(suppressClick){suppressClick=false;e.preventDefault();return}let b=e.target.closest('[data-id]');if(!b)return;let id=b.dataset.id;if(selected.has(id))selected.delete(id);else selected.add(id);render();say(selected.size+' card(s) selected. Tap selected cards again to remove them.')});

@@ -45,13 +45,25 @@ test("standard and blind scoring examples match the agreed rules", () => {
   assert.equal(scoreBid({bid:2,tricksWon:4,mode:"blind"}).points, 42);
 });
 
-test("standard and blind nil scoring adds one bag per trick taken on failure", () => {
-  assert.equal(scoreBid({bid:0,tricksWon:0}).points, 100);
-  assert.equal(scoreBid({bid:0,tricksWon:2}).points, -100);
-  assert.equal(scoreBid({bid:0,tricksWon:2}).bagsAdded, 2);
-  assert.equal(scoreBid({bid:0,tricksWon:0,mode:"blind"}).points, 200);
-  assert.equal(scoreBid({bid:0,tricksWon:1,mode:"blind"}).points, -200);
-  assert.equal(scoreBid({bid:0,tricksWon:1,mode:"blind"}).bagsAdded, 1);
+test("Nil bids score zero through round 12 and tricks taken become bags", () => {
+  assert.deepEqual(scoreBid({bid:0,tricksWon:0,roundNumber:1}), {
+    points:0,bagsAdded:0,success:true,nil:true
+  });
+  assert.deepEqual(scoreBid({bid:0,tricksWon:2,roundNumber:3}), {
+    points:0,bagsAdded:2,success:false,nil:true
+  });
+  assert.equal(scoreBid({bid:0,tricksWon:0,mode:"blind",roundNumber:12}).points, 0);
+  assert.equal(scoreBid({bid:0,tricksWon:1,mode:"blind",roundNumber:12}).points, 0);
+  assert.equal(scoreBid({bid:0,tricksWon:1,mode:"blind",roundNumber:12}).bagsAdded, 1);
+});
+
+test("Round 13 standard Nil stays zero; only Blind Nil scores plus or minus 100", () => {
+  assert.equal(scoreBid({bid:0,tricksWon:0,roundNumber:13}).points, 0);
+  assert.equal(scoreBid({bid:0,tricksWon:2,roundNumber:13}).points, 0);
+  assert.equal(scoreBid({bid:0,tricksWon:2,roundNumber:13}).bagsAdded, 2);
+  assert.equal(scoreBid({bid:0,tricksWon:0,mode:"blind",roundNumber:13}).points, 100);
+  assert.equal(scoreBid({bid:0,tricksWon:1,mode:"blind",roundNumber:13}).points, -100);
+  assert.equal(scoreBid({bid:0,tricksWon:1,mode:"blind",roundNumber:13}).bagsAdded, 1);
 });
 
 test("sandbag penalty is applied at each full ten bags and carries remainder", () => {

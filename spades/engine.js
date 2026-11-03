@@ -79,12 +79,12 @@ export function isLegalPlay({ hand, card, trick, spadesBroken, roundNumber }) {
   return !hasLedSuit || card.suit === ledSuit;
 }
 
-export function playCard({ hand, card, trick, spadesBroken, roundNumber }) {
+export function playCard({ playerIndex, hand, card, trick, spadesBroken, roundNumber }) {
   if (!isLegalPlay({ hand, card, trick, spadesBroken, roundNumber })) {
     throw new Error("Illegal card play");
   }
   const nextHand = hand.filter((candidate) => candidate.id !== card.id);
-  const nextTrick = [...trick, { card }];
+  const nextTrick = [...trick, { playerIndex, card }];
   const brokeSpades = card.suit === "spades" && trick.length > 0 &&
     trick[0].card.suit !== "spades" &&
     !hand.some((candidate) => candidate.suit === trick[0].card.suit);

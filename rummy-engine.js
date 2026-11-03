@@ -17,7 +17,10 @@
     vals.sort((a,b)=>a-b);
     if(vals.every((v,i)=>i===0||v===vals[i-1]+1))return true;
     // Ace may be low (A-2-3) or high (10-J-Q-K-A).
-    return vals.length>=3&&vals[0]===0&&vals.slice(1).every((v,i)=>i===0||v===vals[i]+1)&&vals[vals.length-1]===12;
+    const aceLow = vals[0]===0 && vals.every((v,i)=>i===0||v===vals[i-1]+1);
+    const aceHigh = vals.length>=3 && vals[0]===0 && vals[1]===9 &&
+      vals.slice(2).every((v,i)=>v===vals[i+1]+1);
+    return aceLow || aceHigh;
   }
   function sequenceWithWild(cards,wildRank){
     if(cards.length<3||cards.length>13)return false;
@@ -30,7 +33,11 @@
     // Try every legal consecutive run, including A-2-3 and 10-J-Q-K-A.
     const runs=[];
     for(let start=0;start+n<=13;start++)runs.push(Array.from({length:n},(_,i)=>start+i));
-    if(n>=3&&n<=5){const start=14-n;runs.push([...Array.from({length:n-1},(_,i)=>start+i),0]);} // Q-K-A through 10-J-Q-K-A
+    if(n>=3&&n<=5){
+      // A-2-3 through Q-K-A, plus the 10-J-Q-K-A run.
+      const start=14-n;
+      runs.push([...Array.from({length:n-1},(_,i)=>start+i),0]);
+    }
     return runs.some(run=>fixedRanks.every(r=>run.includes(r))&&run.length-fixedRanks.length===wilds.length);
   }
   function setGroup(cards,wildRank){

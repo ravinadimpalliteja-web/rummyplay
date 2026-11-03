@@ -313,6 +313,33 @@ body:has(#page-spades.active) #page-spades .seat.south{bottom:clamp(112px,16vh,1
  body:has(#page-spades.active) #page-spades .seat.south{bottom:clamp(82px,13vh,112px)!important}
 }
 
+
+/* Spades-only trick presentation: every played card belongs to one centered group.
+   Do not place cards in compass/seat positions; keep this independent of Rummy. */
+body:has(#page-spades.active) #page-spades .seat.center{left:50%!important;top:43%!important;width:min(68%,620px)!important;height:clamp(124px,22vh,190px)!important;transform:translate(-50%,-50%)!important;display:flex!important;align-items:center!important;justify-content:center!important}
+body:has(#page-spades.active) #page-spades .seat.center .card-row{position:relative!important;inset:auto!important;width:100%!important;height:100%!important;display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;gap:clamp(8px,1.5vw,20px)!important;margin:0!important;flex-wrap:nowrap!important}
+body:has(#page-spades.active) #page-spades .seat.center .playing-card.trick-card,
+body:has(#page-spades.active) #page-spades .seat.center .card-row .playing-card:nth-child(n){position:relative!important;inset:auto!important;top:auto!important;right:auto!important;bottom:auto!important;left:auto!important;transform:none!important;display:block!important;box-sizing:border-box!important;flex:0 0 clamp(68px,7vw,88px)!important;width:clamp(68px,7vw,88px)!important;min-width:clamp(68px,7vw,88px)!important;height:clamp(96px,10vw,124px)!important;min-height:clamp(96px,10vw,124px)!important;padding:0!important;overflow:hidden!important}
+body:has(#page-spades.active) #page-spades .seat.center .playing-card .card-corner{display:flex!important;flex-direction:column!important;align-items:center!important;gap:1px!important;position:absolute!important;z-index:3!important;font-size:12px!important;line-height:1!important}
+body:has(#page-spades.active) #page-spades .seat.center .playing-card .card-corner b{font-size:17px!important;line-height:1!important}
+body:has(#page-spades.active) #page-spades .seat.center .playing-card .card-corner i{font-size:12px!important;line-height:1!important}
+body:has(#page-spades.active) #page-spades .seat.center .playing-card .card-corner-top{top:7px!important;left:7px!important;right:auto!important;bottom:auto!important;transform:none!important}
+body:has(#page-spades.active) #page-spades .seat.center .playing-card .card-corner-bottom{right:7px!important;bottom:7px!important;left:auto!important;top:auto!important;transform:rotate(180deg)!important}
+body:has(#page-spades.active) #page-spades .seat.center .playing-card .pip-layout{inset:24px 12px!important;font-size:15px!important}
+body:has(#page-spades.active) #page-spades .seat.center .playing-card .card-suit{font-size:42px!important}
+body:has(#page-spades.active) #page-spades .seat.center .playing-card .face-mark{inset:24px 12px!important}
+@media(max-width:760px){
+ body:has(#page-spades.active) #page-spades .seat.center{width:78%!important;height:clamp(92px,17vh,132px)!important;top:40%!important}
+ body:has(#page-spades.active) #page-spades .seat.center .card-row{gap:clamp(5px,1.6vw,12px)!important}
+ body:has(#page-spades.active) #page-spades .seat.center .playing-card.trick-card,
+ body:has(#page-spades.active) #page-spades .seat.center .card-row .playing-card:nth-child(n){flex-basis:clamp(48px,13vw,68px)!important;width:clamp(48px,13vw,68px)!important;min-width:clamp(48px,13vw,68px)!important;height:clamp(70px,19vw,98px)!important;min-height:clamp(70px,19vw,98px)!important}
+ body:has(#page-spades.active) #page-spades .seat.center .playing-card .card-corner{font-size:9px!important}
+ body:has(#page-spades.active) #page-spades .seat.center .playing-card .card-corner b{font-size:12px!important}
+ body:has(#page-spades.active) #page-spades .seat.center .playing-card .card-corner i{font-size:9px!important}
+ body:has(#page-spades.active) #page-spades .seat.center .playing-card .card-suit{font-size:30px!important}
+ body:has(#page-spades.active) #page-spades .seat.center .playing-card .pip-layout{inset:19px 7px!important;font-size:11px!important}
+}
+
 </style>
 
 <style>

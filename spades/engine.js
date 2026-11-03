@@ -57,7 +57,7 @@ export function dealRound(roundNumber, dealer, random = Math.random) {
 export function validateBid(bid, roundNumber, mode = "standard") {
   if (!Number.isInteger(roundNumber) || roundNumber < 1 || roundNumber > TOTAL_ROUNDS) return false;
   if (!Number.isInteger(bid) || bid < 0 || bid > roundNumber) return false;
-  return mode === "standard" || mode === "blind";
+  return mode === "standard" || (mode === "blind" && roundNumber === 13);
 }
 
 export function rankValue(card) {

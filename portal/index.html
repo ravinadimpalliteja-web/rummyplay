@@ -40,6 +40,52 @@ button,input{font:inherit}button{cursor:pointer}.shell{max-width:1180px;margin:a
  .spades-demo #spadesHand{gap:5px}
  .spades-demo .demo-score th,.spades-demo .demo-score td{padding:8px 6px;font-size:11px}
 }
+
+/* Royal Club Spades table rebuild v2 */
+#page-spades.spades-demo{width:100%;max-width:1180px;margin:22px auto 0}
+#page-spades.spades-demo>.panel{padding:24px;background:linear-gradient(145deg,#0d3528,#08251d);border:1px solid #315b49;border-radius:20px}
+#page-spades .demo-top{padding:2px 2px 12px}
+#page-spades .demo-top h2{font-size:clamp(22px,2.4vw,30px);margin:5px 0}
+#page-spades .demo-table{width:100%;box-sizing:border-box;min-height:500px;margin:18px 0 22px;padding:30px;grid-template-columns:minmax(150px,1fr) minmax(240px,1.35fr) minmax(150px,1fr);grid-template-rows:minmax(105px,auto) minmax(150px,auto) minmax(105px,auto);gap:18px;background:radial-gradient(ellipse at center,#1b5941 0%,#10402f 48%,#08271e 100%);border:1px solid #527b61;border-radius:22px;box-shadow:inset 0 0 55px #03160f99}
+#page-spades .seat{box-sizing:border-box;min-height:100px;padding:18px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;border:1px solid #47745c;background:#06251dcc;border-radius:16px;text-align:center}
+#page-spades .seat strong{font-size:17px;line-height:1.25}
+#page-spades .seat small,#page-spades .seat .demo-help{font-size:14px;line-height:1.35}
+#page-spades .seat.north{grid-column:2;grid-row:1}
+#page-spades .seat.west{grid-column:1;grid-row:2}
+#page-spades .seat.east{grid-column:3;grid-row:2}
+#page-spades .seat.south{grid-column:2;grid-row:3}
+#page-spades .seat.center{grid-column:2;grid-row:2;min-height:150px;background:#061e17e8;border:1px solid #b99a54;border-radius:18px}
+#page-spades .seat.active-turn{border:2px solid #e3c477;box-shadow:0 0 0 4px #e3c47726}
+#page-spades .card-row{gap:10px;margin-top:12px}
+#page-spades .playing-card{box-sizing:border-box!important;display:inline-flex!important;align-items:flex-start;justify-content:flex-start;width:76px!important;min-width:76px!important;height:108px!important;min-height:108px!important;flex:0 0 76px;padding:12px 10px!important;border-radius:11px!important;border:1px solid #d5c9ad;background:linear-gradient(145deg,#fffdf7,#eee7d7);color:#17251e;font-size:23px!important;font-weight:800;line-height:1.1;box-shadow:0 5px 12px #0005}
+#page-spades .playing-card.red{color:#b33a36}
+#page-spades .playing-card:disabled{opacity:1}
+#page-spades .playing-card.selected{transform:translateY(-8px);outline:3px solid #e3c477}
+#page-spades #spadesHand{min-height:132px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:18px 8px}
+#page-spades>.panel>.panel{padding:20px!important;background:#0a2b20;border:1px solid #315b49;border-radius:16px}
+#page-spades .demo-controls{min-height:52px;gap:12px;margin:14px 0}
+#page-spades .demo-controls button,#page-spades .demo-controls select{min-height:46px}
+#page-spades .demo-log{min-height:54px;padding:15px 16px;background:#061f18;border-color:#315b49;font-size:14px}
+#page-spades .demo-score{border-collapse:separate;border-spacing:0;overflow:hidden;border:1px solid #315b49;border-radius:12px}
+#page-spades .demo-score th,#page-spades .demo-score td{padding:13px 14px;font-size:14px}
+#page-spades .demo-score thead{background:#061f18}
+@media(max-width:760px){
+ #page-spades.spades-demo{margin-top:12px}
+ #page-spades.spades-demo>.panel{padding:14px}
+ #page-spades .demo-table{min-height:0;padding:12px;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto auto auto;gap:9px}
+ #page-spades .seat{min-height:88px;padding:12px 8px}
+ #page-spades .seat strong{font-size:14px}
+ #page-spades .seat small,#page-spades .seat .demo-help{font-size:12px}
+ #page-spades .seat.north{grid-column:1/3;grid-row:1}
+ #page-spades .seat.west{grid-column:1;grid-row:2}
+ #page-spades .seat.east{grid-column:2;grid-row:2}
+ #page-spades .seat.center{grid-column:1/3;grid-row:3;min-height:118px}
+ #page-spades .seat.south{grid-column:1/3;grid-row:4}
+ #page-spades .playing-card{width:62px!important;min-width:62px!important;height:88px!important;min-height:88px!important;flex-basis:62px;font-size:19px!important;padding:10px 8px!important}
+ #page-spades #spadesHand{min-height:100px;gap:6px;padding:12px 2px}
+ #page-spades .demo-score th,#page-spades .demo-score td{padding:9px 7px;font-size:12px}
+}
+
 </style>
 </head>
 <body>

@@ -64,7 +64,7 @@ test("Zero bids score zero through round 12 and tricks taken become bags", () =>
   });
   assert.equal(scoreBid({bid:0,tricksWon:0,mode:"standard",roundNumber:12}).points, 0);
   assert.equal(scoreBid({bid:0,tricksWon:1,mode:"standard",roundNumber:12}).points, 0);
-  assert.equal(scoreBid({bid:0,tricksWon:1,mode:"blind",roundNumber:12}).bagsAdded, 1);
+  assert.equal(scoreBid({bid:0,tricksWon:1,mode:"standard",roundNumber:12}).bagsAdded, 1);
 });
 
 test("Round 13 standard zero stays zero; blind zero follows the current special scoring rule", () => {

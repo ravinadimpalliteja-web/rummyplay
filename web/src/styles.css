@@ -7,3 +7,87 @@
 /* Royal Club Spades gameplay */
 .game-screen{position:relative;padding:8px 0 22px}.game-toolbar{height:44px;display:flex;align-items:center;justify-content:space-between}.game-toolbar .back-link{margin:0}.game-toolbar strong{font-size:11px;letter-spacing:.13em;color:#f1dfb4}.game-toolbar strong span{margin-left:12px;color:#d9b96f}.score-chip{border:1px solid #987b42;border-radius:8px;background:#143a2c;color:#fff4d9;padding:8px 13px}.game-board{height:min(61vh,610px);min-height:420px;position:relative;border:1px solid #b8954e;border-radius:15px;background:radial-gradient(ellipse at center,#0c714d,#075238 58%,#043321);box-shadow:inset 0 0 0 5px #173b2b,inset 0 0 55px #00180f99;overflow:hidden}.game-board:before{content:"";position:absolute;inset:12px;border:1px solid #d5b96b55;border-radius:8px}.player-seat{position:absolute;z-index:3;display:flex;align-items:center;flex-direction:column;gap:3px;min-width:100px;padding:6px 9px;border:1px solid #c3a45b;border-radius:11px;background:#08291fee;box-shadow:0 4px 12px #00180f66}.player-seat b{font-size:12px}.player-seat small{font-size:10px;color:#e7d39f}.player-seat.north{top:20px;left:50%;transform:translateX(-50%)}.player-seat.west{left:15px;top:50%;transform:translateY(-50%)}.player-seat.east{right:15px;top:50%;transform:translateY(-50%)}.player-seat.south{bottom:12px;left:50%;transform:translateX(-50%)}.avatar{width:34px;height:34px;display:grid;place-items:center;border-radius:50%;background:linear-gradient(145deg,#d9b96f,#76552b);color:#17251c;font-weight:800;font-size:10px}.player-seat.south .avatar{background:#eee1c2}.trick-area{position:absolute;inset:24% 27%;display:grid;place-items:center}.table-mark{font:100px Georgia;color:#f3dfac1c;text-align:center}.table-mark small{display:block;font:9px 'DM Sans';letter-spacing:.3em}.trick-card{position:absolute;display:flex;flex-direction:column;align-items:center;gap:2px}.trick-card small{font-size:9px;color:#fff0c9}.trick-card.p0{bottom:0;left:50%;transform:translateX(-50%)}.trick-card.p1{top:0;left:50%;transform:translateX(-50%)}.trick-card.p2{left:0;top:50%;transform:translateY(-50%)}.trick-card.p3{right:0;top:50%;transform:translateY(-50%)}.player-dock{margin-top:10px;padding:10px 13px;border:1px solid #a9894b;border-radius:12px;background:linear-gradient(180deg,#0b3023,#041c14);box-shadow:0 8px 22px #0004}.dock-heading{display:flex;justify-content:space-between;color:#e5d19b;font-size:9px;letter-spacing:.2em}.bid-row{display:flex;align-items:center;justify-content:center;gap:10px;margin:8px 0;color:#f0e3c2;font-size:12px}.bid-row select{min-width:135px;padding:9px;border-radius:8px;background:#f5f0e4;color:#18251e}.turn-message,.status-line{text-align:center;color:#e6d4a6;font-size:11px;margin:6px}.hand-cards{display:flex;justify-content:center;align-items:flex-end;gap:clamp(2px,.5vw,7px);min-height:108px;padding:7px 2px 2px;overflow-x:auto}.playing-card{width:clamp(48px,5vw,68px);height:clamp(72px,7.4vw,100px);flex:0 0 auto;position:relative;display:flex;flex-direction:column;justify-content:space-between;padding:5px;border:1px solid #c9c4b7;border-radius:7px;background:linear-gradient(145deg,#fffefa,#eee9dc);box-shadow:0 5px 12px #00170f88;color:#17221d}.playing-card.red{color:#c32b35}.playing-card span{display:flex;flex-direction:column;align-items:center;align-self:flex-start;font:700 12px Georgia;line-height:1}.playing-card i{font-style:normal;font-size:12px}.playing-card>b{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font:30px Georgia}.playing-card .flip{align-self:flex-end;transform:rotate(180deg)}.playing-card:disabled{opacity:1}.playing-card.disabled{filter:grayscale(.55);opacity:.5}.playing-card.small{width:49px;height:70px;min-width:49px;padding:4px}.playing-card.small>b{font-size:24px}.score-panel{position:absolute;z-index:10;right:8px;top:52px;width:min(320px,90vw);padding:16px;border:1px solid var(--gold);border-radius:12px;background:#09251ef5;box-shadow:0 14px 35px #0008}.score-panel>button{float:right;background:none;border:0;color:#f2d99c}.score-panel h3{font:22px 'Playfair Display';margin:8px}.score-row{display:grid;grid-template-columns:1fr 80px 55px;gap:5px;padding:10px 3px;border-top:1px solid #ffffff20;font-size:11px}.score-row span{color:#c3d0c6}.score-row strong{text-align:right;color:#f0d99d}
 @media(max-width:700px){.game-board{height:51vh;min-height:370px}.player-seat{min-width:76px;padding:5px}.player-seat b{font-size:10px}.player-seat small{font-size:8px}.player-seat.west{left:3px}.player-seat.east{right:3px}.avatar{width:29px;height:29px}.trick-area{inset:27% 22%}.playing-card{width:clamp(30px,8vw,47px);height:clamp(46px,12vw,70px);padding:3px}.playing-card>b{font-size:22px}.playing-card span{font-size:9px}.playing-card i{font-size:9px}.playing-card.small{width:39px;height:57px;min-width:39px}.hand-cards{justify-content:flex-start;min-height:82px}.player-dock{padding:8px}.bid-row{flex-wrap:wrap}.game-toolbar strong{font-size:9px}}
+
+
+/* Royal Club full-screen Spades layout — reference-led rebuild */
+.app-shell:has(.game-screen){height:100svh;min-height:560px;overflow:hidden;background:
+  radial-gradient(ellipse at 50% 42%,#0c573d 0%,#073b2b 48%,#041d16 100%);}
+.app-shell:has(.game-screen) .topbar,
+.app-shell:has(.game-screen) footer{display:none}
+.app-shell:has(.game-screen) main{width:100%;max-width:none;margin:0;min-height:0;overflow:hidden}
+.game-screen{height:100svh;min-height:560px;padding:12px clamp(16px,2.8vw,44px) 10px;display:flex;flex-direction:column;gap:6px;overflow:hidden;position:relative}
+.game-screen:before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.2;background-image:radial-gradient(#d6c58a 0.55px,transparent .7px);background-size:8px 8px;mask-image:linear-gradient(90deg,transparent,#000 20%,#000 80%,transparent)}
+.game-toolbar{height:38px;flex:0 0 38px;position:relative;z-index:4;border-bottom:1px solid #d5bd7650}
+.game-toolbar .back-link{margin:0;font-size:12px}
+.game-toolbar strong{font-size:13px;letter-spacing:.16em}
+.game-toolbar strong span{display:inline-flex;align-items:center;gap:5px;border:1px solid #d9b96f66;border-radius:20px;padding:5px 10px;margin-left:12px}
+.score-chip{padding:7px 16px;background:linear-gradient(135deg,#f0d99d,#c79f50);color:#17251c;border:0;font-weight:800}
+.game-board{flex:1 1 auto;width:100%;height:auto;min-height:0;position:relative;overflow:visible;border:0;border-radius:0;background:transparent;box-shadow:none}
+.game-board:before{display:none}
+.player-seat{min-width:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;gap:4px;text-shadow:0 2px 8px #00180f}
+.player-seat b{font-size:clamp(13px,1.15vw,17px);font-weight:700;letter-spacing:.02em}
+.player-seat small{font-size:11px;color:#d7e4d9}
+.avatar{width:40px;height:40px;border:2px solid #e0c47c;background:linear-gradient(145deg,#f0d99d,#c79f50);font-size:12px;box-shadow:0 5px 15px #00180f88}
+.player-seat.north{top:2%;left:50%;transform:translateX(-50%)}
+.player-seat.south{bottom:0;left:50%;transform:translateX(-50%)}
+.player-seat.west{left:1%;top:50%;transform:translateY(-50%)}
+.player-seat.east{right:1%;top:50%;transform:translateY(-50%)}
+.trick-area{position:absolute;inset:0;display:block;pointer-events:none}
+.table-mark{display:none}
+.trick-card{position:absolute;display:flex;flex-direction:column;align-items:center;gap:5px}
+.trick-card small{font-size:12px;font-weight:700;color:#f6e8bd;text-shadow:0 2px 6px #00180f}
+.trick-card.p1{top:19%;left:50%;transform:translateX(-50%)}
+.trick-card.p2{top:50%;left:25%;transform:translateY(-50%)}
+.trick-card.p3{top:50%;right:25%;transform:translateY(-50%)}
+.trick-card.p0{bottom:18%;left:50%;transform:translateX(-50%)}
+.playing-card.small{width:clamp(62px,5.8vw,84px);height:clamp(90px,8.4vw,120px);min-width:0;padding:7px;border-radius:8px;box-shadow:0 9px 22px #00170f99,0 0 0 1px #fff8}
+.playing-card.small>b{font-size:clamp(34px,3vw,46px)}
+.playing-card.small span{font-size:15px}
+.playing-card.small i{font-size:14px}
+.player-dock{position:relative;z-index:3;flex:0 0 auto;margin:0;padding:8px 10px 5px;border:0;border-top:1px solid #d5bd7655;border-radius:0;background:linear-gradient(180deg,#06291f88,#041a13cc);box-shadow:none}
+.dock-heading{max-width:900px;margin:0 auto 4px;font-size:10px}
+.bid-row{margin:5px 0 7px}
+.bid-row select{min-width:145px;border:1px solid #c9a75e}
+.turn-message,.status-line{margin:4px;color:#f2e5c2}
+.hand-cards{min-height:clamp(100px,15vh,145px);max-width:1120px;margin:0 auto;overflow:visible;gap:clamp(1px,.32vw,5px);padding:5px 0 0}
+.hand-cards .playing-card{width:clamp(47px,5.5vw,78px);height:clamp(70px,8vw,112px);padding:6px;border-radius:8px;transition:transform .16s ease,box-shadow .16s ease}
+.hand-cards .playing-card:not(:disabled):hover{transform:translateY(-12px);box-shadow:0 13px 25px #00170fbb}
+.hand-cards .playing-card>b{font-size:clamp(25px,2.4vw,35px)}
+.hand-cards .playing-card span{font-size:13px}
+.hand-cards .playing-card i{font-size:12px}
+.score-panel{top:54px;right:clamp(12px,3vw,44px);background:#06271ff5;backdrop-filter:blur(14px)}
+@media(max-width:760px){
+ .game-screen{padding:8px 10px 6px;min-height:540px}
+ .game-toolbar{height:34px;flex-basis:34px}
+ .game-toolbar strong{font-size:10px}
+ .game-toolbar strong span{padding:4px 7px;margin-left:5px}
+ .player-seat b{font-size:12px}
+ .player-seat small{font-size:9px}
+ .avatar{width:33px;height:33px}
+ .player-seat.west{left:0}
+ .player-seat.east{right:0}
+ .trick-card.p1{top:23%}
+ .trick-card.p2{left:18%}
+ .trick-card.p3{right:18%}
+ .trick-card.p0{bottom:20%}
+ .playing-card.small{width:49px;height:72px}
+ .playing-card.small>b{font-size:27px}
+ .playing-card.small span{font-size:11px}
+ .hand-cards{min-height:90px;gap:1px}
+ .hand-cards .playing-card{width:clamp(25px,7.1vw,48px);height:clamp(43px,12.8vw,72px);padding:3px;border-radius:5px}
+ .hand-cards .playing-card>b{font-size:clamp(16px,4vw,23px)}
+ .hand-cards .playing-card span{font-size:9px}
+ .hand-cards .playing-card i{font-size:8px}
+ .player-dock{padding:6px 2px 2px}
+ .dock-heading{padding:0 6px}
+ .status-line{font-size:10px}
+}
+@media(max-height:700px) and (min-width:761px){
+ .game-screen{padding-top:6px}
+ .player-seat.north{top:0}
+ .player-seat.south{bottom:-4px}
+ .hand-cards{min-height:88px}
+ .hand-cards .playing-card{height:82px}
+ .trick-card.p1{top:15%}
+ .trick-card.p0{bottom:14%}
+}

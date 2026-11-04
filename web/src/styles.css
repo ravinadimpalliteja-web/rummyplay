@@ -197,3 +197,20 @@
   .game-screen .bid-floating label{font-size:11px}
   .game-screen .bid-floating select{min-width:88px;min-height:35px;padding:6px;font-size:12px}
   .game-screen .bid-floating .gold-button{min-height:35px;padding:7px 9px;font-size:11px}  /* Preserve the original north/south card offsets on mobile too. */}
+
+
+/* Final trick-card anchors: keep North and South cards distinct. */
+.app-shell:has(.game-screen) .game-board .trick-area .trick-card.p1{
+  top:14%;
+  left:50%;
+  right:auto;
+  bottom:auto;
+  transform:translateX(-50%);
+}
+.app-shell:has(.game-screen) .game-board .trick-area .trick-card.p0{
+  top:auto;
+  left:50%;
+  right:auto;
+  bottom:18%;
+  transform:translateX(-50%);
+}

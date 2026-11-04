@@ -292,3 +292,7 @@
 .bid-row.blind-choice small{flex-basis:100%;text-align:center;color:#e7d39f;font-size:11px}
 .ghost-button{padding:10px 16px;border:1px solid #987b42;border-radius:9px;background:transparent;color:#f1dfb4;font-weight:700}
 .dealer-tag.blind-tag{background:#d9b96f;color:#17251c;margin-left:6px}
+/* Player timer */
+.timer-chip{display:inline-block;margin-top:2px;padding:2px 9px;border:1px solid #987b42;border-radius:999px;background:#143a2c;color:#f1dfb4;font-size:11px;font-weight:700;letter-spacing:.04em}
+.timer-chip.urgent{background:#7a1f1f;border-color:#e0a0a0;color:#fff;animation:timerPulse .8s ease-in-out infinite}
+@keyframes timerPulse{50%{opacity:.6}}

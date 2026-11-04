@@ -141,3 +141,25 @@
 .round-cell span{font-size:10px;color:#c5d5ca}
 .round-cell b{font-size:11px;color:#f0d99d;padding-top:4px;border-top:1px solid #ffffff20}
 @media(max-width:760px){.dealer-tag{font-size:8px;padding:2px 5px}.bid-badge{font-size:10px;min-width:45px;padding:3px 6px}.score-matrix{min-width:760px}}
+
+/* Keep the north player's identity and bid clear of the played card. */
+.player-seat.north{
+  flex-direction:row;
+  align-items:center;
+  gap:8px;
+  padding:4px 8px;
+  border:1px solid #c3a45b66;
+  border-radius:10px;
+  background:#08291fcc;
+}
+.player-seat.north .player-stats{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  white-space:nowrap;
+}
+@media(max-width:700px){
+  .player-seat.north{gap:5px;padding:3px 6px}
+  .player-seat.north .avatar{width:30px;height:30px}
+  .player-seat.north .player-stats{gap:4px}
+}

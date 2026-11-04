@@ -163,3 +163,39 @@
   .player-seat.north .avatar{width:30px;height:30px}
   .player-seat.north .player-stats{gap:4px}
 }
+
+
+/* Floating bid prompt: only mounted during the human bidding phase. */
+.game-screen .bid-floating{
+  position:absolute;
+  z-index:18;
+  left:50%;
+  bottom:clamp(142px,18vh,188px);
+  transform:translateX(-50%);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  width:max-content;
+  max-width:calc(100vw - 28px);
+  margin:0;
+  padding:10px 13px;
+  border:1px solid #e2c477;
+  border-radius:12px;
+  background:linear-gradient(145deg,#082c21f5,#041a14f5);
+  box-shadow:0 12px 32px #00180fbb,0 0 0 3px #e2c47718;
+  backdrop-filter:blur(12px);
+}
+.game-screen .bid-floating label{font-size:13px;white-space:nowrap}
+.game-screen .bid-floating select{min-width:112px;min-height:38px;font-size:14px}
+.game-screen .bid-floating .gold-button{min-height:38px;padding:8px 13px;white-space:nowrap}
+.trick-card.p1{top:31%;left:50%;transform:translateX(-50%)}
+.trick-card.p0{bottom:27%;left:50%;transform:translateX(-50%)}
+@media(max-width:760px){
+  .game-screen .bid-floating{bottom:clamp(118px,17vh,150px);gap:6px;padding:8px}
+  .game-screen .bid-floating label{font-size:11px}
+  .game-screen .bid-floating select{min-width:88px;min-height:35px;padding:6px;font-size:12px}
+  .game-screen .bid-floating .gold-button{min-height:35px;padding:7px 9px;font-size:11px}
+  .trick-card.p1{top:33%}
+  .trick-card.p0{bottom:28%}
+}

@@ -1,70 +1,14 @@
-import { useState } from "react";
-import { GAMES, type PlayMode } from "./domain/game";
-
-type Screen = "home" | "spades";
-
-export default function App() {
-  const [screen, setScreen] = useState<Screen>("home");
-  const [mode, setMode] = useState<PlayMode>("practice");
-
-  return (
-    <div className="app-shell">
-      <header className="topbar">
-        <button className="brand" onClick={() => setScreen("home")} aria-label="Royal Club home">
-          <span className="brand-mark">♠</span>
-          <span><strong>ROYAL CLUB</strong><small>MORE TO PLAY</small></span>
-        </button>
-        <nav aria-label="Main navigation">
-          <button className={screen === "home" ? "nav-active" : ""} onClick={() => setScreen("home")}>Home</button>
-          <button onClick={() => setScreen("home")}>Games</button>
-          <button onClick={() => setScreen("home")}>Friends</button>
-        </nav>
-        <div className="account-actions"><span className="guest-label">Guest preview</span><button className="sign-in">Sign in</button></div>
-      </header>
-
-      <main>
-        {screen === "home" ? (
-          <>
-            <section className="hero">
-              <div className="eyebrow">A BETTER WAY TO PLAY</div>
-              <h1>Good games.<br/><em>Great company.</em></h1>
-              <p>Welcome to Royal Club. Sharpen your strategy in practice or bring your friends to the table.</p>
-              <button className="gold-button" onClick={() => setScreen("spades")}>Explore games <span>↗</span></button>
-              <div className="hero-ornament" aria-hidden="true">♠</div>
-            </section>
-
-            <section className="section-heading"><div><div className="eyebrow">THE CLUB</div><h2>Choose your game</h2></div><span className="section-note">More games are on the way</span></section>
-            <div className="game-grid">
-              {GAMES.map(game => (
-                <article className={game.status === "available" ? "game-card featured" : "game-card muted-card"} key={game.id}>
-                  <div className="game-art"><span>{game.id === "spades" ? "♠" : "♦"}</span><i>{game.id === "spades" ? "13 ROUNDS" : "COMING SOON"}</i></div>
-                  <div className="game-info"><div className="game-kicker">{game.id === "spades" ? "TRICK-TAKING" : "INDIAN CARD GAME"}</div><h3>{game.name}</h3><p>{game.description}</p>
-                    {game.status === "available" ? <button className="text-button" onClick={() => setScreen("spades")}>Enter game <span>→</span></button> : <span className="coming-label">Coming soon</span>}
-                  </div>
-                </article>
-              ))}
-            </div>
-          </>
-        ) : (
-          <section className="mode-page">
-            <button className="back-link" onClick={() => setScreen("home")}>← Back to games</button>
-            <div className="eyebrow">ROYAL CLUB · SPADES</div>
-            <h1>Choose how you<br/><em>want to play.</em></h1>
-            <p className="mode-intro">Same Progressive Spades rules. Choose a practice table or join real players online.</p>
-            <div className="mode-grid">
-              <button className={mode === "practice" ? "mode-card selected" : "mode-card"} onClick={() => setMode("practice")}>
-                <span className="mode-symbol">♠</span><span className="mode-tag">PLAY AT YOUR PACE</span><strong>Practice mode</strong><span className="mode-copy">You play against three computer opponents. Ideal for learning and improving.</span><span className="mode-cta">Selected mode <b>→</b></span>
-              </button>
-              <button className={mode === "online" ? "mode-card selected" : "mode-card"} onClick={() => setMode("online")}>
-                <span className="mode-symbol">♣</span><span className="mode-tag">PLAY WITH PEOPLE</span><strong>Online multiplayer</strong><span className="mode-copy">Four registered players at one live table, with synchronized turns and scores.</span><span className="mode-cta">{mode === "online" ? "Selected mode" : "Choose online"} <b>→</b></span>
-              </button>
-            </div>
-            <div className="mode-footnote">{mode === "practice" ? "Practice table setup will be connected to the shared Spades engine." : "Online rooms will require sign-in and will be enabled when multiplayer services are connected."}</div>
-            <button className="gold-button continue-button" onClick={() => window.alert(mode === "practice" ? "Practice mode is selected. Game engine integration is the next milestone." : "Online mode is selected. Multiplayer service integration is the next milestone.")}>Continue with {mode === "practice" ? "practice" : "online"} <span>→</span></button>
-          </section>
-        )}
-      </main>
-      <footer><span>♠ ROYAL CLUB</span><span>MORE TO PLAY</span><span>Free to play · No cash prizes</span></footer>
-    </div>
-  );
-}
+import {useEffect,useState} from "react";
+import {GAMES,type PlayMode} from "./domain/game";
+import {botMove,glyph,legal,newMatch,nextRound,playHuman,red,submitBid,type Card,type Match} from "./domain/spades";
+type Screen="home"|"lobby"|"table";
+function PlayingCard({card,onClick,disabled=false,small=false}:{card:Card;onClick?:()=>void;disabled?:boolean;small?:boolean}){return <button className={`playing-card ${red(card.suit)?"red":"black"} ${small?"small":""} ${disabled?"disabled":""}`} disabled={disabled||!onClick} onClick={onClick}><span>{card.rank}<i>{glyph[card.suit]}</i></span><b>{glyph[card.suit]}</b><span className="flip">{card.rank}<i>{glyph[card.suit]}</i></span></button>}
+export default function App(){const[screen,setScreen]=useState<Screen>("home"),[mode,setMode]=useState<PlayMode>("practice"),[match,setMatch]=useState<Match|null>(null),[bid,setBid]=useState("0"),[scores,setScores]=useState(false);
+const start=()=>{setMatch(newMatch(mode));setBid("0");setScreen("table")};
+useEffect(()=>{if(!match||match.phase!=="playing"||match.turn===0)return;const t=window.setTimeout(()=>setMatch(m=>m?botMove(m):m),700);return()=>window.clearTimeout(t)},[match]);
+const seat=(i:number,cls:string)=>{const p=match!.players[i];return <div className={`player-seat ${cls}`}><div className="avatar">{i===0?"YOU":p.name[0]}</div><b>{p.name}</b><small>{p.tricks} tricks · {p.hand.length} cards</small></div>};
+return <div className="app-shell"><header className="topbar"><button className="brand" onClick={()=>setScreen("home")}><span className="brand-mark">♠</span><span><strong>ROYAL CLUB</strong><small>MORE TO PLAY</small></span></button><nav><button onClick={()=>setScreen("home")}>Home</button><button onClick={()=>setScreen("lobby")}>Spades</button></nav><span className="guest-label">FREE TO PLAY</span></header><main>
+{screen==="home"&&<><section className="hero"><div className="eyebrow">A BETTER WAY TO PLAY</div><h1>Good games.<br/><em>Great company.</em></h1><p>Welcome to Royal Club. Sharpen your strategy in practice or bring your friends to the table.</p><button className="gold-button" onClick={()=>setScreen("lobby")}>Explore games →</button></section><h2>Choose your game</h2><div className="game-grid">{GAMES.map(g=><article className="game-card" key={g.id}><div className="game-art">{g.id==="spades"?"♠":"♦"}</div><div className="game-info"><h3>{g.name}</h3><p>{g.description}</p><button className="text-button" onClick={()=>setScreen("lobby")}>{g.id==="spades"?"Enter game →":"Coming soon"}</button></div></article>)}</div></>}
+{screen==="lobby"&&<section className="mode-page"><button className="back-link" onClick={()=>setScreen("home")}>← Back</button><div className="eyebrow">ROYAL CLUB · SPADES</div><h1>Choose how you<br/><em>want to play.</em></h1><div className="mode-grid"><button className={mode==="practice"?"mode-card selected":"mode-card"} onClick={()=>setMode("practice")}><strong>♠ Practice mode</strong><p>Play against three computer opponents.</p></button><button className={mode==="online"?"mode-card selected":"mode-card"} onClick={()=>setMode("online")}><strong>♣ Online multiplayer</strong><p>Four registered human players. Online rooms are being connected.</p></button></div><button className="gold-button" onClick={()=>mode==="practice"?start():alert("Online multiplayer is not connected yet. Practice is playable now.")}>Start {mode==="practice"?"practice":"online"} →</button></section>}
+{screen==="table"&&match&&<section className="game-screen"><div className="game-toolbar"><button className="back-link" onClick={()=>setScreen("lobby")}>← Lobby</button><strong>ROUND {match.round} / 13 <span>♠ TRUMP</span></strong><button className="score-chip" onClick={()=>setScores(v=>!v)}>Scores</button></div><div className="game-board">{seat(1,"north")}{seat(2,"west")}{seat(3,"east")}{seat(0,"south")}<div className="trick-area">{match.trick.length?match.trick.map(p=><div className={`trick-card p${p.player}`} key={p.card.id}><PlayingCard card={p.card} small/><small>{match.players[p.player].name}</small></div>):<div className="table-mark">♠<small>ROYAL CLUB</small></div>}</div></div><div className="player-dock"><div className="dock-heading"><b>YOUR HAND</b><span>{match.players[0].hand.length} CARDS</span></div>{match.phase==="bidding"&&<div className="bid-row"><label htmlFor="bid">Place your bid</label><select id="bid" value={bid} onChange={e=>setBid(e.target.value)}>{Array.from({length:match.round+1},(_,i)=><option key={i} value={i}>{i} tricks</option>)}</select><button className="gold-button" onClick={()=>setMatch(m=>m?submitBid(m,Number(bid)):m)}>Submit bid</button></div>}{match.phase==="playing"&&<p className="turn-message">{match.turn===0?"Your turn — select a card.":match.players[match.turn].name+" is playing…"}</p>}{match.phase==="round-complete"&&<div className="bid-row"><b>Round complete</b><button className="gold-button" onClick={()=>match.round===13?setScreen("lobby"):(setMatch(nextRound(match)),setBid("0"))}>{match.round===13?"Finish game":"Next round"} →</button></div>}<div className="hand-cards">{match.players[0].hand.map(c=><PlayingCard key={c.id} card={c} onClick={()=>setMatch(m=>m?playHuman(m,c):m)} disabled={match.phase!=="playing"||match.turn!==0||!legal(c,match.players[0],match)}/>)}</div><div className="status-line">{match.message}</div></div>{scores&&<aside className="score-panel"><button onClick={()=>setScores(false)}>Close ×</button><h3>Scores</h3>{match.players.map(p=><div className="score-row" key={p.id}><b>{p.name}</b><span>{p.tricks} tricks</span><strong>{p.score}</strong></div>)}</aside>}</section>}
+</main><footer>♠ ROYAL CLUB <span>MORE TO PLAY · FREE TO PLAY</span></footer></div>}

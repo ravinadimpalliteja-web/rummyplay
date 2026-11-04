@@ -141,9 +141,10 @@ export function scoreBid({ bid, tricksWon, mode = "standard", roundNumber = 1 })
     };
   }
 
+  // Overtricks are bags only. Bags are tracked separately and never add points.
   const overtricks = tricksWon - bid;
   return {
-    points: bid * (mode === "blind" ? 20 : 10) + overtricks,
+    points: bid * (mode === "blind" ? 20 : 10),
     bagsAdded: overtricks, success: true, nil: false
   };
 }
@@ -180,12 +181,10 @@ export function chooseWinner(players) {
   if (!Array.isArray(players) || players.length !== PLAYER_COUNT) {
     throw new Error("Exactly four players are required");
   }
-  const ranked = [...players].sort((a, b) =>
-    (b.score || 0) - (a.score || 0) || (b.bags || 0) - (a.bags || 0)
-  );
+  // Highest cumulative score wins. Remaining bags are NOT a tie-breaker: the final
+  // tie-break rule is still undecided, so equal scores are reported as a shared win.
+  const ranked = [...players].sort((a, b) => (b.score || 0) - (a.score || 0));
   const first = ranked[0];
-  const tied = ranked.filter((p) =>
-    (p.score || 0) === (first.score || 0) && (p.bags || 0) === (first.bags || 0)
-  );
+  const tied = ranked.filter((p) => (p.score || 0) === (first.score || 0));
   return { winners: tied.map((p) => p.id), sharedWin: tied.length > 1, standings: ranked };
 }

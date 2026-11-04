@@ -513,7 +513,7 @@
 
 /* Home hero: slim, sleek top banner (title left, actions right) */
 main>.hero{display:grid;grid-template-columns:1fr auto;grid-template-areas:"eyebrow actions" "title actions" "text actions";column-gap:24px;align-items:center;min-height:0;margin:18px 0 22px;padding:18px 28px;border-radius:18px}
-main>.hero .eyebrow{grid-area:eyebrow;font-size:10px;letter-spacing:.2em;margin:0}
+main>.hero .eyebrow{grid-area:eyebrow;white-space:nowrap;font-size:10px;letter-spacing:.2em;margin:0}
 main>.hero h1{grid-area:title;font-size:clamp(24px,3.2vw,34px);line-height:1.1;margin:4px 0 2px;white-space:nowrap}
 main>.hero h1 br{display:none}
 main>.hero h1 em{margin-left:.25em}
@@ -530,7 +530,7 @@ main>.hero .hero-ornament{font-size:90px;top:50%;right:34%;opacity:.12}
 }
 @media (orientation:landscape) and (max-height:520px){
   main:has(>.hero){grid-template-columns:1fr 1fr;grid-template-rows:auto auto 1fr;row-gap:6px}
-  main:has(>.hero)>.hero{grid-column:1/3;grid-row:1;grid-template-columns:1fr auto;padding:10px 20px;border-radius:14px;flex-direction:initial;align-items:center;justify-content:initial}
+  main:has(>.hero)>.hero{grid-column:1/3;grid-row:1;grid-template-columns:1fr auto;grid-template-areas:"eyebrow actions" "title actions";padding:10px 20px;border-radius:14px;flex-direction:initial;align-items:center;justify-content:initial}
   main:has(>.hero)>.hero h1{font-size:24px;margin:2px 0 0}
   main:has(>.hero)>.hero p,main:has(>.hero)>.hero .hero-ornament{display:none}
   main:has(>.hero)>.hero .hero-actions .gold-button,main:has(>.hero)>.hero .hero-actions .ghost-button{padding:8px 14px;font-size:13px}

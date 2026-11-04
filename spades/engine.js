@@ -10,14 +10,12 @@ export const TOTAL_ROUNDS = 13;
 export const BAGS_PER_PENALTY = 10;
 export const BAG_PENALTY = 100;
 
-// Blind Zero (a blind bid of 0 in Round 13) is NOT finalised by the game owner.
-// Until it is confirmed it scores exactly like any zero bid: 0 points, every trick won is a bag.
-// No +100 / -100 is applied. To change the rule later, add an entry to BLIND_ZERO_SCORERS and
-// point RULE_CONFIG.blindZero at it; nothing else needs to change.
-export const BLIND_ZERO_SCORERS = Object.freeze({
-  standard: (tricksWon) => ({ points: 0, bagsAdded: tricksWon })
-});
-export const RULE_CONFIG = Object.freeze({ blindZero: "standard" });
+// Round 13 "Blind": the player commits to winning ZERO tricks before seeing their cards.
+// No number is chosen and there is no multiplier (owner's rule, 2026-11-04):
+//   0 tricks won  -> +100 points
+//   1+ tricks won -> -100 points
+// Tricks won in a failed blind are NOT bags (confirmed by the owner).
+export const BLIND_RULE = Object.freeze({ winPoints: 100, losePoints: -100 });
 
 export function createDeck() {
   return SUITS.flatMap((suit) => RANKS.map((rank, index) => ({
@@ -66,7 +64,8 @@ export function dealRound(roundNumber, dealer, random = Math.random) {
 export function validateBid(bid, roundNumber, mode = "standard") {
   if (!Number.isInteger(roundNumber) || roundNumber < 1 || roundNumber > TOTAL_ROUNDS) return false;
   if (!Number.isInteger(bid) || bid < 0 || bid > roundNumber) return false;
-  return mode === "standard" || (mode === "blind" && roundNumber === 13);
+  if (mode === "blind") return roundNumber === 13 && bid === 0;
+  return mode === "standard";
 }
 
 export function rankValue(card) {
@@ -134,18 +133,20 @@ export function scoreBid({ bid, tricksWon, mode = "standard", roundNumber = 1 })
     throw new RangeError("roundNumber must be between 1 and 13");
   }
 
-  if (bid === 0) {
-    // A zero bid is never a Nil bonus: 0 points, and every trick won becomes a bag.
+  if (mode === "blind") {
+    if (bid !== 0) throw new RangeError("A blind bid is always zero tricks");
     const success = tricksWon === 0;
-    const scorer = mode === "blind" ? BLIND_ZERO_SCORERS[RULE_CONFIG.blindZero] : null;
-    if (mode === "blind" && !scorer) throw new Error("Blind Zero rule is not configured");
-    const { points, bagsAdded } = scorer ? scorer(tricksWon) : { points: 0, bagsAdded: tricksWon };
-    return { points, bagsAdded, success, nil: true };
+    return { points: success ? BLIND_RULE.winPoints : BLIND_RULE.losePoints, bagsAdded: 0, success, nil: true, blind: true };
+  }
+
+  if (bid === 0) {
+    // A standard zero bid is never a Nil bonus: 0 points, and every trick won becomes a bag.
+    return { points: 0, bagsAdded: tricksWon, success: tricksWon === 0, nil: true };
   }
 
   if (tricksWon < bid) {
     return {
-      points: -(bid * (mode === "blind" ? 20 : 10)),
+      points: -(bid * 10),
       bagsAdded: 0, success: false, nil: false
     };
   }
@@ -153,7 +154,7 @@ export function scoreBid({ bid, tricksWon, mode = "standard", roundNumber = 1 })
   // Overtricks are bags only. Bags are tracked separately and never add points.
   const overtricks = tricksWon - bid;
   return {
-    points: bid * (mode === "blind" ? 20 : 10),
+    points: bid * 10,
     bagsAdded: overtricks, success: true, nil: false
   };
 }

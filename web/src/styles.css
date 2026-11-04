@@ -285,3 +285,10 @@
   line-height: 1;
   font-weight: 700;
 }
+/* Round 13 blind choice */
+.playing-card.back{background:repeating-linear-gradient(45deg,#0d6b4a,#0d6b4a 6px,#0a5a3e 6px,#0a5a3e 12px);border-color:#d9b96f;color:#d9b96f}
+.playing-card.back>b{font-size:clamp(25px,2.4vw,35px)}
+.bid-row.blind-choice{flex-wrap:wrap}
+.bid-row.blind-choice small{flex-basis:100%;text-align:center;color:#e7d39f;font-size:11px}
+.ghost-button{padding:10px 16px;border:1px solid #987b42;border-radius:9px;background:transparent;color:#f1dfb4;font-weight:700}
+.dealer-tag.blind-tag{background:#d9b96f;color:#17251c;margin-left:6px}

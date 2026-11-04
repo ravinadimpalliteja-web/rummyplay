@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   createDeck, dealRound, getRoundDealer, validateBid, scoreBid,
-  applyRoundScoring, chooseWinner, isLegalPlay, resolveTrick, RULE_CONFIG, BLIND_ZERO_SCORERS
+  applyRoundScoring, chooseWinner, isLegalPlay, resolveTrick, BLIND_RULE
 } from "./engine.js";
 
 test("deck contains 52 unique cards", () => {
@@ -39,6 +39,8 @@ test("bids are bounded by the round; Blind is available only in round 13", () =>
   assert.equal(validateBid(3, 3, "blind"), false);
   assert.equal(validateBid(0, 13, "standard"), true);
   assert.equal(validateBid(0, 13, "blind"), true);
+  assert.equal(validateBid(2, 13, "blind"), false);
+  assert.equal(validateBid(0, 12, "blind"), false);
   assert.equal(validateBid(4, 3, "standard"), false);
   assert.equal(validateBid(-1, 3), false);
 });
@@ -52,8 +54,6 @@ test("standard and blind scoring examples match the agreed rules", () => {
   });
   assert.equal(scoreBid({bid:3,tricksWon:5}).points, 30);
   assert.equal(scoreBid({bid:3,tricksWon:5}).bagsAdded, 2);
-  assert.equal(scoreBid({bid:2,tricksWon:1,mode:"blind",roundNumber:13}).points, -40);
-  assert.equal(scoreBid({bid:2,tricksWon:4,mode:"blind",roundNumber:13}).points, 40);
 });
 
 test("Zero bids score zero through round 12 and tricks taken become bags", () => {
@@ -68,14 +68,15 @@ test("Zero bids score zero through round 12 and tricks taken become bags", () =>
   assert.equal(scoreBid({bid:0,tricksWon:1,mode:"standard",roundNumber:12}).bagsAdded, 1);
 });
 
-test("Round 13 standard zero stays zero; Blind Zero is unconfirmed and scores like a normal zero (no +/-100)", () => {
+test("Round 13 standard zero stays zero; Blind is +100 / -100 with no bags", () => {
   assert.equal(scoreBid({bid:0,tricksWon:0,roundNumber:13}).points, 0);
   assert.equal(scoreBid({bid:0,tricksWon:2,roundNumber:13}).points, 0);
   assert.equal(scoreBid({bid:0,tricksWon:2,roundNumber:13}).bagsAdded, 2);
-  assert.equal(scoreBid({bid:0,tricksWon:0,mode:"blind",roundNumber:13}).points, 0);
-  assert.equal(scoreBid({bid:0,tricksWon:1,mode:"blind",roundNumber:13}).points, 0);
-  assert.equal(scoreBid({bid:0,tricksWon:1,mode:"blind",roundNumber:13}).bagsAdded, 1);
-  assert.throws(() => scoreBid({bid:1,tricksWon:1,mode:"blind",roundNumber:12}), /only in round 13/);
+  assert.equal(scoreBid({bid:0,tricksWon:0,mode:"blind",roundNumber:13}).points, 100);
+  assert.equal(scoreBid({bid:0,tricksWon:1,mode:"blind",roundNumber:13}).points, -100);
+  assert.equal(scoreBid({bid:0,tricksWon:1,mode:"blind",roundNumber:13}).bagsAdded, 0);
+  assert.throws(() => scoreBid({bid:0,tricksWon:1,mode:"blind",roundNumber:12}), /only in round 13/);
+  assert.throws(() => scoreBid({bid:2,tricksWon:1,mode:"blind",roundNumber:13}), /always zero/);
 });
 
 test("round-aware cumulative scoring applies Nil rules and carries bags", () => {
@@ -95,9 +96,9 @@ test("round-aware cumulative scoring applies Nil rules and carries bags", () => 
     {bid:0,tricksWon:0,mode:"blind"},{bid:0,tricksWon:1,mode:"blind"},
     {bid:0,tricksWon:0,mode:"standard"},{bid:0,tricksWon:2,mode:"standard"}
   ], 13);
-  assert.equal(round13[0].roundNet, 0);
-  assert.equal(round13[1].roundPoints, 0);
-  assert.equal(round13[1].bags, 1);
+  assert.equal(round13[0].roundNet, 100);
+  assert.equal(round13[1].roundPoints, -100);
+  assert.equal(round13[1].bags, 0);
   assert.equal(round13[2].roundNet, 0);
   assert.equal(round13[3].roundNet, 0);
   assert.equal(round13[3].bags, 2);
@@ -205,20 +206,11 @@ test("doc §7D: zero bid is never a Nil bonus; every trick is a bag", () => {
   }
 });
 
-test("doc §8: blind bids above zero use x20; extra tricks are bags only", () => {
-  const B = (bid, tricksWon) => scoreBid({bid,tricksWon,mode:"blind",roundNumber:13});
-  for (const [b, t, p] of [[3,3,60],[5,5,100],[8,8,160],[10,10,200]]) assert.equal(B(b,t).points, p);
-  for (const [b, t, p, g] of [[3,4,60,1],[5,7,100,2],[8,10,160,2]]) { assert.equal(B(b,t).points, p); assert.equal(B(b,t).bagsAdded, g); }
-  for (const [b, t, p] of [[5,4,-100],[8,6,-160],[10,7,-200]]) { assert.equal(B(b,t).points, p); assert.equal(B(b,t).bagsAdded, 0); }
-});
-
-test("doc §8D / §14.11: Blind Zero has no unconfirmed +/-100 and is kept configurable", () => {
-  for (const t of [0, 1, 3]) {
-    const r = scoreBid({bid:0,tricksWon:t,mode:"blind",roundNumber:13});
-    assert.equal(r.points, 0); assert.equal(r.bagsAdded, t);
-  }
-  assert.equal(RULE_CONFIG.blindZero, "standard");
-  assert.equal(typeof BLIND_ZERO_SCORERS.standard, "function");
+test("Blind: 0 tricks +100; any trick -100; failed-blind tricks are never bags; no multiplier", () => {
+  const B = (tricksWon) => scoreBid({bid:0,tricksWon,mode:"blind",roundNumber:13});
+  assert.equal(B(0).points, 100); assert.equal(B(0).bagsAdded, 0);
+  for (const t of [1, 2, 6, 13]) { assert.equal(B(t).points, -100); assert.equal(B(t).bagsAdded, 0); }
+  assert.equal(BLIND_RULE.winPoints, 100); assert.equal(BLIND_RULE.losePoints, -100);
 });
 
 test("doc §9: bag penalty table", () => {

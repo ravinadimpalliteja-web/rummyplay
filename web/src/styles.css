@@ -300,3 +300,53 @@
 /* Table emblem: large embossed spade, gold double ring, ROYAL CLUB wordmark (sits behind cards and names) */
 .game-board:after{content:"";position:absolute;left:50%;top:41%;height:min(74%,500px);aspect-ratio:400/440;width:auto;transform:translate(-50%,-50%);background:url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 440"%3E%0A%3Cdefs%3E%3ClinearGradient id="g" x1="0" y1="0" x2="0" y2="1"%3E%3Cstop offset="0" stop-color="%2323a073"/%3E%3Cstop offset="1" stop-color="%230a4a34"/%3E%3C/linearGradient%3E%0A%3CradialGradient id="h" cx="50%25" cy="38%25" r="60%25"%3E%3Cstop offset="0" stop-color="%2312805a" stop-opacity=".55"/%3E%3Cstop offset="1" stop-color="%2312805a" stop-opacity="0"/%3E%3C/radialGradient%3E%3C/defs%3E%0A%3Ccircle cx="200" cy="205" r="196" fill="url(%23h)"/%3E%0A%3Ccircle cx="200" cy="205" r="196" fill="none" stroke="%23d9b96f" stroke-opacity=".5" stroke-width="2.5"/%3E%0A%3Ccircle cx="200" cy="205" r="184" fill="none" stroke="%23d9b96f" stroke-opacity=".28" stroke-width="1.5"/%3E%0A%3Cpath d="M200 62 C200 62 104 146 104 214 C104 256 142 278 176 262 C171 297 160 322 138 340 L262 340 C240 322 229 297 224 262 C258 278 296 256 296 214 C296 146 200 62 200 62 Z" transform="translate(4 6)" fill="%2302130d" fill-opacity=".55"/%3E%0A%3Cpath d="M200 62 C200 62 104 146 104 214 C104 256 142 278 176 262 C171 297 160 322 138 340 L262 340 C240 322 229 297 224 262 C258 278 296 256 296 214 C296 146 200 62 200 62 Z" fill="url(%23g)" stroke="%23e3c677" stroke-opacity=".85" stroke-width="3" stroke-linejoin="round"/%3E%0A%3Cpath d="M200 96 C170 130 138 168 138 212" fill="none" stroke="%236fd3a8" stroke-opacity=".28" stroke-width="5" stroke-linecap="round"/%3E%0A%3Ctext x="200" y="400" text-anchor="middle" font-family="Playfair Display,Georgia,serif" font-size="30" letter-spacing="9" fill="%23e3c677" fill-opacity=".85"%3EROYAL CLUB%3C/text%3E%0A%3C/svg%3E') center/contain no-repeat;z-index:0;pointer-events:none;opacity:.92}
 .game-board .trick-area{z-index:1}
+
+/* Phone LANDSCAPE (short, wide screens): everything fits in the height, hand in one row along the bottom,
+   compact bid bar, compact seats. Portrait and desktop are unaffected. */
+@media (orientation:landscape) and (max-height:520px){
+  .app-shell:has(.game-screen),.game-screen{min-height:0}
+  .game-screen{padding:3px 12px 3px;gap:2px}
+  .game-toolbar{height:28px;flex:0 0 28px}
+  .game-toolbar strong{font-size:10px}
+  .game-toolbar strong span{padding:2px 8px;margin-left:8px}
+  .game-toolbar .back-link{font-size:11px}
+  .score-chip{padding:4px 12px;font-size:12px}
+  .avatar{width:24px;height:24px;font-size:8px;border-width:1px}
+  .player-seat{gap:2px}
+  .player-seat b{font-size:11px}
+  .player-seat small,.player-seat .player-stats{font-size:9px;gap:4px}
+  .player-seat .bid-badge{font-size:9px}
+  .player-seat .bid-value,.player-seat .bid-label{font-size:10px}
+  .player-seat.north{top:0}
+  .app-shell:has(.game-screen) .player-seat.north{padding:2px 8px}
+  .player-seat.west{left:0;top:44%}
+  .player-seat.east{right:0;top:44%}
+  .player-seat.south{bottom:0;flex-direction:row;align-items:center;gap:6px;flex-wrap:nowrap;white-space:nowrap}
+  .timer-chip{margin:0;padding:1px 7px;font-size:10px}
+  .app-shell:has(.game-screen) .game-board .trick-area .trick-card .playing-card.small{width:44px;height:63px;min-width:44px;padding:3px}
+  .app-shell:has(.game-screen) .game-board .trick-area .trick-card .playing-card.small>b{font-size:22px}
+  .app-shell:has(.game-screen) .game-board .trick-area .trick-card .playing-card.small span{font-size:10px}
+  .app-shell:has(.game-screen) .game-board .trick-area .trick-card .playing-card.small i{font-size:9px}
+  .trick-card small{font-size:8px}
+  .app-shell:has(.game-screen) .game-board .trick-area .trick-card.p1{top:17%}
+  .app-shell:has(.game-screen) .game-board .trick-area .trick-card.p0{bottom:17%}
+  .trick-card.p2{left:26%}
+  .trick-card.p3{right:26%}
+  .player-dock{padding:3px 6px 2px}
+  .dock-heading{display:none}
+  .turn-message,.status-line{margin:1px;font-size:10px;line-height:1.2}
+  .hand-cards{min-height:0;padding:2px 0 0;gap:2px;flex-wrap:nowrap;justify-content:center;overflow:visible}
+  .hand-cards .playing-card{width:clamp(30px,5.4vw,46px);height:clamp(44px,17vh,66px);padding:3px;border-radius:5px}
+  .hand-cards .playing-card>b{font-size:clamp(16px,2.2vw,24px)}
+  .hand-cards .playing-card span{font-size:10px}
+  .hand-cards .playing-card i{font-size:9px}
+  .hand-cards .playing-card:not(:disabled):hover{transform:translateY(-6px)}
+  .game-screen .bid-floating{top:46%;bottom:auto;transform:translate(-50%,-50%);padding:6px 10px;gap:6px;border-radius:10px;max-width:calc(100vw - 24px)}
+  .game-screen .bid-floating label{font-size:11px}
+  .game-screen .bid-floating select{min-width:84px;min-height:30px;padding:3px 6px;font-size:12px}
+  .game-screen .bid-floating .gold-button,.game-screen .bid-floating .ghost-button{min-height:30px;padding:4px 10px;font-size:12px}
+  .bid-row.blind-choice small{font-size:9px;line-height:1.2}
+  .round-transition{padding:3px 8px;gap:8px}
+  .round-transition p{font-size:11px}
+  .score-panel{max-height:calc(100svh - 36px);overflow:auto}
+}

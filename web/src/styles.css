@@ -471,6 +471,12 @@
   .app-shell:has(.mode-page) footer span:last-child{width:auto}
   .mode-page{padding:12px 0 10px}
   .mode-grid{gap:8px}
+  .room-page .eyebrow{display:none}
+  .room-page h1{margin:6px 0 10px}
+  .room-wait{gap:7px}
+  .room-seats{gap:5px}
+  .room-seats li{padding:6px 12px}
+  .room-note{margin:6px 0 0}
 }
 @media (orientation:landscape) and (max-height:520px){
   .app-shell:has(.mode-page){height:100svh;min-height:0;overflow-y:auto}

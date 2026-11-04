@@ -18,6 +18,14 @@ Zero dependencies (Node 18+). Rooms live in memory, so a restart ends any game i
   They can rejoin with the same device. If every player is gone the game pauses; empty rooms are removed after 30 minutes.
 - Scoring follows the owner's final rules, including the Round 13 Blind (+100 / -100, no bags) and a shared win on equal scores.
 
+## Snakes & Ladders rooms
+- Same server, same code + passcode flow. Clients send `game: "snakes"` with `create`, `join` and `hello`; a Spades code cannot be
+  used for Snakes & Ladders or the reverse.
+- 2 to 4 real players; the host can start once at least two have joined. No computer players.
+- Rules (`snakes.js`): a six to enter; a six rolls again; three sixes in a row cancel that whole turn (back to where it began);
+  exact roll to 100. The server rolls the die. 15 seconds to roll, then the server rolls for you; a player who left or is offline
+  is rolled for after 1.5 seconds. The server waits for each move's animation before the next roll.
+
 ## Connect the website
 Set the Netlify build variable `VITE_ROOM_SERVER_URL` to the server's WebSocket address (for example
 `wss://royal-club-rooms.onrender.com`) and redeploy. For testing a preview, `?server=wss://...` can be added to the URL.

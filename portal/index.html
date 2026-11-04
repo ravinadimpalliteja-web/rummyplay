@@ -730,45 +730,68 @@ const current=g.players.map(p=>'<article><b>'+p.name+'</b><strong>'+p.score+'</s
 </script>
 
 <style id="royal-club-no-table-final">
-/* Final full-screen layout: deliberately no table surface, oval, or center seat. */
-body:has(#page-spades.active) .shell{max-width:none!important;padding-left:clamp(10px,1.5vw,24px)!important;padding-right:clamp(10px,1.5vw,24px)!important}
-body:has(#page-spades.active) main.main{padding:8px 0 10px!important}
+/* Royal Club Spades gameplay canvas — premium felt, square geometry, anchored seats. */
+body:has(#page-spades.active) .shell{max-width:none!important;width:100%!important;padding-left:clamp(10px,1.4vw,24px)!important;padding-right:clamp(10px,1.4vw,24px)!important}
+body:has(#page-spades.active) main.main{padding:8px 0 12px!important}
 body:has(#page-spades.active) #page-spades.spades-demo{width:100%!important;max-width:none!important;margin:0!important;padding:0!important}
 body:has(#page-spades.active) #page-spades .pagehead{display:none!important}
-body:has(#page-spades.active) #page-spades.spades-demo>.panel{width:100%!important;max-width:none!important;min-height:calc(100svh - 100px)!important;margin:0!important;padding:10px clamp(10px,1.6vw,24px)!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important}
-body:has(#page-spades.active) #page-spades .spades-stage{width:100%!important;min-height:calc(100svh - 155px)!important;display:flex!important;flex-direction:column!important}
-body:has(#page-spades.active) #page-spades .demo-table{position:relative!important;isolation:isolate!important;display:grid!important;flex:1 1 auto!important;width:100%!important;height:auto!important;min-height:calc(100svh - 330px)!important;margin:0!important;padding:12px clamp(8px,2vw,28px)!important;border:0!important;border-radius:0!important;background:transparent!important;background-image:none!important;box-shadow:none!important;grid-template-columns:minmax(110px,1fr) minmax(110px,1fr) minmax(110px,1fr)!important;grid-template-rows:minmax(72px,auto) minmax(100px,1fr) minmax(86px,auto)!important;gap:10px!important;overflow:visible!important}
-body:has(#page-spades.active) #page-spades .demo-table:before,body:has(#page-spades.active) #page-spades .demo-table:after{content:none!important;display:none!important}
-body:has(#page-spades.active) #page-spades .seat{position:relative!important;z-index:1!important;min-width:0!important;width:max-content!important;max-width:100%!important;min-height:0!important;height:auto!important;padding:7px 10px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:3px!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;text-align:center!important}
-body:has(#page-spades.active) #page-spades .seat.north{grid-column:2!important;grid-row:1!important;justify-self:center!important;align-self:start!important}
-body:has(#page-spades.active) #page-spades .seat.west{grid-column:1!important;grid-row:2!important;justify-self:start!important;align-self:center!important}
-body:has(#page-spades.active) #page-spades .seat.east{grid-column:3!important;grid-row:2!important;justify-self:end!important;align-self:center!important}
-body:has(#page-spades.active) #page-spades .seat.south{grid-column:2!important;grid-row:3!important;justify-self:center!important;align-self:end!important}
+body:has(#page-spades.active) #page-spades.spades-demo>.panel{width:100%!important;max-width:none!important;min-height:calc(100svh - 96px)!important;margin:0!important;padding:10px clamp(10px,1.5vw,22px)!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important}
+body:has(#page-spades.active) #page-spades .demo-top{position:relative!important;z-index:14!important;min-height:44px!important;align-items:center!important;margin:0 0 8px!important}
+body:has(#page-spades.active) #page-spades .demo-top h2{font-size:clamp(17px,1.7vw,24px)!important;margin:0!important}
+body:has(#page-spades.active) #page-spades .demo-top .eyebrow{font-size:10px!important;letter-spacing:.18em!important}
+body:has(#page-spades.active) #page-spades .demo-top #spadesStart{padding:10px 18px!important}
+body:has(#page-spades.active) #page-spades .spades-stage{position:relative!important;display:block!important;width:100%!important;height:clamp(370px,54vh,540px)!important;min-height:370px!important;margin:0!important;overflow:visible!important}
+body:has(#page-spades.active) #page-spades .spades-meta{position:absolute!important;z-index:16!important;top:10px!important;left:12px!important;right:12px!important;display:flex!important;align-items:center!important;justify-content:space-between!important;pointer-events:none!important}
+body:has(#page-spades.active) #page-spades .spades-meta>*{pointer-events:auto!important}
+body:has(#page-spades.active) #page-spades .spades-status-badges{display:flex!important;gap:8px!important}
+body:has(#page-spades.active) #page-spades .spades-status-badges>span{background:#06271fe8!important;border:1px solid #b99750!important;color:#f5e8c5!important;border-radius:18px!important;padding:7px 12px!important;font-size:12px!important}
+body:has(#page-spades.active) #page-spades .scores-toggle{background:#092d22!important;border:1px solid #c4a45d!important;color:#f7e9c8!important;border-radius:20px!important;padding:8px 14px!important}
+body:has(#page-spades.active) #page-spades .scores-popover{position:absolute!important;z-index:30!important;top:48px!important;right:12px!important}
+body:has(#page-spades.active) #page-spades .demo-table{position:absolute!important;inset:0!important;display:block!important;width:100%!important;height:100%!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important;border:1px solid #b8954e!important;border-radius:15px!important;background:radial-gradient(ellipse at 50% 44%,#08714d 0%,#07583d 48%,#043824 100%)!important;box-shadow:inset 0 0 0 3px #173b2b,inset 0 0 65px #00180f99,0 12px 28px #0007!important}
+body:has(#page-spades.active) #page-spades .demo-table:before{content:""!important;position:absolute!important;inset:12px!important;display:block!important;border:1px solid #d5b96b66!important;border-radius:9px!important;pointer-events:none!important;z-index:0!important}
+body:has(#page-spades.active) #page-spades .demo-table:after{content:"♠"!important;position:absolute!important;left:50%!important;top:50%!important;transform:translate(-50%,-50%)!important;color:#e7d09a12!important;font-family:Georgia,serif!important;font-size:clamp(120px,20vw,260px)!important;pointer-events:none!important;z-index:0!important}
+body:has(#page-spades.active) #page-spades .seat{position:absolute!important;z-index:3!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:3px!important;width:max-content!important;max-width:160px!important;min-width:0!important;height:auto!important;min-height:0!important;margin:0!important;padding:5px 8px!important;transform:none!important;background:linear-gradient(180deg,#092b20e8,#041e17ed)!important;border:1px solid #c3a45b99!important;border-radius:14px!important;box-shadow:0 4px 12px #00180f77!important;text-align:center!important}
+body:has(#page-spades.active) #page-spades .seat.north{top:64px!important;left:50%!important;right:auto!important;bottom:auto!important;transform:translateX(-50%)!important}
+body:has(#page-spades.active) #page-spades .seat.west{top:50%!important;left:22px!important;right:auto!important;bottom:auto!important;transform:translateY(-50%)!important}
+body:has(#page-spades.active) #page-spades .seat.east{top:50%!important;right:22px!important;left:auto!important;bottom:auto!important;transform:translateY(-50%)!important}
+body:has(#page-spades.active) #page-spades .seat.south{bottom:20px!important;left:50%!important;right:auto!important;top:auto!important;transform:translateX(-50%)!important}
 body:has(#page-spades.active) #page-spades .seat.center{display:none!important}
-body:has(#page-spades.active) #page-spades .seat .trick-card{position:absolute!important;width:58px!important;min-width:58px!important;height:82px!important;min-height:82px!important;z-index:5!important}
-body:has(#page-spades.active) #page-spades .seat.north .trick-card{left:50%!important;top:calc(100% + 8px)!important;transform:translateX(-50%)!important}
-body:has(#page-spades.active) #page-spades .seat.south .trick-card{left:50%!important;bottom:calc(100% + 8px)!important;transform:translateX(-50%)!important}
-body:has(#page-spades.active) #page-spades .seat.west .trick-card{left:calc(100% + 8px)!important;top:50%!important;transform:translateY(-50%)!important}
-body:has(#page-spades.active) #page-spades .seat.east .trick-card{right:calc(100% + 8px)!important;top:50%!important;transform:translateY(-50%)!important}
-body:has(#page-spades.active) #page-spades .hand-panel{width:100%!important;margin:0!important;padding:6px 0!important;background:transparent!important;border:0!important;box-shadow:none!important}
-body:has(#page-spades.active) #page-spades #spadesHand{min-height:clamp(84px,14vh,124px)!important;height:auto!important;display:flex!important;justify-content:center!important;align-items:flex-end!important;gap:clamp(1px,.35vw,6px)!important;flex-wrap:nowrap!important;overflow-x:auto!important;padding:8px 3px!important}
-body:has(#page-spades.active) #page-spades #spadesHand .playing-card{width:clamp(43px,5.3vw,68px)!important;min-width:clamp(43px,5.3vw,68px)!important;height:clamp(66px,8vw,100px)!important;min-height:clamp(66px,8vw,100px)!important;flex:0 0 clamp(43px,5.3vw,68px)!important;margin-left:clamp(-12px,-.7vw,-3px)!important}
-body:has(#page-spades.active) #page-spades #spadesHand .playing-card:first-child{margin-left:0!important}
-body:has(#page-spades.active) #page-spades .demo-controls{min-height:0!important;margin:5px 0!important;display:flex!important;justify-content:center!important;align-items:center!important}
+body:has(#page-spades.active) #page-spades .seat-avatar{width:46px!important;height:46px!important;flex:0 0 46px!important}
+body:has(#page-spades.active) #page-spades .seat strong{font-size:13px!important;white-space:nowrap!important;color:#fff4d8!important}
+body:has(#page-spades.active) #page-spades .seat small{font-size:10px!important;color:#e7d39f!important}
+body:has(#page-spades.active) #page-spades .seat.active-turn{border-color:#f0d17d!important;box-shadow:0 0 0 2px #d5ad5877,0 5px 15px #00180f99!important}
+body:has(#page-spades.active) #page-spades .seat .played-card,body:has(#page-spades.active) #page-spades .seat .trick-card{position:absolute!important;z-index:5!important;width:58px!important;min-width:58px!important;height:84px!important;min-height:84px!important;box-shadow:0 5px 14px #00170f99!important}
+body:has(#page-spades.active) #page-spades .seat.north .played-card,body:has(#page-spades.active) #page-spades .seat.north .trick-card{top:calc(100% + 10px)!important;left:50%!important;right:auto!important;bottom:auto!important;transform:translateX(-50%)!important}
+body:has(#page-spades.active) #page-spades .seat.south .played-card,body:has(#page-spades.active) #page-spades .seat.south .trick-card{bottom:calc(100% + 10px)!important;left:50%!important;right:auto!important;top:auto!important;transform:translateX(-50%)!important}
+body:has(#page-spades.active) #page-spades .seat.west .played-card,body:has(#page-spades.active) #page-spades .seat.west .trick-card{top:50%!important;left:calc(100% + 12px)!important;right:auto!important;bottom:auto!important;transform:translateY(-50%)!important}
+body:has(#page-spades.active) #page-spades .seat.east .played-card,body:has(#page-spades.active) #page-spades .seat.east .trick-card{top:50%!important;right:calc(100% + 12px)!important;left:auto!important;bottom:auto!important;transform:translateY(-50%)!important}
+body:has(#page-spades.active) #page-spades .hand-panel{position:relative!important;display:block!important;width:100%!important;max-height:none!important;min-height:0!important;margin:8px 0 0!important;padding:7px 12px 8px!important;overflow:visible!important;background:linear-gradient(180deg,#09291f,#041b14)!important;border:1px solid #9c8049!important;border-radius:12px!important;box-shadow:0 7px 18px #00160e77!important}
+body:has(#page-spades.active) #page-spades .hand-panel>.eyebrow{font-size:10px!important;font-weight:800!important;letter-spacing:.18em!important;text-align:center!important;color:#e8d39d!important;margin:0 0 3px!important}
+body:has(#page-spades.active) #page-spades #spadesHand{position:relative!important;display:flex!important;width:100%!important;height:clamp(92px,14vh,122px)!important;min-height:0!important;justify-content:center!important;align-items:flex-end!important;flex-wrap:nowrap!important;gap:clamp(1px,.35vw,6px)!important;padding:5px 4px 2px!important;overflow-x:auto!important;overflow-y:hidden!important}
+body:has(#page-spades.active) #page-spades #spadesHand .playing-card{position:relative!important;display:block!important;flex:0 0 clamp(48px,5.1vw,70px)!important;width:clamp(48px,5.1vw,70px)!important;min-width:clamp(48px,5.1vw,70px)!important;height:clamp(72px,8.5vw,104px)!important;min-height:clamp(72px,8.5vw,104px)!important;margin:0!important;padding:6px!important;border-radius:8px!important;background:linear-gradient(145deg,#fffef9,#eee9dc)!important;box-shadow:0 4px 10px #00170f66!important}
+body:has(#page-spades.active) #page-spades .demo-controls{position:relative!important;z-index:15!important;display:flex!important;justify-content:center!important;align-items:center!important;min-height:0!important;margin:8px 0 0!important;padding:0!important}
 body:has(#page-spades.active) #page-spades .demo-controls:empty{display:none!important}
-body:has(#page-spades.active) #page-spades .demo-controls select{min-width:190px!important;min-height:44px!important}
+body:has(#page-spades.active) #page-spades .demo-controls select{min-width:190px!important;min-height:42px!important;background:#f5f0e4!important;color:#17251e!important;border-radius:9px!important}
+body:has(#page-spades.active) #page-spades .demo-log{min-height:22px!important;margin:5px 0 0!important;padding:3px 8px!important;border:0!important;background:transparent!important;text-align:center!important;font-size:11px!important}
 @media(max-width:760px){
- body:has(#page-spades.active) #page-spades.spades-demo>.panel{min-height:calc(100svh - 90px)!important;padding:6px 8px 10px!important}
- body:has(#page-spades.active) #page-spades .spades-stage{min-height:calc(100svh - 135px)!important}
- body:has(#page-spades.active) #page-spades .demo-table{min-height:calc(100svh - 310px)!important;grid-template-columns:minmax(68px,1fr) minmax(68px,1fr) minmax(68px,1fr)!important;grid-template-rows:64px minmax(90px,1fr) 70px!important;gap:3px!important;padding:6px 0!important}
- body:has(#page-spades.active) #page-spades .seat{padding:4px 2px!important}
+ body:has(#page-spades.active) #page-spades.spades-demo>.panel{padding:6px!important}
+ body:has(#page-spades.active) #page-spades .demo-top{min-height:38px!important}
+ body:has(#page-spades.active) #page-spades .spades-stage{height:clamp(330px,48vh,440px)!important;min-height:330px!important}
+ body:has(#page-spades.active) #page-spades .spades-meta{top:7px!important;left:7px!important;right:7px!important}
+ body:has(#page-spades.active) #page-spades .spades-status-badges>span{font-size:9px!important;padding:5px 7px!important}
+ body:has(#page-spades.active) #page-spades .scores-toggle{font-size:10px!important;padding:5px 8px!important}
+ body:has(#page-spades.active) #page-spades .seat{max-width:100px!important;padding:4px 5px!important}
+ body:has(#page-spades.active) #page-spades .seat.north{top:49px!important}
+ body:has(#page-spades.active) #page-spades .seat.west{left:6px!important}
+ body:has(#page-spades.active) #page-spades .seat.east{right:6px!important}
+ body:has(#page-spades.active) #page-spades .seat.south{bottom:10px!important}
  body:has(#page-spades.active) #page-spades .seat-avatar{width:34px!important;height:34px!important;flex-basis:34px!important}
- body:has(#page-spades.active) #page-spades .seat strong{font-size:11px!important}
- body:has(#page-spades.active) #page-spades .seat small{font-size:9px!important}
- body:has(#page-spades.active) #page-spades .seat.west,body:has(#page-spades.active) #page-spades .seat.east{width:100%!important}
- body:has(#page-spades.active) #page-spades .seat .trick-card{width:42px!important;min-width:42px!important;height:60px!important;min-height:60px!important}
- body:has(#page-spades.active) #page-spades #spadesHand{justify-content:flex-start!important;min-height:78px!important;gap:0!important}
- body:has(#page-spades.active) #page-spades #spadesHand .playing-card{width:clamp(34px,8.6vw,48px)!important;min-width:clamp(34px,8.6vw,48px)!important;height:clamp(52px,12.5vw,68px)!important;min-height:clamp(52px,12.5vw,68px)!important;flex-basis:clamp(34px,8.6vw,48px)!important;margin-left:-7px!important}
+ body:has(#page-spades.active) #page-spades .seat strong{font-size:10px!important}
+ body:has(#page-spades.active) #page-spades .seat small{font-size:8px!important}
+ body:has(#page-spades.active) #page-spades .seat .played-card,body:has(#page-spades.active) #page-spades .seat .trick-card{width:42px!important;min-width:42px!important;height:60px!important;min-height:60px!important}
+ body:has(#page-spades.active) #page-spades .hand-panel{margin-top:6px!important;padding:5px!important}
+ body:has(#page-spades.active) #page-spades #spadesHand{height:clamp(70px,11vh,88px)!important;justify-content:flex-start!important;gap:2px!important}
+ body:has(#page-spades.active) #page-spades #spadesHand .playing-card{flex-basis:clamp(31px,8.2vw,46px)!important;width:clamp(31px,8.2vw,46px)!important;min-width:clamp(31px,8.2vw,46px)!important;height:clamp(48px,12vw,68px)!important;min-height:clamp(48px,12vw,68px)!important;padding:3px!important}
 }
 </style>
 </body></html>

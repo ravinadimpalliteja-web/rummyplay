@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#09251e">
+<meta name="description" content="Royal Club — More to Play. A private card gaming club.">
+<title>Royal Club — More to Play</title>
+<style>
+:root{color-scheme:dark;--bg:#071b16;--panel:#0d2b23;--panel2:#12382d;--line:#285344;--gold:#d7b66d;--gold2:#f0d99d;--ivory:#f5f0e4;--muted:#a8bdb3;--green:#1b5944;--red:#c77e6d}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% -20%,#1b4938 0,#0b281f 42%,var(--bg) 78%);color:var(--ivory);font:15px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input{font:inherit}button{cursor:pointer}.shell{max-width:1180px;margin:auto;padding:0 22px}.topbar{height:76px;border-bottom:1px solid #31534499;background:#071b16d9;backdrop-filter:blur(14px);position:sticky;top:0;z-index:20}.topinner{height:100%;display:flex;align-items:center;justify-content:space-between;gap:20px}.brand{display:flex;align-items:center;gap:12px;border:0;background:none;color:inherit;text-align:left;padding:0}.crest{width:42px;height:42px;border:1px solid var(--gold);border-radius:13px;display:grid;place-items:center;color:var(--gold);font-size:22px;background:linear-gradient(145deg,#1a4938,#09251e);box-shadow:inset 0 0 18px #d7b66d18}.brandname{font-family:Georgia,serif;letter-spacing:.16em;font-size:19px;color:var(--gold2);line-height:1.1}.brandtag{font-size:9px;letter-spacing:.19em;color:var(--muted);margin-top:5px}.nav{display:flex;align-items:center;gap:7px}.nav button,.quiet{background:transparent;border:1px solid transparent;color:var(--muted);padding:10px 13px;border-radius:10px}.nav button.active,.nav button:hover{color:var(--gold2);border-color:#426b58;background:#16382d}.account{display:flex;align-items:center;gap:10px}.avatar{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:#244c3b;border:1px solid #b99755;color:var(--gold2);font-weight:700}.btn{border:1px solid #567461;background:#16382d;color:var(--ivory);padding:11px 16px;border-radius:11px;font-weight:650;transition:.18s}.btn:hover{transform:translateY(-1px);border-color:var(--gold)}.btn.gold{background:linear-gradient(135deg,#efd99d,#c49a4e);border:0;color:#18271f;box-shadow:0 7px 22px #0003}.btn.small{padding:8px 12px;font-size:13px}.main{padding:36px 0 70px}.eyebrow{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);font-weight:700}.hero{display:grid;grid-template-columns:1.2fr .8fr;gap:30px;align-items:center;padding:28px 0 34px}.hero h1{font:clamp(42px,6vw,70px)/.98 Georgia,serif;letter-spacing:-.035em;margin:14px 0 15px;color:#f4eddb}.hero h1 span{color:var(--gold)}.hero p{max-width:510px;color:var(--muted);font-size:16px;margin:0 0 24px}.heroactions{display:flex;gap:10px;flex-wrap:wrap}.hero-art{min-height:250px;position:relative;display:grid;place-items:center;overflow:hidden;border:1px solid #46664e;border-radius:24px;background:radial-gradient(ellipse at center,#225b43,#103729 58%,#0b241c);box-shadow:inset 0 0 55px #d7b66d0b,0 22px 50px #0003}.hero-art:before,.hero-art:after{content:"";position:absolute;width:210px;height:280px;border:1px solid #d7b66d55;border-radius:15px;transform:rotate(-18deg);background:linear-gradient(150deg,#f6efdf,#e2d7bd);box-shadow:0 15px 35px #0007}.hero-art:after{transform:rotate(15deg) translate(22px,4px);background:linear-gradient(145deg,#173f32,#0a261e);border:1px solid var(--gold)}.ace{z-index:2;font:92px Georgia,serif;color:var(--gold2);text-shadow:0 3px 20px #0008}.hero-art .suit{position:absolute;z-index:3;right:24%;bottom:21%;font-size:26px;color:#f2d99b}.sectionhead{display:flex;justify-content:space-between;align-items:end;gap:15px;margin:24px 0 16px}.sectionhead h2{font:30px Georgia,serif;margin:4px 0 0}.sectionhead p{color:var(--muted);margin:0;font-size:13px}.games{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.gamecard{position:relative;min-height:250px;overflow:hidden;border:1px solid #476653;border-radius:20px;background:linear-gradient(120deg,#123b2e,#0c291f 70%);padding:23px;display:flex;flex-direction:column;justify-content:space-between;transition:.2s}.gamecard:hover{transform:translateY(-3px);border-color:var(--gold);box-shadow:0 16px 35px #0003}.gamecard:after{content:attr(data-mark);position:absolute;right:24px;top:13px;font:140px/1 Georgia,serif;color:#d7b66d13;pointer-events:none}.gameinfo{position:relative;z-index:1}.gameicon{width:46px;height:46px;border-radius:14px;border:1px solid #b9985b88;background:#d7b66d13;display:grid;place-items:center;color:var(--gold2);font-size:24px}.gamecard h3{font:31px Georgia,serif;margin:18px 0 5px;letter-spacing:.04em}.gamecard p{color:var(--muted);margin:0;max-width:350px}.gamebottom{display:flex;align-items:center;justify-content:space-between;gap:12px;position:relative;z-index:1;margin-top:25px}.status{font-size:11px;color:#c4d0c7;letter-spacing:.08em;text-transform:uppercase}.status:before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--gold);margin:0 8px 1px 0}.featuregrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:24px}.feature{border:1px solid #294c3e;background:#0c271fbd;border-radius:15px;padding:17px}.feature b{display:block;color:#e9d6a8;font-size:14px;margin:8px 0 4px}.feature span{font-size:12px;color:var(--muted)}.feature .sym{font-size:20px;color:var(--gold)}.page{display:none}.page.active{display:block}.pagehead{padding:22px 0 24px}.pagehead h1{font:clamp(34px,5vw,48px) Georgia,serif;margin:7px 0}.pagehead p{color:var(--muted);margin:0}.panel{border:1px solid #315844;background:linear-gradient(145deg,#103529,#0b261e);border-radius:18px;padding:22px}.lobbygrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.lobbyoption{border:1px solid #466b54;border-radius:16px;padding:22px;background:#12392d}.lobbyoption h3{font:24px Georgia,serif;margin:10px 0 6px}.lobbyoption p{color:var(--muted);font-size:13px;min-height:40px}.formrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.field{background:#071e18;border:1px solid #456450;border-radius:10px;color:var(--ivory);padding:11px 13px;min-width:0}.field:focus{outline:2px solid #c9a75e}.roomlist{margin-top:18px}.roomrow{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:14px 0;border-bottom:1px solid #2b4b3d}.roomrow:last-child{border:0}.muted{color:var(--muted)}.tag{font-size:10px;letter-spacing:.1em;text-transform:uppercase;border:1px solid #53715b;color:#d6c18a;border-radius:20px;padding:4px 8px}.profilegrid{display:grid;grid-template-columns:260px 1fr;gap:16px}.profilecard{text-align:center}.profilebig{width:72px;height:72px;margin:8px auto 13px;border-radius:50%;display:grid;place-items:center;background:#234d3b;border:1px solid var(--gold);font:28px Georgia,serif;color:var(--gold2)}.statgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.stat{padding:16px;background:#0a241c;border:1px solid #294b3c;border-radius:12px}.stat strong{font:27px Georgia,serif;color:var(--gold2);display:block}.stat span{font-size:11px;color:var(--muted)}.notice{border:1px solid #6d5b35;background:#302a1b;color:#f0dca7;border-radius:12px;padding:12px 14px;font-size:12px;margin-top:18px}.footer{border-top:1px solid #294b3c;color:#789287;padding:20px 0 30px;font-size:11px;display:flex;justify-content:space-between;gap:15px}.mobilebar{display:none}.modalback{position:fixed;inset:0;background:#000a;z-index:50;display:none;place-items:center;padding:18px}.modalback.open{display:grid}.modal{width:min(440px,100%);background:#0d2b23;border:1px solid #a88a50;border-radius:20px;padding:25px;box-shadow:0 24px 80px #0009}.modal h2{font:29px Georgia,serif;margin:7px 0}.modal p{color:var(--muted);font-size:13px}.modal .field{width:100%;margin:6px 0}.modalactions{display:flex;gap:9px;margin-top:14px}.modalactions>*{flex:1}.hidden{display:none!important}
+@media(max-width:760px){.shell{padding:0 15px}.topbar{height:66px}.nav{display:none}.hero{grid-template-columns:1fr;padding-top:22px}.hero-art{min-height:190px}.hero-art:before,.hero-art:after{width:140px;height:195px}.ace{font-size:68px}.games{gap:11px}.gamecard{padding:16px;min-height:235px}.gamecard h3{font-size:25px}.gamecard p{font-size:12px}.featuregrid{grid-template-columns:1fr}.mobilebar{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:25;background:#071b16ed;border-top:1px solid #355545;justify-content:space-around;padding:8px 4px calc(8px + env(safe-area-inset-bottom));backdrop-filter:blur(15px)}.mobilebar button{border:0;background:none;color:var(--muted);font-size:10px;display:grid;gap:3px;justify-items:center;padding:4px 10px}.mobilebar button span:first-child{font-size:19px}.main{padding-top:20px;padding-bottom:100px}.lobbygrid,.profilegrid{grid-template-columns:1fr}.statgrid{grid-template-columns:repeat(3,1fr)}.footer{padding-bottom:95px}.brandname{font-size:16px}.account .username{display:none}}
+@media(max-width:420px){.games{grid-template-columns:1fr}.gamecard{min-height:205px}.hero h1{font-size:46px}.sectionhead h2{font-size:26px}.panel{padding:16px}.roomrow{align-items:flex-start}.roomrow .btn{padding:8px}}
+
+/* Local Spades prototype */
+.spades-demo{margin-top:22px}.demo-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.demo-table{margin:18px 0;padding:18px;border:1px solid var(--line);border-radius:18px;background:radial-gradient(ellipse,#174936,#08251d 72%);display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:12px;align-items:center;min-height:310px}.seat{padding:12px;border:1px solid #52746266;border-radius:12px;background:#061b16bb;text-align:center;min-width:0}.seat strong{display:block}.seat small{color:var(--muted)}.seat.south{grid-column:2;grid-row:3}.seat.center{grid-column:2;grid-row:2}.seat.north{grid-column:2;grid-row:1}.seat.west{grid-column:1;grid-row:2}.seat.east{grid-column:3;grid-row:2}.seat.active-turn{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}.card-row{display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin-top:10px}.playing-card{min-width:42px;padding:9px 7px;border-radius:8px;border:1px solid #d8d0bc;background:#f7f3e9;color:#17251e;font-weight:750;box-shadow:0 3px 8px #0005}.playing-card.red{color:#b33a36}.playing-card:disabled{opacity:.5}.playing-card.selected{transform:translateY(-7px);outline:2px solid var(--gold)}.demo-controls{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin:12px 0}.demo-controls select,.demo-controls button{min-height:42px}.demo-log{padding:12px;border:1px solid var(--line);border-radius:12px;color:var(--muted);min-height:48px}.demo-score{width:100%;border-collapse:collapse;margin-top:12px}.demo-score th,.demo-score td{padding:8px;text-align:left;border-bottom:1px solid var(--line);font-size:13px}.demo-score th{color:var(--gold2)}.demo-help{font-size:12px;color:var(--muted)}@media(max-width:650px){.demo-table{grid-template-columns:1fr 1fr;min-height:0}.seat.north{grid-column:1/3;grid-row:1}.seat.west{grid-column:1;grid-row:2}.seat.east{grid-column:2;grid-row:2}.seat.south{grid-column:1/3;grid-row:4}.seat.center{grid-column:1/3;grid-row:3}.playing-card{min-width:35px;padding:8px 5px;font-size:12px}}
+
+/* Royal Club clean-play pass: preserve the emerald and gold identity. */
+.spades-demo{max-width:1040px;margin:18px auto 0}
+.spades-demo .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:none}
+.spades-demo .demo-table{background:radial-gradient(ellipse at center,#174936 0%,#0b3025 58%,#08251d 100%);border:1px solid #47745c;border-radius:20px;padding:28px;min-height:410px;gap:18px;box-shadow:inset 0 0 45px #0003}
+.spades-demo .seat{background:#08251dcc;border:1px solid #416b55;border-radius:14px;padding:17px 14px;min-height:88px;display:flex;flex-direction:column;justify-content:center;gap:4px}
+.spades-demo .seat strong{font-size:15px}
+.spades-demo .seat.active-turn{border:2px solid var(--gold);box-shadow:0 0 0 3px #d7b66d20}
+.spades-demo .playing-card{min-width:68px;min-height:96px;padding:14px 11px;border-radius:10px;font-size:21px;box-shadow:0 4px 10px #0004}
+.spades-demo .playing-card:disabled{opacity:.82}
+.spades-demo #spadesHand{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;padding:12px 4px}
+.spades-demo .demo-controls{gap:12px}
+.spades-demo .demo-controls select{background:#f5f0e4;color:#17251e;border:1px solid #b7aa8d;border-radius:9px;padding:9px 14px;font-weight:700}
+.spades-demo .demo-score{background:#09251d;border-radius:10px;overflow:hidden}
+.spades-demo .demo-score th,.spades-demo .demo-score td{padding:11px 12px}
+.spades-demo .demo-score tbody tr:nth-child(even){background:#ffffff08}
+.spades-demo .demo-log{background:#09251d;color:#e4e9e2;border-color:#315b49}
+.spades-demo .demo-help{font-size:13px}
+.spades-demo .card-row .playing-card{display:inline-grid;place-items:center}
+@media(max-width:650px){
+ .spades-demo .demo-table{padding:12px;gap:8px}
+ .spades-demo .playing-card{min-width:54px;min-height:78px;padding:10px 7px;font-size:17px}
+ .spades-demo #spadesHand{gap:5px}
+ .spades-demo .demo-score th,.spades-demo .demo-score td{padding:8px 6px;font-size:11px}
+}
+
+/* Royal Club Spades table rebuild v2 */
+#page-spades.spades-demo{width:100%;max-width:1180px;margin:22px auto 0}
+#page-spades.spades-demo>.panel{padding:24px;background:linear-gradient(145deg,#0d3528,#08251d);border:1px solid #315b49;border-radius:20px}
+#page-spades .demo-top{padding:2px 2px 12px}
+#page-spades .demo-top h2{font-size:clamp(22px,2.4vw,30px);margin:5px 0}
+#page-spades .demo-table{width:100%;box-sizing:border-box;min-height:500px;margin:18px 0 22px;padding:30px;grid-template-columns:minmax(150px,1fr) minmax(240px,1.35fr) minmax(150px,1fr);grid-template-rows:minmax(105px,auto) minmax(150px,auto) minmax(105px,auto);gap:18px;background:radial-gradient(ellipse at center,#1b5941 0%,#10402f 48%,#08271e 100%);border:1px solid #527b61;border-radius:22px;box-shadow:inset 0 0 55px #03160f99}
+#page-spades .seat{box-sizing:border-box;min-height:100px;padding:18px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;border:1px solid #47745c;background:#06251dcc;border-radius:16px;text-align:center}
+#page-spades .seat strong{font-size:17px;line-height:1.25}
+#page-spades .seat small,#page-spades .seat .demo-help{font-size:14px;line-height:1.35}
+#page-spades .seat.north{grid-column:2;grid-row:1}
+#page-spades .seat.west{grid-column:1;grid-row:2}
+#page-spades .seat.east{grid-column:3;grid-row:2}
+#page-spades .seat.south{grid-column:2;grid-row:3}
+#page-spades .seat.center{grid-column:2;grid-row:2;min-height:150px;background:#061e17e8;border:1px solid #b99a54;border-radius:18px}
+#page-spades .seat.active-turn{border:2px solid #e3c477;box-shadow:0 0 0 4px #e3c47726}
+#page-spades .card-row{gap:10px;margin-top:12px}
+#page-spades .playing-card{box-sizing:border-box!important;display:inline-flex!important;align-items:flex-start;justify-content:flex-start;width:76px!important;min-width:76px!important;height:108px!important;min-height:108px!important;flex:0 0 76px;padding:12px 10px!important;border-radius:11px!important;border:1px solid #d5c9ad;background:linear-gradient(145deg,#fffdf7,#eee7d7);color:#17251e;font-size:23px!important;font-weight:800;line-height:1.1;box-shadow:0 5px 12px #0005}
+#page-spades .playing-card.red{color:#b33a36}
+#page-spades .playing-card:disabled{opacity:1}
+#page-spades .playing-card.selected{transform:translateY(-8px);outline:3px solid #e3c477}
+#page-spades #spadesHand{min-height:132px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:18px 8px}
+#page-spades>.panel>.panel{padding:20px!important;background:#0a2b20;border:1px solid #315b49;border-radius:16px}
+#page-spades .demo-controls{min-height:52px;gap:12px;margin:14px 0}
+#page-spades .demo-controls button,#page-spades .demo-controls select{min-height:46px}
+#page-spades .demo-log{min-height:54px;padding:15px 16px;background:#061f18;border-color:#315b49;font-size:14px}
+#page-spades .demo-score{border-collapse:separate;border-spacing:0;overflow:hidden;border:1px solid #315b49;border-radius:12px}
+#page-spades .demo-score th,#page-spades .demo-score td{padding:13px 14px;font-size:14px}
+#page-spades .demo-score thead{background:#061f18}
+@media(max-width:760px){
+ #page-spades.spades-demo{margin-top:12px}
+ #page-spades.spades-demo>.panel{padding:14px}
+ #page-spades .demo-table{min-height:0;padding:12px;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto auto auto;gap:9px}
+ #page-spades .seat{min-height:88px;padding:12px 8px}
+ #page-spades .seat strong{font-size:14px}
+ #page-spades .seat small,#page-spades .seat .demo-help{font-size:12px}
+ #page-spades .seat.north{grid-column:1/3;grid-row:1}
+ #page-spades .seat.west{grid-column:1;grid-row:2}
+ #page-spades .seat.east{grid-column:2;grid-row:2}
+ #page-spades .seat.center{grid-column:1/3;grid-row:3;min-height:118px}
+ #page-spades .seat.south{grid-column:1/3;grid-row:4}
+ #page-spades .playing-card{width:62px!important;min-width:62px!important;height:88px!important;min-height:88px!important;flex-basis:62px;font-size:19px!important;padding:10px 8px!important}
+ #page-spades #spadesHand{min-height:100px;gap:6px;padding:12px 2px}
+ #page-spades .demo-score th,#page-spades .demo-score td{padding:9px 7px;font-size:12px}
+}
+
+
+/* Royal Club Spades: compact seats and premium card faces */
+#page-spades .demo-table{
+ min-height:340px!important;
+ grid-template-columns:minmax(105px,.72fr) minmax(220px,1.55fr) minmax(105px,.72fr)!important;
+ grid-template-rows:76px minmax(128px,auto) 76px!important;
+ padding:16px!important;gap:10px!important;
+}
+#page-spades .seat{
+ min-height:0!important;height:auto!important;padding:9px 8px!important;
+ border-radius:12px!important;gap:3px!important;
+}
+#page-spades .seat strong{font-size:14px!important}
+#page-spades .seat small,#page-spades .seat .demo-help{font-size:11px!important;line-height:1.2!important}
+#page-spades .seat.north{grid-column:2!important;grid-row:1!important}
+#page-spades .seat.west{grid-column:1!important;grid-row:2!important}
+#page-spades .seat.east{grid-column:3!important;grid-row:2!important}
+#page-spades .seat.south{grid-column:2!important;grid-row:3!important}
+#page-spades .seat.center{grid-column:2!important;grid-row:2!important;min-height:128px!important;padding:10px!important}
+#page-spades .seat.center .card-row{gap:8px;margin-top:6px}
+#page-spades .playing-card{
+ position:relative;display:inline-flex!important;flex-direction:column;align-items:flex-start;justify-content:flex-start;
+ width:70px!important;min-width:70px!important;height:100px!important;min-height:100px!important;flex:0 0 70px;
+ padding:8px 9px!important;overflow:hidden;border:1px solid #d6c9ad!important;border-radius:9px!important;
+ background:linear-gradient(145deg,#fffefa 0%,#f6f0e3 72%,#e9dfca 100%)!important;
+ color:#17251e!important;font-family:Georgia,serif;font-size:20px!important;font-weight:700;line-height:1.05;
+ box-shadow:0 5px 12px #0005,inset 0 0 0 2px #ffffffa8!important;
+}
+#page-spades .playing-card.red{color:#bd3434!important}
+#page-spades .playing-card .card-rank{font-size:19px;font-weight:800;line-height:1}
+#page-spades .playing-card .card-suit{align-self:center;font-size:37px;line-height:1;margin:auto 0}
+#page-spades .playing-card .card-corner{position:absolute;right:7px;bottom:6px;font-size:10px;opacity:.8;transform:rotate(180deg)}
+#page-spades .playing-card:disabled{opacity:1!important}
+#page-spades .playing-card.selected{transform:translateY(-7px);outline:2px solid #e4c779}
+#page-spades .playing-card.trick-card{width:62px!important;min-width:62px!important;height:88px!important;min-height:88px!important;flex-basis:62px}
+#page-spades .playing-card.trick-card .card-suit{font-size:30px}
+#page-spades #spadesHand{display:flex;flex-wrap:nowrap;justify-content:center;align-items:flex-end;gap:7px;overflow-x:auto;padding:16px 5px 10px;min-height:125px}
+@media(max-width:760px){
+ #page-spades .demo-table{min-height:280px!important;grid-template-columns:minmax(74px,.7fr) minmax(120px,1.3fr) minmax(74px,.7fr)!important;grid-template-rows:62px minmax(112px,auto) 62px!important;padding:9px!important;gap:6px!important}
+ #page-spades .seat{padding:7px 4px!important}
+ #page-spades .seat strong{font-size:12px!important}
+ #page-spades .seat small,#page-spades .seat .demo-help{font-size:10px!important}
+ #page-spades .seat.center{min-height:112px!important}
+ #page-spades .playing-card{width:57px!important;min-width:57px!important;height:82px!important;min-height:82px!important;flex-basis:57px;padding:6px!important;font-size:17px!important}
+ #page-spades .playing-card .card-rank{font-size:16px}
+ #page-spades .playing-card .card-suit{font-size:29px}
+ #page-spades #spadesHand{justify-content:flex-start;gap:5px;min-height:100px}
+}
+
+/* Royal Club Spades — avatar-led oval table */
+#page-spades.spades-demo{max-width:1440px;width:100%;padding:0 8px;margin:10px auto}
+#page-spades .pagehead{padding:12px 0 16px}
+#page-spades.spades-demo>.panel{padding:18px;background:linear-gradient(145deg,#0a241b,#071b15);border:1px solid #345b43;border-radius:22px}
+#page-spades .spades-stage{position:relative;padding:0 0 4px}
+#page-spades .spades-meta{position:absolute;z-index:3;left:18px;top:16px;display:grid;gap:8px;color:#f3e5c1;font-size:13px}
+#page-spades .spades-meta span{padding:8px 12px;border:1px solid #567451;border-radius:10px;background:#061d17e8}
+#page-spades .demo-table{position:relative;isolation:isolate;min-height:440px;margin:0 0 16px;padding:26px 17%;border:8px solid #5b351d;border-radius:240px;background:radial-gradient(ellipse at center,#07553b 0%,#06412e 54%,#03291e 100%);box-shadow:inset 0 0 0 3px #d5ad58,inset 0 0 0 7px #281b12,inset 0 0 55px #00180f,0 13px 28px #0008;grid-template-columns:minmax(90px,.7fr) minmax(240px,1.6fr) minmax(90px,.7fr);grid-template-rows:72px minmax(130px,1fr) 72px;gap:10px}
+#page-spades .demo-table:before{content:"";position:absolute;inset:8px;border:1px solid #d4ae5b;border-radius:220px;pointer-events:none;z-index:-1}
+#page-spades .seat{position:relative;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:9px;min-height:0;height:66px;padding:7px 10px;background:#031c16df;border:1px solid #8aab83;border-radius:15px;overflow:visible}
+#page-spades .seat-avatar{width:54px;height:54px;flex:0 0 54px;border-radius:50%;object-fit:cover;border:3px solid #e4c77d;box-shadow:0 2px 10px #0008;background:#234b39}
+#page-spades .seat-info{min-width:0;text-align:center}
+#page-spades .seat strong{font-size:14px;white-space:nowrap}
+#page-spades .seat small{font-size:11px;white-space:nowrap;color:#e3e7dd}
+#page-spades .seat .demo-help{font-size:10px}
+#page-spades .seat-online{position:absolute;width:12px;height:12px;border-radius:50%;background:#65e17b;border:2px solid #08251d;right:4px;bottom:4px}
+#page-spades .seat.north{grid-column:2;grid-row:1;justify-self:center;min-width:190px}
+#page-spades .seat.west{grid-column:1;grid-row:2;justify-self:start;min-width:170px}
+#page-spades .seat.east{grid-column:3;grid-row:2;justify-self:end;min-width:170px}
+#page-spades .seat.south{grid-column:2;grid-row:3;justify-self:center;min-width:190px}
+#page-spades .seat.center{grid-column:2;grid-row:2;align-self:center;justify-self:center;width:100%;height:auto;min-height:130px;display:flex;flex-direction:column;background:transparent;border:0;box-shadow:none}
+#page-spades .seat.center .table-mark{display:grid;justify-items:center;color:#b79b50;opacity:.72}
+#page-spades .seat.center .table-mark span{font-size:72px;line-height:.9}
+#page-spades .seat.center .table-mark strong{font:22px Georgia,serif;letter-spacing:.18em}
+#page-spades .seat.center small{font-size:11px}
+#page-spades .seat.active-turn{border:2px solid #f0d47d;box-shadow:0 0 0 3px #e5c56a2b,0 0 18px #e5c56a44}
+#page-spades .seat.center.active-turn{border:0;box-shadow:none}
+#page-spades .spades-score-panel{position:absolute;right:18px;top:16px;z-index:3;width:210px;padding:10px 12px;background:#031c16e8;border:1px solid #567451;border-radius:12px}
+#page-spades .spades-score-panel .eyebrow{margin-bottom:6px}
+#page-spades .spades-score-panel .demo-score{margin:0;border:0;background:transparent}
+#page-spades .spades-score-panel .demo-score th,#page-spades .spades-score-panel .demo-score td{font-size:10px;padding:4px 5px}
+#page-spades .spades-score-panel .demo-score th:nth-child(4),#page-spades .spades-score-panel .demo-score td:nth-child(4){display:none}
+#page-spades .spades-hand-panel{background:linear-gradient(180deg,#0b2a20,#061b15)!important;border:1px solid #4e6d4e!important}
+#page-spades #spadesHand{min-height:150px;gap:0;justify-content:center;flex-wrap:nowrap;overflow-x:auto;padding:18px 8px 12px}
+#page-spades #spadesHand .playing-card{width:76px!important;min-width:76px!important;height:112px!important;min-height:112px!important;flex:0 0 76px;margin-left:-5px;border-radius:10px!important}
+#page-spades #spadesHand .playing-card:first-child{margin-left:0}
+#page-spades .demo-controls{justify-content:center;padding:10px 14px;border:1px solid #826d3f;border-radius:14px;background:#061d17}
+#page-spades .demo-controls .btn.gold{min-width:150px}
+@media(max-width:900px){
+ #page-spades .spades-meta{position:static;display:flex;flex-wrap:wrap;margin:0 0 8px}
+ #page-spades .spades-score-panel{position:static;width:100%;margin:0 0 10px}
+ #page-spades .demo-table{min-height:350px;padding:18px 8%;border-width:5px;border-radius:170px;grid-template-columns:90px minmax(100px,1fr) 90px;grid-template-rows:64px minmax(120px,1fr) 64px}
+ #page-spades .seat{height:58px;padding:5px;gap:5px}
+ #page-spades .seat-avatar{width:42px;height:42px;flex-basis:42px}
+ #page-spades .seat.north,#page-spades .seat.south{min-width:155px}
+ #page-spades .seat.west,#page-spades .seat.east{min-width:0;width:100%;flex-direction:column;height:auto;min-height:88px}
+ #page-spades .seat.center .table-mark span{font-size:52px}
+ #page-spades .seat.center .table-mark strong{font-size:16px}
+ #page-spades #spadesHand{justify-content:flex-start}
+}
+@media(max-width:560px){
+ #page-spades.spades-demo{padding:0}
+ #page-spades.spades-demo>.panel{padding:10px}
+ #page-spades .demo-table{min-height:300px;padding:12px 5px;border-radius:120px;grid-template-columns:68px minmax(80px,1fr) 68px;grid-template-rows:56px minmax(105px,1fr) 56px;gap:4px}
+ #page-spades .seat{height:52px;gap:3px}
+ #page-spades .seat-avatar{width:34px;height:34px;flex-basis:34px;border-width:2px}
+ #page-spades .seat.north,#page-spades .seat.south{min-width:130px}
+ #page-spades .seat.west,#page-spades .seat.east{min-height:78px}
+ #page-spades .seat strong{font-size:11px}
+ #page-spades .seat small{font-size:9px}
+ #page-spades .seat.center .table-mark span{font-size:42px}
+ #page-spades .seat.center .table-mark strong{font-size:13px}
+ #page-spades #spadesHand .playing-card{width:58px!important;min-width:58px!important;height:86px!important;min-height:86px!important;flex-basis:58px;margin-left:-9px}
+ #page-spades #spadesHand .playing-card:first-child{margin-left:0}
+}
+
+/* Use a consistent generic Royal Club player avatar, not profile photos */
+#page-spades .seat-avatar{position:relative;display:inline-block;width:54px;height:54px;flex:0 0 54px;border-radius:50%;border:2px solid #d9bd75;background:linear-gradient(145deg,#e5d4a5,#8f7540);box-shadow:0 2px 10px #0008;object-fit:initial;overflow:hidden}
+#page-spades .seat-avatar:before{content:"";position:absolute;width:14px;height:14px;border-radius:50%;background:#173a2b;left:50%;top:10px;transform:translateX(-50%)}
+#page-spades .seat-avatar:after{content:"";position:absolute;width:30px;height:18px;border-radius:18px 18px 7px 7px;background:#173a2b;left:50%;bottom:5px;transform:translateX(-50%)}
+@media(max-width:900px){#page-spades .seat-avatar{width:42px;height:42px;flex-basis:42px}#page-spades .seat-avatar:before{width:11px;height:11px;top:7px}#page-spades .seat-avatar:after{width:24px;height:14px;bottom:4px}}
+@media(max-width:560px){#page-spades .seat-avatar{width:34px;height:34px;flex-basis:34px}#page-spades .seat-avatar:before{width:9px;height:9px;top:6px}#page-spades .seat-avatar:after{width:19px;height:11px;bottom:3px}}
+
+#page-spades .spades-stage{position:relative}
+#page-spades .spades-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 8px;margin:0 4px 8px}
+#page-spades .spades-status-badges{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#page-spades .spades-status-badges>span{font-size:11px;color:#f0d99d;background:#09271fdd;border:1px solid #8e7748;border-radius:999px;padding:5px 10px}
+#page-spades .scores-toggle{border:1px solid #b99a54;background:#10382b;color:#f3dfaa;border-radius:999px;padding:6px 11px;font-size:11px;font-weight:700}
+#page-spades .scores-toggle[aria-expanded=true]{background:#d7b66d;color:#14271e}
+#page-spades .scores-popover{position:absolute;z-index:12;top:38px;right:8px;width:min(510px,calc(100% - 16px));max-height:min(60vh,420px);overflow:auto;padding:14px;background:#09271ff5;border:1px solid #c4a45d;border-radius:14px;box-shadow:0 18px 48px #0009}
+#page-spades .scores-popover[hidden]{display:none}
+#page-spades .scores-popover-head{display:flex;align-items:center;justify-content:space-between;color:#f1d99e;margin-bottom:8px}
+#page-spades .scores-popover-head button{border:0;background:transparent;color:#f1d99e;font-size:23px}
+#page-spades .seat{background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important;min-height:0!important;padding:4px 6px!important;display:flex;flex-direction:row!important;align-items:center;justify-content:center;gap:8px!important}
+#page-spades .seat.active-turn{background:#d7b66d18!important;outline:1px solid #d7b66d88;border-radius:999px!important}
+#page-spades .seat .seat-info{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0;text-align:left}
+#page-spades .seat strong{font-size:13px!important}
+#page-spades .seat small{font-size:10px!important}
+#page-spades .seat-avatar{width:32px!important;height:32px!important;flex:0 0 32px!important}
+#page-spades .seat-avatar:before{width:9px!important;height:9px!important;top:6px!important}
+#page-spades .seat-avatar:after{width:19px!important;height:11px!important;bottom:3px!important}
+#page-spades .seat-online{display:none!important}
+#page-spades .seat.center{background:#08271eb8!important;border:1px solid #b99a5470!important;border-radius:18px!important;min-height:130px!important;flex-direction:column!important}
+#page-spades .hand-panel{border-top:1px solid #b99a5470!important;border-radius:0 0 14px 14px!important;padding-top:16px!important}
+#page-spades #spadesHand{padding:14px 6px 8px!important;min-height:128px}
+#page-spades #spadesControls{padding-top:10px;border-top:1px solid #ffffff18}
+@media(max-width:650px){#page-spades .spades-meta{padding:0 3px}#page-spades .spades-status-badges>span{font-size:9px;padding:4px 7px}#page-spades .scores-toggle{font-size:10px;padding:5px 8px}#page-spades .seat{gap:5px!important;padding:2px!important}#page-spades .seat-avatar{width:26px!important;height:26px!important;flex-basis:26px!important}#page-spades .seat strong{font-size:10px!important}#page-spades .seat small{font-size:8px!important}#page-spades .scores-popover{top:34px;right:2px;width:calc(100% - 4px);padding:10px}#page-spades #spadesHand{min-height:104px}}
+
+/* Spades hand visibility + clearer seat hierarchy */
+#page-spades .hand-panel{
+ position:relative!important;z-index:5!important;
+ margin:-118px auto 10px!important;width:min(94%,1080px)!important;
+ padding:10px 14px!important;background:linear-gradient(180deg,#06251deF,#041b15f7)!important;
+ border:1px solid #b9954f!important;border-radius:16px!important;
+ box-shadow:0 8px 24px #0008!important;
+}
+#page-spades .hand-panel>.eyebrow{font-size:13px;font-weight:800;color:#e7ca80}
+#page-spades #spadesHand{min-height:112px!important;padding:8px 4px!important;gap:7px!important;overflow-x:auto!important;flex-wrap:nowrap!important}
+#page-spades .seat-avatar{width:58px!important;height:58px!important;flex:0 0 58px!important;object-fit:cover!important;border-radius:50%!important;border:2px solid #e4c77d!important;background:#173d30!important}
+#page-spades .seat strong{font-size:17px!important}
+#page-spades .seat small{font-size:14px!important;font-weight:700!important}
+#page-spades .seat.north{transform:translateY(-12px)}
+#page-spades .seat.south{transform:translateY(16px)}
+@media(max-width:760px){
+ #page-spades .hand-panel{margin:-84px auto 8px!important;width:98%!important;padding:8px!important}
+ #page-spades #spadesHand{min-height:92px!important;gap:4px!important}
+ #page-spades .seat-avatar{width:44px!important;height:44px!important;flex-basis:44px!important}
+ #page-spades .seat strong{font-size:14px!important}
+ #page-spades .seat small{font-size:12px!important}
+ #page-spades .seat.north{transform:translateY(-7px)}
+ #page-spades .seat.south{transform:translateY(10px)}
+}
+
+
+/* Preview refresh: compact native avatars, traditional card faces and round ledger. */
+#page-spades .seat:not(.center){background:transparent!important;border:0!important;box-shadow:none!important}
+#page-spades .seat-avatar{display:block!important;position:relative!important;flex:0 0 42px!important;width:42px!important;height:42px!important;border-radius:50%!important;object-fit:initial!important;background:linear-gradient(145deg,#e7d6a5,#927844)!important;border:2px solid #e4c77d!important;overflow:hidden!important}
+#page-spades .seat-avatar:before{content:""!important;position:absolute!important;width:12px!important;height:12px!important;border-radius:50%!important;background:#173a2b!important;left:50%!important;top:7px!important;transform:translateX(-50%)!important}
+#page-spades .seat-avatar:after{content:""!important;position:absolute!important;width:25px!important;height:15px!important;border-radius:16px 16px 7px 7px!important;background:#173a2b!important;left:50%!important;bottom:4px!important;transform:translateX(-50%)!important}
+#page-spades .seat-info{display:flex;flex-direction:column;align-items:center;gap:2px}
+#page-spades .seat-info strong{font-size:14px!important}
+#page-spades .seat-info small{font-size:11px!important}
+#page-spades .playing-card{position:relative!important;background:linear-gradient(145deg,#fffefa 0%,#faf7ee 72%,#eee6d5 100%)!important;border:1px solid #d6c9ad!important;box-shadow:0 5px 12px #0005,inset 0 0 0 2px #fff9!important;border-radius:8px!important}
+#page-spades .playing-card .card-corner{position:absolute;display:flex;flex-direction:column;align-items:center;gap:0;z-index:2;font-family:Arial,sans-serif;font-size:12px;line-height:1}
+#page-spades .playing-card .card-corner b{font-size:15px;font-weight:800}
+#page-spades .playing-card .card-corner i{font-style:normal;font-size:11px}
+#page-spades .playing-card .card-corner-top{top:6px;left:7px}
+#page-spades .playing-card .card-corner-bottom{right:7px;bottom:6px;transform:rotate(180deg)}
+#page-spades .playing-card .card-suit{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:39px!important;line-height:1}
+#page-spades .playing-card .pip-layout{position:absolute;inset:24px 12px;display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:repeat(4,1fr);align-items:center;justify-items:center;font:17px Georgia,serif}
+#page-spades .playing-card .pip-layout span{line-height:1}
+#page-spades .playing-card .face-mark{position:absolute;inset:25px 13px;display:grid;place-items:center;border:1px solid currentColor;border-radius:4px;background:repeating-linear-gradient(45deg,transparent 0 5px,#b99a5418 5px 7px)}
+#page-spades .playing-card .face-mark b{font: bold 34px Georgia,serif}
+#page-spades .scores-ledger-wrap{overflow:auto;max-width:100%;border:1px solid #426451;border-radius:10px}
+#page-spades .scores-ledger{border-collapse:separate;border-spacing:0;min-width:690px;width:100%;font-size:12px}
+#page-spades .scores-ledger th,#page-spades .scores-ledger td{padding:8px 9px;text-align:center;border-bottom:1px solid #315342;white-space:nowrap}
+#page-spades .scores-ledger thead th{position:sticky;top:0;background:#12382d;color:#f0d99d}
+#page-spades .scores-ledger th:first-child,#page-spades .scores-ledger td:first-child{text-align:left;position:sticky;left:0;background:#0b2a20}
+#page-spades .scores-ledger .player-head{font:14px Georgia,serif;color:#f0d99d}
+#page-spades .scores-current{display:grid;grid-template-columns:repeat(4,minmax(110px,1fr));gap:7px;margin:0 0 12px}
+#page-spades .scores-current article{padding:9px;background:#12382d;border:1px solid #426451;border-radius:9px}
+#page-spades .scores-current b{display:block;color:#f0d99d;font-size:12px}
+#page-spades .scores-current strong{font:21px Georgia,serif}
+#page-spades .scores-current small{display:block;color:#b5c8bd;font-size:10px}
+@media(max-width:560px){#page-spades .scores-current{grid-template-columns:repeat(2,minmax(0,1fr))}#page-spades .scores-popover{width:calc(100vw - 24px)!important;right:0!important}}
+
+
+/* Keep the hand within the table stage: no detached dark tray or page scroll. */
+body:has(#page-spades.active) #page-spades .spades-stage{overflow:visible!important}
+body:has(#page-spades.active) #page-spades .demo-table{height:100%!important}
+body:has(#page-spades.active) #page-spades .hand-panel{position:absolute!important;z-index:8!important;left:50%!important;right:auto!important;bottom:8px!important;transform:translateX(-50%)!important;width:min(92%,900px)!important;max-height:142px!important;min-height:0!important;padding:4px 8px 2px!important;margin:0!important;overflow:visible!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+body:has(#page-spades.active) #page-spades .hand-panel>.eyebrow{font-size:9px!important;text-align:center;color:#e8d39d!important;text-shadow:0 1px 3px #00180f}
+body:has(#page-spades.active) #page-spades #spadesHand{height:clamp(76px,12vh,106px)!important;min-height:0!important;padding:5px 3px 2px!important;gap:0!important;overflow:visible!important;justify-content:center!important;align-items:flex-end!important}
+body:has(#page-spades.active) #page-spades #spadesHand .playing-card{width:clamp(42px,5vw,66px)!important;min-width:clamp(42px,5vw,66px)!important;height:clamp(64px,7.6vw,94px)!important;min-height:clamp(64px,7.6vw,94px)!important;flex:0 0 clamp(42px,5vw,66px)!important;margin-left:clamp(-17px,-1.2vw,-8px)!important;padding:5px!important}
+body:has(#page-spades.active) #page-spades #spadesHand .playing-card:first-child{margin-left:0!important}
+body:has(#page-spades.active) #page-spades .seat.south{bottom:clamp(112px,16vh,140px)!important}
+@media(max-width:760px){
+ body:has(#page-spades.active) #page-spades .hand-panel{width:98%!important;bottom:4px!important}
+ body:has(#page-spades.active) #page-spades #spadesHand{height:clamp(68px,11vh,88px)!important}
+ body:has(#page-spades.active) #page-spades #spadesHand .playing-card{width:clamp(30px,8vw,44px)!important;min-width:clamp(30px,8vw,44px)!important;height:clamp(46px,12vw,64px)!important;min-height:clamp(46px,12vw,64px)!important;flex-basis:clamp(30px,8vw,44px)!important;margin-left:clamp(-14px,-3.1vw,-9px)!important;padding:3px!important}
+ body:has(#page-spades.active) #page-spades #spadesHand .playing-card .card-corner{font-size:9px!important}
+ body:has(#page-spades.active) #page-spades #spadesHand .playing-card .card-corner b{font-size:10px!important}
+ body:has(#page-spades.active) #page-spades #spadesHand .playing-card .card-corner i{font-size:8px!important}
+ body:has(#page-spades.active) #page-spades #spadesHand .playing-card .card-suit{font-size:22px!important}
+ body:has(#page-spades.active) #page-spades #spadesHand .playing-card .pip-layout{inset:16px 5px;font-size:10px}
+ body:has(#page-spades.active) #page-spades .seat.south{bottom:clamp(82px,13vh,112px)!important}
+}
+
+
+/* Spades-only trick presentation: every played card belongs to one centered group.
+   Do not place cards in compass/seat positions; keep this independent of Rummy. */
+body:has(#page-spades.active) #page-spades .seat.center{left:50%!important;top:43%!important;width:min(68%,620px)!important;height:clamp(124px,22vh,190px)!important;transform:translate(-50%,-50%)!important;display:flex!important;align-items:center!important;justify-content:center!important}
+body:has(#page-spades.active) #page-spades .seat.center .card-row{position:relative!important;inset:auto!important;width:100%!important;height:100%!important;display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;gap:clamp(8px,1.5vw,20px)!important;margin:0!important;flex-wrap:nowrap!important}
+body:has(#page-spades.active) #page-spades .seat.center .playing-card.trick-card,
+body:has(#page-spades.active) #page-spades .seat.center .card-row .playing-card:nth-child(n){position:relative!important;inset:auto!important;top:auto!important;right:auto!important;bottom:auto!important;left:auto!important;transform:none!important;display:block!important;box-sizing:border-box!important;flex:0 0 clamp(68px,7vw,88px)!important;width:clamp(68px,7vw,88px)!important;min-width:clamp(68px,7vw,88px)!important;height:clamp(96px,10vw,124px)!important;min-height:clamp(96px,10vw,124px)!important;padding:0!important;overflow:hidden!important}
+body:has(#page-spades.active) #page-spades .seat.center .playing-card .card-corner{display:flex!important;flex-direction:column!important;align-items:center!important;gap:1px!important;position:absolute!important;z-index:3!important;font-size:12px!important;line-height:1!important}
+body:has(#page-spades.active) #page-spades .seat.center .playing-card .card-corner b{font-size:17px!important;line-height:1!important}
+body:has(#page-spades.active) #page-spades .seat.center .playing-card .card-corner i{font-size:12px!important;line-height:1!important}
+body:has(#page-spades.active) #page-spades .seat.center .playing-card .card-corner-top{top:7px!important;left:7px!important;right:auto!important;bottom:auto!important;transform:none!important}
+body:has(#page-spades.active) #page-spades .seat.center .playing-card .card-corner-bottom{right:7px!important;bottom:7px!important;left:auto!important;top:auto!important;transform:rotate(180deg)!important}
+body:has(#page-spades.active) #page-spades .seat.center .playing-card .pip-layout{inset:24px 12px!important;font-size:15px!important}
+body:has(#page-spades.active) #page-spades .seat.center .playing-card .card-suit{font-size:42px!important}
+body:has(#page-spades.active) #page-spades .seat.center .playing-card .face-mark{inset:24px 12px!important}
+@media(max-width:760px){
+ body:has(#page-spades.active) #page-spades .seat.center{width:78%!important;height:clamp(92px,17vh,132px)!important;top:40%!important}
+ body:has(#page-spades.active) #page-spades .seat.center .card-row{gap:clamp(5px,1.6vw,12px)!important}
+ body:has(#page-spades.active) #page-spades .seat.center .playing-card.trick-card,
+ body:has(#page-spades.active) #page-spades .seat.center .card-row .playing-card:nth-child(n){flex-basis:clamp(48px,13vw,68px)!important;width:clamp(48px,13vw,68px)!important;min-width:clamp(48px,13vw,68px)!important;height:clamp(70px,19vw,98px)!important;min-height:clamp(70px,19vw,98px)!important}
+ body:has(#page-spades.active) #page-spades .seat.center .playing-card .card-corner{font-size:9px!important}
+ body:has(#page-spades.active) #page-spades .seat.center .playing-card .card-corner b{font-size:12px!important}
+ body:has(#page-spades.active) #page-spades .seat.center .playing-card .card-corner i{font-size:9px!important}
+ body:has(#page-spades.active) #page-spades .seat.center .playing-card .card-suit{font-size:30px!important}
+ body:has(#page-spades.active) #page-spades .seat.center .playing-card .pip-layout{inset:19px 7px!important;font-size:11px!important}
+}
+
+
+/* Spades trick cards: anchor each card to the player who played it. */
+body:has(#page-spades.active) #page-spades .seat:not(.center){overflow:visible!important}
+body:has(#page-spades.active) #page-spades .seat.center{display:none!important}
+body:has(#page-spades.active) #page-spades .seat .played-card{position:absolute!important;z-index:4!important;display:flex!important;align-items:flex-start!important;justify-content:flex-start!important;width:clamp(52px,5.2vw,70px)!important;min-width:clamp(52px,5.2vw,70px)!important;height:clamp(76px,7.5vw,100px)!important;min-height:clamp(76px,7.5vw,100px)!important;flex:0 0 auto!important;padding:7px!important;transform:none!important;pointer-events:none!important}
+body:has(#page-spades.active) #page-spades .seat.north .played-card{left:50%!important;top:calc(100% + 8px)!important;right:auto!important;bottom:auto!important;transform:translateX(-50%)!important}
+body:has(#page-spades.active) #page-spades .seat.south .played-card{left:50%!important;bottom:calc(100% + 8px)!important;top:auto!important;right:auto!important;transform:translateX(-50%)!important}
+body:has(#page-spades.active) #page-spades .seat.west .played-card{left:calc(100% + 9px)!important;top:50%!important;right:auto!important;bottom:auto!important;transform:translateY(-50%)!important}
+body:has(#page-spades.active) #page-spades .seat.east .played-card{right:calc(100% + 9px)!important;top:50%!important;left:auto!important;bottom:auto!important;transform:translateY(-50%)!important}
+body:has(#page-spades.active) #page-spades .seat.south{bottom:clamp(82px,12vh,108px)!important}
+@media(max-width:760px){
+ body:has(#page-spades.active) #page-spades .seat .played-card{width:clamp(42px,10vw,56px)!important;min-width:clamp(42px,10vw,56px)!important;height:clamp(62px,15vw,80px)!important;min-height:clamp(62px,15vw,80px)!important;padding:5px!important}
+ body:has(#page-spades.active) #page-spades .seat.south{bottom:clamp(70px,11vh,92px)!important}
+}
+</style>
+
+<style>
+/* Royal Club Spades refinement: table-top status, floating seats, authentic card layout */
+#page-spades .spades-stage{position:relative;padding-top:0}
+#page-spades .demo-table{padding-top:58px!important}
+#page-spades .spades-meta{
+ position:absolute!important;z-index:5!important;top:12px!important;left:50%!important;transform:translateX(-50%);
+ width:calc(100% - 44px);display:flex!important;align-items:center!important;justify-content:space-between!important;
+ gap:12px!important;margin:0!important;padding:0 12px!important;pointer-events:none
+}
+#page-spades .spades-status-badges{display:flex;gap:8px;align-items:center;pointer-events:auto}
+#page-spades .spades-status-badges>span{background:#06271ddd!important;border:1px solid #d0ad62!important;color:#f5e6bf!important;
+ box-shadow:0 2px 8px #00150d88;font-size:12px!important;letter-spacing:.02em;padding:7px 12px!important}
+#page-spades .scores-toggle{pointer-events:auto;padding:7px 13px!important;font-size:12px!important;box-shadow:0 2px 8px #00150d88}
+#page-spades .scores-popover{top:48px!important;right:12px!important}
+#page-spades .seat:not(.center){
+ background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important;
+ min-height:0!important;padding:2px 4px!important;gap:7px!important
+}
+#page-spades .seat:not(.center) .seat-avatar{width:48px!important;height:48px!important;flex-basis:48px!important;
+ border:2px solid #e0c47d!important;box-shadow:0 3px 12px #00150d99!important}
+#page-spades .seat:not(.center) .seat-info{display:flex;flex-direction:column;align-items:center;gap:2px;
+ padding:4px 8px;border-radius:10px;background:#05271dcc;box-shadow:0 2px 8px #00150d55}
+#page-spades .seat:not(.center) .seat-info strong{color:#f7edda!important;text-shadow:0 1px 4px #00150d;font-size:13px!important}
+#page-spades .seat:not(.center) .seat-info small{color:#e7d8b5!important;font-size:10px!important}
+#page-spades .seat:not(.center).active-turn .seat-info{outline:1px solid #e2c16c;background:#174b36}
+#page-spades .seat:not(.center).active-turn .seat-avatar{box-shadow:0 0 0 3px #e2c16c55,0 3px 12px #00150d99!important}
+#page-spades .playing-card{
+ position:relative!important;overflow:hidden!important;background:#fffdf7!important;color:#18231d!important;
+ border:1px solid #c8bea8!important;border-radius:8px!important;
+ box-shadow:0 4px 10px #00150d55,inset 0 0 0 2px #fff!important;
+ font-family:Georgia,'Times New Roman',serif!important
+}
+#page-spades .playing-card:before{content:"";position:absolute;inset:4px;border:1px solid #e7dfcf;border-radius:4px;pointer-events:none}
+#page-spades .playing-card.red{color:#bd3038!important}
+#page-spades .playing-card .card-corner{position:absolute;display:flex;flex-direction:column;align-items:center;gap:0;
+ font-size:12px;line-height:.9;font-weight:700}
+#page-spades .playing-card .card-corner i{font-style:normal;font-size:10px}
+#page-spades .playing-card .card-corner-top{top:8px;left:8px}
+#page-spades .playing-card .card-suit{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+ font-size:43px!important;line-height:1!important;text-shadow:0 1px 0 #0000000d}
+#page-spades .playing-card .card-corner-bottom{right:8px;bottom:8px;transform:rotate(180deg)}
+#page-spades .playing-card.selected{transform:translateY(-8px)!important;outline:2px solid #e3c477!important}
+#page-spades .card-row .playing-card{width:68px!important;min-width:68px!important;height:98px!important;min-height:98px!important;flex-basis:68px!important}
+#page-spades #spadesHand .playing-card{width:76px!important;min-width:76px!important;height:110px!important;min-height:110px!important;flex-basis:76px!important}
+@media(max-width:900px){
+ #page-spades .demo-table{padding-top:54px!important}
+ #page-spades .spades-meta{width:calc(100% - 20px);top:9px!important;padding:0 4px!important}
+ #page-spades .spades-status-badges>span{font-size:10px!important;padding:5px 8px!important}
+ #page-spades .seat:not(.center) .seat-avatar{width:40px!important;height:40px!important;flex-basis:40px!important}
+ #page-spades .seat:not(.center) .seat-info{padding:3px 5px}
+}
+@media(max-width:560px){
+ #page-spades .demo-table{padding-top:48px!important}
+ #page-spades .spades-meta{width:calc(100% - 10px);top:7px!important}
+ #page-spades .spades-status-badges{gap:4px}
+ #page-spades .spades-status-badges>span{font-size:9px!important;padding:4px 6px!important}
+ #page-spades .scores-toggle{font-size:10px!important;padding:5px 8px!important}
+ #page-spades .seat:not(.center) .seat-avatar{width:32px!important;height:32px!important;flex-basis:32px!important}
+ #page-spades .seat:not(.center) .seat-info strong{font-size:10px!important}
+ #page-spades .seat:not(.center) .seat-info small{font-size:8px!important}
+ #page-spades .card-row .playing-card{width:54px!important;min-width:54px!important;height:78px!important;min-height:78px!important;flex-basis:54px!important}
+ #page-spades .playing-card .card-suit{font-size:32px!important}
+}
+
+/* Full-screen Spades table: the felt is the game surface, not a card-game webpage. */
+body:has(#page-spades.active){overflow:hidden}
+body:has(#page-spades.active) .topbar{height:58px}
+body:has(#page-spades.active) .main{padding:8px 0 0;max-width:none;width:100%;height:calc(100dvh - 58px);overflow:hidden}
+body:has(#page-spades.active) #page-spades{height:100%;display:flex;flex-direction:column;max-width:none;margin:0;padding:0 14px}
+body:has(#page-spades.active) #page-spades .pagehead{display:none}
+body:has(#page-spades.active) #page-spades>.panel{flex:1;min-height:0;padding:8px 12px;background:transparent;border:0;box-shadow:none;display:flex;flex-direction:column}
+body:has(#page-spades.active) #page-spades .demo-top{flex:0 0 auto;padding:0 8px 6px}
+body:has(#page-spades.active) #page-spades .demo-top h2{font:18px Georgia,serif;margin:0}
+body:has(#page-spades.active) #page-spades .spades-stage{flex:1;min-height:0;position:relative}
+body:has(#page-spades.active) #page-spades .demo-table{position:relative!important;width:100%;height:100%;min-height:0!important;margin:0!important;padding:0!important;display:block!important;overflow:hidden;border:10px solid #59371f!important;border-radius:48% / 44%!important;background:radial-gradient(ellipse at 50% 45%,#08704b 0%,#075238 48%,#033321 100%)!important;box-shadow:inset 0 0 0 3px #d9b76a,inset 0 0 0 8px #281a10,inset 0 0 70px #00180f,0 15px 35px #0009!important}
+body:has(#page-spades.active) #page-spades .demo-table:before{content:"";position:absolute;inset:9px;border:1px solid #d7b66d;border-radius:48% / 44%;pointer-events:none}
+body:has(#page-spades.active) #page-spades .seat:not(.center){position:absolute!important;z-index:2;height:auto!important;min-width:0!important;max-width:190px;display:flex!important;flex-direction:column!important;align-items:center!important;gap:4px!important;padding:4px!important}
+body:has(#page-spades.active) #page-spades .seat.north{top:5%;left:50%;transform:translateX(-50%)}
+body:has(#page-spades.active) #page-spades .seat.west{left:3%;top:43%;transform:translateY(-50%)}
+body:has(#page-spades.active) #page-spades .seat.east{right:3%;top:43%;transform:translateY(-50%)}
+body:has(#page-spades.active) #page-spades .seat.south{bottom:clamp(118px,20vh,154px);left:50%;transform:translateX(-50%)}
+body:has(#page-spades.active) #page-spades .seat:not(.center) .seat-info{align-items:center!important;text-align:center!important;background:#05271dc9!important;border:1px solid #b99a5470;padding:3px 9px!important;border-radius:999px!important}
+body:has(#page-spades.active) #page-spades .seat:not(.center) .seat-avatar{width:42px!important;height:42px!important;flex-basis:42px!important}
+body:has(#page-spades.active) #page-spades .seat.center{position:absolute!important;left:50%;top:43%;transform:translate(-50%,-50%);width:40%;height:34%;min-height:0!important;display:block!important;background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important}
+body:has(#page-spades.active) #page-spades .seat.center .table-mark,body:has(#page-spades.active) #page-spades .seat.center>small{display:none!important}
+body:has(#page-spades.active) #page-spades .seat.center .card-row{position:absolute;inset:0;margin:0!important;display:block!important}
+body:has(#page-spades.active) #page-spades .playing-card.trick-card{position:absolute!important;width:70px!important;min-width:70px!important;height:100px!important;min-height:100px!important;flex-basis:70px!important}
+body:has(#page-spades.active) #page-spades .card-row .playing-card:nth-child(1){top:0;left:50%;transform:translateX(-50%)}
+body:has(#page-spades.active) #page-spades .card-row .playing-card:nth-child(2){left:0;top:50%;transform:translateY(-50%)}
+body:has(#page-spades.active) #page-spades .card-row .playing-card:nth-child(3){right:0;top:50%;transform:translateY(-50%)}
+body:has(#page-spades.active) #page-spades .card-row .playing-card:nth-child(4){bottom:0;left:50%;transform:translateX(-50%)}
+body:has(#page-spades.active) #page-spades .spades-meta{position:absolute!important;z-index:6;top:14px!important;left:50%!important;transform:translateX(-50%);width:calc(100% - 80px);padding:0!important;margin:0!important;pointer-events:none}
+body:has(#page-spades.active) #page-spades .spades-status-badges>span{font-size:11px!important;padding:5px 10px!important}
+body:has(#page-spades.active) #page-spades .scores-toggle{font-size:11px!important;padding:6px 11px!important}
+body:has(#page-spades.active) #page-spades .scores-popover{top:42px!important;right:4%!important}
+body:has(#page-spades.active) #page-spades .hand-panel{display:block!important;visibility:visible!important;opacity:1!important;position:absolute!important;z-index:8!important;left:8%;right:8%;bottom:10px;width:84%;max-height:190px;overflow:visible;padding:6px 10px 4px!important;margin:0!important;background:linear-gradient(180deg,#08271fe8,#041b14f2)!important;border:1px solid #b99a5470!important;border-radius:16px!important;box-shadow:0 8px 25px #00150d99!important}
+body:has(#page-spades.active) #page-spades .hand-panel>.eyebrow{font-size:9px}
+body:has(#page-spades.active) #page-spades #spadesHand{min-height:0!important;height:clamp(90px,15vh,130px);padding:8px 2px 4px!important;gap:0!important;overflow-x:auto!important;justify-content:center!important;align-items:flex-end!important}
+body:has(#page-spades.active) #page-spades #spadesHand .playing-card{width:clamp(42px,5.1vw,70px)!important;min-width:clamp(42px,5.1vw,70px)!important;height:clamp(64px,9.2vw,100px)!important;min-height:clamp(64px,9.2vw,100px)!important;flex:0 0 clamp(42px,5.1vw,70px)!important;margin-left:clamp(-19px,-1.3vw,-7px)!important;padding:6px!important}
+body:has(#page-spades.active) #page-spades #spadesHand .playing-card:first-child{margin-left:0!important}
+body:has(#page-spades.active) #page-spades .demo-controls{min-height:0!important;margin:4px 0!important;padding:5px 8px!important;gap:8px!important;border:0!important;background:transparent!important}
+body:has(#page-spades.active) #page-spades .demo-controls .demo-help{font-size:11px}
+body:has(#page-spades.active) #page-spades .demo-controls button,body:has(#page-spades.active) #page-spades .demo-controls select{min-height:32px;padding:5px 10px}
+body:has(#page-spades.active) #page-spades .demo-log{min-height:0!important;padding:4px 8px!important;font-size:10px!important;background:transparent!important;border:0!important;text-align:center}
+body:has(#page-spades.active) #page-spades>.notice{display:none}
+@media(max-width:760px){
+ body:has(#page-spades.active) .topbar{height:48px}
+ body:has(#page-spades.active) .main{height:calc(100dvh - 48px);padding:2px 0 0}
+ body:has(#page-spades.active) #page-spades{padding:0 3px}
+ body:has(#page-spades.active) #page-spades>.panel{padding:2px}
+ body:has(#page-spades.active) #page-spades .demo-top h2{font-size:14px}
+ body:has(#page-spades.active) #page-spades .demo-top .btn{padding:6px 9px;font-size:10px}
+ body:has(#page-spades.active) #page-spades .demo-table{border-width:6px!important;border-radius:43% / 40%!important}
+ body:has(#page-spades.active) #page-spades .seat.north{top:6%}
+ body:has(#page-spades.active) #page-spades .seat.west{left:1%;top:39%}
+ body:has(#page-spades.active) #page-spades .seat.east{right:1%;top:39%}
+ body:has(#page-spades.active) #page-spades .seat.south{bottom:clamp(100px,18vh,126px)}
+ body:has(#page-spades.active) #page-spades .seat:not(.center) .seat-avatar{width:30px!important;height:30px!important;flex-basis:30px!important}
+ body:has(#page-spades.active) #page-spades .seat:not(.center) .seat-avatar:before{width:8px!important;height:8px!important;top:5px!important}
+ body:has(#page-spades.active) #page-spades .seat:not(.center) .seat-avatar:after{width:17px!important;height:10px!important;bottom:3px!important}
+ body:has(#page-spades.active) #page-spades .seat:not(.center) .seat-info strong{font-size:9px!important}
+ body:has(#page-spades.active) #page-spades .seat:not(.center) .seat-info small{font-size:8px!important}
+ body:has(#page-spades.active) #page-spades .seat.center{width:46%;height:30%;top:40%}
+ body:has(#page-spades.active) #page-spades .playing-card.trick-card{width:48px!important;min-width:48px!important;height:70px!important;min-height:70px!important;flex-basis:48px!important}
+ body:has(#page-spades.active) #page-spades .spades-meta{width:calc(100% - 18px);top:8px!important}
+ body:has(#page-spades.active) #page-spades .spades-status-badges>span{font-size:8px!important;padding:3px 6px!important}
+ body:has(#page-spades.active) #page-spades .scores-toggle{font-size:9px!important;padding:4px 7px!important}
+ body:has(#page-spades.active) #page-spades .hand-panel{display:block!important;visibility:visible!important;opacity:1!important;left:2%;right:2%;width:96%;bottom:6px;max-height:150px;padding:4px!important}
+ body:has(#page-spades.active) #page-spades #spadesHand{height:clamp(76px,13vh,100px)!important;justify-content:flex-start!important}
+ body:has(#page-spades.active) #page-spades #spadesHand .playing-card{width:clamp(31px,9vw,43px)!important;min-width:clamp(31px,9vw,43px)!important;height:clamp(48px,14vw,64px)!important;min-height:clamp(48px,14vw,64px)!important;flex-basis:clamp(31px,9vw,43px)!important;margin-left:clamp(-18px,-4vw,-12px)!important}
+ body:has(#page-spades.active) #page-spades #spadesHand .playing-card .card-rank{font-size:12px}
+ body:has(#page-spades.active) #page-spades #spadesHand .playing-card .card-suit{font-size:22px!important}
+ body:has(#page-spades.active) #page-spades .demo-log{font-size:8px!important}
+}
+
+</style>
+
+<style>
+/* Spades visual correction: compact hand, lower South seat, player-anchored trick cards.
+   This final layer intentionally overrides the earlier centre-trick experiment. */
+body:has(#page-spades.active) #page-spades .seat.center{display:none!important}
+body:has(#page-spades.active) #page-spades .seat:not(.center){overflow:visible!important}
+body:has(#page-spades.active) #page-spades .seat .played-card{
+ position:absolute!important;z-index:5!important;display:flex!important;align-items:flex-start!important;justify-content:flex-start!important;
+ width:clamp(44px,3.8vw,54px)!important;min-width:clamp(44px,3.8vw,54px)!important;
+ height:clamp(64px,5.6vw,78px)!important;min-height:clamp(64px,5.6vw,78px)!important;
+ flex:0 0 auto!important;padding:5px!important;margin:0!important;transform:none!important;pointer-events:none!important
+}
+body:has(#page-spades.active) #page-spades .seat.north .played-card{
+ left:50%!important;top:calc(100% + 5px)!important;right:auto!important;bottom:auto!important;transform:translateX(-50%)!important
+}
+body:has(#page-spades.active) #page-spades .seat.east .played-card{
+ right:calc(100% + 6px)!important;top:50%!important;left:auto!important;bottom:auto!important;transform:translateY(-50%)!important
+}
+body:has(#page-spades.active) #page-spades .seat.south .played-card{
+ left:50%!important;bottom:calc(100% + 5px)!important;top:auto!important;right:auto!important;transform:translateX(-50%)!important
+}
+body:has(#page-spades.active) #page-spades .seat.west .played-card{
+ left:calc(100% + 6px)!important;top:50%!important;right:auto!important;bottom:auto!important;transform:translateY(-50%)!important
+}
+/* South stays below the table centre, while remaining clear of the hand. */
+body:has(#page-spades.active) #page-spades .seat.south{
+ bottom:clamp(122px,15vh,150px)!important
+}
+/* Make the hand a compact, single-line fan rather than oversized scattered cards. */
+body:has(#page-spades.active) #page-spades .hand-panel{
+ left:50%!important;right:auto!important;bottom:4px!important;transform:translateX(-50%)!important;
+ width:min(94%,820px)!important;max-height:112px!important;min-height:0!important;
+ padding:3px 8px 2px!important;border-radius:12px!important
+}
+body:has(#page-spades.active) #page-spades .hand-panel>.eyebrow{font-size:8px!important;line-height:1.1!important;margin:0!important}
+body:has(#page-spades.active) #page-spades #spadesHand{
+ height:clamp(62px,8.5vh,76px)!important;min-height:0!important;padding:3px 2px 1px!important;
+ gap:0!important;overflow-x:auto!important;overflow-y:visible!important;flex-wrap:nowrap!important;
+ justify-content:center!important;align-items:flex-end!important
+}
+body:has(#page-spades.active) #page-spades #spadesHand .playing-card{
+ width:clamp(43px,3.8vw,52px)!important;min-width:clamp(43px,3.8vw,52px)!important;
+ height:clamp(62px,5.2vw,74px)!important;min-height:clamp(62px,5.2vw,74px)!important;
+ flex:0 0 clamp(43px,3.8vw,52px)!important;margin-left:clamp(-25px,-1.25vw,-17px)!important;
+ padding:4px!important;border-radius:6px!important
+}
+body:has(#page-spades.active) #page-spades #spadesHand .playing-card:first-child{margin-left:0!important}
+body:has(#page-spades.active) #page-spades #spadesHand .playing-card .card-corner{font-size:9px!important}
+body:has(#page-spades.active) #page-spades #spadesHand .playing-card .card-corner b{font-size:10px!important}
+body:has(#page-spades.active) #page-spades #spadesHand .playing-card .card-corner i{font-size:8px!important}
+body:has(#page-spades.active) #page-spades #spadesHand .playing-card .card-suit{font-size:23px!important}
+body:has(#page-spades.active) #page-spades #spadesHand .playing-card .pip-layout{inset:15px 4px!important;font-size:9px!important}
+body:has(#page-spades.active) #page-spades .demo-controls{margin:1px 0!important;padding:1px 4px!important;min-height:0!important}
+body:has(#page-spades.active) #page-spades .demo-controls button,
+body:has(#page-spades.active) #page-spades .demo-controls select{min-height:27px!important;padding:3px 8px!important;font-size:10px!important}
+body:has(#page-spades.active) #page-spades .demo-log{padding:1px 4px!important;font-size:9px!important;min-height:0!important}
+@media(max-width:760px){
+ body:has(#page-spades.active) #page-spades .seat .played-card{
+  width:38px!important;min-width:38px!important;height:56px!important;min-height:56px!important;padding:4px!important
+ }
+ body:has(#page-spades.active) #page-spades .seat.north .played-card{top:calc(100% + 3px)!important}
+ body:has(#page-spades.active) #page-spades .seat.south .played-card{bottom:calc(100% + 3px)!important}
+ body:has(#page-spades.active) #page-spades .seat.east .played-card{right:calc(100% + 3px)!important}
+ body:has(#page-spades.active) #page-spades .seat.west .played-card{left:calc(100% + 3px)!important}
+ body:has(#page-spades.active) #page-spades .seat.south{bottom:clamp(112px,14vh,132px)!important}
+ body:has(#page-spades.active) #page-spades .hand-panel{width:98%!important;max-height:98px!important;bottom:3px!important;padding:2px 4px!important}
+ body:has(#page-spades.active) #page-spades #spadesHand{height:clamp(54px,8vh,64px)!important}
+ body:has(#page-spades.active) #page-spades #spadesHand .playing-card{
+  width:clamp(32px,4.2vw,40px)!important;min-width:clamp(32px,4.2vw,40px)!important;
+  height:clamp(47px,6.2vw,58px)!important;min-height:clamp(47px,6.2vw,58px)!important;
+  flex-basis:clamp(32px,4.2vw,40px)!important;margin-left:clamp(-19px,-2vw,-12px)!important;padding:3px!important
+ }
+ body:has(#page-spades.active) #page-spades #spadesHand .playing-card .card-corner{font-size:7px!important}
+ body:has(#page-spades.active) #page-spades #spadesHand .playing-card .card-corner b{font-size:8px!important}
+ body:has(#page-spades.active) #page-spades #spadesHand .playing-card .card-corner i{font-size:6px!important}
+ body:has(#page-spades.active) #page-spades #spadesHand .playing-card .card-suit{font-size:17px!important}
+ body:has(#page-spades.active) #page-spades #spadesHand .playing-card .pip-layout{inset:12px 3px!important;font-size:7px!important}
+}
+</style>
+<style>
+/* Clean, predictable playing-card faces: no overlapping suit/rank artwork. */
+#page-spades .playing-card{position:relative!important;overflow:hidden!important;box-sizing:border-box!important;background:linear-gradient(145deg,#fffefa,#f4f0e6)!important;border:1px solid #d7d0c2!important;color:#17251e!important}
+#page-spades .playing-card.red{color:#c62835!important}
+#page-spades .playing-card .card-corner{position:absolute!important;display:flex!important;flex-direction:column!important;align-items:center!important;gap:0!important;z-index:3!important;font-family:Georgia,serif!important;line-height:.9!important}
+#page-spades .playing-card .card-corner-top{top:5px!important;left:6px!important}
+#page-spades .playing-card .card-corner-bottom{right:6px!important;bottom:5px!important;transform:rotate(180deg)!important}
+#page-spades .playing-card .card-corner b{font-size:clamp(10px,1vw,14px)!important;font-weight:700!important}
+#page-spades .playing-card .card-corner i{font-size:clamp(9px,.9vw,12px)!important;font-style:normal!important}
+#page-spades .playing-card .card-ace{position:absolute!important;left:50%!important;top:50%!important;transform:translate(-50%,-50%)!important;font-size:clamp(28px,3vw,43px)!important;line-height:1!important}
+#page-spades .playing-card .pip-layout{position:absolute!important;inset:22px 8px 20px!important;display:grid!important;grid-template-columns:1fr 1fr!important;grid-template-rows:repeat(5,1fr)!important;align-items:center!important;justify-items:center!important;font-family:Georgia,serif!important;font-size:clamp(10px,1.15vw,16px)!important;line-height:1!important}
+#page-spades .playing-card .pip-layout span{display:block!important;position:static!important;line-height:1!important}
+#page-spades .playing-card .court-art{position:absolute!important;inset:24px 8px!important;border:1px solid #c7b98e!important;border-radius:5px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:2px!important;background:repeating-linear-gradient(45deg,#fffdf7 0 5px,#eee8d9 5px 7px)!important}
+#page-spades .playing-card .court-rank{font:700 clamp(19px,2vw,29px)/1 Georgia,serif!important}
+#page-spades .playing-card .court-suit{font:clamp(22px,2.3vw,32px)/1 Georgia,serif!important}
+#page-spades .playing-card .court-caption{font:700 7px/1 Arial,sans-serif!important;letter-spacing:.14em!important}
+</style>
+
+<style id="spades-fullscreen-layout">
+/* Full-screen Spades play area: no oval/table surface, only four player seats. */
+#page-spades.spades-demo{width:100%!important;max-width:none!important;margin:0!important;padding:0!important}
+#page-spades.spades-demo>.panel{width:100%!important;min-height:calc(100vh - 145px)!important;padding:12px clamp(12px,2vw,28px) 16px!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+#page-spades .pagehead{padding:8px 0 12px}
+#page-spades .spades-stage{width:100%;min-height:calc(100vh - 185px);display:flex;flex-direction:column;padding:0}
+#page-spades .spades-meta{position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 0 10px}
+#page-spades .spades-meta span{background:#102c23;border-color:#456653}
+#page-spades .demo-table{position:relative!important;isolation:isolate;display:grid!important;flex:1;width:100%!important;min-height:430px!important;margin:0!important;padding:12px 3%!important;border:0!important;border-radius:0!important;background:transparent!important;background-image:none!important;box-shadow:none!important;grid-template-columns:minmax(130px,1fr) minmax(220px,1.5fr) minmax(130px,1fr)!important;grid-template-rows:86px minmax(180px,1fr) 96px!important;gap:12px!important}
+#page-spades .demo-table:before,#page-spades .demo-table:after{content:none!important;display:none!important}
+#page-spades .seat{position:relative;z-index:1;background:linear-gradient(145deg,#102f25,#0a211a)!important;border:1px solid #496c57!important;border-radius:14px!important;box-shadow:0 6px 18px #0003!important}
+#page-spades .seat.north{grid-column:2!important;grid-row:1!important;justify-self:center!important;align-self:start!important}
+#page-spades .seat.west{grid-column:1!important;grid-row:2!important;justify-self:start!important;align-self:center!important}
+#page-spades .seat.east{grid-column:3!important;grid-row:2!important;justify-self:end!important;align-self:center!important}
+#page-spades .seat.south{grid-column:2!important;grid-row:3!important;justify-self:center!important;align-self:end!important}
+#page-spades .seat.center{display:none!important}
+#page-spades .seat .trick-card{position:absolute!important;width:58px!important;min-width:58px!important;height:82px!important;min-height:82px!important;flex:0 0 58px!important;z-index:4;box-shadow:0 8px 18px #0008!important}
+#page-spades .seat.north .trick-card{left:50%;top:calc(100% + 8px);transform:translateX(-50%)}
+#page-spades .seat.south .trick-card{left:50%;bottom:calc(100% + 8px);transform:translateX(-50%)}
+#page-spades .seat.west .trick-card{left:calc(100% + 10px);top:50%;transform:translateY(-50%)}
+#page-spades .seat.east .trick-card{right:calc(100% + 10px);top:50%;transform:translateY(-50%)}
+#page-spades #spadesHand{display:flex;justify-content:center;align-items:flex-end;gap:clamp(2px,.45vw,7px);flex-wrap:nowrap;overflow-x:auto;padding:12px 4px 8px;min-height:122px}
+#page-spades #spadesHand .playing-card{width:clamp(48px,5.2vw,66px)!important;min-width:clamp(48px,5.2vw,66px)!important;height:clamp(70px,7.2vw,94px)!important;min-height:clamp(70px,7.2vw,94px)!important;flex:0 0 clamp(48px,5.2vw,66px)!important}
+#page-spades .hand-panel{background:transparent!important;border:0!important;box-shadow:none!important;padding:8px 0!important}
+#page-spades .demo-controls{display:flex;justify-content:center;align-items:center;min-height:48px;margin:8px 0 12px}
+#page-spades .demo-controls select{min-width:170px;background:#f5f0e4;color:#17251e;border:1px solid #b7aa8d;border-radius:9px;padding:9px 14px;font-weight:700}
+@media(max-width:760px){
+ #page-spades.spades-demo>.panel{padding:8px 8px 14px!important;min-height:calc(100vh - 120px)!important}
+ #page-spades .spades-stage{min-height:calc(100vh - 155px)}
+ #page-spades .demo-table{min-height:360px!important;grid-template-columns:minmax(70px,.8fr) minmax(100px,1fr) minmax(70px,.8fr)!important;grid-template-rows:70px minmax(160px,1fr) 78px!important;padding:8px 0!important;gap:6px!important}
+ #page-spades .seat{height:auto;min-height:56px;padding:6px 4px!important;gap:4px}
+ #page-spades .seat-avatar{width:38px;height:38px;flex-basis:38px}
+ #page-spades .seat-info{max-width:100%;overflow:hidden}
+ #page-spades .seat strong{font-size:11px!important}
+ #page-spades .seat small{font-size:9px!important;white-space:normal}
+ #page-spades .seat.north,#page-spades .seat.south{min-width:130px}
+ #page-spades .seat.west,#page-spades .seat.east{min-width:0;max-width:100px;flex-direction:column}
+ #page-spades .seat .trick-card{width:42px!important;min-width:42px!important;height:60px!important;min-height:60px!important;flex-basis:42px!important}
+ #page-spades .seat.west .trick-card{left:calc(100% + 3px)}
+ #page-spades .seat.east .trick-card{right:calc(100% + 3px)}
+ #page-spades #spadesHand{justify-content:flex-start;gap:2px;min-height:88px;padding:8px 0;overflow-x:auto}
+ #page-spades #spadesHand .playing-card{width:clamp(42px,10vw,54px)!important;min-width:clamp(42px,10vw,54px)!important;height:clamp(62px,14vw,76px)!important;min-height:clamp(62px,14vw,76px)!important;flex-basis:clamp(42px,10vw,54px)!important}
+ #page-spades .spades-meta{font-size:11px}
+}
+</style>
+
+</head>
+<body>
+<header class="topbar"><div class="shell topinner">
+<button class="brand" onclick="showPage('home')" aria-label="Royal Club home"><span class="crest">♠</span><span><span class="brandname">ROYAL CLUB</span><span class="brandtag">MORE TO PLAY</span></span></button>
+<nav class="nav" aria-label="Main navigation"><button class="active" data-nav="home" onclick="showPage('home')">Home</button><button data-nav="games" onclick="showPage('games')">Games</button><button data-nav="friends" onclick="showPage('friends')">Friends</button></nav>
+<div class="account"><span class="username muted" id="topName">Guest preview</span><span class="avatar" id="topAvatar">G</span><button class="btn small" id="accountBtn" onclick="openAuth()">Sign in</button></div>
+</div></header>
+<main class="shell main">
+<section class="page active" id="page-home">
+<div class="hero"><div><div class="eyebrow">A private card gaming club</div><h1>Your games.<br><span>Your people.</span></h1><p>Step into Royal Club — a home for classic card games, friendly competition and private tables with people you know.</p><div class="heroactions"><button class="btn gold" onclick="showPage('games')">Explore games <span>→</span></button><button class="btn" onclick="openAuth()">Create your account</button></div></div><div class="hero-art" aria-label="Decorative playing card artwork"><div class="ace">A</div><div class="suit">♠ ♥ ♦ ♣</div></div></div>
+<div class="sectionhead"><div><div class="eyebrow">Choose your table</div><h2>Games at the club</h2></div><p>Two games to start. More to come.</p></div>
+<div class="games">
+<article class="gamecard" data-mark="♢"><div class="gameinfo"><div class="gameicon">♧</div><h3>RUMMY</h3><p>Indian Rummy with Pool 101, Pool 201 and Pool 251 formats.</p></div><div class="gamebottom"><span class="status">Rummy room lobby</span><button class="btn gold small" onclick="openGame('rummy')">Enter Rummy →</button></div></article>
+<article class="gamecard" data-mark="♠"><div class="gameinfo"><div class="gameicon">♠</div><h3>SPADES</h3><p>Solo Progressive Spades. Four players, individual play and a 13-round ladder.</p></div><div class="gamebottom"><span class="status">New game lobby</span><button class="btn gold small" onclick="openGame('spades')">Enter Spades →</button></div></article>
+</div>
+<div class="featuregrid"><div class="feature"><div class="sym">♙</div><b>Your own player profile</b><span>A home for your identity and game record.</span></div><div class="feature"><div class="sym">♧</div><b>Private tables</b><span>Create rooms and invite registered friends.</span></div><div class="feature"><div class="sym">◇</div><b>More games ahead</b><span>A shared club experience designed to grow.</span></div></div>
+<div class="notice">Portal preview: account authentication, friends, invitations and live multiplayer rooms will be connected in the backend implementation stage. This preview does not create real accounts or live game rooms.</div>
+</section>
+<section class="page" id="page-games"><div class="pagehead"><div class="eyebrow">The club collection</div><h1>Choose your game</h1><p>Pick a table and enter its dedicated lobby.</p></div><div class="games">
+<article class="gamecard" data-mark="♢"><div class="gameinfo"><div class="gameicon">♧</div><h3>RUMMY</h3><p>Indian Rummy · Pool 101 · Pool 201 · Pool 251</p></div><div class="gamebottom"><span class="status">Dedicated game section</span><button class="btn gold small" onclick="openGame('rummy')">Open lobby →</button></div></article>
+<article class="gamecard" data-mark="♠"><div class="gameinfo"><div class="gameicon">♠</div><h3>SPADES</h3><p>Solo Progressive · 13 rounds · 4 individual players</p></div><div class="gamebottom"><span class="status">Dedicated game section</span><button class="btn gold small" onclick="openGame('spades')">Open lobby →</button></div></article>
+</div></section>
+<section class="page" id="page-rummy"><div class="pagehead"><div class="eyebrow">Royal Club · Game room</div><h1>Rummy</h1><p>Choose your format and enter the Rummy room lobby.</p></div><div class="panel"><div class="lobbygrid"><div class="lobbyoption"><div class="eyebrow">Create a table</div><h3>Create a Rummy room</h3><p>Set up a private table for your registered friends. Rummy formats and table settings will be available here.</p><button class="btn gold" onclick="showNotice('Rummy room creation will be connected when the Rummy module is implemented.')">Create room</button></div><div class="lobbyoption"><div class="eyebrow">Join a table</div><h3>Join with room code</h3><p>Have an invitation? Enter the room code supplied by your host.</p><div class="formrow"><input class="field" id="rummyCode" placeholder="Enter room code" maxlength="12"><button class="btn" onclick="showNotice('Room-code joining will be connected with the multiplayer backend.')">Join</button></div></div></div><div class="notice" id="rummyNotice">This is the portal's Rummy entry page. The full Rummy lobby and gameplay will be integrated as a separate module after Spades.</div></div></section>
+<section class="page spades-demo" id="page-spades"><div class="pagehead"><div class="eyebrow">Royal Club · Local prototype</div><h1>Solo Progressive Spades</h1><p>Play a practice match against three temporary test seats. This is a local rules prototype, not online multiplayer.</p></div>
+<div class="panel"><div class="demo-top"><div><div class="eyebrow">13-round ladder</div><h2 id="spadesRoundTitle">Ready to deal · Round 1</h2></div><button class="btn gold" id="spadesStart" onclick="startSpadesDemo()">Start practice match</button></div>
+<div class="spades-stage"><div class="spades-meta"><div class="spades-status-badges"><span id="spadesRoundMeta">♧ &nbsp;Round 1 / 13</span><span class="trump-badge">♠ &nbsp;Trump: Spades</span></div><button class="scores-toggle" id="spadesScoresToggle" type="button" aria-expanded="false" aria-controls="spadesScoresPopover" onclick="toggleSpadesScores()">▤ <span>Scores</span></button></div><div class="scores-popover" id="spadesScoresPopover" hidden><div class="scores-popover-head"><strong>Match scores</strong><button type="button" aria-label="Close scores" onclick="toggleSpadesScores(false)">×</button></div><div id="spadesScoreboard"></div></div><div class="demo-table" id="spadesTable"><div class="seat north"><strong>North · Test player</strong><small>Waiting for deal</small></div><div class="seat west"><strong>West · Test player</strong><small>Waiting for deal</small></div><div class="seat east"><strong>East · Test player</strong><small>Waiting for deal</small></div><div class="seat center"><strong>Current trick</strong></div><div class="seat south"><strong>South · You</strong><small>Waiting for deal</small></div></div><div class="panel hand-panel" style="padding:14px"><div class="eyebrow">Your hand</div><div class="card-row" id="spadesHand"><span class="muted">Your cards will appear here.</span></div>
+<div class="demo-controls" id="spadesControls"></div><div class="demo-log" id="spadesLog" aria-live="polite">Press Start practice match to begin.</div>
+</div></div></div>
+<div class="notice">Local prototype only: no account, room, network connection or real registered players. Test players are temporary and will not be part of the final product.</div></section>
+<section class="page" id="page-friends"><div class="pagehead"><div class="eyebrow">Your circle</div><h1>Friends</h1><p>Build your private club and invite people to your tables.</p></div><div class="panel"><div class="lobbyoption"><h3>Friends and invitations</h3><p>Friend requests, player search, online status and game invitations will be added with registered accounts and backend services.</p><button class="btn gold" onclick="openAuth()">Sign in to continue</button></div></div></section>
+<section class="page" id="page-profile"><div class="pagehead"><div class="eyebrow">Your club identity</div><h1>Player profile</h1></div><div class="profilegrid"><div class="panel profilecard"><div class="profilebig" id="profileAvatar">G</div><h3 id="profileName">Guest preview</h3><div class="muted">Royal Club player</div><button class="btn small" onclick="openAuth()">Set up account</button></div><div class="panel"><div class="eyebrow">Your activity</div><h3 style="font:24px Georgia,serif">Game statistics</h3><div class="statgrid"><div class="stat"><strong>—</strong><span>Games played</span></div><div class="stat"><strong>—</strong><span>Wins</span></div><div class="stat"><strong>—</strong><span>Friends</span></div></div><p class="muted" style="font-size:12px;margin-top:15px">Statistics will appear after account and game-history services are connected.</p></div></div></section>
+<footer class="footer"><span>© Royal Club · More to Play</span><span>Private play · No real-money gaming</span></footer>
+</main>
+<nav class="mobilebar" aria-label="Mobile navigation"><button onclick="showPage('home')"><span>⌂</span>Home</button><button onclick="showPage('games')"><span>♠</span>Games</button><button onclick="showPage('friends')"><span>♙</span>Friends</button><button onclick="showPage('profile')"><span>◉</span>Profile</button></nav>
+<div class="modalback" id="authModal" role="dialog" aria-modal="true" aria-labelledby="authTitle"><div class="modal"><div class="eyebrow">Welcome to the club</div><h2 id="authTitle">Your seat is waiting.</h2><p id="authCopy">Create your Royal Club account or sign in to continue.</p><input class="field" id="authName" placeholder="Player name" autocomplete="nickname"><input class="field" id="authEmail" type="email" placeholder="Email address" autocomplete="email"><input class="field" id="authPassword" type="password" placeholder="Password" autocomplete="current-password"><div class="modalactions"><button class="btn" onclick="closeAuth()">Cancel</button><button class="btn gold" onclick="previewAuth()">Continue preview</button></div><p style="font-size:11px">Preview only — no credentials are sent or stored. Secure account services will be added during backend integration.</p></div></div>
+<script>
+const pages=['home','games','rummy','spades','friends','profile'];
+function showPage(name){pages.forEach(p=>{const el=document.getElementById('page-'+p);if(el)el.classList.toggle('active',p===name)});document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('active',b.dataset.nav===name));window.scrollTo({top:0,behavior:'smooth'});}
+function openGame(game){showPage(game)}
+function openAuth(){document.getElementById('authModal').classList.add('open');document.getElementById('authName').focus()}
+function closeAuth(){document.getElementById('authModal').classList.remove('open')}
+function previewAuth(){const name=document.getElementById('authName').value.trim()||'Player';document.getElementById('topName').textContent=name;document.getElementById('topAvatar').textContent=name[0].toUpperCase();document.getElementById('profileName').textContent=name;document.getElementById('profileAvatar').textContent=name[0].toUpperCase();document.getElementById('accountBtn').textContent='Preview profile';document.getElementById('accountBtn').onclick=()=>showPage('profile');closeAuth();showNotice('Preview profile updated. This is not a registered account yet.');}
+function showNotice(message){const page=document.querySelector('.page.active');let n=page&&page.querySelector('.notice');if(!n){n=document.createElement('div');n.className='notice';page.appendChild(n)}n.textContent=message;n.scrollIntoView({behavior:'smooth',block:'nearest'});}
+document.getElementById('authModal').addEventListener('click',e=>{if(e.target.id==='authModal')closeAuth()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAuth()});
+
+/* Local practice harness. The authoritative rules stay in spades/engine.js. */
+const SP_SUITS=["clubs","diamonds","hearts","spades"],SP_RANKS=["2","3","4","5","6","7","8","9","10","J","Q","K","A"];
+let spGame=null;
+const spNames=["North · Test","East · Test","South · You","West · Test"];
+const spSeatClass=["north","east","south","west"];
+const spSymbol={clubs:"♣",diamonds:"♦",hearts:"♥",spades:"♠"};
+function spCardText(c){return c.rank+spSymbol[c.suit]}
+function spCardFace(c){
+ const suit=spSymbol[c.suit],rank=c.rank;
+ const corner='<span class="card-corner card-corner-top"><b>'+rank+'</b><i>'+suit+'</i></span><span class="card-corner card-corner-bottom"><b>'+rank+'</b><i>'+suit+'</i></span>';
+ if(rank==='A')return corner+'<span class="card-ace">'+suit+'</span>';
+ if(['J','Q','K'].includes(rank))return corner+'<span class="court-art court-'+rank.toLowerCase()+'"><span class="court-rank">'+rank+'</span><span class="court-suit">'+suit+'</span><span class="court-caption">'+(rank==='J'?'JACK':rank==='Q'?'QUEEN':'KING')+'</span></span>';
+ const positions={
+  2:[[1,1],[5,2]],
+  3:[[1,1],[3,2],[5,1]],
+  4:[[1,1],[1,2],[5,1],[5,2]],
+  5:[[1,1],[1,2],[3,1],[5,1],[5,2]],
+  6:[[1,1],[1,2],[2,1],[4,2],[5,1],[5,2]],
+  7:[[1,1],[1,2],[2,1],[3,2],[4,1],[5,1],[5,2]],
+  8:[[1,1],[1,2],[2,1],[2,2],[4,1],[4,2],[5,1],[5,2]],
+  9:[[1,1],[1,2],[2,1],[3,2],[3,1],[4,2],[5,1],[5,2],[2,2]],
+  10:[[1,1],[1,2],[2,1],[2,2],[3,1],[3,2],[4,1],[4,2],[5,1],[5,2]]
+ };
+ const cells=(positions[Number(rank)]||[]).map(([r,col])=>'<span style="grid-row:'+r+';grid-column:'+col+'">'+suit+'</span>').join('');
+ return corner+'<span class="pip-layout pip-count-'+rank+'">'+cells+'</span>';
+}
+function spNewDeck(){return SP_SUITS.flatMap(s=>SP_RANKS.map((r,i)=>({id:s+"-"+r,suit:s,rank:r,value:i+2})))}
+function spShuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function startSpadesDemo(){spGame={round:1,dealer:Math.floor(Math.random()*4),players:spNames.map((name,i)=>({id:"p"+i,name,score:0,bags:0,hand:[],bid:null,mode:"standard",tricks:0})),trick:[],tricksDone:0,leader:1,turn:1,spadesBroken:false,phase:"bidding",bidsDone:0,history:[],roundHistory:[],blindIndex:null};spDealDemo()}
+function spDealDemo(){const g=spGame;g.humanBidMode=null;const deck=spShuffle(spNewDeck());g.players.forEach((p,i)=>{p.hand=deck.slice(i*g.round,(i+1)*g.round);p.bid=null;p.mode="standard";p.tricks=0});g.trick=[];g.tricksDone=0;g.spadesBroken=false;g.leader=(g.dealer+1)%4;g.turn=g.leader;g.phase="bidding";g.bidsDone=0;g.blindIndex=null;spSetLog("Round "+g.round+": "+g.round+" cards each. Bidding starts left of dealer.");spRenderDemo();spBotsBidDemo()}
+function spBotsBidDemo(){const g=spGame;if(g.phase!=="bidding")return;while(g.turn!==2&&g.bidsDone<4){const p=g.players[g.turn];const n=p.hand.filter(c=>c.suit==="spades").length;const high=p.hand.filter(c=>c.value>=12).length;const bid=Math.min(g.round,Math.max(0,Math.round(n*.65+high*.45)));p.bid=bid;p.mode="standard";g.bidsDone++;g.history.push(p.name+" bids "+bid);g.turn=(g.turn+1)%4}spRenderDemo()}
+function spChooseBidMode(mode){const g=spGame;if(!g||g.phase!=="bidding"||g.turn!==2||g.round!==13||!["standard","blind"].includes(mode))return;g.humanBidMode=mode;spRenderDemo();}
+function spSubmitBid(){const g=spGame;if(!g||g.phase!=="bidding"||g.turn!==2)return;const mode=g.round===13?(g.humanBidMode||null):"standard";if(!mode)return;const bidSelect=document.getElementById("spBid");if(!bidSelect||bidSelect.value==="")return;const bid=Number(bidSelect.value);if(!Number.isInteger(bid)||bid<0||bid>g.round)return;g.players[2].bid=bid;g.players[2].mode=mode;g.bidsDone++;if(mode==="blind")g.blindIndex=2;g.history.push("You "+(mode==="blind"?"blind ":"")+"bid "+bid);g.turn=(g.turn+1)%4;while(g.bidsDone<4){const p=g.players[g.turn];const n=p.hand.filter(c=>c.suit==="spades").length;const high=p.hand.filter(c=>c.value>=12).length;p.bid=Math.min(g.round,Math.max(0,Math.round(n*.65+high*.45)));p.mode="standard";g.bidsDone++;g.history.push(p.name+" bids "+p.bid);g.turn=(g.turn+1)%4}g.phase="playing";g.turn=g.leader;spSetLog("All bids are visible. "+g.history.slice(-4).join(" · "));spRenderDemo();spBotsPlayDemo()}
+function spLegal(hand,card){const g=spGame;if(!g.trick.length){if(card.suit!=="spades"||g.spadesBroken)return true;return !hand.some(c=>c.suit!=="spades")}const suit=g.trick[0].card.suit;return !hand.some(c=>c.suit===suit)||card.suit===suit}
+async function spPlayHuman(id){const g=spGame;if(!g||g.phase!=="playing"||g.turn!==2)return;const p=g.players[2],card=p.hand.find(c=>c.id===id);if(!card||!spLegal(p.hand,card)){spSetLog("Illegal move: follow suit when possible. Spades cannot be led until broken, unless you hold only Spades.");return}await spAcceptPlay(2,card);await spBotsPlayDemo()}
+async function spAcceptPlay(index,card){const g=spGame,p=g.players[index];p.hand=p.hand.filter(c=>c.id!==card.id);if(g.trick.length&&card.suit==="spades"&&g.trick[0].card.suit!=="spades"&&!p.hand.some(c=>c.suit===g.trick[0].card.suit))g.spadesBroken=true;g.trick.push({playerIndex:index,card});g.history.push(p.name+" plays "+spCardText(card));spSetLog(p.name+" played "+spCardText(card)+".");spRenderDemo();if(g.trick.length===4){spSetLog("All four cards are down. Review the trick…");await new Promise(resolve=>setTimeout(resolve,1500));const led=g.trick[0].card.suit;let win=g.trick[0];for(const x of g.trick.slice(1)){const a=x.card,b=win.card;if((a.suit==="spades"&&b.suit!=="spades")||(a.suit===b.suit&&a.value>b.value)||(a.suit===led&&b.suit!==led&&b.suit!=="spades"))win=x}g.players[win.playerIndex].tricks++;g.turn=win.playerIndex;g.tricksDone++;spSetLog(g.players[win.playerIndex].name+" wins the trick with "+spCardText(win.card)+".");spRenderDemo();await new Promise(resolve=>setTimeout(resolve,1100));g.trick=[];if(g.tricksDone===g.round){spFinishRoundDemo();return}}else g.turn=(index+1)%4;spRenderDemo()}
+async function spBotsPlayDemo(){const g=spGame;let guard=0;while(g&&g.phase==="playing"&&g.turn!==2&&guard++<52){await new Promise(resolve=>setTimeout(resolve,1150));const p=g.players[g.turn],legal=p.hand.filter(c=>spLegal(p.hand,c));const card=legal.sort((a,b)=>a.value-b.value)[0];if(!card)break;await spAcceptPlay(g.turn,card)}spRenderDemo()}
+function spFinishRoundDemo(){const g=spGame;const results=g.players.map(p=>{const bid=p.bid||0,w=p.tricks,m=p.mode;let pts=0,bags=0;if(bid===0){pts=0;if(w>0)bags=w}else if(w<bid)pts=-bid*(m==="blind"?20:10);else{bags=w-bid;pts=bid*(m==="blind"?20:10)}let total=p.bags+bags,penalty=0;while(total>=10){total-=10;penalty+=100}return{pts,bags:total,bagsAdded:bags,penalty,net:pts-penalty}});g.players.forEach((p,i)=>{Object.assign(p,{roundPoints:results[i].pts,bagPenalty:results[i].penalty,roundNet:results[i].net,bags:results[i].bags,score:p.score+results[i].net})});g.roundHistory.push({round:g.round,players:g.players.map((p,i)=>({id:p.id,name:p.name,bid:p.bid,mode:p.mode,tricks:p.tricks,points:results[i].pts,bagsAdded:results[i].bagsAdded,bagPenalty:results[i].penalty,net:results[i].net,totalBags:p.bags,totalScore:p.score}))});g.phase="score";g.scoreStarted=Date.now();spRenderDemo();spSetLog("Round "+g.round+" complete. Scoreboard will remain available for 15 seconds.");if(g.scoreTimer)clearTimeout(g.scoreTimer);g.scoreTimer=setTimeout(()=>{if(spGame===g&&g.phase==="score")spContinue()},15000);}
+function spContinue(){const g=spGame;if(!g||g.phase!=="score")return;if(g.scoreTimer)clearTimeout(g.scoreTimer);if(g.round===13){g.phase="finished";spRenderDemo();return}g.round++;g.dealer=(g.dealer+1)%4;spDealDemo()}
+function toggleSpadesScores(force){const panel=document.getElementById("spadesScoresPopover"),button=document.getElementById("spadesScoresToggle");if(!panel||!button)return;const open=typeof force==="boolean"?force:panel.hidden;panel.hidden=!open;button.setAttribute("aria-expanded",String(open))}
+function spSetLog(t){const el=document.getElementById("spadesLog");if(el)el.textContent=t}
+function spRenderDemo(){const g=spGame;if(!g)return;document.getElementById("spadesRoundTitle").textContent=g.phase==="finished"?"Match complete · Round 13":"Round "+g.round+" of 13 · "+g.phase;document.getElementById("spadesRoundMeta").textContent="♧  Round "+g.round+" / 13";const table=document.getElementById("spadesTable");table.innerHTML=g.players.map((p,i)=>{const active=g.phase==="playing"&&g.turn===i;const exposed=g.blindIndex===i;const avatarIds=[12,7,32,48];const cards=exposed?p.hand.map(spCardText).join(" "):p.hand.map(()=>"▰").join(" ");const played=g.trick.find(x=>x.playerIndex===i);return '<div class="seat '+spSeatClass[i]+(active?' active-turn':'')+'"><div class="seat-avatar" role="img" aria-label="Default player avatar"></div><div class="seat-info"><strong>'+p.name+'</strong><small>Tricks '+p.tricks+'</small>'+(exposed?'<div class="demo-help">Exposed: '+cards+'</div>':'')+'</div>'+(played?'<span class="playing-card trick-card played-card '+(["hearts","diamonds"].includes(played.card.suit)?"red":"")+'">'+spCardFace(played.card)+'</span>':'')+'<span class="seat-online"></span></div>'}).join("")
+/* Keep the hand panel in the document. Replacing table.innerHTML must never detach it. */
+const hand=document.getElementById("spadesHand");if(!hand){console.error("Spades hand panel is missing from the page.");return;}const maySeeHand=g.phase!=="bidding"||(g.turn===2&&(g.round<=12||g.humanBidMode==="standard"));hand.innerHTML=maySeeHand?g.players[2].hand.map(c=>'<button class="playing-card '+(["hearts","diamonds"].includes(c.suit)?"red":"")+'" '+(g.phase!=="playing"||g.turn!==2||!spLegal(g.players[2].hand,c)?"disabled":"")+' onclick="spPlayHuman(\''+c.id+'\')">'+spCardFace(c)+'</button>').join("")||'<span class="muted">No cards remaining.</span>':'<span class="muted">Choose Standard or Blind before viewing your cards.</span>';
+const controls=document.getElementById("spadesControls");if(g.phase==="bidding"&&g.turn===2){if(g.round===13&&!g.humanBidMode){controls.innerHTML='<label class="demo-help" for="spBidMode">Choose bid type</label><select id="spBidMode" aria-label="Choose bid type" onchange="spChooseBidMode(this.value)"><option value="" selected disabled>Select bid type</option><option value="standard">Standard bid</option><option value="blind">Blind bid</option></select>'}else{controls.innerHTML='<label class="demo-help" for="spBid">Choose your bid</label><select id="spBid" aria-label="Choose your bid" onchange="spSubmitBid()"><option value="" selected disabled>Select 0 to '+g.round+'</option>'+Array.from({length:g.round+1},(_,i)=>'<option value="'+i+'">'+i+'</option>').join("")+'</select>'}}else if(g.phase==="score"){controls.innerHTML='<button class="btn gold" onclick="spContinue()">'+(g.round===13?"Show final result":"Continue to next round")+'</button>'}else if(g.phase==="finished"){controls.innerHTML='<button class="btn gold" onclick="startSpadesDemo()">Play again</button>'}else{controls.innerHTML="";}
+const current=g.players.map(p=>'<article><b>'+p.name+'</b><strong>'+p.score+'</strong><small>Total score · '+p.bags+' bags carried</small></article>').join("");const rounds=g.roundHistory.map(row=>'<tr><th>Round '+row.round+'</th>'+row.players.map(p=>'<td>'+p.points+' pts<br><small>Bid '+(p.mode==="blind"?"Blind ":"")+p.bid+' · Tricks '+p.tricks+'<br>+'+p.bagsAdded+' bags · −'+p.bagPenalty+' penalty<br><b>Total '+p.totalScore+' · Bags '+p.totalBags+'</b></small></td>').join("")+'</tr>').join("");document.getElementById("spadesScoreboard").innerHTML='<div class="scores-current">'+current+'</div><div class="scores-ledger-wrap"><table class="scores-ledger"><thead><tr><th>Round</th>'+g.players.map(p=>'<th class="player-head">'+p.name+'</th>').join("")+'</tr></thead><tbody>'+(rounds||'<tr><td colspan="5">Round results will appear here after the first round is completed.</td></tr>')+'</tbody></table></div>'+(g.phase==="finished"?"<h3>Winner: "+g.players.slice().sort((a,b)=>b.score-a.score||b.bags-a.bags)[0].name+"</h3>":"")}
+</script>
+
+<style id="royal-club-no-table-final">
+/* Royal Club Spades: normal-flow board + full-width hand dock. */
+#page-spades.spades-demo{width:100%!important;max-width:none!important;margin:0!important;padding:0!important}
+#page-spades.spades-demo>.panel{width:100%!important;max-width:none!important;margin:0!important;padding:10px!important;background:transparent!important;border:0!important;box-shadow:none!important}
+#page-spades .pagehead{padding:8px 0!important}
+#page-spades .demo-top{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;margin:0 0 8px!important}
+#page-spades .spades-stage{position:relative!important;display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:minmax(310px,1fr) auto!important;gap:10px!important;width:100%!important;height:calc(100svh - 280px)!important;min-height:510px!important;max-height:720px!important;margin:0!important;padding:0!important;overflow:visible!important}
+#page-spades .spades-meta{position:absolute!important;z-index:20!important;top:8px!important;left:10px!important;right:10px!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important}
+#page-spades .spades-status-badges{display:flex!important;gap:7px!important}
+#page-spades .spades-status-badges>span,#page-spades .scores-toggle{padding:7px 11px!important;border:1px solid #c5a45b!important;border-radius:20px!important;background:#08291f!important;color:#f8edcf!important;font-size:12px!important}
+#page-spades .scores-popover{position:absolute!important;z-index:25!important;top:48px!important;right:8px!important}
+#page-spades .demo-table{position:relative!important;inset:auto!important;grid-row:1!important;display:block!important;width:100%!important;height:100%!important;min-height:0!important;margin:0!important;padding:0!important;overflow:visible!important;box-sizing:border-box!important;border:1px solid #b8954e!important;border-radius:12px!important;background:radial-gradient(ellipse at 50% 48%,#08714d 0%,#07583d 54%,#043824 100%)!important;box-shadow:inset 0 0 0 3px #173b2b,inset 0 0 50px #00180f99!important}
+#page-spades .demo-table:before{content:""!important;position:absolute!important;inset:12px!important;border:1px solid #d5b96b55!important;border-radius:6px!important;pointer-events:none!important}
+#page-spades .demo-table:after{content:"♠"!important;position:absolute!important;left:50%!important;top:50%!important;transform:translate(-50%,-50%)!important;color:#e7d09a12!important;font:clamp(90px,15vw,190px) Georgia,serif!important;pointer-events:none!important}
+#page-spades .seat{position:absolute!important;z-index:4!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:3px!important;width:max-content!important;max-width:140px!important;min-width:0!important;height:auto!important;min-height:0!important;margin:0!important;padding:5px 8px!important;border:1px solid #c3a45b!important;border-radius:13px!important;background:linear-gradient(180deg,#092b20ed,#041e17f2)!important;box-shadow:0 4px 12px #00180f66!important;text-align:center!important}
+#page-spades .seat.north{top:55px!important;left:50%!important;right:auto!important;bottom:auto!important;transform:translateX(-50%)!important}
+#page-spades .seat.west{top:50%!important;left:16px!important;right:auto!important;bottom:auto!important;transform:translateY(-50%)!important}
+#page-spades .seat.east{top:50%!important;right:16px!important;left:auto!important;bottom:auto!important;transform:translateY(-50%)!important}
+#page-spades .seat.south{bottom:14px!important;left:50%!important;right:auto!important;top:auto!important;transform:translateX(-50%)!important}
+#page-spades .seat.center{position:absolute!important;top:50%!important;left:50%!important;right:auto!important;bottom:auto!important;transform:translate(-50%,-50%)!important;display:flex!important;min-width:100px!important;min-height:90px!important;padding:6px!important;background:transparent!important;border:0!important;box-shadow:none!important;z-index:3!important}
+#page-spades .seat-avatar{width:40px!important;height:40px!important;flex:0 0 40px!important}
+#page-spades .seat strong{font-size:12px!important;line-height:1.2!important;white-space:nowrap!important;color:#fff3d8!important}
+#page-spades .seat small{font-size:10px!important;color:#e7d39f!important}
+#page-spades .seat.active-turn:not(.center){border-color:#f2d27c!important;box-shadow:0 0 0 2px #d5ad5877,0 5px 15px #00180f99!important}
+#page-spades .seat .played-card,#page-spades .seat .trick-card{position:absolute!important;z-index:8!important;width:52px!important;min-width:52px!important;height:74px!important;min-height:74px!important}
+#page-spades .seat.north .played-card,#page-spades .seat.north .trick-card{top:calc(100% + 5px)!important;left:50%!important;transform:translateX(-50%)!important}
+#page-spades .seat.south .played-card,#page-spades .seat.south .trick-card{bottom:calc(100% + 5px)!important;left:50%!important;top:auto!important;transform:translateX(-50%)!important}
+#page-spades .seat.west .played-card,#page-spades .seat.west .trick-card{top:50%!important;left:calc(100% + 7px)!important;transform:translateY(-50%)!important}
+#page-spades .seat.east .played-card,#page-spades .seat.east .trick-card{top:50%!important;right:calc(100% + 7px)!important;left:auto!important;transform:translateY(-50%)!important}
+#page-spades .hand-panel{position:relative!important;inset:auto!important;grid-row:2!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:center!important;box-sizing:border-box!important;width:100%!important;max-width:none!important;min-width:0!important;min-height:150px!important;max-height:190px!important;margin:0!important;padding:7px 12px!important;overflow:hidden!important;border:1px solid #b8954e!important;border-radius:12px!important;background:linear-gradient(180deg,#09291f,#041b14)!important;box-shadow:0 7px 18px #00160e55!important}
+#page-spades .hand-panel>.eyebrow{text-align:center!important;font-size:9px!important;font-weight:800!important;letter-spacing:.18em!important;color:#e8d39d!important;margin:0 0 4px!important}
+#page-spades #spadesHand{display:flex!important;flex:1 1 auto!important;align-items:flex-end!important;justify-content:center!important;flex-wrap:nowrap!important;gap:clamp(1px,.3vw,5px)!important;width:100%!important;min-width:0!important;min-height:0!important;height:auto!important;margin:0!important;padding:2px 4px!important;overflow-x:auto!important;overflow-y:hidden!important;box-sizing:border-box!important}
+#page-spades #spadesHand .playing-card{position:relative!important;flex:0 0 clamp(38px,4.3vw,60px)!important;width:clamp(38px,4.3vw,60px)!important;min-width:clamp(38px,4.3vw,60px)!important;height:clamp(58px,7vw,84px)!important;min-height:clamp(58px,7vw,84px)!important;margin:0!important;padding:5px!important;border-radius:7px!important;background:linear-gradient(145deg,#fffef9,#eee9dc)!important;box-shadow:0 4px 10px #00170f66!important}
+#page-spades .demo-controls{position:relative!important;display:flex!important;justify-content:center!important;align-items:center!important;gap:9px!important;flex:0 0 auto!important;min-height:0!important;margin:5px 0 0!important;padding:0!important;border:0!important;background:transparent!important}
+#page-spades .demo-controls:empty{display:none!important}
+#page-spades .demo-controls select{min-width:190px!important;min-height:34px!important;padding:5px 10px!important;background:#f5f0e4!important;color:#17251e!important;border-radius:8px!important}
+#page-spades .demo-log{min-height:14px!important;margin:3px 0 0!important;padding:0!important;border:0!important;background:transparent!important;text-align:center!important;font-size:10px!important;color:#dfd3b7!important}
+@media(max-width:760px){
+ #page-spades.spades-demo>.panel{padding:5px!important}
+ #page-spades .pagehead{padding:5px 0!important}
+ #page-spades .spades-stage{height:calc(100svh - 230px)!important;min-height:460px!important;grid-template-rows:minmax(280px,1fr) auto!important;gap:7px!important}
+ #page-spades .seat{max-width:92px!important;padding:4px 5px!important}
+ #page-spades .seat.north{top:45px!important}
+ #page-spades .seat.west{left:5px!important}
+ #page-spades .seat.east{right:5px!important}
+ #page-spades .seat.south{bottom:8px!important}
+ #page-spades .seat-avatar{width:32px!important;height:32px!important;flex-basis:32px!important}
+ #page-spades .seat strong{font-size:10px!important}
+ #page-spades .seat small{font-size:8px!important}
+ #page-spades .seat .played-card,#page-spades .seat .trick-card{width:38px!important;min-width:38px!important;height:55px!important;min-height:55px!important}
+ #page-spades .seat.center{min-width:74px!important;min-height:65px!important}
+ #page-spades .hand-panel{min-height:125px!important;max-height:155px!important;padding:4px!important}
+ #page-spades #spadesHand{justify-content:flex-start!important;gap:2px!important}
+ #page-spades #spadesHand .playing-card{flex-basis:clamp(28px,7vw,40px)!important;width:clamp(28px,7vw,40px)!important;min-width:clamp(28px,7vw,40px)!important;height:clamp(43px,10vw,58px)!important;min-height:clamp(43px,10vw,58px)!important;padding:3px!important}
+ #page-spades .demo-controls select{min-width:150px!important}
+}
+</style>
+</body></html>

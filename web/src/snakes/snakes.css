@@ -1,0 +1,75 @@
+/* ===== Snakes & Ladders (Royal Club): emerald room, ivory and gold board, mobile first ===== */
+.app-shell:has(.sl-screen){height:100svh;min-height:0;overflow:hidden;background:radial-gradient(ellipse at 50% 38%,#0c573d 0%,#073b2b 48%,#041d16 100%)}
+.app-shell:has(.sl-screen) .topbar,.app-shell:has(.sl-screen) footer{display:none}
+.app-shell:has(.sl-screen) main{display:flex;flex-direction:column;min-height:0}
+.sl-screen{flex:1;min-height:0;display:flex;flex-direction:column;gap:8px;padding:6px 0 10px}
+.sl-toolbar{height:36px;flex:0 0 36px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sl-toolbar .back-link{margin:0;font-size:12px}
+.sl-toolbar strong{font-size:11px;letter-spacing:.14em;color:#f1dfb4;text-align:center}
+.sl-toolbar strong span{display:block;margin-top:1px;font-size:9px;letter-spacing:.2em;color:#d9b96f}
+.sl-main{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;gap:10px}
+.sl-board-wrap{position:relative;width:min(100%,calc(100svh - 280px));min-width:min(100%,280px);aspect-ratio:1;max-width:100%;padding:6px;border:1px solid #c3a45b;border-radius:14px;background:linear-gradient(145deg,#0d3a2b,#06251b);box-shadow:inset 0 0 0 3px #173b2b,0 14px 34px #0007}
+.sl-board{display:block;width:100%;height:100%;border-radius:8px}
+.sl-panel{width:100%;max-width:560px;display:grid;gap:8px;align-content:start}
+.sl-players{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.sl-players li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;padding:6px 10px;border:1px solid #315344;border-radius:10px;background:#08291fcc;font-size:13px;color:#f6f0df}
+.sl-players li.turn{border-color:#d9b96f;box-shadow:inset 0 0 0 1px #d9b96f66;background:#0d3527}
+.sl-players em{font-style:normal;color:#e5a0a0;font-size:11px}
+.sl-dot{width:14px;height:14px;border-radius:50%;box-shadow:0 0 0 2px #fffaf0}
+.sl-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.sl-sq{font-variant-numeric:tabular-nums;font-weight:800;color:#f0d99d}
+.sl-dock{display:flex;align-items:center;gap:12px;padding:8px 10px;border:1px solid #a9894b;border-radius:12px;background:linear-gradient(180deg,#0b3023,#041c14)}
+.sl-dock-main{flex:1;display:flex;align-items:center;gap:10px;min-width:0}
+.sl-roll{flex:1;min-height:46px;font-size:17px}
+.sl-msg{margin:0;min-height:2.6em;text-align:center;color:#f1e3bd;font-size:13px;line-height:1.35}
+.sl-small{margin:0;text-align:center;color:#c9b77f;font-size:11px}
+.sl-die{width:56px;height:56px;flex:none;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:8px;border-radius:12px;background:linear-gradient(145deg,#fffefa,#eee6d2);border:1px solid #d9c79a;box-shadow:inset 0 -3px 0 #e2d4b0,0 5px 12px #0006}
+.sl-die i{width:9px;height:9px;border-radius:50%;place-self:center}
+.sl-die i.on{background:#0d3b2b}
+.sl-die.spin{animation:slSpin .65s ease-out}
+@keyframes slSpin{0%{transform:rotate(0) scale(1)}50%{transform:rotate(200deg) scale(1.12)}100%{transform:rotate(360deg) scale(1)}}
+.sl-win,.sl-rules{position:absolute;inset:6px;border-radius:8px;display:grid;place-content:center;justify-items:center;gap:8px;padding:16px;text-align:center;background:rgba(4,29,22,.86);color:#f6f0df}
+.sl-win h2{margin:0;font:600 clamp(28px,7vw,44px)/1.1 'Playfair Display',serif;color:#f0d99d}
+.sl-win p{margin:0;color:#d6e2da}
+.sl-win-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:6px}
+.sl-rules{justify-items:start;text-align:left;place-content:center start;padding:18px 22px;font-size:13px;line-height:1.5}
+.sl-rules ul{margin:0;padding-left:18px;display:grid;gap:4px}
+.sl-rules b{color:#f0d99d}
+.sl-bots{display:flex;align-items:center;gap:6px;margin:0 0 12px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#c9b77f}
+.sl-bots span{margin-right:6px}
+.sl-bots button{width:38px;height:32px;border:1px solid #41634f;border-radius:8px;background:#09241b;color:#f6f0df;font-weight:800}
+.sl-bots button.on{border-color:#d9b96f;background:linear-gradient(135deg,#f0d99d,#c79f50);color:#14251c}
+.sl-screen button:focus-visible,.sl-mode button:focus-visible{outline:2px solid #f0d99d;outline-offset:2px}
+
+/* Phone portrait: board fills the width, everything fits one screen */
+@media (max-width:760px) and (orientation:portrait){
+  .sl-screen{gap:6px;padding:4px 0 8px}
+  .sl-board-wrap{width:min(100%,calc(100svh - 300px));padding:4px}
+  .sl-win,.sl-rules{inset:4px}
+  .sl-players li{padding:5px 8px;font-size:12px}
+  .sl-rules{padding:12px 14px;font-size:12px}
+}
+/* Phone landscape: board on the left at full height, controls on the right */
+@media (orientation:landscape) and (max-height:520px){
+  .sl-screen{gap:4px;padding:3px 0 4px}
+  .sl-toolbar{height:26px;flex-basis:26px}
+  .sl-toolbar strong span{display:inline;margin-left:8px}
+  .sl-main{flex-direction:row;align-items:stretch;justify-content:center;gap:14px}
+  .sl-board-wrap{width:auto;height:100%;min-width:0;padding:4px}
+  .sl-win,.sl-rules{inset:4px}
+  .sl-panel{flex:1;max-width:380px;gap:6px;align-content:center}
+  .sl-players li{padding:4px 8px;font-size:12px}
+  .sl-die{width:46px;height:46px;padding:6px}
+  .sl-die i{width:8px;height:8px}
+  .sl-roll{min-height:40px;font-size:15px}
+  .sl-msg{font-size:12px}
+  .sl-rules{font-size:11.5px;padding:10px 14px}
+}
+/* Tablets and laptops: board and panel side by side */
+@media (min-width:900px) and (min-height:521px){
+  .sl-main{flex-direction:row;align-items:flex-start;justify-content:center;gap:22px}
+  .sl-board-wrap{width:min(640px,calc(100svh - 80px))}
+  .sl-panel{width:320px;flex:none}
+  .sl-players{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){.sl-die.spin{animation:none}}

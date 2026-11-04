@@ -1,0 +1,24 @@
+name: Spades rules tests
+
+on:
+  push:
+    branches: [royal-club-portal]
+  pull_request:
+    branches: [main]
+    paths:
+      - "spades/**"
+      - "package.json"
+      - ".github/workflows/spades-tests.yml"
+
+jobs:
+  spades-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run Spades rules tests
+        run: npm run test:spades

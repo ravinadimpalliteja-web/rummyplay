@@ -1,0 +1,8 @@
+{
+  "name": "royal-club",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:spades": "node --test spades/*.test.js"
+  }
+}

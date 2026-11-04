@@ -136,7 +136,7 @@ export function scoreBid({ bid, tricksWon, mode = "standard", roundNumber = 1 })
 
   if (tricksWon < bid) {
     return {
-      points: -(bid * (mode === "blind" ? 20 : 10)),
+      points: -(bid * 10),
       bagsAdded: 0, success: false, nil: false
     };
   }
@@ -144,7 +144,8 @@ export function scoreBid({ bid, tricksWon, mode = "standard", roundNumber = 1 })
   // Overtricks are bags only. Bags are tracked separately and never add points.
   const overtricks = tricksWon - bid;
   return {
-    points: bid * (mode === "blind" ? 20 : 10),
+    // Blind bids have no multiplier; the only blind-specific scoring is Round 13 Blind Nil (+/-100).
+    points: bid * 10,
     bagsAdded: overtricks, success: true, nil: false
   };
 }

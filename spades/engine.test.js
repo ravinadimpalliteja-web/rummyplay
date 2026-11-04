@@ -52,8 +52,11 @@ test("standard and blind scoring examples match the agreed rules", () => {
   });
   assert.equal(scoreBid({bid:3,tricksWon:5}).points, 30);
   assert.equal(scoreBid({bid:3,tricksWon:5}).bagsAdded, 2);
-  assert.equal(scoreBid({bid:2,tricksWon:1,mode:"blind",roundNumber:13}).points, -40);
-  assert.equal(scoreBid({bid:2,tricksWon:4,mode:"blind",roundNumber:13}).points, 40);
+  assert.equal(scoreBid({bid:2,tricksWon:1,mode:"blind",roundNumber:13}).points, -20);
+  assert.equal(scoreBid({bid:2,tricksWon:4,mode:"blind",roundNumber:13}).points, 20);
+  // No blind multiplier: a blind bid above zero scores exactly like a normal bid.
+  assert.equal(scoreBid({bid:3,tricksWon:3,mode:"blind",roundNumber:13}).points, scoreBid({bid:3,tricksWon:3,roundNumber:13}).points);
+  assert.equal(scoreBid({bid:3,tricksWon:2,mode:"blind",roundNumber:13}).points, -30);
 });
 
 test("Zero bids score zero through round 12 and tricks taken become bags", () => {

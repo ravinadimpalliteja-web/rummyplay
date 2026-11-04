@@ -266,3 +266,22 @@
   line-height:1;
   font-weight:600;
 }
+
+
+/* Final requested refinements: preserve North name readability, keep South cards visible,
+   and make the numeric bid match the BID label exactly. */
+.player-seat.north {
+  background: rgba(4, 25, 18, 0.97);
+  border-color: rgba(211, 185, 112, 0.16);
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.18);
+}
+.hand-cards .playing-card:disabled {
+  opacity: 1;
+  filter: none;
+}
+.player-seat .bid-badge .bid-label,
+.player-seat .bid-badge .bid-value {
+  font-size: 15px;
+  line-height: 1;
+  font-weight: 700;
+}

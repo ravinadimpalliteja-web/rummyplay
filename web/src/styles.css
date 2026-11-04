@@ -123,3 +123,21 @@
 @media(max-width:760px){.score-panel.score-panel-wide{inset:2vh 2vw;max-height:96vh;padding:14px 12px}.score-panel-heading h3{font-size:22px}.score-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:10px 0}.score-summary-card{padding:8px}.score-table th,.score-table td{padding:8px}.trick-announcement{top:13%;font-size:10px}}
 
 .round-transition{display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;padding:9px 12px;border:1px solid #9b814a88;border-radius:9px;background:#0b3528;color:#f1dfb2}.round-transition p{margin:0;color:#d9e4d9;font-size:12px}.round-transition p strong{display:inline-flex;min-width:22px;justify-content:center;color:#f5d98e;font-size:17px}
+
+/* Clear dealer marker and prominent bid display */
+.dealer-tag{display:inline-flex;align-items:center;gap:4px;margin-left:7px;padding:3px 7px;border:1px solid #e5c779;border-radius:5px;background:linear-gradient(135deg,#f0d99d,#c79f50);color:#173225;font-size:9px;font-weight:900;letter-spacing:.08em;vertical-align:middle;text-shadow:none}
+.player-stats{display:flex;align-items:center;justify-content:center;gap:7px}
+.bid-badge{display:inline-flex;align-items:center;justify-content:center;min-width:54px;padding:4px 9px;border:1px solid #e3c477;border-radius:6px;background:#f0d99d;color:#173225;font-size:12px;font-weight:900;letter-spacing:.04em;text-shadow:none;box-shadow:0 2px 8px #00180f66}
+.bid-row label{font-size:15px;font-weight:800;color:#f4e4bd}
+.bid-row select{min-height:40px;padding:8px 13px;font-size:15px;font-weight:800;border:2px solid #e2c477;border-radius:8px;background:#f4e8c9;color:#173225;box-shadow:0 3px 12px #00180f66}
+.bid-row .gold-button{min-height:40px;padding:9px 18px;font-size:14px;font-weight:900}
+.score-matrix{min-width:900px;table-layout:fixed}
+.score-matrix thead th:first-child,.score-matrix tbody th{width:100px}
+.score-matrix thead th:not(:first-child){text-align:center;font-size:13px}
+.score-matrix tbody th{background:#123c2c;color:#e9d6a2;text-align:left;position:sticky;left:0}
+.score-matrix td{vertical-align:top;padding:9px 12px}
+.round-cell{display:flex;flex-direction:column;gap:5px;min-width:130px}
+.round-cell strong{font-size:15px}
+.round-cell span{font-size:10px;color:#c5d5ca}
+.round-cell b{font-size:11px;color:#f0d99d;padding-top:4px;border-top:1px solid #ffffff20}
+@media(max-width:760px){.dealer-tag{font-size:8px;padding:2px 5px}.bid-badge{font-size:10px;min-width:45px;padding:3px 6px}.score-matrix{min-width:760px}}

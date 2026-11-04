@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   createDeck, dealRound, getRoundDealer, validateBid, scoreBid,
-  applyRoundScoring, chooseWinner, isLegalPlay, resolveTrick
+  applyRoundScoring, chooseWinner, isLegalPlay, resolveTrick, RULE_CONFIG, BLIND_ZERO_SCORERS
 } from "./engine.js";
 
 test("deck contains 52 unique cards", () => {
@@ -52,11 +52,8 @@ test("standard and blind scoring examples match the agreed rules", () => {
   });
   assert.equal(scoreBid({bid:3,tricksWon:5}).points, 30);
   assert.equal(scoreBid({bid:3,tricksWon:5}).bagsAdded, 2);
-  assert.equal(scoreBid({bid:2,tricksWon:1,mode:"blind",roundNumber:13}).points, -20);
-  assert.equal(scoreBid({bid:2,tricksWon:4,mode:"blind",roundNumber:13}).points, 20);
-  // No blind multiplier: a blind bid above zero scores exactly like a normal bid.
-  assert.equal(scoreBid({bid:3,tricksWon:3,mode:"blind",roundNumber:13}).points, scoreBid({bid:3,tricksWon:3,roundNumber:13}).points);
-  assert.equal(scoreBid({bid:3,tricksWon:2,mode:"blind",roundNumber:13}).points, -30);
+  assert.equal(scoreBid({bid:2,tricksWon:1,mode:"blind",roundNumber:13}).points, -40);
+  assert.equal(scoreBid({bid:2,tricksWon:4,mode:"blind",roundNumber:13}).points, 40);
 });
 
 test("Zero bids score zero through round 12 and tricks taken become bags", () => {
@@ -71,12 +68,12 @@ test("Zero bids score zero through round 12 and tricks taken become bags", () =>
   assert.equal(scoreBid({bid:0,tricksWon:1,mode:"standard",roundNumber:12}).bagsAdded, 1);
 });
 
-test("Round 13 standard zero stays zero; blind zero follows the current special scoring rule", () => {
+test("Round 13 standard zero stays zero; Blind Zero is unconfirmed and scores like a normal zero (no +/-100)", () => {
   assert.equal(scoreBid({bid:0,tricksWon:0,roundNumber:13}).points, 0);
   assert.equal(scoreBid({bid:0,tricksWon:2,roundNumber:13}).points, 0);
   assert.equal(scoreBid({bid:0,tricksWon:2,roundNumber:13}).bagsAdded, 2);
-  assert.equal(scoreBid({bid:0,tricksWon:0,mode:"blind",roundNumber:13}).points, 100);
-  assert.equal(scoreBid({bid:0,tricksWon:1,mode:"blind",roundNumber:13}).points, -100);
+  assert.equal(scoreBid({bid:0,tricksWon:0,mode:"blind",roundNumber:13}).points, 0);
+  assert.equal(scoreBid({bid:0,tricksWon:1,mode:"blind",roundNumber:13}).points, 0);
   assert.equal(scoreBid({bid:0,tricksWon:1,mode:"blind",roundNumber:13}).bagsAdded, 1);
   assert.throws(() => scoreBid({bid:1,tricksWon:1,mode:"blind",roundNumber:12}), /only in round 13/);
 });
@@ -98,8 +95,8 @@ test("round-aware cumulative scoring applies Nil rules and carries bags", () => 
     {bid:0,tricksWon:0,mode:"blind"},{bid:0,tricksWon:1,mode:"blind"},
     {bid:0,tricksWon:0,mode:"standard"},{bid:0,tricksWon:2,mode:"standard"}
   ], 13);
-  assert.equal(round13[0].roundNet, 100);
-  assert.equal(round13[1].roundPoints, -100);
+  assert.equal(round13[0].roundNet, 0);
+  assert.equal(round13[1].roundPoints, 0);
   assert.equal(round13[1].bags, 1);
   assert.equal(round13[2].roundNet, 0);
   assert.equal(round13[3].roundNet, 0);
@@ -186,4 +183,67 @@ test("highest trump wins a trick", () => {
     {playerIndex:3,card:{suit:"hearts",rank:"K"}}
   ];
   assert.equal(resolveTrick(trick,0).winner, 2);
+});
+
+// ---- Worked examples from the final Royal Club Spades rules document ----
+const four = (over = {}) => [0, 1, 2, 3].map((i) => ({ id: "p" + i, score: 0, bags: 0, ...(over[i] || {}) }));
+
+test("doc §7A-C: standard scoring tables", () => {
+  for (const [b, t, p] of [[1,1,10],[2,2,20],[3,3,30],[5,5,50],[8,8,80]]) assert.equal(scoreBid({bid:b,tricksWon:t}).points, p);
+  for (const [b, t, p, g] of [[1,2,10,1],[2,3,20,1],[3,5,30,2],[4,6,40,2]]) {
+    const r = scoreBid({bid:b,tricksWon:t}); assert.equal(r.points, p); assert.equal(r.bagsAdded, g);
+  }
+  for (const [b, t, p] of [[2,1,-20],[3,2,-30],[5,3,-50],[8,6,-80]]) {
+    const r = scoreBid({bid:b,tricksWon:t}); assert.equal(r.points, p); assert.equal(r.bagsAdded, 0);
+  }
+});
+
+test("doc §7D: zero bid is never a Nil bonus; every trick is a bag", () => {
+  for (const t of [0, 1, 2, 3, 4]) {
+    const r = scoreBid({bid:0,tricksWon:t,roundNumber:5});
+    assert.equal(r.points, 0); assert.equal(r.bagsAdded, t);
+  }
+});
+
+test("doc §8: blind bids above zero use x20; extra tricks are bags only", () => {
+  const B = (bid, tricksWon) => scoreBid({bid,tricksWon,mode:"blind",roundNumber:13});
+  for (const [b, t, p] of [[3,3,60],[5,5,100],[8,8,160],[10,10,200]]) assert.equal(B(b,t).points, p);
+  for (const [b, t, p, g] of [[3,4,60,1],[5,7,100,2],[8,10,160,2]]) { assert.equal(B(b,t).points, p); assert.equal(B(b,t).bagsAdded, g); }
+  for (const [b, t, p] of [[5,4,-100],[8,6,-160],[10,7,-200]]) { assert.equal(B(b,t).points, p); assert.equal(B(b,t).bagsAdded, 0); }
+});
+
+test("doc §8D / §14.11: Blind Zero has no unconfirmed +/-100 and is kept configurable", () => {
+  for (const t of [0, 1, 3]) {
+    const r = scoreBid({bid:0,tricksWon:t,mode:"blind",roundNumber:13});
+    assert.equal(r.points, 0); assert.equal(r.bagsAdded, t);
+  }
+  assert.equal(RULE_CONFIG.blindZero, "standard");
+  assert.equal(typeof BLIND_ZERO_SCORERS.standard, "function");
+});
+
+test("doc §9: bag penalty table", () => {
+  const rows = [[0,1,0,1],[1,1,0,2],[5,2,0,7],[8,1,0,9],[9,1,100,0],[8,4,100,2],[7,13,200,0],[9,12,200,1]];
+  for (const [prev, add, pen, rem] of rows) {
+    const next = applyRoundScoring(four({0:{bags:prev}}), [{bid:0,tricksWon:add},{bid:0,tricksWon:0},{bid:0,tricksWon:0},{bid:0,tricksWon:0}], 5);
+    assert.equal(next[0].bagPenalty, pen, `penalty ${prev}+${add}`);
+    assert.equal(next[0].bags, rem, `remaining ${prev}+${add}`);
+    assert.equal(next[0].roundPoints, 0, "bags are never points");
+    assert.equal(next[0].score, 0 - pen);
+  }
+});
+
+test("doc §10: scoreboard example (score 100, bags 8, bid 2, won 4)", () => {
+  const next = applyRoundScoring(four({0:{score:100,bags:8}}), [{bid:2,tricksWon:4},{bid:0,tricksWon:0},{bid:0,tricksWon:0},{bid:0,tricksWon:0}], 6);
+  const p = next[0];
+  assert.equal(p.roundPoints, 20);
+  assert.equal(p.bagPenalty, 100);
+  assert.equal(p.bags, 0);
+  assert.equal(p.score, 20);
+});
+
+test("doc §12: highest score wins; tied scores are reported as tied (no bag tie-breaker)", () => {
+  const players = [{id:"a",score:50,bags:9},{id:"b",score:50,bags:0},{id:"c",score:10,bags:0},{id:"d",score:0,bags:0}];
+  const r = chooseWinner(players);
+  assert.deepEqual(r.winners, ["a","b"]);
+  assert.equal(r.sharedWin, true);
 });

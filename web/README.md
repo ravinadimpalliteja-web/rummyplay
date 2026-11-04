@@ -21,7 +21,7 @@ npm run build
 - First web release includes Practice Mode and Online Multiplayer.
 - Both modes use the same Spades domain rules and game state model.
 - Practice opponents are local computer players.
-- Online matches use authoritative server-side game state and four registered human players.
+- Online matches use authoritative server-side game state and four real human players (see `/server`; set `VITE_ROOM_SERVER_URL` to its WebSocket address).
 - Rummy is a later game module and is not part of the first release.
 - No real-money gaming, deposits, wagers, or cash prizes.
 

@@ -1,0 +1,10 @@
+{
+  "name": "royal-club-room-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Royal Club Spades - live room server (4 real players, no computer players). Zero dependencies.",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": { "start": "node server.js", "test": "node test/engine.test.js && node test/room.test.js" },
+  "engines": { "node": ">=18" }
+}

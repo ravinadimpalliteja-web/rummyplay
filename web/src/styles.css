@@ -506,3 +506,7 @@
   .room-seats li{padding:5px 10px;font-size:12px}
   .room-share b{font-size:20px}
 }
+
+/* Live room: final result line in the scorecard */
+.score-panel .final-line{margin:6px 0 10px;padding:8px 12px;border:1px solid rgba(214,181,106,.45);border-radius:10px;background:rgba(214,181,106,.08);color:#f5ecd2;font-size:14px}
+.score-panel .final-line b{color:#e9cf8f}

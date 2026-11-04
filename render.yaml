@@ -1,0 +1,10 @@
+# One-click host for the Royal Club room server (Render "Blueprint"). The website itself stays on Netlify.
+services:
+  - type: web
+    name: royal-club-rooms
+    runtime: node
+    rootDir: server
+    plan: free
+    buildCommand: echo "nothing to build"
+    startCommand: node server.js
+    healthCheckPath: /healthz

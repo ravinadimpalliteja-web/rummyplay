@@ -201,7 +201,7 @@
 
 /* Final trick-card anchors: keep North and South cards distinct. */
 .app-shell:has(.game-screen) .game-board .trick-area .trick-card.p1{
-  top:14%;
+  top:10%;
   left:50%;
   right:auto;
   bottom:auto;
@@ -214,3 +214,13 @@
   bottom:18%;
   transform:translateX(-50%);
 }
+/* Trick cards are slightly shorter than hand cards so the north/south
+   play zones retain a visible gap without shrinking the player's hand. */
+.app-shell:has(.game-screen) .game-board .trick-area .trick-card .playing-card.small{
+  width:76px;
+  height:108px;
+  min-width:76px;
+}
+.app-shell:has(.game-screen) .game-board .trick-area .trick-card .playing-card.small>b{font-size:40px}
+.app-shell:has(.game-screen) .game-board .trick-area .trick-card .playing-card.small span{font-size:13px}
+.app-shell:has(.game-screen) .game-board .trick-area .trick-card .playing-card.small i{font-size:12px}

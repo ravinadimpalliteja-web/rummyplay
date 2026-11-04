@@ -91,3 +91,6 @@
  .trick-card.p1{top:15%}
  .trick-card.p0{bottom:14%}
 }
+
+.player-seat.is-turn .avatar{box-shadow:0 0 0 4px #e4c87a35,0 0 24px #f0d99d88}
+.player-seat.is-turn b{color:#f5d98e}

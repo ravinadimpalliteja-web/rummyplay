@@ -422,3 +422,7 @@
   .game-info p{font-size:11px;line-height:1.4;min-height:0;margin:2px 0 4px}
   .game-info .text-button{padding:2px 0;font-size:12px}
 }
+
+/* Spades card: bold capitals in gold + white, and a gold-ringed emblem badge. Indian Rummy card is unchanged. */
+.game-info h3.game-title-spades{font-weight:800;text-transform:uppercase;letter-spacing:.14em;display:inline-block;background:linear-gradient(90deg,#ffffff 0%,#f6e4ae 45%,#d9b96f 100%);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+.game-art .spade-emblem{width:min(70%,110px);height:auto;filter:drop-shadow(0 0 9px rgba(227,198,119,.55))}

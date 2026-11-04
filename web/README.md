@@ -19,7 +19,7 @@ npm run build
 ## Product decisions
 
 - First web release includes Practice Mode and Online Multiplayer.
-- Both modes use the same Progressive Spades domain rules and game state model.
+- Both modes use the same Spades domain rules and game state model.
 - Practice opponents are local computer players.
 - Online matches use authoritative server-side game state and four registered human players.
 - Rummy is a later game module and is not part of the first release.

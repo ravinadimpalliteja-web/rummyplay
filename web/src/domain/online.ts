@@ -34,21 +34,22 @@ const memory:Record<string,string>={};
 const read=(k:string)=>{try{return window.localStorage.getItem(k)}catch{return memory[k]??null}};
 const write=(k:string,v:string|null)=>{try{if(v===null)window.localStorage.removeItem(k);else window.localStorage.setItem(k,v)}catch{if(v===null)delete memory[k];else memory[k]=v}};
 export const deviceToken=():string=>{let t=read(TOKEN_KEY);if(!t||!/^[A-Za-z0-9_-]{8,64}$/.test(t)){const b=new Uint8Array(18);crypto.getRandomValues(b);t=Array.from(b,x=>x.toString(36).padStart(2,"0")).join("").slice(0,32);write(TOKEN_KEY,t)}return t};
-export const savedRoom=():string|null=>read(ROOM_KEY);
-export const saveRoom=(code:string|null)=>write(ROOM_KEY,code);
+/* Each game keeps its own saved room, so a Spades refresh never resumes a Snakes & Ladders room or the reverse. */
+export const savedRoom=(key:string=ROOM_KEY):string|null=>read(key);
+export const saveRoom=(code:string|null,key:string=ROOM_KEY)=>write(key,code);
 export const randomPasscode=()=>{const b=new Uint32Array(1);crypto.getRandomValues(b);return String(b[0]%10000).padStart(4,"0")};
 
 /* ---------- connection ---------- */
 export type NetStatus="idle"|"connecting"|"open"|"down";
 export class RoomClient{
   private ws:WebSocket|null=null;private closed=false;private retries=0;private timer=0;
-  constructor(private url:string,private first:object,private onMessage:(m:Record<string,unknown>)=>void,private onStatus:(s:NetStatus)=>void){this.connect()}
+  constructor(private url:string,private first:object,private onMessage:(m:Record<string,unknown>)=>void,private onStatus:(s:NetStatus)=>void,private opts:{roomKey?:string;game?:string}={}){this.connect()}
   private connect(){
     this.onStatus("connecting");
     const ws=new WebSocket(this.url);this.ws=ws;
-    ws.onopen=()=>{this.retries=0;this.onStatus("open");const code=savedRoom();ws.send(JSON.stringify(code?{t:"hello",code,token:deviceToken()}:this.first))};
+    ws.onopen=()=>{this.retries=0;this.onStatus("open");const code=savedRoom(this.opts.roomKey);ws.send(JSON.stringify(code?{t:"hello",code,token:deviceToken(),...(this.opts.game?{game:this.opts.game}:{})}:this.first))};
     ws.onmessage=e=>{try{this.onMessage(JSON.parse(String(e.data)))}catch{/* ignore malformed */}};
-    ws.onclose=()=>{if(this.closed||this.ws!==ws)return;this.ws=null;if(!savedRoom()){this.onStatus("idle");return}this.onStatus("down");this.timer=window.setTimeout(()=>this.connect(),Math.min(8000,700*2**this.retries++))};
+    ws.onclose=()=>{if(this.closed||this.ws!==ws)return;this.ws=null;if(!savedRoom(this.opts.roomKey)){this.onStatus("idle");return}this.onStatus("down");this.timer=window.setTimeout(()=>this.connect(),Math.min(8000,700*2**this.retries++))};
   }
   send(o:object){if(this.ws&&this.ws.readyState===WebSocket.OPEN)this.ws.send(JSON.stringify(o))}
   close(){this.closed=true;window.clearTimeout(this.timer);const w=this.ws;this.ws=null;w?.close();this.onStatus("idle")}

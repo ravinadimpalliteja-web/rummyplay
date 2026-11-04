@@ -10,6 +10,13 @@ export const TOTAL_ROUNDS = 13;
 export const BAGS_PER_PENALTY = 10;
 export const BAG_PENALTY = 100;
 
+// Round 13 "Blind": the player commits to winning ZERO tricks before seeing their cards.
+// No number is chosen and there is no multiplier (owner's rule, 2026-11-04):
+//   0 tricks won  -> +100 points
+//   1+ tricks won -> -100 points
+// Tricks won in a failed blind are NOT bags (confirmed by the owner).
+export const BLIND_RULE = Object.freeze({ winPoints: 100, losePoints: -100 });
+
 export function createDeck() {
   return SUITS.flatMap((suit) => RANKS.map((rank, index) => ({
     suit, rank, value: index + 2, id: `${suit}-${rank}`
@@ -57,7 +64,8 @@ export function dealRound(roundNumber, dealer, random = Math.random) {
 export function validateBid(bid, roundNumber, mode = "standard") {
   if (!Number.isInteger(roundNumber) || roundNumber < 1 || roundNumber > TOTAL_ROUNDS) return false;
   if (!Number.isInteger(bid) || bid < 0 || bid > roundNumber) return false;
-  return mode === "standard" || (mode === "blind" && roundNumber === 13);
+  if (mode === "blind") return roundNumber === 13 && bid === 0;
+  return mode === "standard";
 }
 
 export function rankValue(card) {
@@ -125,25 +133,28 @@ export function scoreBid({ bid, tricksWon, mode = "standard", roundNumber = 1 })
     throw new RangeError("roundNumber must be between 1 and 13");
   }
 
-  if (bid === 0) {
+  if (mode === "blind") {
+    if (bid !== 0) throw new RangeError("A blind bid is always zero tricks");
     const success = tricksWon === 0;
-    // Nil bids score zero throughout rounds 1–12. In round 13, only Blind Nil
-    // earns +100 for taking no tricks or -100 for taking one or more tricks.
-    const specialRound13BlindNil = roundNumber === 13 && mode === "blind";
-    const points = specialRound13BlindNil ? (success ? 100 : -100) : 0;
-    return { points, bagsAdded: success ? 0 : tricksWon, success, nil: true };
+    return { points: success ? BLIND_RULE.winPoints : BLIND_RULE.losePoints, bagsAdded: 0, success, nil: true, blind: true };
+  }
+
+  if (bid === 0) {
+    // A standard zero bid is never a Nil bonus: 0 points, and every trick won becomes a bag.
+    return { points: 0, bagsAdded: tricksWon, success: tricksWon === 0, nil: true };
   }
 
   if (tricksWon < bid) {
     return {
-      points: -(bid * (mode === "blind" ? 20 : 10)),
+      points: -(bid * 10),
       bagsAdded: 0, success: false, nil: false
     };
   }
 
+  // Overtricks are bags only. Bags are tracked separately and never add points.
   const overtricks = tricksWon - bid;
   return {
-    points: bid * (mode === "blind" ? 20 : 10) + overtricks,
+    points: bid * 10,
     bagsAdded: overtricks, success: true, nil: false
   };
 }
@@ -180,12 +191,10 @@ export function chooseWinner(players) {
   if (!Array.isArray(players) || players.length !== PLAYER_COUNT) {
     throw new Error("Exactly four players are required");
   }
-  const ranked = [...players].sort((a, b) =>
-    (b.score || 0) - (a.score || 0) || (b.bags || 0) - (a.bags || 0)
-  );
+  // Highest cumulative score wins. Remaining bags are NOT a tie-breaker: the final
+  // tie-break rule is still undecided, so equal scores are reported as a shared win.
+  const ranked = [...players].sort((a, b) => (b.score || 0) - (a.score || 0));
   const first = ranked[0];
-  const tied = ranked.filter((p) =>
-    (p.score || 0) === (first.score || 0) && (p.bags || 0) === (first.bags || 0)
-  );
+  const tied = ranked.filter((p) => (p.score || 0) === (first.score || 0));
   return { winners: tied.map((p) => p.id), sharedWin: tied.length > 1, standings: ranked };
 }

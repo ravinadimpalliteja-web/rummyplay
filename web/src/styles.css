@@ -285,3 +285,308 @@
   line-height: 1;
   font-weight: 700;
 }
+/* Round 13 blind choice */
+.playing-card.back{background:repeating-linear-gradient(45deg,#0d6b4a,#0d6b4a 6px,#0a5a3e 6px,#0a5a3e 12px);border-color:#d9b96f;color:#d9b96f}
+.playing-card.back>b{font-size:clamp(25px,2.4vw,35px)}
+.bid-row.blind-choice{flex-wrap:wrap}
+.bid-row.blind-choice small{flex-basis:100%;text-align:center;color:#e7d39f;font-size:11px}
+.ghost-button{padding:10px 16px;border:1px solid #987b42;border-radius:9px;background:transparent;color:#f1dfb4;font-weight:700}
+.dealer-tag.blind-tag{background:#d9b96f;color:#17251c;margin-left:6px}
+/* Player timer */
+.timer-chip{display:inline-block;margin-top:2px;padding:2px 9px;border:1px solid #987b42;border-radius:999px;background:#143a2c;color:#f1dfb4;font-size:11px;font-weight:700;letter-spacing:.04em}
+.timer-chip.urgent{background:#7a1f1f;border-color:#e0a0a0;color:#fff;animation:timerPulse .8s ease-in-out infinite}
+@keyframes timerPulse{50%{opacity:.6}}
+
+/* Table emblem: large embossed spade, gold double ring, ROYAL CLUB wordmark (sits behind cards and names) */
+.game-board:after{content:"";position:absolute;left:50%;top:41%;height:min(74%,500px);aspect-ratio:400/440;width:auto;transform:translate(-50%,-50%);background:url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 440"%3E%0A%3Cdefs%3E%3ClinearGradient id="g" x1="0" y1="0" x2="0" y2="1"%3E%3Cstop offset="0" stop-color="%2323a073"/%3E%3Cstop offset="1" stop-color="%230a4a34"/%3E%3C/linearGradient%3E%0A%3CradialGradient id="h" cx="50%25" cy="38%25" r="60%25"%3E%3Cstop offset="0" stop-color="%2312805a" stop-opacity=".55"/%3E%3Cstop offset="1" stop-color="%2312805a" stop-opacity="0"/%3E%3C/radialGradient%3E%3C/defs%3E%0A%3Ccircle cx="200" cy="205" r="196" fill="url(%23h)"/%3E%0A%3Ccircle cx="200" cy="205" r="196" fill="none" stroke="%23d9b96f" stroke-opacity=".5" stroke-width="2.5"/%3E%0A%3Ccircle cx="200" cy="205" r="184" fill="none" stroke="%23d9b96f" stroke-opacity=".28" stroke-width="1.5"/%3E%0A%3Cpath d="M200 62 C200 62 104 146 104 214 C104 256 142 278 176 262 C171 297 160 322 138 340 L262 340 C240 322 229 297 224 262 C258 278 296 256 296 214 C296 146 200 62 200 62 Z" transform="translate(4 6)" fill="%2302130d" fill-opacity=".55"/%3E%0A%3Cpath d="M200 62 C200 62 104 146 104 214 C104 256 142 278 176 262 C171 297 160 322 138 340 L262 340 C240 322 229 297 224 262 C258 278 296 256 296 214 C296 146 200 62 200 62 Z" fill="url(%23g)" stroke="%23e3c677" stroke-opacity=".85" stroke-width="3" stroke-linejoin="round"/%3E%0A%3Cpath d="M200 96 C170 130 138 168 138 212" fill="none" stroke="%236fd3a8" stroke-opacity=".28" stroke-width="5" stroke-linecap="round"/%3E%0A%3Ctext x="200" y="400" text-anchor="middle" font-family="Playfair Display,Georgia,serif" font-size="30" letter-spacing="9" fill="%23e3c677" fill-opacity=".85"%3EROYAL CLUB%3C/text%3E%0A%3C/svg%3E') center/contain no-repeat;z-index:0;pointer-events:none;opacity:.92}
+.game-board .trick-area{z-index:1}
+
+/* Phone LANDSCAPE (short, wide screens): everything fits in the height, hand in one row along the bottom,
+   compact bid bar, compact seats. Portrait and desktop are unaffected. */
+@media (orientation:landscape) and (max-height:520px){
+  .app-shell:has(.game-screen),.game-screen{min-height:0}
+  .game-screen{padding:3px 12px 3px;gap:2px}
+  .game-toolbar{height:28px;flex:0 0 28px}
+  .game-toolbar strong{font-size:10px}
+  .game-toolbar strong span{padding:2px 8px;margin-left:8px}
+  .game-toolbar .back-link{font-size:11px}
+  .score-chip{padding:4px 12px;font-size:12px}
+  .avatar{width:24px;height:24px;font-size:8px;border-width:1px}
+  .player-seat{gap:2px}
+  .player-seat b{font-size:11px}
+  .player-seat small,.player-seat .player-stats{font-size:9px;gap:4px}
+  .player-seat .bid-badge{font-size:9px}
+  .player-seat .bid-value,.player-seat .bid-label{font-size:10px}
+  .player-seat.north{top:0}
+  .app-shell:has(.game-screen) .player-seat.north{padding:2px 8px}
+  .player-seat.west{left:0;top:44%}
+  .player-seat.east{right:0;top:44%}
+  .player-seat.south{bottom:0;flex-direction:row;align-items:center;gap:6px;flex-wrap:nowrap;white-space:nowrap}
+  .timer-chip{margin:0;padding:1px 7px;font-size:10px}
+  .app-shell:has(.game-screen) .game-board .trick-area .trick-card .playing-card.small{width:44px;height:63px;min-width:44px;padding:3px}
+  .app-shell:has(.game-screen) .game-board .trick-area .trick-card .playing-card.small>b{font-size:22px}
+  .app-shell:has(.game-screen) .game-board .trick-area .trick-card .playing-card.small span{font-size:10px}
+  .app-shell:has(.game-screen) .game-board .trick-area .trick-card .playing-card.small i{font-size:9px}
+  .trick-card small{font-size:8px}
+  .app-shell:has(.game-screen) .game-board .trick-area .trick-card.p1{top:17%}
+  .app-shell:has(.game-screen) .game-board .trick-area .trick-card.p0{bottom:17%}
+  .trick-card.p2{left:26%}
+  .trick-card.p3{right:26%}
+  .player-dock{padding:3px 6px 2px}
+  .dock-heading{display:none}
+  .turn-message,.status-line{margin:1px;font-size:10px;line-height:1.2}
+  .hand-cards{min-height:0;padding:2px 0 0;gap:2px;flex-wrap:nowrap;justify-content:center;overflow:visible}
+  .hand-cards .playing-card{width:clamp(30px,5.4vw,46px);height:clamp(44px,17vh,66px);padding:3px;border-radius:5px}
+  .hand-cards .playing-card>b{font-size:clamp(16px,2.2vw,24px)}
+  .hand-cards .playing-card span{font-size:10px}
+  .hand-cards .playing-card i{font-size:9px}
+  .hand-cards .playing-card:not(:disabled):hover{transform:translateY(-6px)}
+  .game-screen .bid-floating{top:46%;bottom:auto;transform:translate(-50%,-50%);padding:6px 10px;gap:6px;border-radius:10px;max-width:calc(100vw - 24px)}
+  .game-screen .bid-floating label{font-size:11px}
+  .game-screen .bid-floating select{min-width:84px;min-height:30px;padding:3px 6px;font-size:12px}
+  .game-screen .bid-floating .gold-button,.game-screen .bid-floating .ghost-button{min-height:30px;padding:4px 10px;font-size:12px}
+  .game-screen .bid-floating.blind-choice{max-width:440px}
+  .bid-row.blind-choice small{font-size:9px;line-height:1.2;white-space:normal;text-align:center}
+  .round-transition{padding:3px 8px;gap:8px}
+  .round-transition p{font-size:11px}
+  .score-panel{max-height:calc(100svh - 36px);overflow:auto}
+}
+
+/* ===== Green table (final): rounded-rectangle felt between the four players, faint printed watermark ===== */
+.game-board:before{display:block;content:"";position:absolute;left:18%;right:18%;top:16%;bottom:31%;border-radius:30px;background:radial-gradient(ellipse at 50% 42%,#0e6b4b 0%,#0a553b 68%,#06402c 100%);border:1.5px solid rgba(227,198,119,.55);box-shadow:inset 0 0 0 5px rgba(0,0,0,.10),inset 0 0 44px rgba(0,0,0,.38),0 10px 28px rgba(0,0,0,.45);z-index:0;pointer-events:none}
+.game-board:after{background:url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 440"%3E%3Ccircle cx="200" cy="205" r="196" fill="none" stroke="%23e3c677" stroke-opacity=".2" stroke-width="2"/%3E%3Ccircle cx="200" cy="205" r="184" fill="none" stroke="%23e3c677" stroke-opacity=".12" stroke-width="1.5"/%3E%3Cpath d="M200 62 C200 62 104 146 104 214 C104 256 142 278 176 262 C171 297 160 322 138 340 L262 340 C240 322 229 297 224 262 C258 278 296 256 296 214 C296 146 200 62 200 62 Z" fill="%232aa27a" fill-opacity=".42" stroke="%23e3c677" stroke-opacity=".28" stroke-width="2.5" stroke-linejoin="round"/%3E%3Ctext x="200" y="400" text-anchor="middle" font-family="Playfair Display,Georgia,serif" font-size="30" letter-spacing="9" fill="%23e3c677" fill-opacity=".34"%3EROYAL CLUB%3C/text%3E%3C/svg%3E') center/contain no-repeat;opacity:1;top:44%;height:min(44%,330px)}
+/* Phone portrait: stack side-player stats so their panels are narrow, and keep every played card on the table */
+@media (orientation:portrait) and (max-width:760px){
+  .player-seat.west .player-stats,.player-seat.east .player-stats{flex-direction:column;gap:2px}
+  .app-shell:has(.game-screen) .game-board .trick-area .trick-card .playing-card.small{width:54px;height:78px;min-width:54px;padding:3px}
+  .app-shell:has(.game-screen) .game-board .trick-area .trick-card .playing-card.small>b{font-size:28px}
+  .app-shell:has(.game-screen) .game-board .trick-area .trick-card .playing-card.small span{font-size:11px}
+  .app-shell:has(.game-screen) .game-board .trick-area .trick-card .playing-card.small i{font-size:10px}
+  .trick-card small{font-size:8px}
+  .app-shell:has(.game-screen) .game-board .trick-area .trick-card.p1{top:19%}
+  .app-shell:has(.game-screen) .game-board .trick-area .trick-card.p0{bottom:33%}
+  .app-shell:has(.game-screen) .game-board .trick-area .trick-card.p2{left:21%;top:44%}
+  .app-shell:has(.game-screen) .game-board .trick-area .trick-card.p3{right:21%;top:44%}
+}
+/* Phone landscape: table fits the short board */
+@media (orientation:landscape) and (max-height:520px){
+  .game-board:before{left:21%;right:21%;top:15%;bottom:16%;border-radius:22px}
+  .game-board:after{top:45%;height:min(62%,260px)}
+}
+
+/* ===== Home page: fits one screen on phones, in portrait and in landscape (no scrolling) ===== */
+@media (max-width:760px) and (orientation:portrait){
+  .app-shell:has(.hero){height:100svh;min-height:0;overflow-y:auto}
+  .app-shell:has(.hero) .topbar{height:52px}
+  .app-shell:has(.hero) .brand-mark{width:30px;height:30px;font-size:18px;border-radius:10px}
+  .app-shell:has(.hero) .brand strong{font-size:14px}
+  .app-shell:has(.hero) .brand small{font-size:8px}
+  .app-shell:has(.hero) main{display:flex;flex-direction:column;min-height:0}
+  main>.hero{margin:10px 0 12px;min-height:0;padding:20px 20px 18px}
+  main>.hero h1{font-size:30px;margin:8px 0}
+  main>.hero p{font-size:12.5px;line-height:1.5;margin:0 0 12px}
+  main>.hero .gold-button{padding:11px 16px;font-size:14px}
+  main>.hero .hero-ornament{font-size:120px;top:56%}
+  main>h2{font-size:17px;margin:0 0 8px}
+  .game-grid{gap:8px;margin-bottom:8px}
+  .game-card{min-height:0;grid-template-columns:26% 1fr}
+  .game-art{font:44px Georgia,serif;color:#e3c67f}
+  .game-info{padding:10px 12px}
+  .game-info h3{font-size:15px;margin:2px 0}
+  .game-info p{font-size:11px;line-height:1.4;min-height:0;margin:2px 0 4px}
+  .game-info .text-button{padding:2px 0;font-size:12px}
+  .app-shell:has(.hero) footer{min-height:0;padding:8px 14px;flex-wrap:nowrap;font-size:8px}
+  .app-shell:has(.hero) footer span:last-child{width:auto}
+}
+@media (orientation:landscape) and (max-height:520px){
+  .app-shell:has(.hero){height:100svh;min-height:0;overflow-y:auto}
+  .app-shell:has(.hero) .topbar{height:40px;padding:0 20px}
+  .app-shell:has(.hero) .brand-mark{width:26px;height:26px;font-size:16px;border-radius:9px}
+  .app-shell:has(.hero) .brand strong{font-size:13px}
+  .app-shell:has(.hero) .brand small{font-size:7px}
+  .app-shell:has(.hero) .topbar nav{gap:20px}
+  .app-shell:has(.hero) .topbar nav button,.app-shell:has(.hero) .guest-label{font-size:12px}
+  .app-shell:has(.hero) footer{display:none}
+  main:has(>.hero){display:grid;grid-template-columns:1.15fr 1fr;grid-template-rows:auto 1fr;column-gap:16px;row-gap:6px;width:calc(100% - 40px);padding:8px 0;min-height:0}
+  main:has(>.hero)>.hero{grid-row:1/3;margin:0;min-height:0;padding:18px 24px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start}
+  main:has(>.hero)>.hero h1{font-size:34px;margin:8px 0}
+  main:has(>.hero)>.hero p{font-size:12px;line-height:1.5;margin:0 0 10px;max-width:none}
+  main:has(>.hero)>.hero .gold-button{padding:10px 16px;font-size:13px}
+  main:has(>.hero)>.hero .hero-ornament{font-size:150px;right:4%}
+  main:has(>.hero)>h2{grid-column:2;font-size:15px;margin:0;align-self:end}
+  main:has(>.hero) .game-grid{grid-column:2;grid-template-columns:1fr;gap:8px;margin:0;align-content:start}
+  .game-card{min-height:0;grid-template-columns:24% 1fr}
+  .game-art{font:40px Georgia,serif;color:#e3c67f}
+  .game-info{padding:10px 12px}
+  .game-info h3{font-size:15px;margin:2px 0}
+  .game-info p{font-size:11px;line-height:1.4;min-height:0;margin:2px 0 4px}
+  .game-info .text-button{padding:2px 0;font-size:12px}
+}
+
+/* Spades card: bold capitals in gold + white, and a gold-ringed emblem badge. Indian Rummy card is unchanged. */
+.game-info h3.game-title-spades{font-weight:800;text-transform:uppercase;letter-spacing:.14em;display:inline-block;background:linear-gradient(90deg,#ffffff 0%,#f6e4ae 45%,#d9b96f 100%);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+.game-art .spade-emblem{width:min(70%,110px);height:auto;filter:drop-shadow(0 0 9px rgba(227,198,119,.55))}
+
+/* ===== Lobby (compact) and Room screens ===== */
+.mode-page{padding:22px 0 18px;max-width:760px}
+.mode-page h1{font:600 clamp(22px,3.4vw,32px)/1.15 'Playfair Display',serif;letter-spacing:-.01em;margin:8px 0 14px}
+.mode-page .eyebrow{font-size:9px}
+.mode-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.mode-card{min-height:0;padding:12px 10px;align-items:flex-start;gap:2px;border-radius:12px;position:relative}
+.mode-card .mode-ico{font-size:20px;line-height:1;color:#e3c67f}
+.mode-card strong{font:600 14px 'Playfair Display',serif;margin:6px 0 2px}
+.mode-card p{margin:0;font-size:10.5px;line-height:1.35;color:#a9bdb2}
+.mode-card .mode-tag{position:absolute;top:8px;right:8px;font-size:8px;letter-spacing:.12em;color:#c9b77f;border:1px solid #c9b77f55;border-radius:999px;padding:1px 6px}
+.mode-page .gold-button{padding:11px 18px;font-size:14px}
+.gold-button:disabled{opacity:.5;cursor:default}
+.ghost-button:disabled{opacity:.5;cursor:default}
+.room-tabs{display:flex;gap:6px;margin-bottom:12px;padding:3px;border:1px solid #41634f;border-radius:10px;background:#09241b;width:max-content;max-width:100%}
+.room-tabs button{border:0;background:none;color:#c2d0c7;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:700}
+.room-tabs button.on{background:linear-gradient(135deg,#f0d99d,#c79f50);color:#14251c}
+.room-form{display:grid;gap:10px;max-width:420px}
+.room-form label{display:grid;gap:4px;font-size:11px;letter-spacing:.06em;color:#c9b77f;text-transform:uppercase}
+.room-form input{height:40px;padding:0 12px;border:1px solid #41634f;border-radius:9px;background:#0b2a20;color:#f6f0df;font-size:15px;letter-spacing:.02em;text-transform:none}
+.room-form input:focus{outline:2px solid #d9b96f88;border-color:#d9b96f}
+.room-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.room-msg{margin:10px 0 0;padding:9px 12px;border:1px solid #987b4288;border-radius:9px;background:#0b3528;color:#f1dfb2;font-size:12px;line-height:1.45;max-width:420px}
+.room-note{margin:10px 0 4px;color:#a9bdb2;font-size:11px;line-height:1.5;max-width:420px}
+.room-wait{display:grid;gap:10px;max-width:420px}
+.room-preview-tag{justify-self:start;font-size:9px;letter-spacing:.14em;color:#c9b77f;border:1px solid #c9b77f66;border-radius:999px;padding:2px 9px}
+.room-share{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 12px;border:1px solid #987b42;border-radius:12px;background:linear-gradient(145deg,#0d3024,#09241b)}
+.room-share small{display:block;font-size:8px;letter-spacing:.18em;color:#c9b77f}
+.room-share b{font:700 24px 'Playfair Display',serif;letter-spacing:.2em;color:#f6e4ae}
+.room-share .ghost-button{margin-left:auto;padding:8px 12px;font-size:12px}
+.room-seats{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.room-seats li{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px dashed #41634f;border-radius:10px;background:#09241b;color:#8fa79a;font-size:13px}
+.room-seats li span{width:22px;height:22px;display:grid;place-items:center;border-radius:50%;border:1px solid #41634f;font-size:11px}
+.room-seats li.filled{border:1px solid #d9b96f88;color:#f6e4ae;background:#0d3024}
+.room-seats li.filled span{border-color:#d9b96f;background:#d9b96f;color:#14251c;font-weight:800}
+@media (max-width:760px) and (orientation:portrait){
+  .app-shell:has(.mode-page){height:100svh;min-height:0;overflow-y:auto}
+  .app-shell:has(.mode-page) .topbar{height:52px}
+  .app-shell:has(.mode-page) .brand-mark{width:30px;height:30px;font-size:18px;border-radius:10px}
+  .app-shell:has(.mode-page) .brand strong{font-size:14px}
+  .app-shell:has(.mode-page) .brand small{font-size:8px}
+  .app-shell:has(.mode-page) footer{min-height:0;padding:8px 14px;flex-wrap:nowrap;font-size:8px}
+  .app-shell:has(.mode-page) footer span:last-child{width:auto}
+  .mode-page{padding:12px 0 10px}
+  .mode-grid{gap:8px}
+  .room-page .eyebrow{display:none}
+  .room-page h1{margin:6px 0 10px}
+  .room-wait{gap:7px}
+  .room-seats{gap:5px}
+  .room-seats li{padding:6px 12px}
+  .room-note{margin:6px 0 0}
+}
+@media (orientation:landscape) and (max-height:520px){
+  .app-shell:has(.mode-page){height:100svh;min-height:0;overflow-y:auto}
+  .app-shell:has(.mode-page) .topbar{height:40px;padding:0 20px}
+  .app-shell:has(.mode-page) .brand-mark{width:26px;height:26px;font-size:16px;border-radius:9px}
+  .app-shell:has(.mode-page) .brand strong{font-size:13px}
+  .app-shell:has(.mode-page) .brand small{font-size:7px}
+  .app-shell:has(.mode-page) .topbar nav{gap:20px}
+  .app-shell:has(.mode-page) .topbar nav button,.app-shell:has(.mode-page) .guest-label{font-size:12px}
+  .app-shell:has(.mode-page) footer{display:none}
+  .mode-page{padding:6px 0;margin:0 auto}
+  .mode-page .back-link{margin:0 0 2px;padding:2px 0}
+  .mode-page .eyebrow{display:none}
+  .mode-page h1{font-size:19px;margin:2px 0 8px}
+  .mode-card{padding:9px 10px}
+  .room-tabs{margin-bottom:8px}
+  .room-tabs button{padding:6px 12px;font-size:12px}
+  .room-form{max-width:none;display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px}
+  .room-form>label{flex:1 1 150px}
+  .room-row{display:contents}
+  .room-row label{flex:1 1 110px}
+  .room-form input{height:36px}
+  .room-form .gold-button{flex:0 0 auto}
+  .room-msg,.room-note{max-width:none;margin:6px 0 0;font-size:10.5px}
+  .room-wait{max-width:none;grid-template-columns:1fr 1fr;column-gap:12px;row-gap:6px}
+  .room-wait>.room-preview-tag,.room-wait>.gold-button,.room-wait>.room-note{grid-column:1/3}
+  .room-seats li{padding:5px 10px;font-size:12px}
+  .room-share b{font-size:20px}
+}
+
+/* Live room: final result line in the scorecard */
+.score-panel .final-line{margin:6px 0 10px;padding:8px 12px;border:1px solid rgba(214,181,106,.45);border-radius:10px;background:rgba(214,181,106,.08);color:#f5ecd2;font-size:14px}
+.score-panel .final-line b{color:#e9cf8f}
+
+/* Home hero: slim, sleek top banner (title left, actions right) */
+main>.hero{display:grid;grid-template-columns:1fr auto;grid-template-areas:"eyebrow actions" "title actions" "text actions";column-gap:24px;align-items:center;min-height:0;margin:18px 0 22px;padding:18px 28px;border-radius:18px}
+main>.hero .eyebrow{grid-area:eyebrow;white-space:nowrap;font-size:10px;letter-spacing:.2em;margin:0}
+main>.hero h1{grid-area:title;font-size:clamp(24px,3.2vw,34px);line-height:1.1;margin:4px 0 2px;white-space:nowrap}
+main>.hero h1 br{display:none}
+main>.hero h1 em{margin-left:.25em}
+main>.hero p{grid-area:text;font-size:13px;line-height:1.4;margin:2px 0 0;max-width:none;color:#b9c9bf}
+main>.hero .hero-actions{grid-area:actions;display:flex;flex-wrap:nowrap;gap:10px;align-items:center;margin:0}
+main>.hero .hero-actions .gold-button,main>.hero .hero-actions .ghost-button{padding:10px 16px;font-size:14px;white-space:nowrap}
+main>.hero .hero-ornament{font-size:90px;top:50%;right:34%;opacity:.12}
+@media (max-width:760px) and (orientation:portrait){
+  main>.hero{grid-template-columns:1fr;grid-template-areas:"eyebrow" "title" "actions";row-gap:6px;margin:10px 0 12px;padding:14px 16px;border-radius:16px}
+  main>.hero h1{font-size:23px;margin:0}
+  main>.hero p,main>.hero .hero-ornament{display:none}
+  main>.hero .hero-actions{gap:8px;margin-top:6px}
+  main>.hero .hero-actions .gold-button,main>.hero .hero-actions .ghost-button{padding:9px 13px;font-size:13px}
+}
+@media (orientation:landscape) and (max-height:520px){
+  main:has(>.hero){grid-template-columns:1fr 1fr;grid-template-rows:auto auto 1fr;row-gap:6px}
+  main:has(>.hero)>.hero{display:grid;grid-column:1/3;grid-row:1;grid-template-columns:1fr auto;grid-template-areas:"eyebrow actions" "title actions";padding:10px 20px;border-radius:14px;flex-direction:initial;align-items:center;justify-content:initial}
+  main:has(>.hero)>.hero h1{font-size:24px;margin:2px 0 0}
+  main:has(>.hero)>.hero p,main:has(>.hero)>.hero .hero-ornament{display:none}
+  main:has(>.hero)>.hero .hero-actions .gold-button,main:has(>.hero)>.hero .hero-actions .ghost-button{padding:8px 14px;font-size:13px}
+  main:has(>.hero)>h2{grid-column:1/3;grid-row:2}
+  main:has(>.hero) .game-grid{grid-column:1/3;grid-row:3;grid-template-columns:1fr 1fr}
+}
+
+/* ===== Home: Card games and Board games, side by side ===== */
+.game-sections{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;margin-bottom:56px;align-items:start}
+.game-section{min-width:0;display:flex;flex-direction:column;gap:12px}
+.game-section-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding-bottom:7px;border-bottom:1px solid #d9b96f44}
+.game-section-head h2{margin:0;font:600 26px 'Playfair Display',serif;color:#f6f0df}
+.game-section-head small{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#c9b77f;white-space:nowrap}
+.game-section .game-grid{grid-template-columns:1fr;margin:0;gap:14px}
+.game-soon{display:grid;place-items:center;min-height:90px;padding:12px;border:1px dashed #41634f;border-radius:16px;color:#8fa79a;font-size:12px;letter-spacing:.04em;text-align:center;line-height:1.4}
+.game-section h3.game-title-spades{text-wrap:balance}
+.game-section .game-art{font:64px Georgia,serif;color:#e3c67f}
+@media (max-width:1000px) and (min-width:761px){
+  .game-section .game-card{grid-template-columns:1fr;grid-template-rows:110px auto}
+  .game-section .game-art{border-right:0;border-bottom:1px solid #a8874c55}
+  .game-section .game-art .spade-emblem{width:auto;height:88px}
+}
+/* Phone portrait: two narrow columns, cards stack art over text so everything fits one screen */
+@media (max-width:760px) and (orientation:portrait){
+  .game-sections{gap:10px;margin-bottom:8px}
+  .game-section{gap:6px}
+  .game-section-head{flex-direction:column;align-items:flex-start;gap:1px;padding-bottom:4px}
+  .game-section-head h2{font-size:16px}
+  .game-section-head small{font-size:7.5px;letter-spacing:.1em;white-space:normal}
+  .game-section .game-grid{gap:8px}
+  .game-section .game-card{grid-template-columns:1fr;grid-template-rows:64px auto;min-height:0}
+  .game-section .game-art{border-right:0;border-bottom:1px solid #a8874c55;font-size:40px}
+  .game-section .game-art .spade-emblem{width:auto;height:52px}
+  .game-section .game-info{padding:8px 10px 9px}
+  .game-section .game-info h3{font-size:13px;margin:0 0 3px;line-height:1.2}
+  .game-section .game-info h3.game-title-spades{letter-spacing:.08em}
+  .game-section .game-info p{font-size:10px;line-height:1.35;margin:0 0 4px}
+  .game-section .game-info .text-button{font-size:11.5px;padding:2px 0}
+  .game-soon{min-height:64px;font-size:10px;border-radius:12px}
+}
+/* Phone landscape: the two sections sit side by side to the right of the banner */
+@media (orientation:landscape) and (max-height:520px){
+  main:has(>.hero)>.game-sections{grid-column:1/3;grid-row:2/4;margin:0;gap:14px;min-height:0;align-self:start}
+  main:has(>.hero) .game-section .game-grid{grid-column:auto;grid-row:auto;grid-template-columns:1fr 1fr;align-items:stretch}
+  .game-section{gap:5px}
+  .game-section-head{flex-direction:column;align-items:flex-start;gap:0;padding-bottom:3px}
+  .game-section-head h2{font-size:14px}
+  .game-section-head small{font-size:7.5px;letter-spacing:.1em}
+  .game-section .game-grid{gap:6px}
+  .game-section .game-card{grid-template-columns:1fr;grid-template-rows:50px auto;min-height:0}
+  .game-section .game-art{border-right:0;border-bottom:1px solid #a8874c55;font-size:30px}
+  .game-section .game-art .spade-emblem{width:auto;height:42px}
+  .game-section .game-info{padding:6px 9px 7px}
+  .game-section .game-info h3{font-size:12px;margin:0 0 2px;line-height:1.2}
+  .game-section .game-info h3.game-title-spades{letter-spacing:.07em}
+  .game-section .game-info p{font-size:9.5px;line-height:1.3;margin:0 0 2px}
+  .game-section .game-info .text-button{font-size:11px;padding:1px 0}
+  .game-soon{min-height:0;font-size:9.5px;border-radius:12px}
+}

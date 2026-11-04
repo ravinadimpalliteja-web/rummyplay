@@ -373,3 +373,52 @@
   .game-board:before{left:21%;right:21%;top:15%;bottom:16%;border-radius:22px}
   .game-board:after{top:45%;height:min(62%,260px)}
 }
+
+/* ===== Home page: fits one screen on phones, in portrait and in landscape (no scrolling) ===== */
+@media (max-width:760px) and (orientation:portrait){
+  .app-shell:has(.hero){height:100svh;min-height:0;overflow-y:auto}
+  .app-shell:has(.hero) .topbar{height:52px}
+  .app-shell:has(.hero) .brand-mark{width:30px;height:30px;font-size:18px;border-radius:10px}
+  .app-shell:has(.hero) .brand strong{font-size:14px}
+  .app-shell:has(.hero) .brand small{font-size:8px}
+  .app-shell:has(.hero) main{display:flex;flex-direction:column;min-height:0}
+  main>.hero{margin:10px 0 12px;min-height:0;padding:20px 20px 18px}
+  main>.hero h1{font-size:30px;margin:8px 0}
+  main>.hero p{font-size:12.5px;line-height:1.5;margin:0 0 12px}
+  main>.hero .gold-button{padding:11px 16px;font-size:14px}
+  main>.hero .hero-ornament{font-size:120px;top:56%}
+  main>h2{font-size:17px;margin:0 0 8px}
+  .game-grid{gap:8px;margin-bottom:8px}
+  .game-card{min-height:0;grid-template-columns:26% 1fr}
+  .game-art{font:44px Georgia,serif;color:#e3c67f}
+  .game-info{padding:10px 12px}
+  .game-info h3{font-size:15px;margin:2px 0}
+  .game-info p{font-size:11px;line-height:1.4;min-height:0;margin:2px 0 4px}
+  .game-info .text-button{padding:2px 0;font-size:12px}
+  .app-shell:has(.hero) footer{min-height:0;padding:8px 14px;flex-wrap:nowrap;font-size:8px}
+  .app-shell:has(.hero) footer span:last-child{width:auto}
+}
+@media (orientation:landscape) and (max-height:520px){
+  .app-shell:has(.hero){height:100svh;min-height:0;overflow-y:auto}
+  .app-shell:has(.hero) .topbar{height:40px;padding:0 20px}
+  .app-shell:has(.hero) .brand-mark{width:26px;height:26px;font-size:16px;border-radius:9px}
+  .app-shell:has(.hero) .brand strong{font-size:13px}
+  .app-shell:has(.hero) .brand small{font-size:7px}
+  .app-shell:has(.hero) .topbar nav{gap:20px}
+  .app-shell:has(.hero) .topbar nav button,.app-shell:has(.hero) .guest-label{font-size:12px}
+  .app-shell:has(.hero) footer{display:none}
+  main:has(>.hero){display:grid;grid-template-columns:1.15fr 1fr;grid-template-rows:auto 1fr;column-gap:16px;row-gap:6px;width:calc(100% - 40px);padding:8px 0;min-height:0}
+  main:has(>.hero)>.hero{grid-row:1/3;margin:0;min-height:0;padding:18px 24px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start}
+  main:has(>.hero)>.hero h1{font-size:34px;margin:8px 0}
+  main:has(>.hero)>.hero p{font-size:12px;line-height:1.5;margin:0 0 10px;max-width:none}
+  main:has(>.hero)>.hero .gold-button{padding:10px 16px;font-size:13px}
+  main:has(>.hero)>.hero .hero-ornament{font-size:150px;right:4%}
+  main:has(>.hero)>h2{grid-column:2;font-size:15px;margin:0;align-self:end}
+  main:has(>.hero) .game-grid{grid-column:2;grid-template-columns:1fr;gap:8px;margin:0;align-content:start}
+  .game-card{min-height:0;grid-template-columns:24% 1fr}
+  .game-art{font:40px Georgia,serif;color:#e3c67f}
+  .game-info{padding:10px 12px}
+  .game-info h3{font-size:15px;margin:2px 0}
+  .game-info p{font-size:11px;line-height:1.4;min-height:0;margin:2px 0 4px}
+  .game-info .text-button{padding:2px 0;font-size:12px}
+}

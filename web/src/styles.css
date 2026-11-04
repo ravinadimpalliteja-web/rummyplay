@@ -345,7 +345,8 @@
   .game-screen .bid-floating label{font-size:11px}
   .game-screen .bid-floating select{min-width:84px;min-height:30px;padding:3px 6px;font-size:12px}
   .game-screen .bid-floating .gold-button,.game-screen .bid-floating .ghost-button{min-height:30px;padding:4px 10px;font-size:12px}
-  .bid-row.blind-choice small{font-size:9px;line-height:1.2}
+  .game-screen .bid-floating.blind-choice{max-width:440px}
+  .bid-row.blind-choice small{font-size:9px;line-height:1.2;white-space:normal;text-align:center}
   .round-transition{padding:3px 8px;gap:8px}
   .round-transition p{font-size:11px}
   .score-panel{max-height:calc(100svh - 36px);overflow:auto}

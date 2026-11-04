@@ -50,4 +50,4 @@ export function roll(prev: SLGame, seat: number, value: number): SLGame {
 export const rollDie = () => { const b = new Uint32Array(1); crypto.getRandomValues(b); return 1 + (b[0] % 6); };
 
 /** Same timing as the server's pause (server/snakes.js animMs). */
-export const STEP_MS = 230, LADDER_MS = 850, SNAKE_MS = 1250, RETURN_MS = 800, ENTER_MS = 300, DIE_MS = 650;
+export const STEP_MS = 230, LADDER_MS = 850, SNAKE_MS = 1250, RETURN_MS = 800, ENTER_MS = 300, DIE_MS = 1100;

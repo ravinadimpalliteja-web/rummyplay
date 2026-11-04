@@ -56,7 +56,7 @@ function roll(g, seat, value) {
 /** How long clients spend animating a roll (die spin + steps + ladder/snake). The server waits this long. */
 function animMs(last) {
   if (!last) return 0;
-  let t = 650;                                                   // die spin
+  let t = 1220;                                                  // die thrown across the board, plus a short pause
   if (last.outcome === 'move') t += Math.abs(last.landed - last.from) * 230;
   if (last.outcome === 'enter') t += 300;
   if (last.outcome === 'three-sixes') t += 800;

@@ -1,10 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { RoomClient, deviceToken, randomPasscode, saveRoom, savedRoom, serverUrl, type NetStatus } from "../domain/online";
 import { DIE_MS, ENTER_MS, LADDER_MS, RETURN_MS, SNAKE_MS, STEP_MS, newGame, roll, rollDie, turnOf, type LastRoll, type SLGame } from "./engine";
-import { OFF, W, center, paintBoard, paintToken, snakePath, type Pt } from "./board";
+import { OFF, W, WOODS, WOOD_IDS, center, paintBoard, paintToken, snakePath, type Pt, type WoodId } from "./board";
 import "./snakes.css";
 
 const ROOM_KEY = "rc-snakes-room";
+const WOOD_KEY = "rc-snakes-wood";
+const readWood = (): WoodId => { try { const w = window.localStorage.getItem(WOOD_KEY); return w && (WOOD_IDS as string[]).includes(w) ? (w as WoodId) : "teak"; } catch { return "teak"; } };
+/* Final orientation of the die for each value (faces: front 1, right 2, top 3, bottom 4, left 5, back 6). */
+const FACE_ROT: Record<number, [number, number]> = { 1: [0, 0], 2: [0, -90], 3: [-90, 0], 4: [90, 0], 5: [0, 90], 6: [0, 180] };
+const FACES: [string, number][] = [["front", 1], ["right", 2], ["top", 3], ["bottom", 4], ["left", 5], ["back", 6]];
 const COLORS = ["#d23b45", "#2f6fd6", "#e3a21a", "#8a4fd0"];
 const BOTS = ["Maya", "Alex", "Jordan"];
 const PIPS: Record<number, number[]> = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
@@ -55,11 +60,7 @@ function describe(l: LastRoll, t: Table): string {
   }
 }
 
-function Die({ value, spinning }: { value: number; spinning: boolean }) {
-  return <div className={`sl-die ${spinning ? "spin" : ""}`} aria-label={`Die showing ${value}`}>
-    {Array.from({ length: 9 }, (_, i) => <i key={i} className={PIPS[value].includes(i) ? "on" : ""} />)}
-  </div>;
-}
+const DiceIcon = () => <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>;
 
 export default function SnakesGame({ onHome }: { onHome: () => void }) {
   type Sub = "lobby" | "room" | "table";
@@ -74,7 +75,11 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
   const [roomName, setRoomName] = useState(""), [roomCode, setRoomCode] = useState(""), [roomPass, setRoomPass] = useState("");
   const [roomMsg, setRoomMsg] = useState("");
   const [animating, setAnimating] = useState(false);
-  const [dieValue, setDieValue] = useState(6), [spinning, setSpinning] = useState(false);
+  const [dieValue, setDieValue] = useState(6);
+  const [wood, setWood] = useState<WoodId>(readWood), [showWoods, setShowWoods] = useState(false);
+  const wrapRef = useRef<HTMLDivElement | null>(null), diceRef = useRef<HTMLDivElement | null>(null), cubeRef = useRef<HTMLDivElement | null>(null), shadowRef = useRef<HTMLDivElement | null>(null);
+  const fadeTimer = useRef(0);
+  const chooseWood = (w: WoodId) => { setWood(w); setShowWoods(false); try { window.localStorage.setItem(WOOD_KEY, w); } catch { /* storage off: still works for this visit */ } };
   const [msg, setMsg] = useState(""), [showRules, setShowRules] = useState(false), [, setTick] = useState(0);
 
   const clientRef = useRef<RoomClient | null>(null), skew = useRef(0), lastPhase = useRef<string | null>(null);
@@ -156,7 +161,7 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     if (sub !== "table") return;
     const canvas = canvasRef.current; if (!canvas) return;
     const layer = document.createElement("canvas"); layerRef.current = layer;
-    const paint = () => { const dpr = Math.min(3, window.devicePixelRatio || 1); paintBoard(layer, dpr); canvas.width = canvas.height = layer.width; dirty.current = true; };
+    const paint = () => { const dpr = Math.min(3, window.devicePixelRatio || 1); paintBoard(layer, Math.min(dpr, 2.5), wood); canvas.width = canvas.height = Math.round(W * dpr); dirty.current = true; };
     paint();
     document.fonts?.ready.then(paint).catch(() => undefined);
     let raf = 0;
@@ -165,7 +170,7 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
       if (!dirty.current) return;
       dirty.current = false;
       const g = canvas.getContext("2d")!, t = tableRef.current, dpr = canvas.width / W;
-      g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(layer, 0, 0); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(layer, 0, 0, canvas.width, canvas.height); g.setTransform(dpr, 0, 0, dpr, 0, 0);
       if (!t) return;
       const turn = t.phase === "playing" ? t.turn : -1;
       for (const s of [...t.order.filter(x => x !== turn), ...(turn >= 0 ? [turn] : [])]) {
@@ -175,7 +180,7 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     };
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
-  }, [sub, !!table]);
+  }, [sub, !!table, wood]);
 
   const follow = (seat: number, pts: Pt[], ms: number, hop = 0) => new Promise<void>(res => {
     const seg = [0];
@@ -192,11 +197,38 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     requestAnimationFrame(step);
   });
 
+  /* Throws a 3D die across the board: it tumbles, bounces and settles showing `value`. */
+  const throwDie = (value: number) => new Promise<void>((resolve) => {
+    const wrap = wrapRef.current, el = diceRef.current, cube = cubeRef.current, sh = shadowRef.current;
+    if (!wrap || !el || !cube || !sh) { resolve(); return; }
+    window.clearTimeout(fadeTimer.current);
+    const B = wrap.clientWidth, size = Math.round(B * .115);
+    wrap.style.setProperty("--ds", size + "px");
+    const from = { x: B * (.5 + (Math.random() - .5) * .5), y: B * 1.05 }, to = { x: B * (.22 + Math.random() * .56), y: B * (.28 + Math.random() * .44) };
+    const [bx, by] = FACE_ROT[value] ?? [0, 0], fx = bx - 16, fy = by + 10, fz = (Math.random() - .5) * 50;
+    const dir = () => (Math.random() < .5 ? -1 : 1);
+    const sx = fx + 360 * (2 + Math.floor(Math.random() * 2)) * dir(), sy = fy + 360 * (1 + Math.floor(Math.random() * 2)) * dir(), sz = fz + (200 + Math.random() * 160) * dir();
+    const dur = reduced ? 250 : DIE_MS, t0 = performance.now();
+    el.classList.add("show"); sh.classList.add("show");
+    const step = (now: number) => {
+      const t = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - t, 3), rot = 1 - Math.pow(1 - t, 2.2);
+      const x = from.x + (to.x - from.x) * e, y = from.y + (to.y - from.y) * e;
+      const h = reduced ? 0 : B * .2 * Math.pow(1 - t, 1.7) * Math.abs(Math.cos(t * Math.PI * 2.5));
+      el.style.transform = `translate(${x - size / 2}px, ${y - size / 2 - h}px) scale(${1 + h / B * 1.1})`;
+      cube.style.transform = `rotateZ(${sz + (fz - sz) * rot}deg) rotateX(${sx + (fx - sx) * rot}deg) rotateY(${sy + (fy - sy) * rot}deg)`;
+      sh.style.transform = `translate(${x - size / 2 + h * .25}px, ${y - size / 2 + size * .18 + h * .1}px) scale(${1.15 - h / B * 1.5})`;
+      sh.style.opacity = String(Math.max(.15, .7 - h / B * 2.2));
+      if (t < 1) requestAnimationFrame(step);
+      else { try { navigator.vibrate?.(18); } catch { /* not supported */ } resolve(); }
+    };
+    requestAnimationFrame(step);
+  });
+  const restDie = () => { window.clearTimeout(fadeTimer.current); fadeTimer.current = window.setTimeout(() => { diceRef.current?.classList.remove("show"); shadowRef.current?.classList.remove("show"); }, 1400); };
+
   const play = async (l: LastRoll) => {
-    setSpinning(true);
-    const spinEnd = performance.now() + DIE_MS * pace;
-    while (performance.now() < spinEnd - 60) { setDieValue(1 + Math.floor(Math.random() * 6)); await wait(70); }
-    setDieValue(l.value); setSpinning(false);
+    await throwDie(l.value);
+    setDieValue(l.value);
+    await wait(120);
     const seat = l.seat, here = () => disp.current[seat] ?? OFF;
     if (l.outcome === "enter") await follow(seat, [OFF, center(1)], ENTER_MS, 12);
     if (l.outcome === "move") for (let n = l.from + 1; n <= l.landed; n++) await follow(seat, [here(), center(n)], STEP_MS, 9);
@@ -219,7 +251,7 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     animatedN.current = l.n;
     setAnimating(true); setMsg(`${table.names[l.seat]} ${l.seat === table.you ? "roll" : "rolls"}…`);
     chain.current = chain.current.then(() => play(l)).catch(() => undefined).then(() => {
-      settle(); setAnimating(false);
+      settle(); setAnimating(false); restDie();
       const t = tableRef.current; if (t) setMsg(describe(l, t));
     });
   }, [table, sub]);
@@ -299,51 +331,58 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
   /* table */
   if (!table) return <section className="mode-page sl-mode"><button className="back-link" onClick={() => setSub("lobby")}>← Back</button><p className="room-note">Loading the board…</p></section>;
   const winnerName = table.winner != null ? table.names[table.winner] : "";
+  const turnName = table.names[table.turn];
   return <section className="sl-screen">
-    <div className="sl-toolbar">
-      <button className="back-link" onClick={() => setSub(online ? "room" : "lobby")}>{online ? "← Room" : "← Lobby"}</button>
-      <strong>SNAKES &amp; LADDERS{online && view ? <span>ROOM {view.code}</span> : <span>PRACTICE</span>}</strong>
-      <button className="score-chip" onClick={() => setShowRules(v => !v)}>Rules</button>
+    <div className="sl-top">
+      <button className="sl-icon-btn" onClick={() => setSub(online ? "room" : "lobby")} aria-label={online ? "Back to the room" : "Back to the lobby"}>←</button>
+      <strong>Snakes &amp; Ladders<span>{online && view ? `Room ${view.code}` : "Practice"}</span></strong>
+      <button className="sl-chip" onClick={() => { setShowWoods(v => !v); setShowRules(false); }} aria-expanded={showWoods}><i className={`sl-swatch w-${wood}`} />{WOODS[wood].name}</button>
+      <button className="sl-chip" onClick={() => { setShowRules(v => !v); setShowWoods(false); }} aria-expanded={showRules}>Rules</button>
     </div>
-    <div className="sl-main">
-      <div className="sl-board-wrap">
-        <canvas ref={canvasRef} className="sl-board" aria-label="Snakes and ladders board" />
-        {showWin && <div className="sl-win">
-          <span className="eyebrow">MOKSHA</span>
-          <h2>{table.winner === table.you ? "You win!" : `${winnerName} wins`}</h2>
-          <p>{table.winner === table.you ? "You reached square 100." : `${winnerName} reached square 100.`}</p>
-          <div className="sl-win-actions">
-            {online ? (view?.host ? <button className="gold-button" onClick={() => send({ t: "again" })}>Play again</button> : <p className="sl-small">Waiting for the host to start a new game.</p>)
-              : <button className="gold-button" onClick={startPractice}>Play again</button>}
-            <button className="ghost-button" onClick={() => (online ? leaveRoom() : setSub("lobby"))}>{online ? "Leave room" : "Back to lobby"}</button>
-          </div>
-        </div>}
-        {showRules && <div className="sl-rules" role="dialog" aria-label="Rules">
-          <b>House rules</b>
-          <ul><li>Roll a <b>6</b> to enter the board on square 1.</li><li>A <b>6</b> gives you another roll.</li><li><b>Three 6s in a row</b> cancel that whole turn — your token goes back to where the turn began.</li><li>Ladders lift you up; snakes bring you down.</li><li>Land <b>exactly</b> on 100 to win. A roll that goes past 100 doesn't move.</li>{online && <li>You have 15 seconds to roll, then the game rolls for you.</li>}</ul>
-          <button className="ghost-button" onClick={() => setShowRules(false)}>Close</button>
-        </div>}
-      </div>
-      <div className="sl-panel">
-        <ul className="sl-players">
-          {table.order.map(s => <li key={s} className={table.phase === "playing" && table.turn === s ? "turn" : ""}>
-            <span className="sl-dot" style={{ background: COLORS[s] }} />
-            <span className="sl-name">{table.names[s]}{table.away[s] && <em> · away</em>}</span>
-            <span className="sl-sq">{table.pos[s] ? table.pos[s] : "Start"}</span>
-          </li>)}
-        </ul>
-        <div className="sl-dock">
-          <Die value={dieValue} spinning={spinning} />
-          <div className="sl-dock-main">
-            <button className="gold-button sl-roll" disabled={!myTurn} onClick={doRoll}>
-              {table.phase === "gameEnd" ? "Game over" : myTurn ? (table.streak > 0 ? "Roll again" : "Roll") : animating ? "Moving…" : `${table.names[table.turn]}'s turn`}
-            </button>
-            {secsLeft !== null && myTurn && <span className={`timer-chip ${secsLeft <= 5 ? "urgent" : ""}`}>⏱ {secsLeft}s</span>}
-          </div>
+    <ul className="sl-players">
+      {table.order.map(s => <li key={s} className={table.phase === "playing" && table.turn === s ? "turn" : ""}>
+        <span className="sl-dot" style={{ background: COLORS[s] }} />
+        <span className="sl-name">{table.names[s]}{table.away[s] && <em> · away</em>}</span>
+        <span className="sl-sq">{table.pos[s] ? table.pos[s] : "Start"}</span>
+      </li>)}
+    </ul>
+    <div className="sl-board-wrap" ref={wrapRef}>
+      <canvas ref={canvasRef} className="sl-board" aria-label={`Snakes and ladders board. ${table.order.map(s => `${table.names[s]} on ${table.pos[s] || "start"}`).join(", ")}.`} />
+      <div className="sl-dice-shadow" ref={shadowRef} />
+      <div className="sl-dice" ref={diceRef} aria-hidden="true">
+        <div className="sl-cube" ref={cubeRef}>
+          {FACES.map(([f, v]) => <div key={f} className={`sl-face ${f}`}>{Array.from({ length: 9 }, (_, i) => <i key={i} className={PIPS[v].includes(i) ? "on" : ""} />)}</div>)}
         </div>
-        <p className="sl-msg" aria-live="polite">{msg}</p>
-        {table.streak > 0 && table.phase === "playing" && !animating && <p className="sl-small">Sixes this turn: {table.streak} of 3</p>}
       </div>
+      {showWoods && <div className="sl-woods" role="dialog" aria-label="Board wood">
+        <b>Board wood</b>
+        <div>{WOOD_IDS.map(w => <button key={w} className={w === wood ? "on" : ""} aria-pressed={w === wood} onClick={() => chooseWood(w)}><i className={`sl-swatch w-${w}`} />{WOODS[w].name}</button>)}</div>
+      </div>}
+      {showWin && <div className="sl-win">
+        <span className="eyebrow">MOKSHA</span>
+        <h2>{table.winner === table.you ? "You win!" : `${winnerName} wins`}</h2>
+        <p>{table.winner === table.you ? "You reached square 100." : `${winnerName} reached square 100.`}</p>
+        <div className="sl-win-actions">
+          {online ? (view?.host ? <button className="gold-button" onClick={() => send({ t: "again" })}>Play again</button> : <p className="sl-small">Waiting for the host to start a new game.</p>)
+            : <button className="gold-button" onClick={startPractice}>Play again</button>}
+          <button className="ghost-button" onClick={() => (online ? leaveRoom() : setSub("lobby"))}>{online ? "Leave room" : "Back to lobby"}</button>
+        </div>
+      </div>}
+      {showRules && <div className="sl-rules" role="dialog" aria-label="Rules">
+        <b>House rules</b>
+        <ul><li>Roll a <b>6</b> to enter the board on square 1.</li><li>A <b>6</b> gives you another roll.</li><li><b>Three 6s in a row</b> cancel that whole turn — your token goes back to where the turn began.</li><li>Ladders lift you up; snakes bring you down.</li><li>Land <b>exactly</b> on 100 to win. A roll that goes past 100 doesn't move.</li>{online && <li>You have 15 seconds to roll, then the game rolls for you.</li>}</ul>
+        <button className="ghost-button" onClick={() => setShowRules(false)}>Close</button>
+      </div>}
+    </div>
+    <div className="sl-dock">
+      <div className="sl-dock-row">
+        <button className="sl-roll" disabled={!myTurn} onClick={doRoll} aria-label={myTurn ? "Roll dice" : undefined}>
+          <DiceIcon />{table.phase === "gameEnd" ? "Game over" : myTurn ? (table.streak > 0 ? "Roll again" : "Roll dice") : animating ? "Rolling…" : `${turnName}'s turn`}
+        </button>
+        {secsLeft !== null && myTurn && <span className={`timer-chip ${secsLeft <= 5 ? "urgent" : ""}`}>⏱ {secsLeft}s</span>}
+      </div>
+      <p className="sl-msg" aria-live="polite">{msg}{table.streak > 0 && table.phase === "playing" && !animating ? ` · Sixes this turn: ${table.streak} of 3` : ""}</p>
+      <span className="sl-sr" aria-live="polite">{animating ? "" : `Die shows ${dieValue}`}</span>
     </div>
   </section>;
 }

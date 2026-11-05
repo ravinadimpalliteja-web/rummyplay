@@ -19,7 +19,7 @@ const wx = (x: number) => (x - W / 2) / S, wz = (y: number) => (y - W / 2) / S;
 const TILE_TOP = .14, RIM = .62, HALF = 5 + RIM, RIM_TOP = .26, BASE = -.5;
 const L_BOARD = 0, L_NUMBERS = 1, L_TOKENS = 2;
 /** Token figures are modelled about 0.9 squares tall; on the board they stand this much larger. */
-const FIG = 1.35;
+const FIG = 1.32;
 /** Extra shift for token positions, in board units (positions already come laid out for the 3D board). */
 const SHIFT = { x: 0, y: 0 };
 
@@ -279,7 +279,7 @@ export class BoardScene {
     this.size = { w, h };
     this.dpr = dpr; this.renderer.setPixelRatio(Math.min(dpr, this.ratioCap)); this.renderer.setSize(w, h, false);
     const cam = this.camera, aspect = w / h;
-    this.elevation = aspect > 1.15 ? 55 : aspect < .85 ? 60 : 58;
+    this.elevation = aspect > 1.15 ? 57 : aspect < .85 ? 60 : 58;
     cam.aspect = aspect; cam.clearViewOffset();
     const el = (this.elevation * Math.PI) / 180, dirv = new THREE.Vector3(0, Math.sin(el), Math.cos(el));
     const pts: Obj[] = [];
@@ -391,6 +391,5 @@ export class BoardScene {
     this.scene.traverse((o: Obj) => { o.geometry?.dispose?.(); const mm = o.material; if (mm) (Array.isArray(mm) ? mm : [mm]).forEach((x: Obj) => x.dispose?.()); });
     this.scene.environment?.dispose?.();
     this.renderer.dispose();
-    this.renderer.forceContextLoss?.();
   }
 }

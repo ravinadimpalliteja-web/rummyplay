@@ -341,7 +341,7 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
         dirty.current = false;
         // watch the frame rate while things move; if this device struggles, step the 3D down, and in the end use the lighter board
         const now = performance.now(), gap = now - glPrev.current; glPrev.current = now;
-        if (gap < 400 && !(DEBUG && /[?&]keep3d\b/.test(location.search))) {
+        if (gap < 1500 && !(DEBUG && /[?&]keep3d\b/.test(location.search))) {
           glGaps.current.push(gap);
           if (glGaps.current.length >= 24) {
             const med = [...glGaps.current].sort((a, b) => a - b)[12]; glGaps.current = [];
@@ -383,6 +383,7 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     if (!DEBUG) return;
     (window as unknown as { __slPerf?: () => unknown }).__slPerf = () => sceneRef.current?.perf();
     (window as unknown as { __slForce?: () => void }).__slForce = () => { dirty.current = true; };
+    (window as unknown as { __slOverlay?: (o: typeof overlay.current) => void }).__slOverlay = (o) => { overlay.current = o; dirty.current = true; };
   });
   /* Test hook (only with ?debug in the address): where tokens and square numbers are on screen, to check none is hidden. */
   useEffect(() => {
@@ -662,10 +663,10 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
 
     <div className="sl-stage" ref={stageRef} role="img" aria-label={`Snakes and ladders board. ${table.order.map(s => `${table.names[s]} on ${table.pos[s] || "start"}`).join(", ")}.`}>
       {useGL ? <>
-        <canvas className="sl-gl" ref={glRef} />
+        <canvas key="gl" className="sl-gl" ref={glRef} />
         {glState !== "ready" && <p className="sl-gl-wait">Setting up the 3D board…</p>}
       </> : <>
-        <canvas className="sl-base" ref={baseRef} style={geo ? { width: geo.sw + "px", height: geo.sh + "px" } : undefined} />
+        <canvas key="base" className="sl-base" ref={baseRef} style={geo ? { width: geo.sw + "px", height: geo.sh + "px" } : undefined} />
         <div className="sl-plane" style={geo ? planeStyle(geo) : { visibility: "hidden" }}><canvas className="sl-board" ref={boardRef} /></div>
         <canvas className="sl-pieces" ref={piecesRef} style={geo ? { width: geo.sw + "px", height: geo.sh + "px" } : undefined} />
         <div className="sl-plane fx" style={geo ? planeStyle(geo) : { visibility: "hidden" }}><canvas ref={fxRef} /></div>

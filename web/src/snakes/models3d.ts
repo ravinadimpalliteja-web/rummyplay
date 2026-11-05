@@ -145,8 +145,8 @@ function lion() {
   const grp = new THREE.Group(), fur = mat("#e2a13e", .7), face2 = mat("#ffd77a", .6), mane = mat("#c96a24", .85);
   animalBody(grp, fur, mat("#fbe3a4", .7));
   for (const s of [-1, 1]) { ball(grp, fur, [s * .075, .085, .07], [.06, .04, .075]); ball(grp, fur, [s * .14, .22, .05], [.05, .085, .05], [0, 0, s * .3]); }
-  for (let i = 0; i < 16; i++) { const a = (i / 16) * Math.PI * 2; ball(grp, mane, [Math.cos(a) * .165, .56 + Math.sin(a) * .165, -.04], .075); }
-  ball(grp, mane, [0, .56, -.06], .17);
+  for (let i = 0; i < 16; i++) { const a = (i / 16) * Math.PI * 2; ball(grp, mane, [Math.cos(a) * .15, .56 + Math.sin(a) * .155, -.04], .066); }
+  ball(grp, mane, [0, .56, -.06], .16);
   for (const s of [-1, 1]) { ball(grp, face2, [s * .11, .69, 0], .045); ball(grp, mat("#c9783a", .7), [s * .11, .69, .03], .022); }
   ball(grp, face2, [0, .555, .02], .14);
   face(grp, .57, .02, .14, { cheeks: true, smile: false });

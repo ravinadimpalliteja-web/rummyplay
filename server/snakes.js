@@ -7,26 +7,53 @@
  *  - A six is needed to enter the board (you enter on square 1).
  *  - A six gives another roll. Three sixes in a row cancel that whole turn: the token goes back to where it was
  *    when the turn began, and play passes on.
- *  - You must land exactly on 100 to win; a roll that would go past 100 does not move.
- * The server rolls the die. Clients only send intents: 'start', 'roll', 'again', 'leave'.
+ *  - You must land exactly on 100; a roll that would go past 100 does not move.
+ *  - Rankings: the game goes on after someone reaches 100. Each finisher takes the next place (1st, 2nd, 3rd);
+ *    the game ends when only one player is left, who takes last place.
+ * The server rolls the die. Clients only send intents: 'start', 'roll', 'again', 'leave', 'chat'.
  */
 const crypto = require('crypto');
 
-const LADDERS = Object.freeze({ 4: 25, 13: 46, 33: 49, 42: 63, 50: 69, 62: 81, 74: 92 });
-const SNAKES = Object.freeze({ 27: 5, 40: 3, 43: 18, 54: 31, 66: 45, 76: 58, 89: 53, 99: 41 });
+/* A tougher board: ten long snakes, six short ladders. Must match web/src/snakes/engine.ts (a test checks this). */
+const LADDERS = Object.freeze({ 14: 28, 22: 43, 35: 54, 59: 63, 74: 95 });
+const SNAKES = Object.freeze({ 49: 7, 60: 19, 66: 17, 73: 51, 82: 43, 93: 55, 98: 44 });
+/* The golden ladder: landing on 81 climbs to 99 only once in RARE_ODDS landings (a separate draw with every roll). */
+const RARE_LADDERS = Object.freeze({ 81: 99 });
+const RARE_ODDS = 1000;
+const BOARD_VERSION = 3;          // must match web/src/snakes/engine.ts; clients won't start a room game on another board
 const TARGET = 100;
+
+/* Quick chat: players pick from these by index; no free text yet. Must match the web client's lists. */
+const CHAT_PHRASES = 8;   // Nice move! · Good luck · Well played · Oops! · Hurry up · So close! · Haha · Thank you
+const CHAT_EMOJIS = 12;
+const CHAT_GAP_MS = 1200;
+
+/* Player tokens: three collections (4 pawns, 8 people, 9 animals). Must match web/src/snakes/tokens.ts (a test checks this).
+   Every seat always holds a token, and no two seats share one. */
+const PIECE_IDS = Object.freeze([
+  'pawn-gold', 'pawn-green', 'pawn-red', 'pawn-blue',
+  'young-explorer', 'jungle-adventurer', 'mountain-adventurer', 'outdoor-explorer', 'cricketer', 'chef', 'dancer', 'scholar',
+  'lion', 'panda', 'elephant', 'rabbit', 'peacock', 'monkey', 'fox', 'tiger', 'deer',
+]);
+const DEFAULT_PIECES = Object.freeze(['pawn-gold', 'pawn-green', 'pawn-red', 'pawn-blue']);
 
 /* ---------- pure rules ---------- */
 function newGame(order) {
   if (!Array.isArray(order) || order.length < 2 || order.length > 4) throw new Error('Snakes & Ladders needs 2 to 4 players');
   const pos = {};
   for (const s of order) pos[s] = 0;
-  return { order: order.slice(), pos, turnIdx: 0, streak: 0, turnStart: 0, phase: 'playing', winner: null, last: null, rolls: 0 };
+  return { order: order.slice(), pos, turnIdx: 0, streak: 0, turnStart: 0, phase: 'playing', winner: null, last: null, rolls: 0, finished: [] };
 }
 const turnOf = (g) => g.order[g.turnIdx];
+function nextTurn(g) {
+  for (let i = 0; i < g.order.length; i++) {
+    g.turnIdx = (g.turnIdx + 1) % g.order.length;
+    if (!g.finished.includes(g.order[g.turnIdx])) return;
+  }
+}
 
 /** Applies one roll for `seat`. Mutates and returns the game; `g.last` describes what happened. */
-function roll(g, seat, value) {
+function roll(g, seat, value, lucky = false) {
   if (g.phase !== 'playing') throw new Error('The game is over');
   if (seat !== turnOf(g)) throw new Error('It is not your turn');
   if (!Number.isInteger(value) || value < 1 || value > 6) throw new Error('Bad roll');
@@ -42,27 +69,43 @@ function roll(g, seat, value) {
   else { outcome = 'move'; to = landed = from + value; }
   if (outcome === 'move' || outcome === 'enter') {
     if (LADDERS[landed]) { via = 'ladder'; to = LADDERS[landed]; }
+    else if (RARE_LADDERS[landed] && lucky) { via = 'ladder'; to = RARE_LADDERS[landed]; }
     else if (SNAKES[landed]) { via = 'snake'; to = SNAKES[landed]; }
   }
   g.pos[seat] = to;
   const win = to === TARGET;
   const extra = value === 6 && outcome !== 'three-sixes' && !win;
-  g.last = { n: ++g.rolls, seat, value, from, landed, to, via, outcome, extra, win, streak: g.streak };
-  if (win) { g.phase = 'gameEnd'; g.winner = seat; }
-  else if (!extra) { g.streak = 0; g.turnIdx = (g.turnIdx + 1) % g.order.length; }
+  let rank = null, ended = false;
+  if (win) {
+    g.finished.push(seat); rank = g.finished.length;
+    const left = g.order.filter((s) => !g.finished.includes(s));
+    if (left.length <= 1) { g.finished.push(...left); g.phase = 'gameEnd'; g.winner = g.finished[0]; ended = true; }
+  }
+  g.last = { n: ++g.rolls, seat, value, from, landed, to, via, outcome, extra, win, rank, ended, streak: g.streak };
+  if (!ended && !extra) { g.streak = 0; nextTurn(g); }
   return g;
 }
+
+/* ---------- animation timing, shared with the web client (web/src/snakes/engine.ts) ---------- */
+const TIMING = Object.freeze({ die: 1100, settle: 120, step: 230, enter: 300, ret: 800, rung: 120, ladderBase: 150,
+  mouth: 380, slideBase: 500, slidePerSquare: 230, pop: 320, finish1: 3200, finishN: 1700, gap: 250 });
+const sqXY = (n) => { const row = Math.floor((n - 1) / 10); let col = (n - 1) % 10; if (row % 2) col = 9 - col; return [col, row]; };
+const dist = (a, b) => { const [x1, y1] = sqXY(a), [x2, y2] = sqXY(b); return Math.hypot(x2 - x1, y2 - y1); };
+const rungsOf = (a, b) => Math.max(3, Math.floor((dist(a, b) * 60) / 19));
+const ladderMs = (a, b) => TIMING.ladderBase + rungsOf(a, b) * TIMING.rung;
+const snakeMs = (h, t) => Math.round(TIMING.mouth + TIMING.slideBase + dist(h, t) * TIMING.slidePerSquare + TIMING.pop);
 
 /** How long clients spend animating a roll (die spin + steps + ladder/snake). The server waits this long. */
 function animMs(last) {
   if (!last) return 0;
-  let t = 650;                                                   // die spin
-  if (last.outcome === 'move') t += Math.abs(last.landed - last.from) * 230;
-  if (last.outcome === 'enter') t += 300;
-  if (last.outcome === 'three-sixes') t += 800;
-  if (last.via === 'ladder') t += 850;
-  if (last.via === 'snake') t += 1250;
-  return t + 250;
+  let t = TIMING.die + TIMING.settle;
+  if (last.outcome === 'move') t += Math.abs(last.landed - last.from) * TIMING.step;
+  if (last.outcome === 'enter') t += TIMING.enter;
+  if (last.outcome === 'three-sixes') t += TIMING.ret;
+  if (last.via === 'ladder') t += ladderMs(last.landed, last.to);
+  if (last.via === 'snake') t += snakeMs(last.landed, last.to);
+  if (last.win) t += last.rank === 1 ? TIMING.finish1 : TIMING.finishN;
+  return t + TIMING.gap;
 }
 
 /* ---------- live room ---------- */
@@ -99,21 +142,32 @@ class SnakesRoom {
   view(seat) {
     const g = this.game;
     const base = {
-      t: 'state', game: 'snakes', code: this.code, passcode: this.passcode, now: Date.now(), you: seat,
+      t: 'state', game: 'snakes', board: BOARD_VERSION, code: this.code, passcode: this.passcode, now: Date.now(), you: seat,
       host: this.hostSeat() === seat,
       phase: g ? g.phase : 'lobby',
-      seats: this.seats.map((s, i) => (s ? { seat: i, name: s.name, connected: s.connected, away: g ? this.isAway(i) : false } : null)),
+      seats: this.seats.map((s, i) => (s ? { seat: i, name: s.name, connected: s.connected, away: g ? this.isAway(i) : false, piece: s.piece } : null)),
     };
     if (!g) return base;
     return {
       ...base,
       order: g.order, players: g.order.map((s) => ({ seat: s, sq: g.pos[s] })),
-      turn: turnOf(g), streak: g.streak, last: g.last, winner: g.winner,
+      turn: turnOf(g), streak: g.streak, last: g.last, winner: g.winner, finished: g.finished,
       deadline: this.deadline, moving: Date.now() < this.pauseUntil,
     };
   }
 
+  /** Gives any seat without a token the first free one (its seat's pawn colour first). */
+  assignPieces() {
+    for (let i = 0; i < 4; i++) {
+      const s = this.seats[i];
+      if (!s || (s.piece && PIECE_IDS.includes(s.piece) && !this.seats.some((o, j) => j !== i && o && o.piece === s.piece))) continue;
+      const taken = new Set(this.seats.filter((o, j) => o && j !== i && o.piece).map((o) => o.piece));
+      s.piece = [DEFAULT_PIECES[i], ...DEFAULT_PIECES, ...PIECE_IDS].find((p) => !taken.has(p));
+    }
+  }
+
   broadcast() {
+    this.assignPieces();
     for (let i = 0; i < 4; i++) {
       const s = this.seats[i];
       if (s && s.ws && s.ws.open) s.ws.send(JSON.stringify(this.view(i)));
@@ -157,7 +211,7 @@ class SnakesRoom {
   }
 
   doRoll(seat) {
-    roll(this.game, seat, crypto.randomInt(1, 7));
+    roll(this.game, seat, crypto.randomInt(1, 7), crypto.randomInt(0, RARE_ODDS) === 0);
     this.pauseUntil = Date.now() + this.ms(animMs(this.game.last));
     this.schedule();
   }
@@ -180,8 +234,22 @@ class SnakesRoom {
         return this.start();
       case 'again':
         if (this.hostSeat() !== seat) throw new Error('Only the host can start a new game');
-        if (g && g.phase === 'gameEnd') this.newGame();
+        // back to the waiting room, so everyone can pick a token before the next match
+        if (g && g.phase === 'gameEnd') {
+          this.clearTimer(); this.game = null; this.pauseUntil = 0;
+          for (let i = 0; i < 4; i++) if (this.seats[i] && !this.seats[i].connected) this.seats[i] = null;   // players who left
+          this.hostSeat(); this.broadcast();
+        }
         return;
+      case 'piece': {
+        if (g) throw new Error('Tokens are chosen before the match starts');
+        const id = String(m.id || '');
+        if (!PIECE_IDS.includes(id)) throw new Error('Unknown token');
+        const other = this.seats.find((o, j) => o && j !== seat && o.piece === id);
+        if (other) throw new Error(`${other.name} already has that token`);
+        this.seats[seat].piece = id;
+        return this.broadcast();
+      }
       case 'roll':
         if (!g) throw new Error('The game has not started');
         if (g.phase !== 'playing') throw new Error('The game is over');
@@ -189,6 +257,16 @@ class SnakesRoom {
         if (Date.now() < this.pauseUntil) throw new Error('Wait for the last move to finish');
         this.seats[seat].missed = 0;
         return this.doRoll(seat);
+      case 'chat': {
+        const kind = m.k === 'e' ? 'e' : 'p', i = Number(m.i);
+        if (!Number.isInteger(i) || i < 0 || i >= (kind === 'e' ? CHAT_EMOJIS : CHAT_PHRASES)) throw new Error('Unknown chat message');
+        const s = this.seats[seat], now = Date.now();
+        if (s.lastChat && now - s.lastChat < CHAT_GAP_MS) return;           // quietly drop rapid repeats
+        s.lastChat = now;
+        const out = JSON.stringify({ t: 'chat', seat, k: kind, i, at: now });
+        for (const x of this.seats) if (x && x.ws && x.ws.open) x.ws.send(out);
+        return;
+      }
       case 'leave': {
         const s = this.seats[seat];
         if (!g) {                                   // lobby: free the seat
@@ -219,4 +297,4 @@ class SnakesRoom {
   destroy() { this.clearTimer(); this.dead = true; for (const s of this.seats) if (s && s.ws) s.ws.terminate(); }
 }
 
-module.exports = { LADDERS, SNAKES, TARGET, ROLL_SECS, newGame, roll, animMs, turnOf, SnakesRoom };
+module.exports = { LADDERS, SNAKES, RARE_LADDERS, RARE_ODDS, BOARD_VERSION, TARGET, ROLL_SECS, TIMING, CHAT_PHRASES, CHAT_EMOJIS, PIECE_IDS, DEFAULT_PIECES, newGame, roll, animMs, turnOf, rungsOf, SnakesRoom };

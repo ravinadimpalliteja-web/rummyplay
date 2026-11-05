@@ -5,6 +5,6 @@
   "description": "Royal Club live room server: Spades (4 real players) and Snakes & Ladders (2 to 4 real players). Zero dependencies.",
   "main": "server.js",
   "type": "commonjs",
-  "scripts": { "start": "node server.js", "test": "node test/engine.test.js && node test/room.test.js && node test/snakes.test.js" },
+  "scripts": { "start": "node server.js", "test": "node test/engine.test.js && node test/room.test.js && node test/snakes.test.js && node test/snakes-view.test.js" },
   "engines": { "node": ">=18" }
 }

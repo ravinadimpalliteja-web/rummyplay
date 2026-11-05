@@ -328,6 +328,7 @@ export class BoardScene {
       f.grp.visible = visible;
       f.grp.position.set(wx(p.x + SHIFT.x), TILE_TOP + p.h / S, wz(p.y + SHIFT.y)); f.grp.scale.setScalar(Math.max(.001, p.s) * FIG);
       f.glow.visible = p.active;
+      f.fig.rotation.x = -((this.elevation - 34) * Math.PI) / 180;          // lean back toward the camera so faces show, as board-game standees do
     }
     for (const [seat, f] of this.figures) if (!seen.has(seat)) f.grp.visible = false;
     // snake effects

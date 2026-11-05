@@ -1,7 +1,7 @@
 'use strict';
 process.env.SPEED = '50';        // shorten every timer and animation pause; the real roll timer is 15s
 const assert = require('assert');
-const { newGame, roll, turnOf, LADDERS, SNAKES } = require('../snakes');
+const { newGame, roll, turnOf, animMs, LADDERS, SNAKES, TIMING } = require('../snakes');
 
 /* ---------- rules ---------- */
 {
@@ -13,31 +13,32 @@ const { newGame, roll, turnOf, LADDERS, SNAKES } = require('../snakes');
   roll(g, 2, 6);
   assert.strictEqual(g.pos[2], 1); assert.strictEqual(g.last.outcome, 'enter'); assert(g.last.extra);
   assert.strictEqual(turnOf(g), 2, 'a six gives another roll');
-  roll(g, 2, 2);                                   // 1 -> 3
-  assert.strictEqual(g.pos[2], 3); assert.strictEqual(turnOf(g), 0);
+  roll(g, 2, 1);                                   // 1 -> 2
+  assert.strictEqual(g.pos[2], 2); assert.strictEqual(turnOf(g), 0);
 }
 {
   // Ladders and snakes.
   const g = newGame([0, 1]); g.pos[0] = 1;
-  roll(g, 0, 3);                                   // lands on 4 -> ladder to 25
-  assert.strictEqual(g.last.landed, 4); assert.strictEqual(g.last.via, 'ladder'); assert.strictEqual(g.pos[0], LADDERS[4]);
-  g.pos[1] = 23; roll(g, 1, 4);                    // lands on 27 -> snake to 5
-  assert.strictEqual(g.last.via, 'snake'); assert.strictEqual(g.pos[1], SNAKES[27]);
+  roll(g, 0, 2);                                   // lands on 3 -> ladder
+  assert.strictEqual(g.last.landed, 3); assert.strictEqual(g.last.via, 'ladder'); assert.strictEqual(g.pos[0], LADDERS[3]);
+  g.pos[1] = 45; roll(g, 1, 4);                    // lands on 49 -> snake
+  assert.strictEqual(g.last.via, 'snake'); assert.strictEqual(g.pos[1], SNAKES[49]);
+  assert(animMs(g.last) > TIMING.die + 4 * TIMING.step, 'the server waits for the swallow animation');
 }
 {
   // Three sixes in a row cancel the whole turn.
-  const g = newGame([0, 1]); g.pos[0] = 10;
-  roll(g, 0, 6); assert.strictEqual(g.pos[0], 16); assert.strictEqual(turnOf(g), 0);
-  roll(g, 0, 6); assert.strictEqual(g.pos[0], 22); assert.strictEqual(turnOf(g), 0);
+  const g = newGame([0, 1]); g.pos[0] = 40;
+  roll(g, 0, 6); assert.strictEqual(g.pos[0], 46); assert.strictEqual(turnOf(g), 0);
+  roll(g, 0, 6); assert.strictEqual(g.pos[0], 52); assert.strictEqual(turnOf(g), 0);
   roll(g, 0, 6);
-  assert.strictEqual(g.last.outcome, 'three-sixes'); assert.strictEqual(g.pos[0], 10, 'back to where the turn began');
+  assert.strictEqual(g.last.outcome, 'three-sixes'); assert.strictEqual(g.pos[0], 40, 'back to where the turn began');
   assert.strictEqual(turnOf(g), 1, 'turn passes'); assert.strictEqual(g.streak, 0);
   // Three sixes from off the board: entered on the first six, sent back off the board on the third.
   const h = newGame([0, 1]);
   roll(h, 0, 6); roll(h, 0, 6); assert.strictEqual(h.pos[0], 7); roll(h, 0, 6);
   assert.strictEqual(h.pos[0], 0); assert.strictEqual(turnOf(h), 1);
   // Sixes on different turns do not add up.
-  const k = newGame([0, 1]); k.pos[0] = 10; k.pos[1] = 10;
+  const k = newGame([0, 1]); k.pos[0] = 40; k.pos[1] = 40;
   roll(k, 0, 6); roll(k, 0, 1); roll(k, 1, 2); roll(k, 0, 6); roll(k, 0, 6);
   assert.strictEqual(k.last.outcome, 'move'); assert.strictEqual(turnOf(k), 0);
 }
@@ -50,6 +51,30 @@ const { newGame, roll, turnOf, LADDERS, SNAKES } = require('../snakes');
   roll(g, 0, 4);
   assert.strictEqual(g.pos[0], 100); assert(g.last.win); assert.strictEqual(g.phase, 'gameEnd'); assert.strictEqual(g.winner, 0);
   assert.throws(() => roll(g, 1, 2), /over/);
+}
+{
+  // Rankings: with 3 players the game goes on after 1st place, skips finished players, and ends when one is left.
+  const g = newGame([0, 1, 2]); g.pos = { 0: 97, 1: 93, 2: 50 };
+  roll(g, 0, 3);
+  assert(g.last.win && g.last.rank === 1 && !g.last.ended); assert.strictEqual(g.phase, 'playing'); assert.strictEqual(turnOf(g), 1);
+  roll(g, 1, 1); roll(g, 2, 1);
+  assert.strictEqual(turnOf(g), 1, 'finished player 0 is skipped');
+  roll(g, 1, 6);
+  assert(g.last.rank === 2 && g.last.ended); assert.strictEqual(g.phase, 'gameEnd');
+  assert.deepStrictEqual(g.finished, [0, 1, 2]); assert.strictEqual(g.winner, 0);
+  assert(animMs(g.last) >= TIMING.finishN, 'celebration pause');
+  // Four players: three places are played for.
+  const f = newGame([0, 1, 2, 3]); f.pos = { 0: 99, 1: 99, 2: 99, 3: 2 };
+  roll(f, 0, 1); roll(f, 1, 1); assert.strictEqual(f.phase, 'playing'); roll(f, 2, 1);
+  assert.strictEqual(f.phase, 'gameEnd'); assert.deepStrictEqual(f.finished, [0, 1, 2, 3]);
+}
+{
+  // The web client must use the same board and timing as the server.
+  const fs = require('fs'), src = fs.readFileSync(require('path').join(__dirname, '../../web/src/snakes/engine.ts'), 'utf8');
+  const grab = (name) => JSON.parse(src.match(new RegExp(`export const ${name}[^=]*= (\\{[^}]*\\})`))[1].replace(/(\w+):/g, '"$1":'));
+  assert.deepStrictEqual(grab('LADDERS'), Object.fromEntries(Object.entries(LADDERS)), 'ladders match the web client');
+  assert.deepStrictEqual(grab('SNAKES'), Object.fromEntries(Object.entries(SNAKES)), 'snakes match the web client');
+  assert.deepStrictEqual(grab('TIMING'), { ...TIMING }, 'animation timing matches the web client');
 }
 {
   // Board sanity: no ladder ends on a snake head and no snake ends on a ladder foot.
@@ -106,6 +131,15 @@ server.listen(0, async () => {
     assert(a.state.players.every((p) => p.sq === 0));
     c.send({ t: 'join', game: 'snakes', token: tc, name: 'Cy', code, passcode: '1234' }); await c.until(() => c.errs.length);
     assert(/already started/.test(c.errs[0]));
+
+    // Quick chat: a known phrase reaches everyone; unknown ones are refused; rapid repeats are dropped.
+    const chats = [];
+    b.ws.addEventListener('message', (e) => { const m = JSON.parse(e.data); if (m.t === 'chat') chats.push(m); });
+    a.send({ t: 'chat', k: 'p', i: 2 }); a.send({ t: 'chat', k: 'e', i: 0 });
+    a.send({ t: 'chat', k: 'p', i: 99 }); await a.until(() => a.errs.some((x) => /Unknown chat/.test(x)));
+    await b.until(() => chats.length >= 1);
+    await new Promise((r) => setTimeout(r, 200));
+    assert.strictEqual(chats.length, 1); assert.deepStrictEqual([chats[0].seat, chats[0].k, chats[0].i], [0, 'p', 2]);
 
     // Out-of-turn roll is refused.
     const notTurn = a.state.turn === 0 ? b : a;

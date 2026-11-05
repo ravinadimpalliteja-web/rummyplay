@@ -1,31 +1,35 @@
 /* Royal Club Snakes & Ladders rules. Mirrors server/snakes.js (the online game runs on the server; practice runs here).
+   A server test checks that LADDERS, SNAKES and TIMING below match the server exactly.
    - A six is needed to enter the board (you enter on square 1).
    - A six gives another roll; three sixes in a row cancel the whole turn (back to where the turn began).
-   - Exact roll to land on 100; a roll that would pass 100 does not move. */
+   - Exact roll to land on 100; a roll that would pass 100 does not move.
+   - Rankings: play goes on after someone reaches 100; each finisher takes the next place, and the game ends
+     when one player is left (last place). */
 
-export const LADDERS: Record<number, number> = { 4: 25, 13: 46, 33: 49, 42: 63, 50: 69, 62: 81, 74: 92 };
-export const SNAKES: Record<number, number> = { 27: 5, 40: 3, 43: 18, 54: 31, 66: 45, 76: 58, 89: 53, 99: 41 };
+/* A tougher board: ten long snakes, six short ladders. */
+export const LADDERS: Record<number, number> = { 3: 23, 12: 32, 16: 36, 35: 54, 57: 76, 74: 95 };
+export const SNAKES: Record<number, number> = { 49: 8, 60: 19, 64: 17, 67: 15, 71: 31, 81: 42, 92: 53, 96: 55, 98: 58, 99: 61 };
 export const TARGET = 100;
 
 export type Outcome = "need-six" | "enter" | "move" | "overshoot" | "three-sixes";
 export type LastRoll = {
   n: number; seat: number; value: number; from: number; landed: number; to: number;
-  via: "ladder" | "snake" | null; outcome: Outcome; extra: boolean; win: boolean; streak: number;
+  via: "ladder" | "snake" | null; outcome: Outcome; extra: boolean; win: boolean; rank: number | null; ended: boolean; streak: number;
 };
 export type SLGame = {
   order: number[]; pos: Record<number, number>; turnIdx: number; streak: number; turnStart: number;
-  phase: "playing" | "gameEnd"; winner: number | null; last: LastRoll | null; rolls: number;
+  phase: "playing" | "gameEnd"; winner: number | null; last: LastRoll | null; rolls: number; finished: number[];
 };
 
 export const newGame = (order: number[]): SLGame => ({
   order: [...order], pos: Object.fromEntries(order.map(s => [s, 0])), turnIdx: 0, streak: 0, turnStart: 0,
-  phase: "playing", winner: null, last: null, rolls: 0,
+  phase: "playing", winner: null, last: null, rolls: 0, finished: [],
 });
 export const turnOf = (g: SLGame) => g.order[g.turnIdx];
 
 export function roll(prev: SLGame, seat: number, value: number): SLGame {
   if (prev.phase !== "playing" || seat !== turnOf(prev)) return prev;
-  const g: SLGame = { ...prev, pos: { ...prev.pos } };
+  const g: SLGame = { ...prev, pos: { ...prev.pos }, finished: [...prev.finished] };
   const from = g.pos[seat];
   if (g.streak === 0) g.turnStart = from;
   if (value === 6) g.streak++;
@@ -41,13 +45,30 @@ export function roll(prev: SLGame, seat: number, value: number): SLGame {
   }
   g.pos[seat] = to;
   const win = to === TARGET, extra = value === 6 && outcome !== "three-sixes" && !win;
-  g.last = { n: ++g.rolls, seat, value, from, landed, to, via, outcome, extra, win, streak: g.streak };
-  if (win) { g.phase = "gameEnd"; g.winner = seat; }
-  else if (!extra) { g.streak = 0; g.turnIdx = (g.turnIdx + 1) % g.order.length; }
+  let rank: number | null = null, ended = false;
+  if (win) {
+    g.finished.push(seat); rank = g.finished.length;
+    const left = g.order.filter(s => !g.finished.includes(s));
+    if (left.length <= 1) { g.finished.push(...left); g.phase = "gameEnd"; g.winner = g.finished[0]; ended = true; }
+  }
+  g.last = { n: ++g.rolls, seat, value, from, landed, to, via, outcome, extra, win, rank, ended, streak: g.streak };
+  if (!ended && !extra) {
+    g.streak = 0;
+    for (let i = 0; i < g.order.length; i++) { g.turnIdx = (g.turnIdx + 1) % g.order.length; if (!g.finished.includes(g.order[g.turnIdx])) break; }
+  }
   return g;
 }
 
 export const rollDie = () => { const b = new Uint32Array(1); crypto.getRandomValues(b); return 1 + (b[0] % 6); };
 
-/** Same timing as the server's pause (server/snakes.js animMs). */
-export const STEP_MS = 230, LADDER_MS = 850, SNAKE_MS = 1250, RETURN_MS = 800, ENTER_MS = 300, DIE_MS = 650;
+/* Animation timing, shared with the server, which waits this long before the next roll. */
+export const TIMING = { die: 1100, settle: 120, step: 230, enter: 300, ret: 800, rung: 120, ladderBase: 150, mouth: 380, slideBase: 500, slidePerSquare: 230, pop: 320, finish1: 3200, finishN: 1700, gap: 250 };
+const sqXY = (n: number) => { const row = Math.floor((n - 1) / 10); let col = (n - 1) % 10; if (row % 2) col = 9 - col; return [col, row]; };
+const dist = (a: number, b: number) => { const [x1, y1] = sqXY(a), [x2, y2] = sqXY(b); return Math.hypot(x2 - x1, y2 - y1); };
+export const rungsOf = (a: number, b: number) => Math.max(3, Math.floor((dist(a, b) * 60) / 19));
+export const ladderMs = (a: number, b: number) => TIMING.ladderBase + rungsOf(a, b) * TIMING.rung;
+export const snakeSlideMs = (h: number, t: number) => Math.round(TIMING.slideBase + dist(h, t) * TIMING.slidePerSquare);
+
+/* Quick chat (no free text yet). The server only relays the index. */
+export const CHAT_PHRASES = ["Nice move!", "Good luck", "Well played", "Oops!", "Hurry up", "So close!", "Haha", "Thank you"];
+export const CHAT_EMOJIS = ["😀", "😂", "😮", "😢", "😤", "👍", "👏", "🎉", "🙏", "🔥", "🐍", "🪜"];

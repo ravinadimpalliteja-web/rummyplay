@@ -23,8 +23,8 @@ const wx = (x: number) => (x - W / 2) / S, wz = (y: number) => (y - W / 2) / S;
 const TILE_TOP = .14, RIM = .62, HALF = 5 + RIM, RIM_TOP = .26, BASE = -.5;
 const L_BOARD = 0, L_NUMBERS = 1, L_TOKENS = 2;
 /** Token figures are modelled about 0.85 squares tall on a base 0.27 across; on the board they stand this much larger
-    (so a figure in the middle of its square keeps clear of the number in the square's front-left corner). */
-const FIG = 1.12;
+    (big enough that their faces and details read at board size). */
+const FIG = 1.8;
 /** Extra shift for token positions, in board units (positions already come laid out for the 3D board). */
 const SHIFT = { x: 0, y: 0 };
 
@@ -190,6 +190,11 @@ export class BoardScene {
     light.shadow.mapSize.set(low ? 1024 : 2048, low ? 1024 : 2048); light.shadow.bias = -.0004; light.shadow.normalBias = .025;
     light.layers.enableAll(); sc.layers.enableAll(); scene.add(light); this.light = light;
     const fill = new THREE.HemisphereLight("#fff6e6", "#0b3a26", .2); fill.layers.enableAll(); scene.add(fill);
+    // extra light on the tokens only (they are drawn in their own pass): a soft front light from the players' side so faces
+    // and clothing read, and a warm rim light from behind that outlines each figure against the board
+    const front = new THREE.DirectionalLight("#fff4e4", 1.1); front.position.set(1.5, 6, 12); front.layers.set(L_TOKENS); scene.add(front);
+    const rim = new THREE.DirectionalLight("#ffe2a8", 1.6); rim.position.set(3, 7, -10); rim.layers.set(L_TOKENS); scene.add(rim);
+    const tokFill = new THREE.HemisphereLight("#fffaf0", "#2a4a3a", .35); tokFill.layers.set(L_TOKENS); scene.add(tokFill);
     // the table only catches shadows; the page shows the green felt behind
     const table = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.ShadowMaterial({ opacity: .5 }));
     table.rotation.x = -Math.PI / 2; table.position.y = BASE - .01; table.receiveShadow = true; scene.add(table);
@@ -423,7 +428,7 @@ export class BoardScene {
       const qLean = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(dz, 0, -dx).normalize(), p.lean ?? 0);
       const qSway = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(dx, 0, dz).normalize(), p.sway ?? 0);
       f.tilt.quaternion.copy(qLean).multiply(qSway);
-      f.fig.rotation.x = -((this.elevation - 34) * Math.PI) / 180;          // lean back toward the camera so faces show, as board-game standees do
+      f.fig.rotation.x = -((this.elevation - 24) * Math.PI) / 180;          // lean back toward the camera so faces show under hats, as board-game standees do
     }
     for (const [seat, f] of this.figures) if (!seen.has(seat)) f.grp.visible = false;
     // gold sparkles and the landing ring

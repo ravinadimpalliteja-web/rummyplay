@@ -73,7 +73,7 @@ export const SHARED: Record<number, { pts: [number, number][]; s: number }> = {
 /** WebGL 3D board: a lone token stands exactly on the centre of its square. */
 export const spot3D = (n: number): Pt => center(n);
 export const SHARED3D: Record<number, { pts: [number, number][]; s: number }> = {
-  2: { pts: [[-13, -3], [13, -3]], s: .66 }, 3: { pts: [[-13, -9], [13, -9], [11, 11]], s: .56 }, 4: { pts: [[-13, -11], [13, -11], [4, 11], [21, 11]], s: .5 },
+  2: { pts: [[-15, -3], [15, -3]], s: .64 }, 3: { pts: [[-15, -10], [15, -10], [12, 12]], s: .54 }, 4: { pts: [[-15, -12], [15, -12], [4, 12], [22, 12]], s: .48 },
 };
 /** Where a token waits before entering (on the rim, just left of square 1). */
 export const OFF: Pt = { x: PAD * .4, y: center(1).y + 6 };
@@ -688,7 +688,7 @@ export function ladderSteps(a: number, b: number, rungs: number): Pt[] {
     A contact shadow and a ring in the player's colour sit on the board; the active player's token also gets a gold glow.
     `lift` raises the token off the board (hops), in board units. Until `img` has loaded a plain disc is drawn. */
 /** Height of a standing token, in board units (a square is 60). */
-export const PIECE_H = 44;
+export const PIECE_H = 58;
 export function paintPiece(g: CanvasRenderingContext2D, x: number, y: number, u: number, sq: number, ring: string, img: HTMLImageElement | null, active: boolean, scale = 1, lift = 0, lean = 0) {
   if (scale <= 0.02) return;
   const k = u * scale, h = PIECE_H * k, w = h * (100 / 120), top = y - lift * u;

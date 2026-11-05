@@ -13,15 +13,15 @@ type V3 = [number, number, number];
 
 const cache = new Map<string, Obj>();
 const once = <T,>(key: string, make: () => T): T => { let g = cache.get(key); if (!g) { g = make(); cache.set(key, g); } return g as T; };
-const SPH = () => once("sph", () => new THREE.SphereGeometry(1, 24, 16));
-const CYL = () => once("cyl", () => new THREE.CylinderGeometry(1, 1, 1, 24));
-const TOR = (tube: number) => once("tor" + tube, () => new THREE.TorusGeometry(1, tube, 8, 32));
-const DOME = (frac: number) => once("dome" + frac, () => new THREE.SphereGeometry(1, 24, 10, 0, Math.PI * 2, 0, Math.PI * frac));
-const CONE = () => once("cone", () => new THREE.ConeGeometry(1, 1, 20));
+const SPH = () => once("sph", () => new THREE.SphereGeometry(1, 40, 28));
+const CYL = () => once("cyl", () => new THREE.CylinderGeometry(1, 1, 1, 40));
+const TOR = (tube: number) => once("tor" + tube, () => new THREE.TorusGeometry(1, tube, 14, 48));
+const DOME = (frac: number) => once("dome" + frac, () => new THREE.SphereGeometry(1, 40, 16, 0, Math.PI * 2, 0, Math.PI * frac));
+const CONE = () => once("cone", () => new THREE.ConeGeometry(1, 1, 32));
 const BOX = () => once("box", () => new THREE.BoxGeometry(1, 1, 1));
 /** A tapered limb (wider at the top). */
-const LIMB = (r1: number, r2: number, l: number) => once(`limb${r1.toFixed(4)}/${r2.toFixed(4)}/${l.toFixed(4)}`, () => new THREE.CylinderGeometry(r1, r2, l, 16));
-const lathe = (key: string, prof: number[][], seg = 32) => once("lathe" + key, () => new THREE.LatheGeometry(prof.map(([x, y]) => new THREE.Vector2(x, y)), seg));
+const LIMB = (r1: number, r2: number, l: number) => once(`limb${r1.toFixed(4)}/${r2.toFixed(4)}/${l.toFixed(4)}`, () => new THREE.CylinderGeometry(r1, r2, l, 24));
+const lathe = (key: string, prof: number[][], seg = 48) => once("lathe" + key, () => new THREE.LatheGeometry(prof.map(([x, y]) => new THREE.Vector2(x, y)), seg));
 
 /** Satin finish (skin, cloth, fur). */
 export const mat = (color: string, rough = .6) => once("m" + color + rough, () => new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: 0 }));

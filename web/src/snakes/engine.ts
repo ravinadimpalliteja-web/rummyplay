@@ -6,9 +6,12 @@
    - Rankings: play goes on after someone reaches 100; each finisher takes the next place, and the game ends
      when one player is left (last place). */
 
-/* A tougher board: ten long snakes, six short ladders. */
-export const LADDERS: Record<number, number> = { 3: 23, 12: 32, 16: 36, 35: 54, 57: 76, 74: 95 };
-export const SNAKES: Record<number, number> = { 49: 8, 60: 19, 64: 17, 67: 15, 71: 31, 81: 42, 92: 53, 96: 55, 98: 58, 99: 61 };
+/* The board layout (chosen by the owner): five ladders and seven snakes. Each snake's body is routed around the
+   ladders (board.ts, SNAKE_WAYPOINTS); a server test checks no snake crosses a ladder. */
+export const LADDERS: Record<number, number> = { 14: 28, 22: 43, 35: 54, 59: 63, 74: 95 };
+export const SNAKES: Record<number, number> = { 49: 7, 60: 19, 64: 17, 73: 51, 82: 43, 93: 55, 98: 44 };
+/** Bumped when the board layout changes, so a client can tell if a room server still runs an older board. */
+export const BOARD_VERSION = 2;
 export const TARGET = 100;
 
 export type Outcome = "need-six" | "enter" | "move" | "overshoot" | "three-sixes";

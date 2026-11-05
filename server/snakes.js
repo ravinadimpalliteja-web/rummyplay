@@ -15,14 +15,24 @@
 const crypto = require('crypto');
 
 /* A tougher board: ten long snakes, six short ladders. Must match web/src/snakes/engine.ts (a test checks this). */
-const LADDERS = Object.freeze({ 3: 23, 12: 32, 16: 36, 35: 54, 57: 76, 74: 95 });
-const SNAKES = Object.freeze({ 49: 8, 60: 19, 64: 17, 67: 15, 71: 31, 81: 42, 92: 53, 96: 55, 98: 58, 99: 61 });
+const LADDERS = Object.freeze({ 14: 28, 22: 43, 35: 54, 59: 63, 74: 95 });
+const SNAKES = Object.freeze({ 49: 7, 60: 19, 64: 17, 73: 51, 82: 43, 93: 55, 98: 44 });
+const BOARD_VERSION = 2;          // must match web/src/snakes/engine.ts; clients won't start a room game on another board
 const TARGET = 100;
 
 /* Quick chat: players pick from these by index; no free text yet. Must match the web client's lists. */
 const CHAT_PHRASES = 8;   // Nice move! · Good luck · Well played · Oops! · Hurry up · So close! · Haha · Thank you
 const CHAT_EMOJIS = 12;
 const CHAT_GAP_MS = 1200;
+
+/* Player tokens: three collections (4 pawns, 8 people, 9 animals). Must match web/src/snakes/tokens.ts (a test checks this).
+   Every seat always holds a token, and no two seats share one. */
+const PIECE_IDS = Object.freeze([
+  'pawn-gold', 'pawn-green', 'pawn-red', 'pawn-blue',
+  'young-explorer', 'jungle-adventurer', 'mountain-adventurer', 'outdoor-explorer', 'cricketer', 'chef', 'dancer', 'scholar',
+  'lion', 'panda', 'elephant', 'rabbit', 'peacock', 'monkey', 'fox', 'tiger', 'deer',
+]);
+const DEFAULT_PIECES = Object.freeze(['pawn-gold', 'pawn-green', 'pawn-red', 'pawn-blue']);
 
 /* ---------- pure rules ---------- */
 function newGame(order) {
@@ -128,10 +138,10 @@ class SnakesRoom {
   view(seat) {
     const g = this.game;
     const base = {
-      t: 'state', game: 'snakes', code: this.code, passcode: this.passcode, now: Date.now(), you: seat,
+      t: 'state', game: 'snakes', board: BOARD_VERSION, code: this.code, passcode: this.passcode, now: Date.now(), you: seat,
       host: this.hostSeat() === seat,
       phase: g ? g.phase : 'lobby',
-      seats: this.seats.map((s, i) => (s ? { seat: i, name: s.name, connected: s.connected, away: g ? this.isAway(i) : false } : null)),
+      seats: this.seats.map((s, i) => (s ? { seat: i, name: s.name, connected: s.connected, away: g ? this.isAway(i) : false, piece: s.piece } : null)),
     };
     if (!g) return base;
     return {
@@ -142,7 +152,18 @@ class SnakesRoom {
     };
   }
 
+  /** Gives any seat without a token the first free one (its seat's pawn colour first). */
+  assignPieces() {
+    for (let i = 0; i < 4; i++) {
+      const s = this.seats[i];
+      if (!s || (s.piece && PIECE_IDS.includes(s.piece) && !this.seats.some((o, j) => j !== i && o && o.piece === s.piece))) continue;
+      const taken = new Set(this.seats.filter((o, j) => o && j !== i && o.piece).map((o) => o.piece));
+      s.piece = [DEFAULT_PIECES[i], ...DEFAULT_PIECES, ...PIECE_IDS].find((p) => !taken.has(p));
+    }
+  }
+
   broadcast() {
+    this.assignPieces();
     for (let i = 0; i < 4; i++) {
       const s = this.seats[i];
       if (s && s.ws && s.ws.open) s.ws.send(JSON.stringify(this.view(i)));
@@ -209,8 +230,22 @@ class SnakesRoom {
         return this.start();
       case 'again':
         if (this.hostSeat() !== seat) throw new Error('Only the host can start a new game');
-        if (g && g.phase === 'gameEnd') this.newGame();
+        // back to the waiting room, so everyone can pick a token before the next match
+        if (g && g.phase === 'gameEnd') {
+          this.clearTimer(); this.game = null; this.pauseUntil = 0;
+          for (let i = 0; i < 4; i++) if (this.seats[i] && !this.seats[i].connected) this.seats[i] = null;   // players who left
+          this.hostSeat(); this.broadcast();
+        }
         return;
+      case 'piece': {
+        if (g) throw new Error('Tokens are chosen before the match starts');
+        const id = String(m.id || '');
+        if (!PIECE_IDS.includes(id)) throw new Error('Unknown token');
+        const other = this.seats.find((o, j) => o && j !== seat && o.piece === id);
+        if (other) throw new Error(`${other.name} already has that token`);
+        this.seats[seat].piece = id;
+        return this.broadcast();
+      }
       case 'roll':
         if (!g) throw new Error('The game has not started');
         if (g.phase !== 'playing') throw new Error('The game is over');
@@ -258,4 +293,4 @@ class SnakesRoom {
   destroy() { this.clearTimer(); this.dead = true; for (const s of this.seats) if (s && s.ws) s.ws.terminate(); }
 }
 
-module.exports = { LADDERS, SNAKES, TARGET, ROLL_SECS, TIMING, CHAT_PHRASES, CHAT_EMOJIS, newGame, roll, animMs, turnOf, rungsOf, SnakesRoom };
+module.exports = { LADDERS, SNAKES, BOARD_VERSION, TARGET, ROLL_SECS, TIMING, CHAT_PHRASES, CHAT_EMOJIS, PIECE_IDS, DEFAULT_PIECES, newGame, roll, animMs, turnOf, rungsOf, SnakesRoom };

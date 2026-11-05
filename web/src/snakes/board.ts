@@ -1,21 +1,60 @@
 import { LADDERS, SNAKES } from "./engine";
+import { MOKSH_DEVA, MOKSH_LATIN } from "./moksh";
 
-/* The board is drawn on a 624 x 624 logical canvas: a thin raised wooden frame (PAD) around 10 x 10 carved squares of 60,
-   numbered in a zigzag from the bottom left. Everything is painted in code (no image files), so it stays sharp at any size. */
-export const PAD = 12, S = 60, W = S * 10 + PAD * 2;
+/* The board is drawn on a 644 x 644 logical canvas: a rim (PAD) around 10 x 10 squares of 60, numbered in a zigzag from the
+   bottom left. Everything is painted in code (no image files), so it stays sharp at any size. There are three board models
+   (a framed tray of raised squares, a polished marble slab, and flat tiles with brass inlay), each in four light themes, so
+   the numbers and tokens always stand out. The screen tilts this flat picture in 3D (view3d.ts) or builds it in WebGL
+   (scene3d.ts); tokens are drawn upright on top. */
+export const PAD = 22, S = 60, W = S * 10 + PAD * 2;
+/** How deep the board is (its front edge), in board units. */
+export const THICK = 26;
 const K = 1.45;                                    // snake size: bodies, heads and markings are drawn this much larger than before
 export type Pt = { x: number; y: number };
 
-/* ---------- woods ---------- */
-export type WoodId = "teak" | "rosewood" | "walnut" | "sheesham";
-type Wood = { name: string; base: string; light: string; dark: string; grain: string; contrast: number; frame: string; stain: number };
-export const WOODS: Record<WoodId, Wood> = {
-  teak: { name: "Teak", base: "#a8692f", light: "#c98b4a", dark: "#73421a", grain: "#4a2a0e", contrast: .9, frame: "#7a4518", stain: .10 },
-  rosewood: { name: "Rosewood", base: "#6f2b1d", light: "#8f4029", dark: "#40150c", grain: "#260905", contrast: .9, frame: "#4a170e", stain: .12 },
-  walnut: { name: "Walnut", base: "#5b3c27", light: "#7c5538", dark: "#33200f", grain: "#1c1007", contrast: .85, frame: "#3a2414", stain: .12 },
-  sheesham: { name: "Sheesham", base: "#8c5a33", light: "#c99360", dark: "#4b2a13", grain: "#2c1609", contrast: 1.2, frame: "#5a3418", stain: .10 },
+/* ---------- board models and themes ---------- */
+export type ModelId = "tray" | "marble" | "inlay";
+export type ThemeId = "ivory" | "mint" | "sandstone" | "pearl";
+export type Look = { model: ModelId; theme: ThemeId };
+export const MODELS: Record<ModelId, { name: string; blurb: string }> = {
+  tray: { name: "Classic Tray", blurb: "Raised squares in a framed wooden rim" },
+  marble: { name: "Royal Marble", blurb: "Polished slab, engraved lines, gold border" },
+  inlay: { name: "Palace Inlay", blurb: "Flat tiles, brass inlay, carved corners" },
 };
-export const WOOD_IDS = Object.keys(WOODS) as WoodId[];
+export const MODEL_IDS = Object.keys(MODELS) as ModelId[];
+export const THEMES: Record<ThemeId, { name: string; swatch: [string, string, string] }> = {
+  ivory: { name: "Ivory", swatch: ["#fbf5e6", "#efe1c3", "#9a6a3a"] },
+  mint: { name: "Mint", swatch: ["#eef8f1", "#d3ebdc", "#136b4b"] },
+  sandstone: { name: "Sandstone", swatch: ["#f9ead3", "#edd1aa", "#a4583a"] },
+  pearl: { name: "Pearl", swatch: ["#f7f7fa", "#e4e6ef", "#56627a"] },
+};
+export const THEME_IDS = Object.keys(THEMES) as ThemeId[];
+export const DEFAULT_LOOK: Look = { model: "tray", theme: "ivory" };
+/** Every colour a board needs. tileA / tileB: the alternating squares; grain: their texture lines; groove: the gap or engraved
+    line between squares; rim*: the frame; ink / inkEdge: the numbers; metal: gold or brass trim (light, mid, dark). */
+export type Pal = {
+  tileA: string; tileB: string; grain: string; contrast: number; groove: string;
+  rim: string; rimLight: string; rimDark: string; rimGrain: string; ink: string; inkEdge: string;
+  metal: [string, string, string]; vein: string; stone: string;
+};
+const BASE_PAL: Record<ThemeId, Omit<Pal, "groove" | "stone"> & { stoneRim: string }> = {
+  ivory: { tileA: "#fbf5e6", tileB: "#efe0c0", grain: "#a8844e", contrast: .55, rim: "#9a6a3a", rimLight: "#cf9f64", rimDark: "#5a361a", rimGrain: "#3a2210",
+    ink: "#2a1d10", inkEdge: "rgba(255,252,242,.92)", metal: ["#fff1b8", "#d9aa4a", "#8f6418"], vein: "#b6a382", stoneRim: "#e6dac2" },
+  mint: { tileA: "#eef8f1", tileB: "#d2eadb", grain: "#5f9474", contrast: .5, rim: "#136b4b", rimLight: "#33a376", rimDark: "#073d29", rimGrain: "#03281a",
+    ink: "#10281c", inkEdge: "rgba(250,255,251,.92)", metal: ["#fff1b8", "#d9aa4a", "#8f6418"], vein: "#86b39a", stoneRim: "#cfe6d8" },
+  sandstone: { tileA: "#f9ead3", tileB: "#ecd0a8", grain: "#a8744a", contrast: .55, rim: "#a4583a", rimLight: "#d4875e", rimDark: "#62301b", rimGrain: "#3d1a0c",
+    ink: "#2e1a0d", inkEdge: "rgba(255,250,240,.92)", metal: ["#fff1b8", "#d9aa4a", "#8f6418"], vein: "#c79c6c", stoneRim: "#ead2b0" },
+  pearl: { tileA: "#f7f7fa", tileB: "#e3e6ef", grain: "#8a91a8", contrast: .45, rim: "#56627a", rimLight: "#8592ad", rimDark: "#2d3548", rimGrain: "#1a2030",
+    ink: "#1d2333", inkEdge: "rgba(255,255,255,.94)", metal: ["#fff6d6", "#dcc07a", "#8f7430"], vein: "#9da3b8", stoneRim: "#dfe1ea" },
+};
+/** The colours for one model in one theme. The marble slab uses the theme's stone for its border; the other two a wooden rim. */
+export function palette(look: Look): Pal {
+  const b = BASE_PAL[look.theme] ?? BASE_PAL.ivory, m = look.model;
+  const groove = m === "tray" ? mix(b.tileB, b.rimDark, .55) : m === "marble" ? mix(b.vein, "#3a2a18", .35) : b.metal[1];
+  return { ...b, groove, stone: b.stoneRim, tileB: m === "marble" ? mix(b.tileA, b.tileB, .6) : b.tileB };
+}
+const BASE_PAL_TILEB = (l: Look) => (BASE_PAL[l.theme] ?? BASE_PAL.ivory).tileB;
+export const lookKey = (l: Look) => l.model + "-" + l.theme;
 
 export const center = (n: number): Pt => {
   const row = Math.floor((n - 1) / 10);
@@ -23,20 +62,73 @@ export const center = (n: number): Pt => {
   if (row % 2) col = 9 - col;
   return { x: PAD + col * S + S / 2, y: PAD + (9 - row) * S + S / 2 };
 };
-/** Where a token waits before entering (on the frame, just left of square 1). */
-export const OFF: Pt = { x: PAD - S / 3, y: center(1).y };
+/* Tokens stand in the middle of their square; each square's number sits in its front-left corner (nearest the players),
+   which a token in the middle never covers. */
+/** Flat or tilted picture board: where a lone token's stand touches the board, so its figure looks centred on the square. */
+export const spot = (n: number): Pt => { const c = center(n); return { x: c.x, y: c.y + 9 }; };
+/** Tokens sharing a square (2 to 4), smaller, laid out around the middle and clear of the number in the front-left corner. */
+export const SHARED: Record<number, { pts: [number, number][]; s: number }> = {
+  2: { pts: [[-12, 4], [13, 4]], s: .66 }, 3: { pts: [[-12, -4], [12, -4], [12, 18]], s: .56 }, 4: { pts: [[-12, -4], [12, -4], [5, 16], [21, 16]], s: .48 },
+};
+/** WebGL 3D board: a lone token stands exactly on the centre of its square. */
+export const spot3D = (n: number): Pt => center(n);
+export const SHARED3D: Record<number, { pts: [number, number][]; s: number }> = {
+  2: { pts: [[-15, -3], [15, -3]], s: .64 }, 3: { pts: [[-15, -10], [15, -10], [12, 12]], s: .54 }, 4: { pts: [[-15, -12], [15, -12], [4, 12], [22, 12]], s: .48 },
+};
+/** Where a token waits before entering (on the rim, just left of square 1). */
+export const OFF: Pt = { x: PAD * .4, y: center(1).y + 6 };
 
 /** Centre line of a snake from head to tail; also the path a token slides down. */
+/** Each snake's planned route (board units, head first): worked out once so its body goes around every ladder
+    (a path search over the board, then checked by layoutIssues() and a server test). The curve below smooths it. */
+export const SNAKE_WAYPOINTS: Record<number, [number, number][]> = {
+  49: [[538, 358], [538, 478], [418, 598]],
+  60: [[58, 298], [58, 478], [118, 538]],
+  64: [[238, 238], [250, 250], [250, 526], [238, 538]],
+  73: [[478, 178], [598, 298]],
+  82: [[118, 118], [214, 214], [214, 358], [202, 370]],
+  93: [[478, 58], [452, 135], [440, 215], [385, 240], [352, 285]],
+  98: [[178, 58], [286, 166], [286, 322], [250, 358], [238, 358]],
+};
+/** How far a snake's body swings either side of its route (board units). */
+export const SNAKE_WAVE = 5;
+/** Centre line of a snake from head to tail: a smooth curve through its route with a gentle S-wave (also the path a
+    swallowed token slides down). Falls back to a straight route between the two squares. */
 export function snakePath(head: number, tail: number): Pt[] {
-  const h = center(head), t = center(tail);
-  const dx = t.x - h.x, dy = t.y - h.y, len = Math.hypot(dx, dy);
-  const nx = -dy / len, ny = dx / len, waves = Math.max(1.5, Math.round(len / 78) + .5), amp = Math.min(26, 13 + len / 28), pts: Pt[] = [];
-  for (let i = 0; i <= 120; i++) {
-    const k = i / 120, env = Math.sin(Math.min(1, k * 1.15) * Math.PI) * .85 + .15;
-    const w = Math.sin(k * Math.PI * waves) * amp * env;
-    pts.push({ x: h.x + dx * k + nx * w, y: h.y + dy * k + ny * w });
+  const raw = SNAKE_WAYPOINTS[head] ?? [[center(head).x, center(head).y], [center(tail).x, center(tail).y]];
+  const wp = raw.map(([x, y]) => ({ x, y }));
+  const cat = (p0: Pt, p1: Pt, p2: Pt, p3: Pt, t: number) => {
+    const t2 = t * t, t3 = t2 * t, f = (a: number, b: number, c: number, d: number) => .5 * (2 * b + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (-a + 3 * b - 3 * c + d) * t3);
+    return { x: f(p0.x, p1.x, p2.x, p3.x), y: f(p0.y, p1.y, p2.y, p3.y) };
+  };
+  const dense: Pt[] = [];
+  for (let i = 0; i < wp.length - 1; i++) for (let j = 0; j < 30; j++) dense.push(cat(wp[Math.max(0, i - 1)], wp[i], wp[i + 1], wp[Math.min(wp.length - 1, i + 2)], j / 30));
+  dense.push(wp[wp.length - 1]);
+  const len = [0]; for (let i = 1; i < dense.length; i++) len.push(len[i - 1] + Math.hypot(dense[i].x - dense[i - 1].x, dense[i].y - dense[i - 1].y));
+  const total = len[len.length - 1], N = 120, out: Pt[] = [], waves = Math.max(2, Math.round(total / 70));
+  let j = 1;
+  for (let i = 0; i <= N; i++) {
+    const sd = (i / N) * total; while (j < dense.length - 1 && len[j] < sd) j++;
+    const f = (sd - len[j - 1]) / ((len[j] - len[j - 1]) || 1), a = dense[j - 1], b = dense[j];
+    const x = a.x + (b.x - a.x) * f, y = a.y + (b.y - a.y) * f, tl = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+    const k = i / N, w = Math.sin(k * Math.PI * waves) * SNAKE_WAVE * Math.sin(Math.min(1, k * 1.1) * Math.PI);
+    out.push({ x: x - ((b.y - a.y) / tl) * w, y: y + ((b.x - a.x) / tl) * w });
   }
-  return pts;
+  return out;
+}
+/** Checks the layout: no snake body touches a ladder, and every snake stays on the board. Returns the problems found
+    (empty when all is well). Widths are the widest drawn (the 3D board): snake 11.4, ladder 18 either side of its line. */
+export function layoutIssues(snakeHalf = 11.4, ladderHalf = 18): string[] {
+  const issues = new Set<string>();
+  const segD = (p: Pt, a: Pt, b: Pt) => { const dx = b.x - a.x, dy = b.y - a.y, l = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l)); return Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy); };
+  for (const [h, t] of Object.entries(SNAKES)) {
+    const pts = snakePath(+h, t);
+    for (const p of pts) {
+      for (const [a, b] of Object.entries(LADDERS)) if (segD(p, center(+a), center(b)) < snakeHalf + ladderHalf) issues.add(`snake ${h}-${t} touches ladder ${a}-${b}`);
+      if (p.x - snakeHalf < PAD || p.x + snakeHalf > W - PAD || p.y - snakeHalf < PAD || p.y + snakeHalf > W - PAD) issues.add(`snake ${h}-${t} leaves the board`);
+    }
+  }
+  return [...issues];
 }
 
 /* ---------- helpers ---------- */
@@ -64,8 +156,9 @@ const rgba = (h: string, a: number) => { const [r, g, b] = hex(h); return `rgba(
 const mix = (a: string, b: string, t: number) => { const x = hex(a), y = hex(b); return `rgb(${x.map((v, i) => Math.round(v + (y[i] - v) * t)).join(",")})`; };
 const LIGHT = { x: -0.55, y: -0.83 };                                   // light comes from the top left
 
+type Wood = { base: string; light: string; dark: string; grain: string; contrast: number };
 /** Wood grain filling a rectangle: broad colour bands, flowing grain lines, pores and the odd knot. */
-function grain(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, wood: Wood, seed: number, vertical = false) {
+function grain(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, wood: Wood, seed: number, vertical = false, knotChance = .7) {
   const r = rng(seed);
   g.save();
   g.beginPath(); g.rect(x, y, w, h); g.clip();
@@ -91,7 +184,7 @@ function grain(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: 
   g.fillStyle = rgba(wood.grain, .18 * wood.contrast);
   for (let i = 0; i < w * h / 90; i++) g.fillRect(x + r() * w, y + r() * h, 1.4 + r() * 2.2, .6);
   // a knot or two
-  const knots = r() < .7 ? 1 + Math.floor(r() * 2) : 0;
+  const knots = r() < knotChance ? 1 + Math.floor(r() * 2) : 0;
   for (let k = 0; k < knots; k++) {
     const kx = x + r() * w, ky = y + r() * h, rx = 6 + r() * 7;
     for (let ring = 0; ring < 7; ring++) {
@@ -104,104 +197,261 @@ function grain(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: 
 }
 
 /* ---------- board ---------- */
-function frameAndSquares(g: CanvasRenderingContext2D, wood: Wood) {
-  // frame: four mitred planks, grain running along each
-  const fw = { ...wood, base: wood.frame, light: mix(wood.frame, wood.light, .5), dark: wood.dark };
-  grain(g, 0, 0, W, PAD, fw, 11);
-  grain(g, 0, W - PAD, W, PAD, fw, 12);
-  grain(g, 0, 0, PAD, W, fw, 13, true);
-  grain(g, W - PAD, 0, PAD, W, fw, 14, true);
-  // mitre joints and bevel
-  g.strokeStyle = "rgba(0,0,0,.35)"; g.lineWidth = 1;
-  for (const [a, b, c, d] of [[0, 0, PAD, PAD], [W, 0, W - PAD, PAD], [0, W, PAD, W - PAD], [W, W, W - PAD, W - PAD]]) { g.beginPath(); g.moveTo(a, b); g.lineTo(c, d); g.stroke(); }
-  const bevel = (x1: number, y1: number, x2: number, y2: number, c: string, w: number) => { g.strokeStyle = c; g.lineWidth = w; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); };
-  bevel(1, 1, W - 1, 1, "rgba(255,240,210,.35)", 2); bevel(1, 1, 1, W - 1, "rgba(255,240,210,.28)", 2);
-  bevel(1, W - 1, W - 1, W - 1, "rgba(0,0,0,.45)", 2); bevel(W - 1, 1, W - 1, W - 1, "rgba(0,0,0,.4)", 2);
-  // playing surface: one panel, slightly lower than the frame
-  grain(g, PAD, PAD, S * 10, S * 10, wood, 21);
-  bevel(PAD, PAD + .5, W - PAD, PAD + .5, "rgba(0,0,0,.55)", 2.5); bevel(PAD + .5, PAD, PAD + .5, W - PAD, "rgba(0,0,0,.5)", 2.5);
-  bevel(PAD, W - PAD - .5, W - PAD, W - PAD - .5, "rgba(255,235,200,.25)", 1.5); bevel(W - PAD - .5, PAD, W - PAD - .5, W - PAD, "rgba(255,235,200,.2)", 1.5);
-  // alternate squares carry a slightly darker oil stain, like a hand-made board
-  for (let n = 1; n <= 100; n++) {
-    const p = center(n), row = Math.floor((n - 1) / 10), col = (n - 1) % 10;
-    if ((row + col) % 2) { g.fillStyle = `rgba(30,12,2,${wood.stain})`; g.fillRect(p.x - S / 2, p.y - S / 2, S, S); }
+const rr = (g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) => {
+  g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+};
+const poly = (g: CanvasRenderingContext2D, pts: number[][], fill: string) => { g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath(); g.fillStyle = fill; g.fill(); };
+const tileWood = (pal: Pal, base: string): Wood => ({ base, light: mix(base, "#ffffff", .6), dark: mix(base, pal.grain, .2), grain: mix(pal.grain, base, .25), contrast: pal.contrast * .7 });
+const rimWood = (pal: Pal): Wood => ({ base: pal.rim, light: pal.rimLight, dark: pal.rimDark, grain: pal.rimGrain, contrast: .85 });
+const metalGrad = (g: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number, m: [string, string, string]) => {
+  const gr = g.createLinearGradient(x0, y0, x1, y1);
+  gr.addColorStop(0, m[0]); gr.addColorStop(.3, m[1]); gr.addColorStop(.55, mix(m[0], m[1], .4)); gr.addColorStop(1, m[2]); return gr;
+};
+
+/** Polished stone: a soft cloudy base, a few long branching veins and a fine speckle. */
+function stone(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, base: string, vein: string, seed: number, veins = 3) {
+  const r = rng(seed);
+  g.save(); g.beginPath(); g.rect(x, y, w, h); g.clip();
+  g.fillStyle = base; g.fillRect(x, y, w, h);
+  for (let i = 0; i < 6; i++) {                                                 // clouds
+    const cx = x + r() * w, cy = y + r() * h, rad = (w + h) * (.15 + r() * .2), gr = g.createRadialGradient(cx, cy, 1, cx, cy, rad);
+    gr.addColorStop(0, rgba(r() < .5 ? "#ffffff" : vein, .1 + r() * .08)); gr.addColorStop(1, rgba(vein, 0));
+    g.fillStyle = gr; g.fillRect(x, y, w, h);
   }
-  // carved grooves between squares: a dark cut with a lit lower edge
-  for (let i = 1; i < 10; i++) {
-    const v = PAD + i * S;
-    bevel(v, PAD, v, W - PAD, "rgba(15,6,0,.55)", 1.6); bevel(v + 1.4, PAD, v + 1.4, W - PAD, "rgba(255,230,190,.16)", 1);
-    bevel(PAD, v, W - PAD, v, "rgba(15,6,0,.55)", 1.6); bevel(PAD, v + 1.4, W - PAD, v + 1.4, "rgba(255,230,190,.16)", 1);
+  g.lineCap = "round";
+  for (let v = 0; v < veins; v++) {                                             // veins: wandering lines with thinner branches
+    let px = x + r() * w, py = y - 4, ang = Math.PI / 2 + (r() - .5) * 1.4;
+    const width = .5 + r() * 1.3, alpha = .2 + r() * .22;
+    g.strokeStyle = rgba(vein, alpha); g.lineWidth = width; g.beginPath(); g.moveTo(px, py);
+    const steps = Math.round((w + h) / 7);
+    for (let i = 0; i < steps; i++) {
+      ang += (r() - .5) * .6; px += Math.cos(ang) * 7; py += Math.sin(ang) * 7; g.lineTo(px, py);
+      if (r() < .08) { g.stroke(); g.save(); g.lineWidth = width * .5; g.strokeStyle = rgba(vein, alpha * .7); g.beginPath(); g.moveTo(px, py); let bx = px, by = py, ba = ang + (r() < .5 ? -1 : 1) * (.5 + r() * .6); for (let j = 0; j < 6; j++) { ba += (r() - .5) * .5; bx += Math.cos(ba) * 5; by += Math.sin(ba) * 5; g.lineTo(bx, by); } g.stroke(); g.restore(); g.beginPath(); g.moveTo(px, py); }
+    }
+    g.stroke();
   }
-  // square 100: an inlaid brass-and-ivory lotus
-  const m = center(100);
-  const halo = g.createRadialGradient(m.x, m.y, 4, m.x, m.y, 34);
-  halo.addColorStop(0, "rgba(255,215,140,.35)"); halo.addColorStop(1, "rgba(255,215,140,0)");
-  g.fillStyle = halo; g.fillRect(m.x - S / 2, m.y - S / 2, S, S);
-  lotus(g, m.x + 4, m.y + 2);
+  g.fillStyle = rgba(vein, .12);
+  for (let i = 0; i < w * h / 45; i++) g.fillRect(x + r() * w, y + r() * h, .7, .7);
+  g.restore();
+}
+/** A smooth lacquered tile (the inlay board): a gentle sheen and a hint of fine texture. */
+function lacquer(g: CanvasRenderingContext2D, x: number, y: number, s: number, base: string, pal: Pal, seed: number) {
+  const r = rng(seed);
+  g.fillStyle = base; g.fillRect(x, y, s, s);
+  const sh = g.createLinearGradient(x, y, x + s, y + s);
+  sh.addColorStop(0, "rgba(255,255,255,.35)"); sh.addColorStop(.5, "rgba(255,255,255,0)"); sh.addColorStop(1, rgba(pal.grain, .1));
+  g.fillStyle = sh; g.fillRect(x, y, s, s);
+  g.fillStyle = rgba(pal.grain, .07);
+  for (let i = 0; i < 70; i++) g.fillRect(x + r() * s, y + r() * s, 1.6, .5);
 }
 
-/** Square numbers, drawn last so snakes and ladders never hide them: bold ivory figures with a dark outline. */
-function numbers(g: CanvasRenderingContext2D) {
-  g.save();
-  g.textAlign = "left"; g.textBaseline = "alphabetic"; g.lineJoin = "round";
-  for (let n = 1; n <= 100; n++) {
-    const p = center(n), x = p.x - S / 2 + 4, y = p.y - S / 2 + 19, t = String(n);
-    g.font = "800 19px 'DM Sans', system-ui, sans-serif";
-    g.lineWidth = 4.2; g.strokeStyle = "rgba(22,10,2,.92)"; g.strokeText(t, x, y);
-    g.fillStyle = n === 100 ? "#ffe08a" : "#fff4dc"; g.fillText(t, x, y);
+/** One raised square (the tray board): its own light wood, a lit top-left bevel, a shaded bottom-right bevel and a soft sheen. */
+function tile(g: CanvasRenderingContext2D, x: number, y: number, s: number, pal: Pal, base: string, seed: number, vertical: boolean) {
+  g.save(); rr(g, x, y, s, s, 3.4); g.clip();
+  grain(g, x, y, s, s, tileWood(pal, base), seed, vertical, .05);
+  const b = 4.2;
+  poly(g, [[x, y], [x + s, y], [x + s - b, y + b], [x + b, y + b]], "rgba(255,255,255,.55)");
+  poly(g, [[x, y], [x + b, y + b], [x + b, y + s - b], [x, y + s]], "rgba(255,255,255,.35)");
+  poly(g, [[x, y + s], [x + b, y + s - b], [x + s - b, y + s - b], [x + s, y + s]], rgba(pal.rimDark, .32));
+  poly(g, [[x + s, y], [x + s, y + s], [x + s - b, y + s - b], [x + s - b, y + b]], rgba(pal.rimDark, .22));
+  const sh = g.createRadialGradient(x + s * .34, y + s * .28, 2, x + s * .5, y + s * .5, s * .78);
+  sh.addColorStop(0, "rgba(255,255,255,.2)"); sh.addColorStop(.6, "rgba(255,255,255,0)"); sh.addColorStop(1, rgba(pal.rimDark, .06));
+  g.fillStyle = sh; g.fillRect(x, y, s, s);
+  g.restore();
+}
+/** The faces of the 100 squares for one model, covering the playing area (PAD..W-PAD), with the START plaque and the
+    gold MOKSH engraving on square 100. Used by the picture board and as the WebGL board's surface texture. */
+function squares(g: CanvasRenderingContext2D, look: Look, pal: Pal) {
+  const A = PAD, L = S * 10;
+  if (look.model === "tray") {
+    g.fillStyle = pal.groove; g.fillRect(A - 1.5, A - 1.5, L + 3, L + 3);
+    for (let n = 1; n <= 100; n++) {
+      const p = center(n), row = Math.floor((n - 1) / 10), col = (n - 1) % 10, gap = 1.4;
+      tile(g, p.x - S / 2 + gap, p.y - S / 2 + gap, S - gap * 2, pal, (row + col) % 2 ? pal.tileB : pal.tileA, 1000 + n * 7, (row + col) % 2 === 1);
+    }
+  } else if (look.model === "marble") {
+    stone(g, A, A, L, L, pal.tileA, pal.vein, 77, 7);
+    for (let n = 1; n <= 100; n++) {                                           // the second tone, as a light wash on alternate squares
+      const p = center(n), row = Math.floor((n - 1) / 10), col = (n - 1) % 10;
+      if ((row + col) % 2) { g.fillStyle = rgba(BASE_PAL_TILEB(look), .62); g.fillRect(p.x - S / 2, p.y - S / 2, S, S); }
+    }
+    // engraved lines: a dark cut with a bright lower lip
+    for (let i = 1; i < 10; i++) {
+      const v = A + i * S;
+      g.fillStyle = rgba(pal.groove, .55); g.fillRect(v - 1.1, A, 1.6, L); g.fillRect(A, v - 1.1, L, 1.6);
+      g.fillStyle = "rgba(255,255,255,.75)"; g.fillRect(v + .5, A, .8, L); g.fillRect(A, v + .5, L, .8);
+    }
+    const sheen = g.createLinearGradient(A, A, A + L, A + L);
+    sheen.addColorStop(0, "rgba(255,255,255,.22)"); sheen.addColorStop(.42, "rgba(255,255,255,0)"); sheen.addColorStop(.5, "rgba(255,255,255,.12)"); sheen.addColorStop(.6, "rgba(255,255,255,0)");
+    g.fillStyle = sheen; g.fillRect(A, A, L, L);
+  } else {
+    for (let n = 1; n <= 100; n++) {
+      const p = center(n), row = Math.floor((n - 1) / 10), col = (n - 1) % 10;
+      lacquer(g, p.x - S / 2, p.y - S / 2, S, (row + col) % 2 ? pal.tileB : pal.tileA, pal, 300 + n * 13);
+      // a small carved diamond in the corners where four tiles meet (drawn on the tile's back-right corner)
+    }
+    // brass strips between the tiles (the WebGL board adds them as real metal on top)
+    for (let i = 0; i <= 10; i++) {
+      const v = A + i * S, w = i === 0 || i === 10 ? 3.4 : 2.4;
+      g.fillStyle = metalGrad(g, v - w, A, v + w, A, pal.metal); g.fillRect(v - w / 2, A, w, L);
+      g.fillStyle = metalGrad(g, A, v - w, A, v + w, pal.metal); g.fillRect(A, v - w / 2, L, w);
+    }
+    for (let i = 1; i < 10; i++) for (let j = 1; j < 10; j++) {              // brass studs where strips cross
+      const x = A + i * S, y = A + j * S, gr = g.createRadialGradient(x - .8, y - .8, .2, x, y, 3.4);
+      gr.addColorStop(0, pal.metal[0]); gr.addColorStop(.6, pal.metal[1]); gr.addColorStop(1, pal.metal[2]);
+      g.fillStyle = gr; g.beginPath(); g.arc(x, y, 3.2, 0, Math.PI * 2); g.fill();
+    }
   }
-  const s = center(1);
-  g.textAlign = "center"; g.font = "800 10px 'DM Sans', system-ui, sans-serif"; g.lineWidth = 3;
-  g.strokeText("START", s.x, s.y + 24); g.fillStyle = "#ffe08a"; g.fillText("START", s.x, s.y + 24);
-  const m = center(100);
-  g.font = "700 12px 'Noto Sans Devanagari', 'Kohinoor Devanagari', 'Mangal', sans-serif";
-  g.strokeText("मोक्ष", m.x + 4, m.y + 25); g.fillStyle = "#ffe08a"; g.fillText("मोक्ष", m.x + 4, m.y + 25);
+  finishSquare(g, pal);
+  start(g, center(1));
+}
+
+/** Square 100, the goal: an emerald enamel panel in a double gold frame, with मोक्ष over MOKSH engraved in gold
+    (the number 100 sits in its usual front-left corner, in gold). */
+function finishSquare(g: CanvasRenderingContext2D, pal: Pal) {
+  const m = center(100), x = m.x - S / 2, y = m.y - S / 2, i = 2.2;
+  g.save();
+  g.shadowColor = "rgba(0,0,0,.35)"; g.shadowBlur = 3; g.shadowOffsetY = 1;
+  rr(g, x + i, y + i, S - i * 2, S - i * 2, 4);
+  const en = g.createRadialGradient(m.x - 8, m.y - 14, 2, m.x, m.y, 46); en.addColorStop(0, "#23a06c"); en.addColorStop(.55, "#0f6b47"); en.addColorStop(1, "#06402a");
+  g.fillStyle = en; g.fill(); g.shadowColor = "transparent";
+  g.strokeStyle = metalGrad(g, x, y, x + S, y + S, pal.metal); g.lineWidth = 1.8; g.stroke();
+  g.lineWidth = .7; g.strokeRect(x + i + 2.6, y + i + 2.6, S - i * 2 - 5.2, S - i * 2 - 5.2);
+  g.restore();
+  engraveMoksh(g, m.x + 1, m.y - 9.5, 47);
+}
+/** मोक्ष (and MOKSH beneath it) cut into the board and gilded, centred on (cx, cy). Light comes from the top left, so the
+    cut's top-left inner wall is in shadow and its lower-right wall catches the light. */
+export function engraveMoksh(g: CanvasRenderingContext2D, cx: number, cy: number, width = 46) {
+  const deva = new Path2D(MOKSH_DEVA.d), latin = new Path2D(MOKSH_LATIN.d);
+  const dw = MOKSH_DEVA.x1 - MOKSH_DEVA.x0, ds = width / dw, dh = (MOKSH_DEVA.y1 - MOKSH_DEVA.y0) * ds;
+  const lw = width * .78, ls = lw / (MOKSH_LATIN.x1 - MOKSH_LATIN.x0), lh = (MOKSH_LATIN.y1 - MOKSH_LATIN.y0) * ls, gap = 2.4;
+  const top = cy - (dh + gap + lh) / 2;
+  const parts: [Path2D, number, number, number][] = [
+    [deva, cx - width / 2 - MOKSH_DEVA.x0 * ds, top - MOKSH_DEVA.y0 * ds, ds],
+    [latin, cx - lw / 2 - MOKSH_LATIN.x0 * ls, top + dh + gap - MOKSH_LATIN.y0 * ls, ls],
+  ];
+  const base = g.getTransform();
+  for (const [p, ox, oy, s] of parts) {
+    const M = (dx: number, dy: number) => base.multiply(new DOMMatrix([s, 0, 0, s, ox + dx, oy + dy]));
+    // the cut's dark shadow just below and right of each letter
+    g.save(); g.setTransform(M(.35, .55)); g.fillStyle = "rgba(0,20,10,.7)"; g.filter = "blur(.5px)"; g.fill(p); g.restore();
+    // the gilded letter
+    g.save(); g.setTransform(M(0, 0)); g.fillStyle = metalGrad(g, 0, -900, 0, 160, ["#fff3c2", "#dcae4c", "#93661a"]); g.fill(p); g.restore();
+    // inner shadow on the top-left walls and a light rim on the lower-right walls
+    for (const [dx, dy, col] of [[.9, 1.1, "rgba(70,40,5,.6)"], [-.6, -.7, "rgba(255,250,225,.8)"]] as [number, number, string][]) {
+      g.save(); g.setTransform(M(0, 0)); g.clip(p);
+      g.setTransform(M(dx, dy));
+      const hole = new Path2D(); hole.rect(-4000, -4000, 12000, 12000); hole.addPath(p);
+      g.fillStyle = col; g.fill(hole, "evenodd"); g.restore();
+    }
+  }
+}
+
+/** The frame around the squares, for one model: a wooden rim with a gold inlay (tray), a marble border with a gold band
+    (marble), or a carved wooden rim with gold rosettes at the corners (inlay). */
+function frame(g: CanvasRenderingContext2D, look: Look, pal: Pal) {
+  const line = (x1: number, y1: number, x2: number, y2: number, c: string, w: number) => { g.strokeStyle = c; g.lineWidth = w; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); };
+  if (look.model === "marble") {
+    stone(g, 0, 0, W, W, pal.stone, pal.vein, 41, 6);
+    line(1.5, 1.5, W - 1.5, 1.5, "rgba(255,255,255,.7)", 3); line(1.5, 1.5, 1.5, W - 1.5, "rgba(255,255,255,.5)", 3);
+    line(1, W - 1, W - 1, W - 1, rgba(pal.groove, .7), 2); line(W - 1, 1, W - 1, W - 1, rgba(pal.groove, .6), 2);
+  } else {
+    const fw = rimWood(pal);
+    grain(g, 0, 0, W, PAD, fw, 11); grain(g, 0, W - PAD, W, PAD, fw, 12);
+    grain(g, 0, 0, PAD, W, fw, 13, true); grain(g, W - PAD, 0, PAD, W, fw, 14, true);
+    g.strokeStyle = "rgba(0,0,0,.35)"; g.lineWidth = 1;
+    for (const [a, b, c, d] of [[0, 0, PAD, PAD], [W, 0, W - PAD, PAD], [0, W, PAD, W - PAD], [W, W, W - PAD, W - PAD]]) { g.beginPath(); g.moveTo(a, b); g.lineTo(c, d); g.stroke(); }
+    line(1.5, 1.5, W - 1.5, 1.5, "rgba(255,238,205,.45)", 3); line(1.5, 1.5, 1.5, W - 1.5, "rgba(255,238,205,.3)", 3);
+    line(1, W - 1, W - 1, W - 1, "rgba(0,0,0,.5)", 2); line(W - 1, 1, W - 1, W - 1, "rgba(0,0,0,.45)", 2);
+    const roll = g.createLinearGradient(0, 0, 0, PAD);
+    roll.addColorStop(0, "rgba(255,240,210,.18)"); roll.addColorStop(.5, "rgba(255,240,210,0)"); roll.addColorStop(1, "rgba(0,0,0,.25)");
+    g.fillStyle = roll; g.fillRect(0, 0, W, PAD);
+  }
+  // the gold band just inside the frame
+  g.strokeStyle = metalGrad(g, 0, 0, W, W, pal.metal); g.lineWidth = look.model === "marble" ? 4.2 : 2.4;
+  g.strokeRect(PAD - 7, PAD - 7, S * 10 + 14, S * 10 + 14);
+  g.strokeStyle = rgba(pal.rimDark, .45); g.lineWidth = .8; g.strokeRect(PAD - 4.6, PAD - 4.6, S * 10 + 9.2, S * 10 + 9.2);
+  if (look.model === "inlay") for (const [x, y] of [[PAD / 2, PAD / 2], [W - PAD / 2, PAD / 2], [PAD / 2, W - PAD / 2], [W - PAD / 2, W - PAD / 2]]) rosette(g, x, y, PAD * .42, pal);
+}
+/** A carved gold rosette (the inlay board's corners). */
+function rosette(g: CanvasRenderingContext2D, x: number, y: number, r: number, pal: Pal) {
+  g.save(); g.translate(x, y);
+  g.fillStyle = "rgba(0,0,0,.3)"; g.beginPath(); g.arc(1, 1.4, r * 1.05, 0, Math.PI * 2); g.fill();
+  for (let i = 0; i < 8; i++) { g.rotate(Math.PI / 4); g.fillStyle = metalGrad(g, -r, -r, r, r, pal.metal); g.beginPath(); g.ellipse(0, -r * .55, r * .28, r * .5, 0, 0, Math.PI * 2); g.fill(); }
+  const gr = g.createRadialGradient(-r * .2, -r * .2, .3, 0, 0, r * .45); gr.addColorStop(0, pal.metal[0]); gr.addColorStop(1, pal.metal[2]);
+  g.fillStyle = gr; g.beginPath(); g.arc(0, 0, r * .38, 0, Math.PI * 2); g.fill();
   g.restore();
 }
 
-function lotus(g: CanvasRenderingContext2D, x: number, y: number) {
-  const petal = (ang: number, len: number, wid: number, inner: boolean) => {
-    g.save(); g.translate(x, y + 7); g.rotate(ang);
-    g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(wid, -len * .55, 0, -len); g.quadraticCurveTo(-wid, -len * .55, 0, 0);
-    const gr = g.createLinearGradient(0, 0, 0, -len);
-    if (inner) { gr.addColorStop(0, "#e9d9b8"); gr.addColorStop(1, "#fffaf0"); } else { gr.addColorStop(0, "#9a6a22"); gr.addColorStop(.6, "#e1b65c"); gr.addColorStop(1, "#fbe3a0"); }
-    g.fillStyle = gr; g.shadowColor = "rgba(0,0,0,.45)"; g.shadowBlur = 2; g.shadowOffsetY = 1; g.fill();
-    g.shadowColor = "transparent"; g.strokeStyle = "rgba(60,30,0,.5)"; g.lineWidth = .7; g.stroke(); g.restore();
-  };
-  for (const a of [-1.3, 1.3, -0.85, 0.85]) petal(a, 17, 7, false);
-  for (const a of [-0.4, 0.4]) petal(a, 19, 7, true);
-  petal(0, 21, 7.5, true);
-  g.fillStyle = "#c9962f"; g.beginPath(); g.ellipse(x, y + 8, 10, 3, 0, 0, Math.PI * 2); g.fill();
+/** The START plaque on square 1, along its front edge beside the number: green enamel framed in gold, with an arrow. */
+function start(g: CanvasRenderingContext2D, p: Pt) {
+  const x = p.x - 11, y = p.y + S / 2 - 18, w = S / 2 + 7, h = 13;
+  g.save();
+  g.shadowColor = "rgba(0,0,0,.35)"; g.shadowBlur = 2.5; g.shadowOffsetY = 1;
+  rr(g, x, y, w, h, 3.5); const gr = g.createLinearGradient(0, y, 0, y + h); gr.addColorStop(0, "#1f8a5b"); gr.addColorStop(1, "#0b4a31"); g.fillStyle = gr; g.fill();
+  g.shadowColor = "transparent"; g.strokeStyle = "#e9c877"; g.lineWidth = 1.2; g.stroke();
+  g.fillStyle = "#ffe9a8"; g.font = "800 8px 'DM Sans', system-ui, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText("START", x + w / 2 + 3, y + h / 2 + .5);
+  g.strokeStyle = "#ffe9a8"; g.lineWidth = 1.3; g.lineCap = "round"; g.lineJoin = "round";
+  g.beginPath(); g.moveTo(x + 3, y + h / 2); g.lineTo(x + 8, y + h / 2); g.moveTo(x + 6, y + h / 2 - 2.3); g.lineTo(x + 8, y + h / 2); g.lineTo(x + 6, y + h / 2 + 2.3); g.stroke();
+  g.restore();
 }
 
-/* ---------- ladders: round wooden rails and rungs, casting shadows on the board ---------- */
+/** Square numbers, drawn last so snakes and ladders never hide them: bold figures in the front-left corner of each square
+    (nearest the players, where a token standing in the middle never covers them), dark with a light outline. */
+export const NUM_FONT = "800 19px 'DM Sans', system-ui, sans-serif";
+export const numberAt = (n: number): Pt => { const p = center(n); return { x: p.x - S / 2 + 4.5, y: p.y + S / 2 - 5.5 }; };
+export const NUM_FONT_3D = NUM_FONT;
+export const numberAt3D = numberAt;
+function numbers(g: CanvasRenderingContext2D, pal: Pal) {
+  g.save();
+  g.textAlign = "left"; g.textBaseline = "alphabetic"; g.lineJoin = "round"; g.font = NUM_FONT;
+  for (let n = 1; n <= 100; n++) {
+    const { x, y } = numberAt(n), t = String(n);
+    g.lineWidth = 4.2; g.strokeStyle = pal.inkEdge; g.strokeText(t, x, y);
+    if (n === 100) { g.strokeStyle = "rgba(4,40,24,.95)"; g.strokeText(t, x, y); }
+    g.fillStyle = n === 100 ? "#ffe39a" : pal.ink; g.fillText(t, x, y);
+  }
+  g.restore();
+}
+
+/* ---------- ladders: bold rails of dark polished wood with light rungs, so they stand out on light boards ---------- */
+export const LADDER_HALF = 15;
+const RAIL = { base: "#7a3a16", light: "#c97a45", dark: "#3a1606" }, RUNG = { base: "#e2a55a", light: "#ffe0a8", dark: "#8a5520" };
 function ladder(g: CanvasRenderingContext2D, a: number, b: number) {
   const p1 = center(a), p2 = center(b), dx = p2.x - p1.x, dy = p2.y - p1.y, len = Math.hypot(dx, dy);
-  const ux = dx / len, uy = dy / len, nx = -uy, ny = ux, half = 11;
-  const ext = 9, s1 = { x: p1.x - ux * ext, y: p1.y - uy * ext }, s2 = { x: p2.x + ux * ext, y: p2.y + uy * ext };
+  const ux = dx / len, uy = dy / len, nx = -uy, ny = ux, half = LADDER_HALF;
+  const ext = 10, s1 = { x: p1.x - ux * ext, y: p1.y - uy * ext }, s2 = { x: p2.x + ux * ext, y: p2.y + uy * ext };
   const rungs = Math.floor(len / 19);
-  const cylinder = (x1: number, y1: number, x2: number, y2: number, r: number, base: string, light: string, dark: string) => {
+  const cylinder = (x1: number, y1: number, x2: number, y2: number, r: number, c: { base: string; light: string; dark: string }) => {
     const dxx = x2 - x1, dyy = y2 - y1, l = Math.hypot(dxx, dyy), px = -dyy / l, py = dxx / l;
     const gr = g.createLinearGradient(x1 + px * r, y1 + py * r, x1 - px * r, y1 - py * r);
     const lit = px * LIGHT.x + py * LIGHT.y > 0;                         // which side faces the light
-    gr.addColorStop(0, lit ? light : dark); gr.addColorStop(.45, base); gr.addColorStop(1, lit ? dark : light);
+    gr.addColorStop(0, lit ? c.light : c.dark); gr.addColorStop(.42, c.base); gr.addColorStop(1, lit ? c.dark : c.light);
     g.fillStyle = gr; g.beginPath();
     g.moveTo(x1 + px * r, y1 + py * r); g.lineTo(x2 + px * r, y2 + py * r); g.arc(x2, y2, r, Math.atan2(py, px), Math.atan2(-py, -px));
     g.lineTo(x1 - px * r, y1 - py * r); g.arc(x1, y1, r, Math.atan2(-py, -px), Math.atan2(py, px)); g.closePath(); g.fill();
+    g.strokeStyle = "rgba(30,10,0,.55)"; g.lineWidth = .7; g.stroke();
   };
   // shadow first
-  g.save(); g.filter = "blur(3px)"; g.fillStyle = "rgba(0,0,0,.42)";
-  for (const s of [1, -1]) { g.beginPath(); g.moveTo(s1.x + nx * half * s + 4, s1.y + ny * half * s + 6); g.lineTo(s2.x + nx * half * s + 4, s2.y + ny * half * s + 6); g.lineWidth = 7; g.strokeStyle = "rgba(0,0,0,.42)"; g.stroke(); }
-  for (let i = 1; i < rungs; i++) { const k = i / rungs, x = p1.x + dx * k + 4, y = p1.y + dy * k + 6; g.beginPath(); g.moveTo(x + nx * half, y + ny * half); g.lineTo(x - nx * half, y - ny * half); g.lineWidth = 4; g.stroke(); }
+  g.save(); g.filter = "blur(3px)"; g.strokeStyle = "rgba(40,20,0,.5)"; g.lineCap = "round";
+  for (const s of [1, -1]) { g.beginPath(); g.moveTo(s1.x + nx * half * s + 6, s1.y + ny * half * s + 8); g.lineTo(s2.x + nx * half * s + 6, s2.y + ny * half * s + 8); g.lineWidth = 10; g.stroke(); }
+  for (let i = 1; i < rungs; i++) { const k = i / rungs, x = p1.x + dx * k + 6, y = p1.y + dy * k + 8; g.beginPath(); g.moveTo(x + nx * half, y + ny * half); g.lineTo(x - nx * half, y - ny * half); g.lineWidth = 6; g.stroke(); }
   g.restore();
   for (let i = 1; i < rungs; i++) {
     const k = i / rungs, x = p1.x + dx * k, y = p1.y + dy * k;
-    cylinder(x + nx * half, y + ny * half, x - nx * half, y - ny * half, 2.3, "#b98a52", "#e9c48c", "#6d4a22");
+    cylinder(x + nx * half, y + ny * half, x - nx * half, y - ny * half, 3.5, RUNG);
   }
-  for (const s of [1, -1]) cylinder(s1.x + nx * half * s, s1.y + ny * half * s, s2.x + nx * half * s, s2.y + ny * half * s, 3.4, "#a8763f", "#e2b77b", "#5a3a17");
-  for (let i = 1; i < rungs; i++) {                                     // wooden pegs where rungs meet rails
+  for (const s of [1, -1]) cylinder(s1.x + nx * half * s, s1.y + ny * half * s, s2.x + nx * half * s, s2.y + ny * half * s, 5.4, RAIL);
+  for (const [p, sgn] of [[s1, 1], [s2, -1]] as [Pt, number][]) for (const s of [1, -1]) {      // gold caps at the rail ends
+    const cx = p.x + nx * half * s - ux * sgn * 1.5, cy = p.y + ny * half * s - uy * sgn * 1.5, gr = g.createRadialGradient(cx - 1.2, cy - 1.2, .4, cx, cy, 5.4);
+    gr.addColorStop(0, "#fff1b8"); gr.addColorStop(.55, "#d9aa4a"); gr.addColorStop(1, "#7a5212");
+    g.fillStyle = gr; g.beginPath(); g.arc(cx, cy, 5, 0, Math.PI * 2); g.fill();
+  }
+  for (let i = 1; i < rungs; i++) {                                     // pegs where rungs meet rails
     const k = i / rungs, x = p1.x + dx * k, y = p1.y + dy * k;
-    for (const s of [1, -1]) { g.fillStyle = "#4a2e10"; g.beginPath(); g.arc(x + nx * half * s, y + ny * half * s, 1.3, 0, Math.PI * 2); g.fill(); }
+    for (const s of [1, -1]) { g.fillStyle = "#2a0f02"; g.beginPath(); g.arc(x + nx * half * s, y + ny * half * s, 1.8, 0, Math.PI * 2); g.fill(); g.fillStyle = "rgba(255,230,180,.55)"; g.beginPath(); g.arc(x + nx * half * s - .5, y + ny * half * s - .5, .7, 0, Math.PI * 2); g.fill(); }
   }
 }
 
@@ -220,21 +470,22 @@ const blot = (c: MarkCtx, s: number, off: number, rx: number, ry: number, fill: 
   g.fillStyle = fill; g.fill(); g.strokeStyle = edge; g.lineWidth = edgeW * c.k; g.stroke(); g.restore();
 };
 const each = (c: MarkCtx, first: number, gap: number, endPad: number, f: (s: number) => void) => { for (let s = first * c.k; s < c.total - endPad * c.k; s += gap * c.k) f(s); };
-const SPECIES: Species[] = [
-  { name: "Indian python", body: "#9a8657", belly: "#d7c89c", head: "#7c6a43", eye: "#b8892a", pupil: "slit", hood: false,
-    mark: (c) => each(c, 10, 17, 16, (s) => { blot(c, s, 0, 7.5, 7, "#5a4026", "#2e1f10", 1.6); blot(c, s + 8 * c.k, .62, 3, 2.4, "#4a331d", "#2e1f10", .8); blot(c, s + 8 * c.k, -.62, 3, 2.4, "#4a331d", "#2e1f10", .8); }) },
-  { name: "King cobra", body: "#4d4a26", belly: "#cfc488", head: "#5b5730", eye: "#3a2a12", pupil: "round", hood: true,
-    mark: (c) => each(c, 14, 12, 8, (s) => band(c, s, 2.4, "rgba(232,222,150,.85)")) },
-  { name: "Russell's viper", body: "#a77f4b", belly: "#e2cfa4", head: "#8d673a", eye: "#c49a3c", pupil: "slit", hood: false,
-    mark: (c) => each(c, 9, 13, 12, (s) => { blot(c, s, 0, 5.4, 4.2, "#5b3a1c", "#141008", 1.3); blot(c, s + 6.5 * c.k, .66, 2.8, 2.3, "#5b3a1c", "#141008", .9); blot(c, s + 6.5 * c.k, -.66, 2.8, 2.3, "#5b3a1c", "#141008", .9); }) },
-  { name: "Common krait", body: "#1d1f28", belly: "#6c6e78", head: "#22242e", eye: "#111", pupil: "round", hood: false,
-    mark: (c) => each(c, 16, 13, 6, (s) => { band(c, s, 1.3, "rgba(240,240,236,.92)"); band(c, s + 3.2 * c.k, 1.3, "rgba(240,240,236,.92)"); }) },
-  { name: "Spectacled cobra", body: "#6a4728", belly: "#d6b98a", head: "#5e3f22", eye: "#2a1a0c", pupil: "round", hood: true,
-    mark: (c) => each(c, 20, 19, 10, (s) => band(c, s, 4, "rgba(40,22,8,.35)")) },
-  { name: "Green vine snake", body: "#4f8a2e", belly: "#c8e08a", head: "#4a8229", eye: "#d1b23a", pupil: "slit", hood: false,
-    mark: () => { /* plain green with a pale belly line */ } },
+/* Friendly, glossy snakes in clear colours, each with its own pattern. Cycled over the board's snakes in order. */
+export const SPECIES: Species[] = [
+  { name: "Emerald", body: "#3c9a30", belly: "#dcf08e", head: "#46a83a", eye: "#ffd94a", pupil: "round", hood: false,
+    mark: (c) => each(c, 12, 13, 14, (s) => { blot(c, s, .38, 2.6, 2.1, "#2a7420", "rgba(0,0,0,0)", 0); blot(c, s + 6.5 * c.k, -.38, 2.6, 2.1, "#2a7420", "rgba(0,0,0,0)", 0); }) },
+  { name: "Ruby", body: "#cc3428", belly: "#ffe3a6", head: "#d5402f", eye: "#ffe07a", pupil: "round", hood: false,
+    mark: (c) => each(c, 13, 15, 10, (s) => band(c, s, 3.4, "rgba(246,196,58,.95)")) },
+  { name: "Sapphire", body: "#2c69cc", belly: "#cfe7ff", head: "#3577dc", eye: "#ffe07a", pupil: "round", hood: false,
+    mark: (c) => each(c, 11, 14, 12, (s) => blot(c, s, 0, 4.4, 3.4, "rgba(150,205,255,.85)", "rgba(15,50,120,.6)", .8)) },
+  { name: "Amethyst", body: "#8644c4", belly: "#f3d4ff", head: "#904ecf", eye: "#ffe07a", pupil: "round", hood: false,
+    mark: (c) => each(c, 12, 12, 12, (s) => { blot(c, s, .42, 2.2, 2, "#e7a6ff", "rgba(0,0,0,0)", 0); blot(c, s + 6 * c.k, -.42, 2.2, 2, "#e7a6ff", "rgba(0,0,0,0)", 0); }) },
+  { name: "Tiger", body: "#e2862a", belly: "#ffeab8", head: "#e99234", eye: "#fff1a8", pupil: "round", hood: false,
+    mark: (c) => each(c, 14, 11, 10, (s) => band(c, s, 2.3, "rgba(70,36,8,.85)")) },
+  { name: "Jade", body: "#1d9c8b", belly: "#d4f7eb", head: "#24a895", eye: "#ffe07a", pupil: "round", hood: false,
+    mark: (c) => each(c, 14, 15, 10, (s) => { band(c, s, 1.5, "rgba(10,90,78,.9)"); band(c, s + 3.6 * c.k, 1.5, "rgba(10,90,78,.9)"); }) },
 ];
-const speciesOf = (head: number) => SPECIES[Math.max(0, Object.keys(SNAKES).indexOf(String(head))) % SPECIES.length];
+export const speciesOf = (head: number) => SPECIES[Math.max(0, Object.keys(SNAKES).indexOf(String(head))) % SPECIES.length];
 
 /** Shape of one snake: its centre line, cumulative length, width and a lookup by distance from the head. */
 type Geom = { pts: Pt[]; len: number[]; total: number; WD: number[]; L: Pt[]; R: Pt[]; tan: (i: number) => Pt; at: (s: number) => { p: Pt; n: Pt; t: Pt; w: number }; angle: number };
@@ -270,9 +521,7 @@ function snake(g: CanvasRenderingContext2D, head: number, tail: number, sp: Spec
 
   // shadow on the wood
   g.save(); g.filter = "blur(4px)"; g.translate(5, 7); outline(); g.fillStyle = "rgba(0,0,0,.45)"; g.fill();
-  g.beginPath(); g.ellipse(pts[0].x + Math.cos(angle) * (sp.hood ? 0 : 8 * K), pts[0].y + Math.sin(angle) * (sp.hood ? 0 : 8 * K), (sp.hood ? 17 : 11) * K, (sp.hood ? 15 : 8) * K, angle, 0, Math.PI * 2); g.fill(); g.restore();
-  // a cobra's spread hood sits under the head
-  if (sp.hood) hood(g, pts[0], angle, sp);
+  g.beginPath(); g.ellipse(pts[0].x + Math.cos(angle) * 8 * K, pts[0].y + Math.sin(angle) * 8 * K, 11 * K, 9 * K, angle, 0, Math.PI * 2); g.fill(); g.restore();
   // body
   outline(); g.fillStyle = sp.body; g.fill();
   g.save(); outline(); g.clip();
@@ -308,64 +557,47 @@ function snake(g: CanvasRenderingContext2D, head: number, tail: number, sp: Spec
   g.beginPath();
   for (let i = 0; i < N; i++) { const t = tan(i), n = { x: -t.y, y: t.x }, w = WD[i] / 2, sd = n.x * LIGHT.x + n.y * LIGHT.y > 0 ? 1 : -1; const q = { x: pts[i].x + n.x * w * .62 * sd, y: pts[i].y + n.y * w * .62 * sd }; i ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y); }
   for (let i = N - 1; i >= 0; i--) { const t = tan(i), n = { x: -t.y, y: t.x }, w = WD[i] / 2, sd = n.x * LIGHT.x + n.y * LIGHT.y > 0 ? 1 : -1; g.lineTo(pts[i].x + n.x * w * .12 * sd, pts[i].y + n.y * w * .12 * sd); }
-  g.closePath(); g.fillStyle = "rgba(255,250,235,.3)"; g.fill();
+  g.closePath(); g.fillStyle = "rgba(255,252,240,.4)"; g.fill();
+  // a crisp specular streak along the lit side
+  g.filter = "blur(.6px)"; g.lineWidth = 1.3; g.strokeStyle = "rgba(255,255,255,.45)"; g.lineCap = "round"; g.beginPath();
+  for (let i = 3; i < N * .8; i++) { const t = tan(i), n = { x: -t.y, y: t.x }, w = WD[i] / 2, sd = n.x * LIGHT.x + n.y * LIGHT.y > 0 ? 1 : -1; const q = { x: pts[i].x + n.x * w * .45 * sd, y: pts[i].y + n.y * w * .45 * sd }; i > 3 ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y); }
+  g.stroke();
   g.filter = "none";
   g.restore();
   outline(); g.strokeStyle = "rgba(0,0,0,.5)"; g.lineWidth = 1; g.stroke();
-  snakeHead(g, pts[0], angle, WD[0], sp, r() < .5);
+  snakeHead(g, pts[0], angle, WD[0], sp, r() < .7);
 }
 
-function hood(g: CanvasRenderingContext2D, p: Pt, ang: number, sp: Species) {
-  g.save(); g.translate(p.x, p.y); g.rotate(ang); g.scale(K, K);
-  const gr = g.createRadialGradient(-6, -4, 2, -6, 0, 17);
-  gr.addColorStop(0, mixHex(sp.body, "#ffffff", .25)); gr.addColorStop(.7, sp.body); gr.addColorStop(1, mixHex(sp.body, "#000000", .45));
-  // a spread hood: widest just behind the head, narrowing back into the neck
-  g.beginPath(); g.moveTo(4, -6.5);
-  g.bezierCurveTo(2, -15.5, -10, -16.5, -16, -9); g.quadraticCurveTo(-21, -4, -24, 0);
-  g.quadraticCurveTo(-21, 4, -16, 9); g.bezierCurveTo(-10, 16.5, 2, 15.5, 4, 6.5); g.closePath();
-  g.fillStyle = gr; g.fill();
-  g.strokeStyle = "rgba(0,0,0,.5)"; g.lineWidth = .9; g.stroke();
-  // hood markings: spectacles for the spectacled cobra, chevrons for the king cobra
-  if (sp.name === "Spectacled cobra") {
-    g.strokeStyle = "rgba(245,230,190,.85)"; g.lineWidth = 1.6;
-    g.beginPath(); g.arc(-8, -6.5, 3.4, 0, Math.PI * 2); g.stroke(); g.beginPath(); g.arc(-8, 6.5, 3.4, 0, Math.PI * 2); g.stroke();
-    g.beginPath(); g.moveTo(-11.5, -3.5); g.quadraticCurveTo(-13.5, 0, -11.5, 3.5); g.stroke();
-    g.fillStyle = "rgba(20,10,4,.75)"; g.beginPath(); g.arc(-8, -6.5, 1.6, 0, Math.PI * 2); g.fill(); g.beginPath(); g.arc(-8, 6.5, 1.6, 0, Math.PI * 2); g.fill();
-  } else {
-    g.strokeStyle = "rgba(225,215,140,.6)"; g.lineWidth = 1.3;
-    for (const x of [-15, -9]) { g.beginPath(); g.moveTo(x, -11); g.quadraticCurveTo(x + 4, 0, x, 11); g.stroke(); }
-  }
-  g.restore();
-}
 const mixHex = (a: string, b: string, t: number) => mix(a, b, t);
 
+/** A friendly eye: white, a coloured iris, a round pupil and a bright catch-light. */
+function eye(g: CanvasRenderingContext2D, x: number, y: number, sp: Species) {
+  g.fillStyle = "#fffdf6"; g.beginPath(); g.ellipse(x, y, 3.3, 3, 0, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = "rgba(0,0,0,.55)"; g.lineWidth = .6; g.stroke();
+  g.fillStyle = sp.eye; g.beginPath(); g.arc(x + .5, y, 2.1, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#0b0b0b"; g.beginPath(); g.arc(x + .7, y, 1.35, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#ffffff"; g.beginPath(); g.arc(x - .1, y - .8, .7, 0, Math.PI * 2); g.fill();
+}
+
+/** A rounded, friendly head with big eyes (closed), or the two jaws swung apart with the throat showing (`open` > 0). */
 function snakeHead(g: CanvasRenderingContext2D, p: Pt, ang: number, neckPx: number, sp: Species, tongue: boolean, open = 0) {
   g.save(); g.translate(p.x, p.y); g.rotate(ang); g.scale(K, K);
-  const neck = neckPx / K, viper = sp.name === "Russell's viper", hw = neck * (viper ? .78 : sp.hood ? .6 : .66), len = viper ? 17 : 15;
+  const neck = neckPx / K, hw = neck * .8, len = 16;
   if (open > 0) {
-    // mouth open: cover the closed head with the throat, then draw the two jaws swung apart
     const piv = len * .12, a = open * .5;
-    // the throat shows only between the two jaws
     const tip = (side: number) => { const x = len - piv, y = side * hw * .12; return { x: piv + x * Math.cos(side * a) - y * Math.sin(side * a), y: x * Math.sin(side * a) + y * Math.cos(side * a) }; };
     const up = tip(-1), lo = tip(1);
     g.beginPath(); g.moveTo(piv, 0); g.lineTo(up.x, up.y); g.quadraticCurveTo(len + hw * .2, 0, lo.x, lo.y); g.closePath();
     const th = g.createRadialGradient(piv + 1, 0, .5, piv + 2, 0, len * .9);
-    th.addColorStop(0, "#2a050a"); th.addColorStop(.55, "#8e2633"); th.addColorStop(1, "#d86b7a");
+    th.addColorStop(0, "#3a070d"); th.addColorStop(.55, "#b23345"); th.addColorStop(1, "#f08a98");
     g.fillStyle = th; g.fill();
     for (const side of [-1, 1]) {
       g.save(); g.translate(piv, 0); g.rotate(side * a); g.translate(-piv, 0);
-      g.beginPath();
-      if (side < 0) { g.moveTo(-3, -neck * .48); g.bezierCurveTo(3, -hw * 1.05, len * .7, -hw * .9, len, -hw * .25); g.quadraticCurveTo(len + 1.5, -hw * .05, len - 1, 0); g.lineTo(-3, 0); }
-      else { g.moveTo(-3, neck * .48); g.bezierCurveTo(3, hw * 1.05, len * .7, hw * .9, len, hw * .25); g.quadraticCurveTo(len + 1.5, hw * .05, len - 1, 0); g.lineTo(-3, 0); }
-      g.closePath();
+      g.beginPath(); g.moveTo(-3, side * neck * .48); g.bezierCurveTo(3, side * hw * 1.1, len * .72, side * hw, len, side * hw * .3); g.quadraticCurveTo(len + 1.8, side * hw * .05, len - 1, 0); g.lineTo(-3, 0); g.closePath();
       const jg = g.createLinearGradient(0, side * -hw, 0, side * hw * .2);
-      jg.addColorStop(0, mix(sp.head, "#000000", .35)); jg.addColorStop(.6, sp.head); jg.addColorStop(1, mix(sp.head, "#ffffff", .2));
-      g.fillStyle = jg; g.fill(); g.strokeStyle = "rgba(0,0,0,.6)"; g.lineWidth = .7; g.stroke();
-      // fangs and the eye on this jaw
-      g.fillStyle = "#fbf6e8"; g.beginPath(); g.moveTo(len - 3.2, 0); g.lineTo(len - 2.4, side * -.4); g.lineTo(len - 1.6, side * 2.6); g.closePath(); g.fill();
-      const ex = len * .58, ey = side * hw * .66;
-      g.fillStyle = sp.eye; g.beginPath(); g.ellipse(ex, ey, 2.4, 2.1, 0, 0, Math.PI * 2); g.fill();
-      g.fillStyle = "#050505"; g.beginPath(); g.ellipse(ex, ey, sp.pupil === "slit" ? .55 : 1.25, sp.pupil === "slit" ? 1.8 : 1.25, 0, 0, Math.PI * 2); g.fill();
+      jg.addColorStop(0, mix(sp.head, "#000000", .3)); jg.addColorStop(.6, sp.head); jg.addColorStop(1, mix(sp.head, "#ffffff", .25));
+      g.fillStyle = jg; g.fill(); g.strokeStyle = "rgba(0,0,0,.55)"; g.lineWidth = .7; g.stroke();
+      eye(g, len * .5, side * hw * .62, sp);
       g.restore();
     }
     g.restore();
@@ -373,35 +605,27 @@ function snakeHead(g: CanvasRenderingContext2D, p: Pt, ang: number, neckPx: numb
   }
   const shape = () => {
     g.beginPath(); g.moveTo(-3, -neck * .48);
-    g.bezierCurveTo(3, -hw * 1.05, len * .7, -hw * (viper ? 1 : .9), len, -hw * .25);
-    g.quadraticCurveTo(len + 2.2, 0, len, hw * .25);
-    g.bezierCurveTo(len * .7, hw * (viper ? 1 : .9), 3, hw * 1.05, -3, neck * .48); g.closePath();
+    g.bezierCurveTo(2, -hw * 1.15, len * .78, -hw * 1.02, len, -hw * .32);
+    g.quadraticCurveTo(len + 2.6, 0, len, hw * .32);
+    g.bezierCurveTo(len * .78, hw * 1.02, 2, hw * 1.15, -3, neck * .48); g.closePath();
   };
-  const gr = g.createRadialGradient(len * .35, -hw * .45, 1, len * .45, 0, len);
-  gr.addColorStop(0, mix(sp.head, "#ffffff", .3)); gr.addColorStop(.55, sp.head); gr.addColorStop(1, mix(sp.head, "#000000", .5));
-  shape(); g.fillStyle = gr; g.fill(); g.strokeStyle = "rgba(0,0,0,.55)"; g.lineWidth = .8; g.stroke();
-  // head plates
-  g.strokeStyle = "rgba(0,0,0,.25)"; g.lineWidth = .6;
-  g.beginPath(); g.moveTo(len * .35, -hw * .35); g.quadraticCurveTo(len * .55, 0, len * .35, hw * .35); g.stroke();
-  g.beginPath(); g.moveTo(len * .62, -hw * .25); g.quadraticCurveTo(len * .78, 0, len * .62, hw * .25); g.stroke();
-  if (viper) { g.fillStyle = "rgba(60,35,15,.6)"; g.beginPath(); g.ellipse(len * .3, 0, 4, hw * .45, 0, 0, Math.PI * 2); g.fill(); }
-  // eyes
-  for (const s of [-1, 1]) {
-    const ex = len * .58, ey = s * hw * .66;
-    g.fillStyle = sp.eye; g.beginPath(); g.ellipse(ex, ey, 2.4, 2.1, 0, 0, Math.PI * 2); g.fill();
-    g.strokeStyle = "rgba(0,0,0,.6)"; g.lineWidth = .6; g.stroke();
-    g.fillStyle = "#050505";
-    if (sp.pupil === "slit") { g.beginPath(); g.ellipse(ex, ey, .55, 1.8, 0, 0, Math.PI * 2); g.fill(); }
-    else { g.beginPath(); g.arc(ex, ey, 1.25, 0, Math.PI * 2); g.fill(); }
-    g.fillStyle = "rgba(255,255,255,.85)"; g.beginPath(); g.arc(ex - .7, ey - .7, .55, 0, Math.PI * 2); g.fill();
-  }
+  const gr = g.createRadialGradient(len * .38, -hw * .4, 1, len * .45, 0, len * 1.05);
+  gr.addColorStop(0, mix(sp.head, "#ffffff", .42)); gr.addColorStop(.5, sp.head); gr.addColorStop(1, mix(sp.head, "#000000", .42));
+  shape(); g.fillStyle = gr; g.fill(); g.strokeStyle = "rgba(0,0,0,.5)"; g.lineWidth = .8; g.stroke();
+  // pale chin and a gentle smile
+  g.save(); shape(); g.clip(); g.fillStyle = rgba(sp.belly, .45); g.beginPath(); g.ellipse(len * .55, 0, len * .42, hw * .28, 0, 0, Math.PI * 2); g.fill(); g.restore();
+  g.strokeStyle = "rgba(40,10,5,.55)"; g.lineWidth = .7; g.lineCap = "round";
+  g.beginPath(); g.moveTo(len * .55, -hw * .22); g.quadraticCurveTo(len * .95, 0, len * .55, hw * .22); g.stroke();
+  // big eyes on top of the head
+  for (const s of [-1, 1]) eye(g, len * .46, s * hw * .62, sp);
   // nostrils
-  g.fillStyle = "rgba(0,0,0,.65)";
-  for (const s of [-1, 1]) { g.beginPath(); g.ellipse(len - 1.6, s * hw * .2, .7, .45, 0, 0, Math.PI * 2); g.fill(); }
-  // a flicking tongue on some snakes
+  g.fillStyle = "rgba(0,0,0,.6)";
+  for (const s of [-1, 1]) { g.beginPath(); g.ellipse(len - 1.4, s * hw * .18, .65, .42, 0, 0, Math.PI * 2); g.fill(); }
+  // gloss on the crown of the head
+  g.fillStyle = "rgba(255,255,255,.35)"; g.beginPath(); g.ellipse(len * .25, -hw * .35, 3.6, 1.4, -.25, 0, Math.PI * 2); g.fill();
   if (tongue) {
-    g.strokeStyle = "#b3141c"; g.lineWidth = 1.1; g.lineCap = "round";
-    g.beginPath(); g.moveTo(len + 1.5, 0); g.lineTo(len + 7, 0); g.lineTo(len + 10, -2.2); g.moveTo(len + 7, 0); g.lineTo(len + 10, 2.2); g.stroke();
+    g.strokeStyle = "#d61f2c"; g.lineWidth = 1.15; g.lineCap = "round";
+    g.beginPath(); g.moveTo(len + 1.6, 0); g.lineTo(len + 6.5, 0); g.lineTo(len + 9.2, -2); g.moveTo(len + 6.5, 0); g.lineTo(len + 9.2, 2); g.stroke();
   }
   g.restore();
 }
@@ -412,21 +636,22 @@ function varnish(g: CanvasRenderingContext2D) {
   sheen.addColorStop(0, "rgba(255,245,220,.10)"); sheen.addColorStop(.35, "rgba(255,245,220,.02)"); sheen.addColorStop(.5, "rgba(255,245,220,.07)"); sheen.addColorStop(.62, "rgba(255,245,220,0)"); sheen.addColorStop(1, "rgba(0,0,0,.10)");
   g.fillStyle = sheen; g.fillRect(0, 0, W, W);
   const v = g.createRadialGradient(W / 2, W / 2, W * .35, W / 2, W / 2, W * .75);
-  v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, "rgba(0,0,0,.28)");
+  v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, "rgba(0,0,0,.08)");
   g.fillStyle = v; g.fillRect(0, 0, W, W);
 }
 
-/** Paints the static board (frame, carved squares, ladders, snakes) into `layer` at the given pixel ratio. */
-export function paintBoard(layer: HTMLCanvasElement, dpr: number, woodId: WoodId = "teak") {
-  const wood = WOODS[woodId] ?? WOODS.teak;
+/** Paints the static board (frame, squares, ladders, snakes, numbers) for one model and theme into `layer` at the given pixel ratio. */
+export function paintBoard(layer: HTMLCanvasElement, dpr: number, look: Look = DEFAULT_LOOK) {
+  const pal = palette(look);
   layer.width = layer.height = Math.round(W * dpr);
   const g = layer.getContext("2d")!;
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
-  frameAndSquares(g, wood);
-  Object.entries(LADDERS).forEach(([a, b]) => onLayer(g, boxOf([center(+a), center(b)], 34), (c) => ladder(c, +a, b)));
+  frame(g, look, pal);
+  squares(g, look, pal);
+  Object.entries(LADDERS).forEach(([a, b]) => onLayer(g, boxOf([center(+a), center(b)], 36), (c) => ladder(c, +a, b)));
   Object.entries(SNAKES).forEach(([h, t], i) => onLayer(g, boxOf(snakePath(+h, t), 54), (c) => snake(c, +h, t, SPECIES[i % SPECIES.length], 100 + i)));
   varnish(g);
-  numbers(g);
+  numbers(g, pal);
 }
 
 /* ---------- moving parts drawn over the board during animations ---------- */
@@ -434,7 +659,6 @@ export function paintBoard(layer: HTMLCanvasElement, dpr: number, woodId: WoodId
 export function paintSnakeMouth(g: CanvasRenderingContext2D, head: number, open: number) {
   const tail = SNAKES[head]; if (!tail) return;
   const sp = speciesOf(head), gm = geom(head, tail);
-  if (sp.hood) hood(g, gm.pts[0], gm.angle, sp);
   snakeHead(g, gm.pts[0], gm.angle, gm.WD[0], sp, false, Math.max(0.001, open));
 }
 /** A swallowed pawn as a bulge travelling down the snake's body (`k` 0 = at the head, 1 = at the tail). */
@@ -455,22 +679,107 @@ export function paintSnakeBulge(g: CanvasRenderingContext2D, head: number, k: nu
 export function ladderSteps(a: number, b: number, rungs: number): Pt[] {
   const p1 = center(a), p2 = center(b), out: Pt[] = [];
   for (let i = 1; i <= rungs; i++) { const k = i / rungs; out.push({ x: p1.x + (p2.x - p1.x) * k, y: p1.y + (p2.y - p1.y) * k }); }
+  out[out.length - 1] = spot(b);                                          // step off the top rung onto the square
   return out;
 }
 
-/** A player's token standing on the board: a coloured ring in the player's colour, a soft shadow, then the token art.
-    `img` is the token picture; until it has loaded a plain disc in the player's colour is drawn. */
-export function paintToken(g: CanvasRenderingContext2D, p: Pt, ring: string, img: HTMLImageElement | null, active: boolean, scale = 1) {
+/** A player's token standing upright on the (possibly tilted) board, drawn in screen pixels.
+    (x, y): where its stand touches the board; u: screen px per board unit there; sq: how flat the board looks there (1 = face on).
+    A contact shadow and a ring in the player's colour sit on the board; the active player's token also gets a gold glow.
+    `lift` raises the token off the board (hops), in board units. Until `img` has loaded a plain disc is drawn. */
+/** Height of a standing token, in board units (a square is 60). */
+export const PIECE_H = 46;
+export function paintPiece(g: CanvasRenderingContext2D, x: number, y: number, u: number, sq: number, ring: string, img: HTMLImageElement | null, active: boolean, scale = 1, lift = 0, lean = 0) {
   if (scale <= 0.02) return;
-  const h = 56 * scale, w = h * (100 / 120), baseY = p.y + 9 * scale;
+  const k = u * scale, h = PIECE_H * k, w = h * (100 / 120), top = y - lift * u;
   g.save();
-  g.fillStyle = "rgba(0,0,0,.38)"; g.beginPath(); g.ellipse(p.x + 3 * scale, baseY + 2 * scale, 17 * scale, 6.5 * scale, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = `rgba(0,0,0,${(.4 * Math.max(.3, 1 - lift / 26)).toFixed(3)})`;
+  g.beginPath(); g.ellipse(x + 1.6 * k, y + 1 * k, 13 * k * (1 - Math.min(.3, lift / 60)), 13 * k * sq, 0, 0, Math.PI * 2); g.fill();
   if (active) {
-    g.strokeStyle = "rgba(255,226,140,.95)"; g.lineWidth = 3; g.shadowColor = "rgba(255,210,110,.9)"; g.shadowBlur = 8;
-    g.beginPath(); g.ellipse(p.x, baseY, 21 * scale, 8.5 * scale, 0, 0, Math.PI * 2); g.stroke(); g.shadowBlur = 0;
+    g.strokeStyle = "rgba(255,226,140,.95)"; g.lineWidth = 2.4 * u; g.shadowColor = "rgba(255,206,100,.95)"; g.shadowBlur = 9 * u;
+    g.beginPath(); g.ellipse(x, y, 16.5 * k, 16.5 * k * sq, 0, 0, Math.PI * 2); g.stroke(); g.shadowBlur = 0;
   }
-  g.strokeStyle = ring; g.lineWidth = 2.6 * scale; g.beginPath(); g.ellipse(p.x, baseY, 16.5 * scale, 6.2 * scale, 0, 0, Math.PI * 2); g.stroke();
-  if (img && img.complete && img.naturalWidth) g.drawImage(img, p.x - w / 2, baseY - h * (106 / 120), w, h);
-  else { g.fillStyle = ring; g.beginPath(); g.arc(p.x, p.y, 12 * scale, 0, Math.PI * 2); g.fill(); g.strokeStyle = "#fffaf0"; g.lineWidth = 2; g.stroke(); }
+  g.strokeStyle = ring; g.lineWidth = 2.4 * k; g.beginPath(); g.ellipse(x, y, 12.5 * k, 12.5 * k * sq, 0, 0, Math.PI * 2); g.stroke();
+  if (lean) { g.translate(x, top); g.rotate(lean); g.translate(-x, -top); }
+  if (img && img.complete && img.naturalWidth) g.drawImage(img, x - w / 2, top - h * (106 / 120), w, h);
+  else { g.fillStyle = ring; g.beginPath(); g.arc(x, top - 12 * k, 12 * k, 0, Math.PI * 2); g.fill(); g.strokeStyle = "#fffaf0"; g.lineWidth = 2 * u; g.stroke(); }
   g.restore();
+}
+
+type ProjFn = (x: number, y: number, z?: number) => { x: number; y: number; u: number };
+/** What sits under and around the tilted board: its shadow on the table, the board's front and side edges, and palm leaves at the corners. */
+export function paintBase(g: CanvasRenderingContext2D, P: ProjFn, look: Look = DEFAULT_LOOK) {
+  const pal = palette(look), T = THICK, edge = look.model === "marble" ? { frame: mix(pal.stone, pal.vein, .35), light: "#ffffff" } : { frame: pal.rim, light: pal.rimLight };
+  const q = (pts: { x: number; y: number }[]) => { g.beginPath(); pts.forEach((p, i) => (i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y))); g.closePath(); };
+  const c0 = P(0, 0, -T), c1 = P(W, 0, -T), c2 = P(W, W, -T), c3 = P(0, W, -T), u = P(W / 2, W, 0).u;
+  // soft shadow on the table
+  g.save(); g.filter = `blur(${Math.round(16 * u)}px)`; g.fillStyle = "rgba(0,0,0,.6)";
+  q([c0, c1, c2, c3].map(p => ({ x: p.x, y: p.y + 14 * u }))); g.fill(); g.restore();
+  g.save(); g.filter = `blur(${Math.round(4 * u)}px)`; g.fillStyle = "rgba(0,0,0,.55)"; q([c0, c1, c2, c3].map(p => ({ x: p.x, y: p.y + 3 * u }))); g.fill(); g.restore();
+  // side and front edges of the board (only the ones facing us)
+  const faces: [{ x: number; y: number }[], number][] = [
+    [[P(0, 0, 0), P(0, W, 0), c3, c0], .62], [[P(W, W, 0), P(W, 0, 0), c1, c2], .62], [[P(0, W, 0), P(W, W, 0), c2, c3], 1],
+  ];
+  for (const [pts, light] of faces) {
+    const area = (pts[1].x - pts[0].x) * (pts[2].y - pts[0].y) - (pts[1].y - pts[0].y) * (pts[2].x - pts[0].x);
+    if (area <= 0.5) continue;
+    const gr = g.createLinearGradient(0, Math.min(pts[0].y, pts[1].y), 0, Math.max(pts[2].y, pts[3].y));
+    gr.addColorStop(0, mix(edge.frame, edge.light, .35 * light)); gr.addColorStop(.25, mix(edge.frame, "#000000", .1 + (1 - light) * .3)); gr.addColorStop(1, mix(edge.frame, "#000000", .5));
+    q(pts); g.fillStyle = gr; g.fill();
+    // grain along the edge
+    g.save(); q(pts); g.clip(); g.lineWidth = Math.max(.6, .8 * u);
+    for (let i = 1; i < 7; i++) {
+      const t = i / 7, a = { x: pts[0].x + (pts[3].x - pts[0].x) * t, y: pts[0].y + (pts[3].y - pts[0].y) * t }, b = { x: pts[1].x + (pts[2].x - pts[1].x) * t, y: pts[1].y + (pts[2].y - pts[1].y) * t };
+      g.strokeStyle = `rgba(30,12,2,${.12 + (i % 3) * .05})`; g.beginPath(); g.moveTo(a.x, a.y);
+      g.bezierCurveTo(a.x + (b.x - a.x) * .33, a.y + (b.y - a.y) * .33 + Math.sin(i * 2.1) * 2 * u, a.x + (b.x - a.x) * .66, a.y + (b.y - a.y) * .66 - Math.sin(i * 1.3) * 2 * u, b.x, b.y); g.stroke();
+    }
+    g.restore();
+    g.strokeStyle = `rgba(255,232,190,${.35 * light})`; g.lineWidth = 1.2 * u; g.beginPath(); g.moveTo(pts[0].x, pts[0].y); g.lineTo(pts[1].x, pts[1].y); g.stroke();
+  }
+  // palm leaves peeking out from behind the four corners
+  const corners: [number, number, number][] = [[0, 0, -2.4], [W, 0, -.74], [0, W, 2.5], [W, W, .64]];
+  for (const [x, y, out] of corners) { const p = P(x, y, -T * .5); leaves(g, p.x, p.y, out, 66 * p.u); }
+}
+function leaves(g: CanvasRenderingContext2D, x: number, y: number, out: number, size: number) {
+  for (const [k, l] of [[-1.05, .7], [-.55, .92], [0, 1], [.55, .92], [1.05, .7]] as [number, number][]) {
+    const len = size * l, wid = size * .2;
+    g.save(); g.translate(x, y); g.rotate(out + k);
+    const gr = g.createLinearGradient(0, 0, len, 0); gr.addColorStop(0, "#174d16"); gr.addColorStop(.45, "#2f8a27"); gr.addColorStop(1, "#7cc84a");
+    g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(len * .45, -wid * 1.1, len, 0); g.quadraticCurveTo(len * .45, wid * .9, 0, 0);
+    g.fillStyle = gr; g.shadowColor = "rgba(0,0,0,.4)"; g.shadowBlur = size * .08; g.fill(); g.shadowColor = "transparent";
+    g.strokeStyle = "rgba(15,55,10,.65)"; g.lineWidth = Math.max(.6, size * .025); g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(len * .5, -wid * .1, len * .97, 0); g.stroke();
+    g.strokeStyle = "rgba(15,55,10,.35)";
+    for (let i = 1; i < 6; i++) { const t = i / 6, cx = len * t; g.beginPath(); g.moveTo(cx, 0); g.lineTo(cx + len * .07, -wid * .8 * (1 - t * .6)); g.moveTo(cx, 0); g.lineTo(cx + len * .07, wid * .7 * (1 - t * .6)); g.stroke(); }
+    g.restore();
+  }
+}
+
+/* ---------- textures for the WebGL 3D board (scene3d.ts) ---------- */
+/** The playing surface (10 x 10 squares, no rim) as a texture for one model and theme, with the START plaque and the
+    MOKSH engraving. `px` is the canvas size in pixels. Numbers are painted separately. */
+export function paintSurface(c: HTMLCanvasElement, px: number, look: Look = DEFAULT_LOOK) {
+  const k = px / (S * 10);
+  c.width = c.height = px;
+  const g = c.getContext("2d")!; g.setTransform(k, 0, 0, k, -PAD * k, -PAD * k);
+  squares(g, look, palette(look));
+}
+/** The square numbers alone, on a transparent texture covering the playing surface (drawn above snakes and ladders). */
+export function paintNumbers(c: HTMLCanvasElement, px: number, look: Look = DEFAULT_LOOK) {
+  const k = px / (S * 10);
+  c.width = c.height = px;
+  const g = c.getContext("2d")!; g.setTransform(k, 0, 0, k, -PAD * k, -PAD * k);
+  numbers(g, palette(look));
+}
+/** The frame's material as a strip `w` x `h` px: wood with the grain running along it, or the marble slab's stone. */
+export function paintPlank(c: HTMLCanvasElement, w: number, h: number, look: Look, seed: number) {
+  const pal = palette(look);
+  c.width = w; c.height = h;
+  const g = c.getContext("2d")!;
+  if (look.model === "marble") stone(g, 0, 0, w, h, pal.stone, pal.vein, seed, 4);
+  else grain(g, 0, 0, w, h, rimWood(pal), seed, false, .5);
+}
+/** Polished dark wood for the ladder rails (the same on every board, so ladders always stand out). */
+export function paintRail(c: HTMLCanvasElement, w: number, h: number, seed: number) {
+  c.width = w; c.height = h;
+  grain(c.getContext("2d")!, 0, 0, w, h, { base: RAIL.base, light: RAIL.light, dark: RAIL.dark, grain: "#1e0a02", contrast: .8 }, seed, false, 0);
 }

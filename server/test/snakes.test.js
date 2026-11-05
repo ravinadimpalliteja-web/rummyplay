@@ -1,7 +1,7 @@
 'use strict';
 process.env.SPEED = '50';        // shorten every timer and animation pause; the real roll timer is 15s
 const assert = require('assert');
-const { newGame, roll, turnOf, animMs, LADDERS, SNAKES, TIMING, PIECE_IDS, DEFAULT_PIECES } = require('../snakes');
+const { newGame, roll, turnOf, animMs, LADDERS, SNAKES, BOARD_VERSION, TIMING, PIECE_IDS, DEFAULT_PIECES } = require('../snakes');
 
 /* ---------- rules ---------- */
 {
@@ -18,11 +18,11 @@ const { newGame, roll, turnOf, animMs, LADDERS, SNAKES, TIMING, PIECE_IDS, DEFAU
 }
 {
   // Ladders and snakes.
-  const g = newGame([0, 1]); g.pos[0] = 1;
-  roll(g, 0, 2);                                   // lands on 3 -> ladder
-  assert.strictEqual(g.last.landed, 3); assert.strictEqual(g.last.via, 'ladder'); assert.strictEqual(g.pos[0], LADDERS[3]);
-  g.pos[1] = 45; roll(g, 1, 4);                    // lands on 49 -> snake
-  assert.strictEqual(g.last.via, 'snake'); assert.strictEqual(g.pos[1], SNAKES[49]);
+  const g = newGame([0, 1]); g.pos[0] = 10;
+  roll(g, 0, 4);                                   // lands on 14 -> ladder to 28
+  assert.strictEqual(g.last.landed, 14); assert.strictEqual(g.last.via, 'ladder'); assert.strictEqual(g.pos[0], 28);
+  g.pos[1] = 45; roll(g, 1, 4);                    // lands on 49 -> snake to 7
+  assert.strictEqual(g.last.via, 'snake'); assert.strictEqual(g.pos[1], 7);
   assert(animMs(g.last) > TIMING.die + 4 * TIMING.step, 'the server waits for the swallow animation');
 }
 {
@@ -75,11 +75,14 @@ const { newGame, roll, turnOf, animMs, LADDERS, SNAKES, TIMING, PIECE_IDS, DEFAU
   assert.deepStrictEqual(grab('LADDERS'), Object.fromEntries(Object.entries(LADDERS)), 'ladders match the web client');
   assert.deepStrictEqual(grab('SNAKES'), Object.fromEntries(Object.entries(SNAKES)), 'snakes match the web client');
   assert.deepStrictEqual(grab('TIMING'), { ...TIMING }, 'animation timing matches the web client');
-  // Tokens: same twelve ids on both sides, three collections of four, and the same default pawns.
+  assert.strictEqual(+src.match(/export const BOARD_VERSION = (\d+)/)[1], BOARD_VERSION, 'board version matches the web client');
+  // Tokens: same ids on both sides (4 pawns, 8 people, 9 animals), and the same default pawns.
   const tsrc = fs.readFileSync(require('path').join(__dirname, '../../web/src/snakes/tokens.ts'), 'utf8');
   const webPieces = [...tsrc.matchAll(/\{ id: "([a-z-]+)", name: "[^"]+", collection: "([a-z]+)"/g)].map((m) => [m[1], m[2]]);
   assert.deepStrictEqual(webPieces.map((p) => p[0]), [...PIECE_IDS], 'token ids match the web client');
-  for (const c of ['traditional', 'explorers', 'animals']) assert.strictEqual(webPieces.filter((p) => p[1] === c).length, 4, c + ' has four tokens');
+  for (const [c, n] of [['traditional', 4], ['explorers', 8], ['animals', 9]]) assert.strictEqual(webPieces.filter((p) => p[1] === c).length, n, c + ' has ' + n + ' tokens');
+  const msrc = fs.readFileSync(require('path').join(__dirname, '../../web/src/snakes/models3d.ts'), 'utf8').split('const BUILD')[1];
+  for (const id of PIECE_IDS) assert(new RegExp(`"${id}": |\\b${id}[,\\n ]`).test(msrc), '3D model for ' + id);
   assert.deepStrictEqual(JSON.parse(tsrc.match(/DEFAULT_PIECES: PieceId\[\] = (\[[^\]]*\])/)[1]), [...DEFAULT_PIECES]);
   for (const id of PIECE_IDS) assert(new RegExp(`"${id}": `).test(tsrc) || new RegExp(`\\b${id}[,\\n ]`).test(tsrc.split('const ART')[1]), 'artwork for ' + id);
 }

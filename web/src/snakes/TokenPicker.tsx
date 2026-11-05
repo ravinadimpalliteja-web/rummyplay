@@ -39,7 +39,7 @@ export default function TokenPicker({ players, active, onActive, onPick, note }:
           <span>{c.name}</span><small>{c.blurb}</small>
         </button>)}
       </div>
-      <div className="tp-grid" role="tabpanel">
+      <div className={`tp-grid n${PIECES.filter((p) => p.collection === tab).length}`} role="tabpanel">
         {PIECES.filter((p) => p.collection === tab).map((p) => {
           const taken = owner(p.id), mine = p.id === cur?.piece, can = !!cur?.editable && !taken;
           return <button key={p.id} type="button" className={`tp-token ${mine ? "on" : ""} ${taken ? "taken" : ""}`} aria-pressed={mine} disabled={!can && !mine}

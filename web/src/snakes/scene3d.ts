@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { LADDERS, SNAKES } from "./engine";
+import { LADDERS, RARE_LADDERS, SNAKES } from "./engine";
 import { NUM_FONT_3D, S, SPECIES, W, center, lookKey, numberAt3D, paintNumbers, paintPlank, paintRail, paintSurface, palette, snakePath, speciesOf, type Look } from "./board";
 import { buildFigure, gloss, gold, mat } from "./models3d";
 import type { PieceId } from "./tokens";
@@ -395,6 +395,10 @@ export class BoardScene {
     const railM = new THREE.MeshPhysicalMaterial({ map: lt, roughness: .35, clearcoat: .6, clearcoatRoughness: .2 });
     const rungM = new THREE.MeshStandardMaterial({ color: "#e9ad62", roughness: .42 });
     for (const [s, e] of Object.entries(LADDERS)) this.ladder(+s, e, railM, rungM, metal);
+    // the rare golden ladder, in polished gold so it stands apart
+    const goldRail = new THREE.MeshPhysicalMaterial({ color: "#d4a640", roughness: .26, metalness: .85, clearcoat: .6, clearcoatRoughness: .15 });
+    const goldRung = new THREE.MeshStandardMaterial({ color: "#f2d47a", roughness: .3, metalness: .75 });
+    for (const [s, e] of Object.entries(RARE_LADDERS)) this.ladder(+s, e, goldRail, goldRung, metal);
     // snakes
     const skins = new Map<number, { col: Obj; bump: Obj; rough: Obj }>();
     Object.entries(SNAKES).forEach(([h, t]) => {

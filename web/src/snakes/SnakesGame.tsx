@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { RoomClient, deviceToken, randomPasscode, saveRoom, savedRoom, serverUrl, type NetStatus } from "../domain/online";
-import { BOARD_VERSION, CHAT_EMOJIS, CHAT_PHRASES, TIMING, newGame, roll, rollDie, rungsOf, snakeSlideMs, turnOf, type LastRoll, type SLGame } from "./engine";
+import { BOARD_VERSION, CHAT_EMOJIS, CHAT_PHRASES, RARE_LADDERS, TIMING, newGame, roll, rollDie, rollLucky, rungsOf, snakeSlideMs, turnOf, type LastRoll, type SLGame } from "./engine";
 import { MODELS, MODEL_IDS, NUM_FONT, OFF, PIECE_H, SHARED, SHARED3D, THEMES, THEME_IDS, W, center, layoutIssues, numberAt, paintBase, paintBoard, paintPiece, paintSnakeBulge, paintSnakeMouth, snakePath, spot, spot3D, type Look, type ModelId, type Pt, type ThemeId } from "./board";
 import { fitView, planeStyle, project, squash, type View } from "./view3d";
 import { setSound, sfx, soundOn, unlock } from "./sound";
@@ -83,7 +83,7 @@ function describe(l: LastRoll, t: Table): string {
     default: {
       if (l.win) return `${who} ${you ? "finish" : "finishes"} ${PLACE[(l.rank ?? 1) - 1]}!${l.ended ? " Game over." : " The game goes on."}`;
       const base = `${who} rolled ${l.value}: ${l.from} → ${l.landed}.`;
-      if (l.via === "ladder") return `${base} Climbed up to ${l.to}!${again}`;
+      if (l.via === "ladder") return `${base} ${RARE_LADDERS[l.landed] ? "The golden ladder — 1 in 1000! " : ""}Climbed up to ${l.to}!${again}`;
       if (l.via === "snake") return `${base} Swallowed by a snake — down to ${l.to}.${again}`;
       return base + again;
     }
@@ -256,7 +256,7 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
   useEffect(() => {
     if (online || !local || local.phase !== "playing" || animating || turnOf(local) === 0) return;
     if (local.last && local.last.n !== animatedN.current) return;            // wait for the last move to be shown
-    const id = window.setTimeout(() => { const v = rollDie(); setLocal(g => (g && turnOf(g) !== 0 ? roll(g, turnOf(g), v) : g)); }, 700 * pace);
+    const id = window.setTimeout(() => { const v = rollDie(), lucky = rollLucky(); setLocal(g => (g && turnOf(g) !== 0 ? roll(g, turnOf(g), v, lucky) : g)); }, 700 * pace);
     return () => window.clearTimeout(id);
   }, [online, local, animating]);
 
@@ -595,7 +595,7 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
   const doRoll = () => {
     if (!myTurn) return;
     unlock();
-    if (online) send({ t: "roll" }); else { const v = rollDie(); setLocal(g => (g ? roll(g, 0, v) : g)); }
+    if (online) send({ t: "roll" }); else { const v = rollDie(), lucky = rollLucky(); setLocal(g => (g ? roll(g, 0, v, lucky) : g)); }
   };
   useEffect(() => {
     if (sub !== "table") return;

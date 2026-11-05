@@ -8,7 +8,7 @@ const src = fs.readFileSync(path.join(__dirname, '../../web/src/snakes/board.ts'
 const num = (re, what) => { const m = src.match(re); assert(m, 'could not find ' + what + ' in board.ts'); return m.slice(1).map(Number); };
 
 // snakes and ladders come only from the engine
-assert(/import \{ LADDERS, SNAKES \} from "\.\/engine";/.test(src), 'board.ts must import LADDERS and SNAKES from the engine');
+assert(/import \{ LADDERS, RARE_LADDERS, SNAKES \} from "\.\/engine";/.test(src), 'board.ts must import LADDERS, RARE_LADDERS and SNAKES from the engine');
 assert(!/(SNAKES|LADDERS)\s*[:=]\s*\{/.test(src.replace(/import[^\n]*\n/, '')), 'board.ts must not define its own snakes or ladders');
 
 // numbering: zigzag from the bottom left, unchanged
@@ -52,7 +52,7 @@ console.log('snakes view: ok (board uses engine positions, numbering unchanged, 
 
 // The snakes' bodies never touch a ladder: the drawn curve (same algorithm as snakePath in board.ts) against every ladder.
 {
-  const { LADDERS: L, SNAKES: SN } = require('../snakes');
+  const { LADDERS: L0, RARE_LADDERS: RL, SNAKES: SN } = require('../snakes'), L = { ...L0, ...RL };
   const wpSrc = src.slice(src.indexOf('export const SNAKE_WAYPOINTS'), src.indexOf('};', src.indexOf('export const SNAKE_WAYPOINTS')));
   const WPS = Object.fromEntries([...wpSrc.matchAll(/(\d+): (\[\[[^\n]*\]\]),/g)].map((m) => [m[1], JSON.parse(m[2])]));
   const [WAVE] = num(/export const SNAKE_WAVE = (\d+);/, 'SNAKE_WAVE');

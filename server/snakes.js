@@ -16,8 +16,11 @@ const crypto = require('crypto');
 
 /* A tougher board: ten long snakes, six short ladders. Must match web/src/snakes/engine.ts (a test checks this). */
 const LADDERS = Object.freeze({ 14: 28, 22: 43, 35: 54, 59: 63, 74: 95 });
-const SNAKES = Object.freeze({ 49: 7, 60: 19, 64: 17, 73: 51, 82: 43, 93: 55, 98: 44 });
-const BOARD_VERSION = 2;          // must match web/src/snakes/engine.ts; clients won't start a room game on another board
+const SNAKES = Object.freeze({ 49: 7, 60: 19, 66: 17, 73: 51, 82: 43, 93: 55, 98: 44 });
+/* The golden ladder: landing on 81 climbs to 99 only once in RARE_ODDS landings (a separate draw with every roll). */
+const RARE_LADDERS = Object.freeze({ 81: 99 });
+const RARE_ODDS = 1000;
+const BOARD_VERSION = 3;          // must match web/src/snakes/engine.ts; clients won't start a room game on another board
 const TARGET = 100;
 
 /* Quick chat: players pick from these by index; no free text yet. Must match the web client's lists. */
@@ -50,7 +53,7 @@ function nextTurn(g) {
 }
 
 /** Applies one roll for `seat`. Mutates and returns the game; `g.last` describes what happened. */
-function roll(g, seat, value) {
+function roll(g, seat, value, lucky = false) {
   if (g.phase !== 'playing') throw new Error('The game is over');
   if (seat !== turnOf(g)) throw new Error('It is not your turn');
   if (!Number.isInteger(value) || value < 1 || value > 6) throw new Error('Bad roll');
@@ -66,6 +69,7 @@ function roll(g, seat, value) {
   else { outcome = 'move'; to = landed = from + value; }
   if (outcome === 'move' || outcome === 'enter') {
     if (LADDERS[landed]) { via = 'ladder'; to = LADDERS[landed]; }
+    else if (RARE_LADDERS[landed] && lucky) { via = 'ladder'; to = RARE_LADDERS[landed]; }
     else if (SNAKES[landed]) { via = 'snake'; to = SNAKES[landed]; }
   }
   g.pos[seat] = to;
@@ -207,7 +211,7 @@ class SnakesRoom {
   }
 
   doRoll(seat) {
-    roll(this.game, seat, crypto.randomInt(1, 7));
+    roll(this.game, seat, crypto.randomInt(1, 7), crypto.randomInt(0, RARE_ODDS) === 0);
     this.pauseUntil = Date.now() + this.ms(animMs(this.game.last));
     this.schedule();
   }
@@ -293,4 +297,4 @@ class SnakesRoom {
   destroy() { this.clearTimer(); this.dead = true; for (const s of this.seats) if (s && s.ws) s.ws.terminate(); }
 }
 
-module.exports = { LADDERS, SNAKES, BOARD_VERSION, TARGET, ROLL_SECS, TIMING, CHAT_PHRASES, CHAT_EMOJIS, PIECE_IDS, DEFAULT_PIECES, newGame, roll, animMs, turnOf, rungsOf, SnakesRoom };
+module.exports = { LADDERS, SNAKES, RARE_LADDERS, RARE_ODDS, BOARD_VERSION, TARGET, ROLL_SECS, TIMING, CHAT_PHRASES, CHAT_EMOJIS, PIECE_IDS, DEFAULT_PIECES, newGame, roll, animMs, turnOf, rungsOf, SnakesRoom };

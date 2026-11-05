@@ -1,4 +1,4 @@
-import { LADDERS, SNAKES } from "./engine";
+import { LADDERS, RARE_LADDERS, SNAKES } from "./engine";
 import { MOKSH_DEVA, MOKSH_LATIN } from "./moksh";
 
 /* The board is drawn on a 644 x 644 logical canvas: a rim (PAD) around 10 x 10 squares of 60, numbered in a zigzag from the
@@ -84,7 +84,7 @@ export const OFF: Pt = { x: PAD * .4, y: center(1).y + 6 };
 export const SNAKE_WAYPOINTS: Record<number, [number, number][]> = {
   49: [[538, 358], [538, 478], [418, 598]],
   60: [[58, 298], [58, 478], [118, 538]],
-  64: [[238, 238], [250, 250], [250, 526], [238, 538]],
+  66: [[358, 238], [330, 262], [318, 330], [298, 450], [262, 520], [238, 538]],
   73: [[478, 178], [598, 298]],
   82: [[118, 118], [214, 214], [214, 358], [202, 370]],
   93: [[478, 58], [452, 135], [440, 215], [385, 240], [352, 285]],
@@ -124,7 +124,7 @@ export function layoutIssues(snakeHalf = 11.4, ladderHalf = 18): string[] {
   for (const [h, t] of Object.entries(SNAKES)) {
     const pts = snakePath(+h, t);
     for (const p of pts) {
-      for (const [a, b] of Object.entries(LADDERS)) if (segD(p, center(+a), center(b)) < snakeHalf + ladderHalf) issues.add(`snake ${h}-${t} touches ladder ${a}-${b}`);
+      for (const [a, b] of Object.entries({ ...LADDERS, ...RARE_LADDERS })) if (segD(p, center(+a), center(b)) < snakeHalf + ladderHalf) issues.add(`snake ${h}-${t} touches ladder ${a}-${b}`);
       if (p.x - snakeHalf < PAD || p.x + snakeHalf > W - PAD || p.y - snakeHalf < PAD || p.y + snakeHalf > W - PAD) issues.add(`snake ${h}-${t} leaves the board`);
     }
   }
@@ -418,8 +418,11 @@ function numbers(g: CanvasRenderingContext2D, pal: Pal) {
 
 /* ---------- ladders: bold rails of dark polished wood with light rungs, so they stand out on light boards ---------- */
 export const LADDER_HALF = 15;
-const RAIL = { base: "#7a3a16", light: "#c97a45", dark: "#3a1606" }, RUNG = { base: "#e2a55a", light: "#ffe0a8", dark: "#8a5520" };
-function ladder(g: CanvasRenderingContext2D, a: number, b: number) {
+const WOOD_RAIL = { base: "#7a3a16", light: "#c97a45", dark: "#3a1606" }, WOOD_RUNG = { base: "#e2a55a", light: "#ffe0a8", dark: "#8a5520" };
+/** The rare golden ladder (see RARE_LADDERS) is drawn in polished gold so players can tell it apart. */
+const GOLD_RAIL = { base: "#c9952e", light: "#fff0b0", dark: "#6e4a0c" }, GOLD_RUNG = { base: "#f0cf6a", light: "#fff8d6", dark: "#9a7420" };
+function ladder(g: CanvasRenderingContext2D, a: number, b: number, golden = false) {
+  const RAIL = golden ? GOLD_RAIL : WOOD_RAIL, RUNG = golden ? GOLD_RUNG : WOOD_RUNG;
   const p1 = center(a), p2 = center(b), dx = p2.x - p1.x, dy = p2.y - p1.y, len = Math.hypot(dx, dy);
   const ux = dx / len, uy = dy / len, nx = -uy, ny = ux, half = LADDER_HALF;
   const ext = 10, s1 = { x: p1.x - ux * ext, y: p1.y - uy * ext }, s2 = { x: p2.x + ux * ext, y: p2.y + uy * ext };
@@ -649,6 +652,7 @@ export function paintBoard(layer: HTMLCanvasElement, dpr: number, look: Look = D
   frame(g, look, pal);
   squares(g, look, pal);
   Object.entries(LADDERS).forEach(([a, b]) => onLayer(g, boxOf([center(+a), center(b)], 36), (c) => ladder(c, +a, b)));
+  Object.entries(RARE_LADDERS).forEach(([a, b]) => onLayer(g, boxOf([center(+a), center(b)], 36), (c) => ladder(c, +a, b, true)));
   Object.entries(SNAKES).forEach(([h, t], i) => onLayer(g, boxOf(snakePath(+h, t), 54), (c) => snake(c, +h, t, SPECIES[i % SPECIES.length], 100 + i)));
   varnish(g);
   numbers(g, pal);
@@ -781,5 +785,5 @@ export function paintPlank(c: HTMLCanvasElement, w: number, h: number, look: Loo
 /** Polished dark wood for the ladder rails (the same on every board, so ladders always stand out). */
 export function paintRail(c: HTMLCanvasElement, w: number, h: number, seed: number) {
   c.width = w; c.height = h;
-  grain(c.getContext("2d")!, 0, 0, w, h, { base: RAIL.base, light: RAIL.light, dark: RAIL.dark, grain: "#1e0a02", contrast: .8 }, seed, false, 0);
+  grain(c.getContext("2d")!, 0, 0, w, h, { base: WOOD_RAIL.base, light: WOOD_RAIL.light, dark: WOOD_RAIL.dark, grain: "#1e0a02", contrast: .8 }, seed, false, 0);
 }

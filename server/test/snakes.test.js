@@ -1,7 +1,7 @@
 'use strict';
 process.env.SPEED = '50';        // shorten every timer and animation pause; the real roll timer is 15s
 const assert = require('assert');
-const { newGame, roll, turnOf, animMs, LADDERS, SNAKES, BOARD_VERSION, TIMING, PIECE_IDS, DEFAULT_PIECES } = require('../snakes');
+const { newGame, roll, turnOf, animMs, LADDERS, SNAKES, RARE_LADDERS, RARE_ODDS, BOARD_VERSION, TIMING, PIECE_IDS, DEFAULT_PIECES } = require('../snakes');
 
 /* ---------- rules ---------- */
 {
@@ -74,6 +74,8 @@ const { newGame, roll, turnOf, animMs, LADDERS, SNAKES, BOARD_VERSION, TIMING, P
   const grab = (name) => JSON.parse(src.match(new RegExp(`export const ${name}[^=]*= (\\{[^}]*\\})`))[1].replace(/(\w+):/g, '"$1":'));
   assert.deepStrictEqual(grab('LADDERS'), Object.fromEntries(Object.entries(LADDERS)), 'ladders match the web client');
   assert.deepStrictEqual(grab('SNAKES'), Object.fromEntries(Object.entries(SNAKES)), 'snakes match the web client');
+  assert.deepStrictEqual(grab('RARE_LADDERS'), Object.fromEntries(Object.entries(RARE_LADDERS)), 'golden ladder matches the web client');
+  assert.strictEqual(+src.match(/export const RARE_ODDS = (\d+)/)[1], RARE_ODDS, 'golden ladder odds match the web client');
   assert.deepStrictEqual(grab('TIMING'), { ...TIMING }, 'animation timing matches the web client');
   assert.strictEqual(+src.match(/export const BOARD_VERSION = (\d+)/)[1], BOARD_VERSION, 'board version matches the web client');
   // Tokens: same ids on both sides (4 pawns, 8 people, 9 animals), and the same default pawns.
@@ -88,9 +90,21 @@ const { newGame, roll, turnOf, animMs, LADDERS, SNAKES, BOARD_VERSION, TIMING, P
 }
 {
   // Board sanity: no ladder ends on a snake head and no snake ends on a ladder foot.
-  for (const top of Object.values(LADDERS)) assert(!SNAKES[top] && !LADDERS[top]);
+  for (const top of [...Object.values(LADDERS), ...Object.values(RARE_LADDERS)]) assert(!SNAKES[top] && !LADDERS[top] && !RARE_LADDERS[top]);
+  for (const foot of Object.keys(RARE_LADDERS)) assert(!SNAKES[foot] && !LADDERS[foot]);
   for (const tail of Object.values(SNAKES)) assert(!SNAKES[tail] && !LADDERS[tail]);
   assert.throws(() => newGame([0]), /2 to 4/);
+}
+{
+  // The golden ladder (81 -> 99): only on a lucky draw; otherwise 81 is an ordinary square.
+  assert.deepStrictEqual({ ...RARE_LADDERS }, { 81: 99 }); assert.strictEqual(RARE_ODDS, 1000);
+  assert.strictEqual(SNAKES[66], 17); assert.strictEqual(SNAKES[64], undefined);
+  const a = newGame([0, 1]); a.pos[0] = 77; roll(a, 0, 4);
+  assert.strictEqual(a.pos[0], 81); assert.strictEqual(a.last.via, null);
+  const b = newGame([0, 1]); b.pos[0] = 77; roll(b, 0, 4, true);
+  assert.strictEqual(b.pos[0], 99); assert.strictEqual(b.last.via, 'ladder'); assert.strictEqual(b.last.landed, 81);
+  const c = newGame([0, 1]); c.pos[0] = 62; roll(c, 0, 4, true);           // a lucky draw does nothing elsewhere
+  assert.strictEqual(c.pos[0], 17); assert.strictEqual(c.last.via, 'snake');
 }
 console.log('snakes rules: ok');
 

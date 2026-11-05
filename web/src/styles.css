@@ -235,16 +235,12 @@
 
 /* Requested reference-layout refinements:
    - Keep South's dealt hand fully visible during bidding.
-   - Make North's identity panel lighter/less obstructive.
+   - (North panel: styled only by the final .player-seat.north rule below, 97% opaque.
+     A more specific :has() override used to force it to 58%; it was removed.)
    - Enlarge only the BID label by 1.5x; keep its value and badge restrained. */
 .app-shell:has(.game-screen) .game-screen:has(.bid-floating) .hand-cards .playing-card.disabled{
   opacity:1;
   filter:none;
-}
-.app-shell:has(.game-screen) .player-seat.north{
-  background:rgba(4,25,18,.58);
-  border-color:rgba(211,185,112,.28);
-  box-shadow:0 2px 7px rgba(0,0,0,.18);
 }
 .player-seat .bid-badge{
   display:inline-flex;

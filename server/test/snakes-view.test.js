@@ -24,7 +24,8 @@ const [H] = num(/export const PIECE_H = (\d+);/, 'PIECE_H');
 const [nx, ny] = num(/return \{ x: p\.x - S \/ 2 \+ (\d+), y: p\.y - S \/ 2 \+ (\d+) \}; \};/, 'numberAt');
 const [fontPx] = num(/NUM_FONT = "800 (\d+)px/, 'NUM_FONT');
 const shared = {};
-for (const m of src.matchAll(/(\d): \{ pts: (\[\[[^}]*\]\]), s: ([\d.]+) \}/g)) shared[m[1]] = { pts: JSON.parse(m[2]), s: +m[3] };
+const sharedSrc = src.slice(src.indexOf('export const SHARED:'), src.indexOf('};', src.indexOf('export const SHARED:')));      // the flat board's layout (the 3D board has its own)
+for (const m of sharedSrc.matchAll(/(\d): \{ pts: (\[\[[^}]*\]\]), s: ([\d.]+) \}/g)) shared[m[1]] = { pts: JSON.parse(m[2]), s: +m[3] };
 assert.deepStrictEqual(Object.keys(shared), ['2', '3', '4'], 'layouts for 2, 3 and 4 tokens on one square');
 // a token's visible art: 68% of its width, from its stand up to 84% of its height (same box the browser checks use)
 const box = (x, y, s) => { const h = H * s, w = h * 100 / 120; return { x0: x - w * .34, x1: x + w * .34, y0: y - h * .84, y1: y }; };

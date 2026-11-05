@@ -66,6 +66,8 @@
 .sl-plane{position:absolute;transform-origin:50% 50%;pointer-events:none;backface-visibility:hidden}
 .sl-plane canvas{display:block;width:100%;height:100%}
 .sl-base{z-index:1}.sl-plane{z-index:2}.sl-pieces{z-index:3}.sl-plane.fx{z-index:4}
+.sl-gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:manipulation}
+.sl-gl-wait{position:absolute;inset:0;display:grid;place-items:center;margin:0;color:var(--sl-gold);font-weight:700;font-size:14px;letter-spacing:.04em}
 
 /* ===== the 3D die on its gold-rimmed pedestal, and its five finishes ===== */
 .sl-right{grid-area:right;display:grid;grid-template-columns:64px minmax(0,1fr) 64px;grid-template-areas:"rules tray chat" "rules roll chat" "last last last";align-items:center;justify-items:center;gap:4px 8px;position:relative}

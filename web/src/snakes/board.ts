@@ -34,6 +34,12 @@ export const spot = (n: number): Pt => { const c = center(n); return { x: c.x + 
 export const SHARED: Record<number, { pts: [number, number][]; s: number }> = {
   2: { pts: [[-7, 22], [15, 22]], s: .62 }, 3: { pts: [[-15, 19], [3, 19], [21, 19]], s: .55 }, 4: { pts: [[-21, 17], [-6, 17], [9, 17], [24, 17]], s: .46 },
 };
+/** On the WebGL 3D board (numbers at the front-left of each square, tokens standing upright): a lone token stands at the
+    back-right of its square; 2 to 4 tokens stand smaller in a row across the middle, so none hides a number or another token. */
+export const spot3D = (n: number): Pt => { const c = center(n); return { x: c.x + 21, y: c.y - 13 }; };
+export const SHARED3D: Record<number, { pts: [number, number][]; s: number }> = {
+  2: { pts: [[-10, -4], [18, -4]], s: .5 }, 3: { pts: [[-17, -4], [2, -4], [21, -4]], s: .46 }, 4: { pts: [[-20, -4], [-5, -4], [10, -4], [25, -4]], s: .4 },
+};
 /** Where a token waits before entering (on the rim, just left of square 1). */
 export const OFF: Pt = { x: PAD * .4, y: center(1).y + 15 };
 
@@ -192,8 +198,8 @@ function flag(g: CanvasRenderingContext2D, x: number, y: number) {
   g.restore();
 }
 /** The START plaque on square 1: green enamel framed in gold, with an arrow. */
-function start(g: CanvasRenderingContext2D, p: Pt) {
-  const x = p.x - S / 2 + 4, y = p.y + 6, w = S - 8, h = 19;
+function start(g: CanvasRenderingContext2D, p: Pt, atTop = false) {
+  const x = p.x - S / 2 + 4, y = atTop ? p.y - S / 2 + 5 : p.y + 6, w = S - 8, h = 19;
   g.save();
   g.shadowColor = "rgba(0,0,0,.45)"; g.shadowBlur = 3; g.shadowOffsetY = 1.5;
   rr(g, x, y, w, h, 4); const gr = g.createLinearGradient(0, y, 0, y + h); gr.addColorStop(0, "#1f8a5b"); gr.addColorStop(1, "#0b4a31"); g.fillStyle = gr; g.fill();
@@ -209,11 +215,15 @@ function start(g: CanvasRenderingContext2D, p: Pt) {
     dark on light woods (ivory on dark woods), with an outline so they stay clear where a snake or ladder crosses. */
 export const NUM_FONT = "800 20px 'DM Sans', system-ui, sans-serif";
 export const numberAt = (n: number): Pt => { const p = center(n); return { x: p.x - S / 2 + 4, y: p.y - S / 2 + 22 }; };
-function numbers(g: CanvasRenderingContext2D, wood: Wood) {
+/** On the WebGL 3D board numbers sit at the front-left of each square (nearest the players), so a token standing
+    toward the back of its square never hides one. */
+export const NUM_FONT_3D = "800 22px 'DM Sans', system-ui, sans-serif";
+export const numberAt3D = (n: number): Pt => { const p = center(n); return { x: p.x - S / 2 + 4, y: p.y + S / 2 - 6 }; };
+function numbers(g: CanvasRenderingContext2D, wood: Wood, front = false) {
   g.save();
-  g.textAlign = "left"; g.textBaseline = "alphabetic"; g.lineJoin = "round"; g.font = NUM_FONT;
+  g.textAlign = "left"; g.textBaseline = "alphabetic"; g.lineJoin = "round"; g.font = front ? NUM_FONT_3D : NUM_FONT;
   for (let n = 1; n <= 100; n++) {
-    const { x, y } = numberAt(n), t = String(n);
+    const { x, y } = (front ? numberAt3D : numberAt)(n), t = String(n);
     g.lineWidth = 4; g.strokeStyle = wood.inkEdge; g.strokeText(t, x, y);
     g.fillStyle = wood.ink; g.fillText(t, x, y);
   }
@@ -267,7 +277,7 @@ const blot = (c: MarkCtx, s: number, off: number, rx: number, ry: number, fill: 
 };
 const each = (c: MarkCtx, first: number, gap: number, endPad: number, f: (s: number) => void) => { for (let s = first * c.k; s < c.total - endPad * c.k; s += gap * c.k) f(s); };
 /* Friendly, glossy snakes in clear colours, each with its own pattern. Cycled over the board's snakes in order. */
-const SPECIES: Species[] = [
+export const SPECIES: Species[] = [
   { name: "Emerald", body: "#3c9a30", belly: "#dcf08e", head: "#46a83a", eye: "#ffd94a", pupil: "round", hood: false,
     mark: (c) => each(c, 12, 13, 14, (s) => { blot(c, s, .38, 2.6, 2.1, "#2a7420", "rgba(0,0,0,0)", 0); blot(c, s + 6.5 * c.k, -.38, 2.6, 2.1, "#2a7420", "rgba(0,0,0,0)", 0); }) },
   { name: "Ruby", body: "#cc3428", belly: "#ffe3a6", head: "#d5402f", eye: "#ffe07a", pupil: "round", hood: false,
@@ -281,7 +291,7 @@ const SPECIES: Species[] = [
   { name: "Jade", body: "#1d9c8b", belly: "#d4f7eb", head: "#24a895", eye: "#ffe07a", pupil: "round", hood: false,
     mark: (c) => each(c, 14, 15, 10, (s) => { band(c, s, 1.5, "rgba(10,90,78,.9)"); band(c, s + 3.6 * c.k, 1.5, "rgba(10,90,78,.9)"); }) },
 ];
-const speciesOf = (head: number) => SPECIES[Math.max(0, Object.keys(SNAKES).indexOf(String(head))) % SPECIES.length];
+export const speciesOf = (head: number) => SPECIES[Math.max(0, Object.keys(SNAKES).indexOf(String(head))) % SPECIES.length];
 
 /** Shape of one snake: its centre line, cumulative length, width and a lookup by distance from the head. */
 type Geom = { pts: Pt[]; len: number[]; total: number; WD: number[]; L: Pt[]; R: Pt[]; tan: (i: number) => Pt; at: (s: number) => { p: Pt; n: Pt; t: Pt; w: number }; angle: number };
@@ -546,4 +556,39 @@ function leaves(g: CanvasRenderingContext2D, x: number, y: number, out: number, 
     for (let i = 1; i < 6; i++) { const t = i / 6, cx = len * t; g.beginPath(); g.moveTo(cx, 0); g.lineTo(cx + len * .07, -wid * .8 * (1 - t * .6)); g.moveTo(cx, 0); g.lineTo(cx + len * .07, wid * .7 * (1 - t * .6)); g.stroke(); }
     g.restore();
   }
+}
+
+/* ---------- textures for the WebGL 3D board (scene3d.ts) ---------- */
+/** The playing surface (10 x 10 squares, no rim) as a texture: each square's own grain in two alternating woods,
+    the START plaque and the finish flag. `px` is the canvas size in pixels. Numbers are painted separately. */
+export function paintSurface(c: HTMLCanvasElement, px: number, woodId: WoodId) {
+  const wood = WOODS[woodId] ?? WOODS.maple, k = px / (S * 10);
+  c.width = c.height = px;
+  const g = c.getContext("2d")!; g.setTransform(k, 0, 0, k, -PAD * k, -PAD * k);
+  g.fillStyle = "#2a1407"; g.fillRect(PAD, PAD, S * 10, S * 10);
+  for (let n = 1; n <= 100; n++) {
+    const p = center(n), row = Math.floor((n - 1) / 10), col = (n - 1) % 10, base = (row + col) % 2 ? wood.tileB : wood.tileA;
+    const tw = { ...wood, base, light: mix(base, "#ffdca6", .32), dark: mix(base, "#7a3a0c", .32), grain: mix(wood.grain, "#8a4a14", .35), contrast: wood.contrast * .62 };
+    grain(g, p.x - S / 2, p.y - S / 2, S, S, tw, 1000 + n * 7, (row + col) % 2 === 1, .1);
+  }
+  const m = center(100), halo = g.createRadialGradient(m.x + 6, m.y + 4, 3, m.x, m.y, 40);
+  halo.addColorStop(0, "rgba(255,214,120,.55)"); halo.addColorStop(1, "rgba(255,214,120,0)");
+  g.fillStyle = halo; g.fillRect(m.x - S / 2, m.y - S / 2, S, S);
+  flag(g, m.x + 12, m.y - 18);
+  start(g, center(1), true);
+}
+/** The square numbers alone, on a transparent texture covering the playing surface (drawn above snakes and ladders). */
+export function paintNumbers(c: HTMLCanvasElement, px: number, woodId: WoodId) {
+  const wood = WOODS[woodId] ?? WOODS.maple, k = px / (S * 10);
+  c.width = c.height = px;
+  const g = c.getContext("2d")!; g.setTransform(k, 0, 0, k, -PAD * k, -PAD * k);
+  numbers(g, wood, true);
+}
+/** A plank of wood (rim, sides, ladder rails), grain running along it. */
+export function paintPlank(c: HTMLCanvasElement, w: number, h: number, woodId: WoodId, seed: number, which: "frame" | "light" = "frame") {
+  const wood = WOODS[woodId] ?? WOODS.maple;
+  c.width = w; c.height = h;
+  const g = c.getContext("2d")!;
+  const base = which === "frame" ? wood.frame : wood.tileB;
+  grain(g, 0, 0, w, h, { ...wood, base, light: mix(base, wood.light, .5), dark: mix(base, "#000000", .3) }, seed, false, .5);
 }

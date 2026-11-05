@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { RoomClient, deviceToken, randomPasscode, saveRoom, savedRoom, serverUrl, type NetStatus } from "../domain/online";
 import { CHAT_EMOJIS, CHAT_PHRASES, TIMING, newGame, roll, rollDie, rungsOf, snakeSlideMs, turnOf, type LastRoll, type SLGame } from "./engine";
-import { NUM_FONT, OFF, PIECE_H, SHARED, W, WOODS, WOOD_IDS, center, ladderSteps, numberAt, paintBase, paintBoard, paintPiece, paintSnakeBulge, paintSnakeMouth, snakePath, spot, type Pt, type WoodId } from "./board";
+import { NUM_FONT, OFF, PIECE_H, SHARED, SHARED3D, W, WOODS, WOOD_IDS, center, ladderSteps, numberAt, paintBase, paintBoard, paintPiece, paintSnakeBulge, paintSnakeMouth, snakePath, spot, spot3D, type Pt, type WoodId } from "./board";
 import { fitView, planeStyle, project, squash, type View } from "./view3d";
 import { setSound, sfx, soundOn, unlock } from "./sound";
 import { celebrate } from "./confetti";
@@ -10,7 +10,7 @@ import { DEFAULT_PIECES, PIECE_IDS, pieceById, pieceImage, pieceUrl, type PieceI
 import "./snakes.css";
 
 const ROOM_KEY = "rc-snakes-room", PIECE_KEY = "rc-snakes-piece";
-const WOOD_KEY = "rc-snakes-wood", DICE_KEY = "rc-snakes-dice", VIEW_KEY = "rc-snakes-view";
+const WOOD_KEY = "rc-snakes-wood", DICE_KEY = "rc-snakes-dice", VIEW_KEY = "rc-snakes-view", GL_SLOW_KEY = "rc-snakes-3d-slow";
 const DICE = [
   { id: "ivory", name: "Classic ivory" }, { id: "brass", name: "Polished brass" }, { id: "glass", name: "Emerald glass" },
   { id: "rosewood", name: "Carved rosewood" }, { id: "onyx", name: "Black onyx" },
@@ -31,6 +31,12 @@ const PLACE = ["1st", "2nd", "3rd", "4th"], MEDAL = ["🥇", "🥈", "🥉", "�
 const reduced = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 const pace = reduced ? 0.3 : 1;
 const can3d = typeof CSS !== "undefined" && !!CSS.supports?.("transform-style", "preserve-3d");
+/** Can this device draw WebGL (for the full 3D board)? Checked once, without loading the 3D code. */
+let glOk: boolean | null = null;
+const canWebGL = () => { if (glOk === null) { try { const c = document.createElement("canvas"); glOk = !!(c.getContext("webgl2") || c.getContext("webgl")); } catch { glOk = false; } } return glOk; };
+/** Lower-power devices get a lighter 3D setup (smaller shadow map and textures, lower pixel ratio). */
+const lowPower = () => { const n = navigator as Navigator & { deviceMemory?: number }; return (n.hardwareConcurrency ?? 8) <= 4 || (n.deviceMemory ?? 8) <= 3; };
+type Scene3D = import("./scene3d").BoardScene;
 const DEBUG = typeof location !== "undefined" && /[?&]debug\b/.test(location.search);
 const wait = (ms: number) => new Promise<void>(r => window.setTimeout(r, ms * pace));
 
@@ -113,6 +119,9 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
   const [panel, setPanel] = useState<"none" | "settings" | "rules" | "chat">("none");
   const [view3d, setView3d] = useState<"3d" | "flat">(() => readKey(VIEW_KEY, ["3d", "flat"], can3d ? "3d" : "flat"));
   const [geo, setGeo] = useState<View | null>(null);
+  /* full WebGL 3D board: "off" after a failure (falls back to the tilted canvas board) */
+  const [glState, setGlState] = useState<"idle" | "loading" | "ready" | "off">("idle");
+  const sceneRef = useRef<Scene3D | null>(null), glRef = useRef<HTMLCanvasElement | null>(null);
   const [sound, setSoundState] = useState(soundOn());
   const [bubbles, setBubbles] = useState<Record<number, { text: string; id: number }>>({});
   const [banner, setBanner] = useState<{ text: string; big: boolean } | null>(null);
@@ -122,6 +131,10 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
   const stageRef = useRef<HTMLDivElement | null>(null), diceRef = useRef<HTMLDivElement | null>(null), cubeRef = useRef<HTMLDivElement | null>(null), shadowRef = useRef<HTMLDivElement | null>(null);
   const baseRef = useRef<HTMLCanvasElement | null>(null), boardRef = useRef<HTMLCanvasElement | null>(null), piecesRef = useRef<HTMLCanvasElement | null>(null), fxRef = useRef<HTMLCanvasElement | null>(null);
   const geoRef = useRef<View | null>(null); geoRef.current = geo;
+  const useGL = view3d === "3d" && glState !== "off" && canWebGL() && readKey<string>(GL_SLOW_KEY, ["1"], "") !== "1";
+  const glMode = useRef(false); glMode.current = useGL;
+  /** Where a token stands on square n: the 3D board and the flat/tilted board lay squares out differently. */
+  const spotOf = (n: number) => (glMode.current ? spot3D(n) : spot(n));
   const bubbleId = useRef(0);
   const clientRef = useRef<RoomClient | null>(null), skew = useRef(0), lastPhase = useRef<string | null>(null);
   const disp = useRef<Record<number, Disp | null>>({}), dirty = useRef(true);
@@ -245,8 +258,8 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     const sq = t.pos[seat];
     if (!sq) return null;
     const same = t.order.filter(s => t.pos[s] === sq);
-    if (same.length === 1) return spot(sq);
-    const c = center(sq), lay = SHARED[same.length], [dx, dy] = lay.pts[same.indexOf(seat)];
+    if (same.length === 1) return spotOf(sq);
+    const c = center(sq), lay = (glMode.current ? SHARED3D : SHARED)[same.length], [dx, dy] = lay.pts[same.indexOf(seat)];
     return { x: c.x + dx, y: c.y + dy, s: lay.s };
   };
   const settle = () => { const t = tableRef.current; if (!t) return; for (const s of t.order) disp.current[s] = restPoint(t, s); overlay.current = {}; dirty.current = true; };
@@ -254,7 +267,7 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
   /* The stage: measure the space, fit the tilted board into it (debounced while the window is resized or turned). */
   useEffect(() => {
     if (sub !== "table") return;
-    const stage = stageRef.current; if (!stage) return;
+    const stage = stageRef.current; if (!stage || useGL) { setGeo(null); return; }
     let timer = 0;
     const measure = () => {
       const w = stage.clientWidth, h = stage.clientHeight; if (w < 40 || h < 40) return;
@@ -267,7 +280,28 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     const ro = new ResizeObserver(() => { window.clearTimeout(timer); timer = window.setTimeout(measure, 90); });
     ro.observe(stage);
     return () => { ro.disconnect(); window.clearTimeout(timer); };
-  }, [sub, !!table, view3d]);
+  }, [sub, !!table, view3d, useGL]);
+
+  /* The WebGL 3D board: load the 3D code only when the board opens, then size it to the stage. */
+  useEffect(() => {
+    if (sub !== "table" || !table || !useGL) return;
+    const stage = stageRef.current, canvas = glRef.current; if (!stage || !canvas) return;
+    let live = true, ro: ResizeObserver | null = null, timer = 0;
+    setGlState("loading");
+    const lost = (e: Event) => { e.preventDefault(); setGlState("off"); };
+    canvas.addEventListener("webglcontextlost", lost);
+    import("./scene3d").then(m => {
+      if (!live) return;
+      const sc = new m.BoardScene(canvas, wood, lowPower(), { testLite: DEBUG && /[?&]gllite\b/.test(location.search) });
+      sceneRef.current = sc;
+      const fit = () => { const w = stage.clientWidth, h = stage.clientHeight; if (w > 40 && h > 40) { sc.resize(w, h, window.devicePixelRatio || 1); dirty.current = true; } };
+      fit(); setGlState("ready");
+      ro = new ResizeObserver(() => { window.clearTimeout(timer); timer = window.setTimeout(fit, 80); }); ro.observe(stage);
+    }).catch(() => { if (live) setGlState("off"); });
+    return () => { live = false; ro?.disconnect(); window.clearTimeout(timer); canvas.removeEventListener("webglcontextlost", lost); sceneRef.current?.dispose(); sceneRef.current = null; };
+  }, [sub, !!table, useGL]);
+  useEffect(() => { sceneRef.current?.setWood(wood); dirty.current = true; }, [wood]);
+  useEffect(() => { if (!animating) settle(); }, [useGL]);
 
   /* Paint the board picture, the base (shadow, edges, leaves) and size the token and effect layers whenever the fit or the wood changes. */
   useEffect(() => {
@@ -294,11 +328,31 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
 
   /* Each frame (only when something moved): tokens upright at their projected spots, back to front; snake effects on their own layer. */
   const boxes = useRef<{ seat: number; x0: number; y0: number; x1: number; y1: number }[]>([]);
+  const glPrev = useRef(0), glGaps = useRef<number[]>([]);
   useEffect(() => {
     if (sub !== "table") return;
     let raf = 0, fxUsed = true;
     const frame = () => {
       raf = requestAnimationFrame(frame);
+      const sc = sceneRef.current;
+      if (sc) {
+        const t = tableRef.current;
+        if (!dirty.current) return;                                     // draw only when something changed (saves battery)
+        dirty.current = false;
+        // watch the frame rate while things move; if this device struggles, step the 3D down, and in the end use the lighter board
+        const now = performance.now(), gap = now - glPrev.current; glPrev.current = now;
+        if (gap < 400 && !(DEBUG && /[?&]keep3d\b/.test(location.search))) {
+          glGaps.current.push(gap);
+          if (glGaps.current.length >= 24) {
+            const med = [...glGaps.current].sort((a, b) => a - b)[12]; glGaps.current = [];
+            if (med > 42 && !sc.degrade()) { keep(GL_SLOW_KEY, "1"); setGlState("off"); return; }
+          }
+        }
+        if (!t) return;
+        const turn = rollingRef.current ?? (t.phase === "playing" ? t.turn : -1);
+        sc.frame(t.order.flatMap(s => { const p = disp.current[s]; return p ? [{ seat: s, piece: t.pieces[s], color: COLORS[s], x: p.x, y: p.y, h: p.h ?? 0, s: p.s ?? 1, active: s === turn }] : []; }), overlay.current);
+        return;
+      }
       const v = geoRef.current, pc = piecesRef.current, fx = fxRef.current;
       if (!dirty.current || !v || !pc || !fx || !pc.width) return;
       dirty.current = false;
@@ -324,12 +378,24 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     };
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
-  }, [sub, !!table]);
+  }, [sub, !!table, glState]);
+  useEffect(() => {
+    if (!DEBUG) return;
+    (window as unknown as { __slPerf?: () => unknown }).__slPerf = () => sceneRef.current?.perf();
+    (window as unknown as { __slForce?: () => void }).__slForce = () => { dirty.current = true; };
+  });
   /* Test hook (only with ?debug in the address): where tokens and square numbers are on screen, to check none is hidden. */
   useEffect(() => {
     if (!DEBUG) return;
     const w = window as unknown as { __slDebug?: () => unknown };
     w.__slDebug = () => {
+      const sc = sceneRef.current, st0 = stageRef.current;
+      if (sc && st0 && (window as unknown as { __slPerfOnly?: boolean }).__slPerfOnly) return null;
+      if (sc && st0) {
+        const r = st0.getBoundingClientRect(), d = sc.debug(), off = <T extends { x0: number; x1: number; y0: number; y1: number }>(b: T) => ({ ...b, x0: b.x0 + r.left, x1: b.x1 + r.left, y0: b.y0 + r.top, y1: b.y1 + r.top });
+        const pr = off(d.projRect);
+        return { mode: "webgl", A: d.elevation, numbers: d.numbers.map(off), tokens: d.tokens.map(off), topSquare: d.topSquare, bottomSquare: d.bottomSquare, fontTop: d.fontTop, fontBottom: d.fontBottom, projRect: pr, planeRect: pr, stage: { x0: r.left, x1: r.right, y0: r.top, y1: r.bottom } };
+      }
       const v = geoRef.current, st = stageRef.current; if (!v || !st) return null;
       const r = st.getBoundingClientRect(), m = document.createElement("canvas").getContext("2d")!; m.font = NUM_FONT;
       const numbers = Array.from({ length: 100 }, (_, i) => {
@@ -401,14 +467,15 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     setDieValue(l.value);
     await wait(TIMING.settle);
     const seat = l.seat, here = () => disp.current[seat] ?? OFF;
-    if (l.outcome === "enter") { sfx.hop(); await follow(seat, [OFF, spot(1)], TIMING.enter, 16); }
-    if (l.outcome === "move") for (let n = l.from + 1; n <= l.landed; n++) { sfx.hop(); await follow(seat, [here(), spot(n)], TIMING.step, 12); }
+    if (l.outcome === "enter") { sfx.hop(); await follow(seat, [OFF, spotOf(1)], TIMING.enter, 16); }
+    if (l.outcome === "move") for (let n = l.from + 1; n <= l.landed; n++) { sfx.hop(); await follow(seat, [here(), spotOf(n)], TIMING.step, 12); }
     if (l.via === "ladder") {
       // climb rung by rung
       const rungs = rungsOf(l.landed, l.to);
       await wait(TIMING.ladderBase);
       sfx.ladder(rungs, TIMING.rung * pace, 0);
-      for (const p of ladderSteps(l.landed, l.to, rungs)) await follow(seat, [here(), p], TIMING.rung, 6);
+      const steps = ladderSteps(l.landed, l.to, rungs); steps[steps.length - 1] = spotOf(l.to);
+      for (const p of steps) await follow(seat, [here(), p], TIMING.rung, 6);
     }
     if (l.via === "snake") {
       // the snake opens its mouth and swallows the pawn, a bulge slides down its body, and the pawn pops out at the tail
@@ -426,10 +493,10 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
         overlay.current.bulge = { head, k: .03 + .97 * (t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2), color };
       });
       overlay.current = {};
-      const end = spot(l.to);
+      const end = spotOf(l.to);
       await tween(TIMING.pop, t => { const s = t < .6 ? (t / .6) * 1.25 : 1.25 - ((t - .6) / .4) * .25; disp.current[seat] = { x: end.x, y: end.y, h: Math.sin(t * Math.PI) * 14, s }; });
     }
-    if (l.outcome === "three-sixes") { sfx.oops(); await wait(150); await follow(seat, [here(), l.to === 0 ? OFF : spot(l.to)], TIMING.ret - 150); }
+    if (l.outcome === "three-sixes") { sfx.oops(); await wait(150); await follow(seat, [here(), l.to === 0 ? OFF : spotOf(l.to)], TIMING.ret - 150); }
     if (l.win && l.rank) {
       const t = tableRef.current, who = t ? t.names[seat] : "";
       const big = l.rank === 1;
@@ -478,7 +545,7 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
   const chooseWood = (w: WoodId) => { setWood(w); keep(WOOD_KEY, w); };
   const chooseDice = (d: DiceId) => { setDice(d); keep(DICE_KEY, d); };
   const togglePanel = (p: "settings" | "rules" | "chat") => setPanel(x => (x === p ? "none" : p));
-  const chooseView = (v: "3d" | "flat") => { setView3d(v); keep(VIEW_KEY, v); };
+  const chooseView = (v: "3d" | "flat") => { setView3d(v); keep(VIEW_KEY, v); if (v === "3d") { keep(GL_SLOW_KEY, ""); setGlState(s => (s === "off" ? "idle" : s)); } };
   useEffect(() => {
     if (panel === "none") return;
     const k = (e: KeyboardEvent) => { if (e.key === "Escape") setPanel("none"); };
@@ -594,10 +661,15 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     </aside>
 
     <div className="sl-stage" ref={stageRef} role="img" aria-label={`Snakes and ladders board. ${table.order.map(s => `${table.names[s]} on ${table.pos[s] || "start"}`).join(", ")}.`}>
-      <canvas className="sl-base" ref={baseRef} style={geo ? { width: geo.sw + "px", height: geo.sh + "px" } : undefined} />
-      <div className="sl-plane" style={geo ? planeStyle(geo) : { visibility: "hidden" }}><canvas className="sl-board" ref={boardRef} /></div>
-      <canvas className="sl-pieces" ref={piecesRef} style={geo ? { width: geo.sw + "px", height: geo.sh + "px" } : undefined} />
-      <div className="sl-plane fx" style={geo ? planeStyle(geo) : { visibility: "hidden" }}><canvas ref={fxRef} /></div>
+      {useGL ? <>
+        <canvas className="sl-gl" ref={glRef} />
+        {glState !== "ready" && <p className="sl-gl-wait">Setting up the 3D board…</p>}
+      </> : <>
+        <canvas className="sl-base" ref={baseRef} style={geo ? { width: geo.sw + "px", height: geo.sh + "px" } : undefined} />
+        <div className="sl-plane" style={geo ? planeStyle(geo) : { visibility: "hidden" }}><canvas className="sl-board" ref={boardRef} /></div>
+        <canvas className="sl-pieces" ref={piecesRef} style={geo ? { width: geo.sw + "px", height: geo.sh + "px" } : undefined} />
+        <div className="sl-plane fx" style={geo ? planeStyle(geo) : { visibility: "hidden" }}><canvas ref={fxRef} /></div>
+      </>}
       {banner && <div className={`sl-banner ${banner.big ? "big" : ""}`} role="status">{banner.text}</div>}
       {showEnd && <div className="sl-win">
         <Crown />
@@ -638,7 +710,7 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     {panel !== "none" && <div className="sl-backdrop" onClick={() => setPanel("none")} />}
     {panel === "settings" && <div className="sl-sheet" role="dialog" aria-label="Settings">
       <b>Board view</b>
-      <div className="sl-opts">{(["3d", "flat"] as const).map(v => <button key={v} className={v === view3d ? "on" : ""} aria-pressed={v === view3d} disabled={v === "3d" && !can3d} onClick={() => chooseView(v)}>{v === "3d" ? "3D table view" : "Flat, top-down"}</button>)}</div>
+      <div className="sl-opts">{(["3d", "flat"] as const).map(v => <button key={v} className={v === view3d ? "on" : ""} aria-pressed={v === view3d} disabled={v === "3d" && !can3d} onClick={() => chooseView(v)}>{v === "3d" ? "3D board" : "Flat, top-down"}</button>)}</div>
       <b>Board wood</b>
       <div className="sl-opts">{WOOD_IDS.map(w => <button key={w} className={w === wood ? "on" : ""} aria-pressed={w === wood} onClick={() => chooseWood(w)}><i className={`sl-swatch w-${w}`} />{WOODS[w].name}</button>)}</div>
       <b>Dice</b>

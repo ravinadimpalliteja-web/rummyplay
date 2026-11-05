@@ -1,7 +1,7 @@
 'use strict';
 process.env.SPEED = '50';        // shorten every timer and animation pause; the real roll timer is 15s
 const assert = require('assert');
-const { newGame, roll, turnOf, LADDERS, SNAKES } = require('../snakes');
+const { newGame, roll, turnOf, animMs, LADDERS, SNAKES, BOARD_VERSION, TIMING, PIECE_IDS, DEFAULT_PIECES } = require('../snakes');
 
 /* ---------- rules ---------- */
 {
@@ -13,31 +13,32 @@ const { newGame, roll, turnOf, LADDERS, SNAKES } = require('../snakes');
   roll(g, 2, 6);
   assert.strictEqual(g.pos[2], 1); assert.strictEqual(g.last.outcome, 'enter'); assert(g.last.extra);
   assert.strictEqual(turnOf(g), 2, 'a six gives another roll');
-  roll(g, 2, 2);                                   // 1 -> 3
-  assert.strictEqual(g.pos[2], 3); assert.strictEqual(turnOf(g), 0);
+  roll(g, 2, 1);                                   // 1 -> 2
+  assert.strictEqual(g.pos[2], 2); assert.strictEqual(turnOf(g), 0);
 }
 {
   // Ladders and snakes.
-  const g = newGame([0, 1]); g.pos[0] = 1;
-  roll(g, 0, 3);                                   // lands on 4 -> ladder to 25
-  assert.strictEqual(g.last.landed, 4); assert.strictEqual(g.last.via, 'ladder'); assert.strictEqual(g.pos[0], LADDERS[4]);
-  g.pos[1] = 23; roll(g, 1, 4);                    // lands on 27 -> snake to 5
-  assert.strictEqual(g.last.via, 'snake'); assert.strictEqual(g.pos[1], SNAKES[27]);
+  const g = newGame([0, 1]); g.pos[0] = 10;
+  roll(g, 0, 4);                                   // lands on 14 -> ladder to 28
+  assert.strictEqual(g.last.landed, 14); assert.strictEqual(g.last.via, 'ladder'); assert.strictEqual(g.pos[0], 28);
+  g.pos[1] = 45; roll(g, 1, 4);                    // lands on 49 -> snake to 7
+  assert.strictEqual(g.last.via, 'snake'); assert.strictEqual(g.pos[1], 7);
+  assert(animMs(g.last) > TIMING.die + 4 * TIMING.step, 'the server waits for the swallow animation');
 }
 {
   // Three sixes in a row cancel the whole turn.
-  const g = newGame([0, 1]); g.pos[0] = 10;
-  roll(g, 0, 6); assert.strictEqual(g.pos[0], 16); assert.strictEqual(turnOf(g), 0);
-  roll(g, 0, 6); assert.strictEqual(g.pos[0], 22); assert.strictEqual(turnOf(g), 0);
+  const g = newGame([0, 1]); g.pos[0] = 40;
+  roll(g, 0, 6); assert.strictEqual(g.pos[0], 46); assert.strictEqual(turnOf(g), 0);
+  roll(g, 0, 6); assert.strictEqual(g.pos[0], 52); assert.strictEqual(turnOf(g), 0);
   roll(g, 0, 6);
-  assert.strictEqual(g.last.outcome, 'three-sixes'); assert.strictEqual(g.pos[0], 10, 'back to where the turn began');
+  assert.strictEqual(g.last.outcome, 'three-sixes'); assert.strictEqual(g.pos[0], 40, 'back to where the turn began');
   assert.strictEqual(turnOf(g), 1, 'turn passes'); assert.strictEqual(g.streak, 0);
   // Three sixes from off the board: entered on the first six, sent back off the board on the third.
   const h = newGame([0, 1]);
   roll(h, 0, 6); roll(h, 0, 6); assert.strictEqual(h.pos[0], 7); roll(h, 0, 6);
   assert.strictEqual(h.pos[0], 0); assert.strictEqual(turnOf(h), 1);
   // Sixes on different turns do not add up.
-  const k = newGame([0, 1]); k.pos[0] = 10; k.pos[1] = 10;
+  const k = newGame([0, 1]); k.pos[0] = 40; k.pos[1] = 40;
   roll(k, 0, 6); roll(k, 0, 1); roll(k, 1, 2); roll(k, 0, 6); roll(k, 0, 6);
   assert.strictEqual(k.last.outcome, 'move'); assert.strictEqual(turnOf(k), 0);
 }
@@ -50,6 +51,40 @@ const { newGame, roll, turnOf, LADDERS, SNAKES } = require('../snakes');
   roll(g, 0, 4);
   assert.strictEqual(g.pos[0], 100); assert(g.last.win); assert.strictEqual(g.phase, 'gameEnd'); assert.strictEqual(g.winner, 0);
   assert.throws(() => roll(g, 1, 2), /over/);
+}
+{
+  // Rankings: with 3 players the game goes on after 1st place, skips finished players, and ends when one is left.
+  const g = newGame([0, 1, 2]); g.pos = { 0: 97, 1: 93, 2: 50 };
+  roll(g, 0, 3);
+  assert(g.last.win && g.last.rank === 1 && !g.last.ended); assert.strictEqual(g.phase, 'playing'); assert.strictEqual(turnOf(g), 1);
+  roll(g, 1, 1); roll(g, 2, 1);
+  assert.strictEqual(turnOf(g), 1, 'finished player 0 is skipped');
+  roll(g, 1, 6);
+  assert(g.last.rank === 2 && g.last.ended); assert.strictEqual(g.phase, 'gameEnd');
+  assert.deepStrictEqual(g.finished, [0, 1, 2]); assert.strictEqual(g.winner, 0);
+  assert(animMs(g.last) >= TIMING.finishN, 'celebration pause');
+  // Four players: three places are played for.
+  const f = newGame([0, 1, 2, 3]); f.pos = { 0: 99, 1: 99, 2: 99, 3: 2 };
+  roll(f, 0, 1); roll(f, 1, 1); assert.strictEqual(f.phase, 'playing'); roll(f, 2, 1);
+  assert.strictEqual(f.phase, 'gameEnd'); assert.deepStrictEqual(f.finished, [0, 1, 2, 3]);
+}
+{
+  // The web client must use the same board and timing as the server.
+  const fs = require('fs'), src = fs.readFileSync(require('path').join(__dirname, '../../web/src/snakes/engine.ts'), 'utf8');
+  const grab = (name) => JSON.parse(src.match(new RegExp(`export const ${name}[^=]*= (\\{[^}]*\\})`))[1].replace(/(\w+):/g, '"$1":'));
+  assert.deepStrictEqual(grab('LADDERS'), Object.fromEntries(Object.entries(LADDERS)), 'ladders match the web client');
+  assert.deepStrictEqual(grab('SNAKES'), Object.fromEntries(Object.entries(SNAKES)), 'snakes match the web client');
+  assert.deepStrictEqual(grab('TIMING'), { ...TIMING }, 'animation timing matches the web client');
+  assert.strictEqual(+src.match(/export const BOARD_VERSION = (\d+)/)[1], BOARD_VERSION, 'board version matches the web client');
+  // Tokens: same ids on both sides (4 pawns, 8 people, 9 animals), and the same default pawns.
+  const tsrc = fs.readFileSync(require('path').join(__dirname, '../../web/src/snakes/tokens.ts'), 'utf8');
+  const webPieces = [...tsrc.matchAll(/\{ id: "([a-z-]+)", name: "[^"]+", collection: "([a-z]+)"/g)].map((m) => [m[1], m[2]]);
+  assert.deepStrictEqual(webPieces.map((p) => p[0]), [...PIECE_IDS], 'token ids match the web client');
+  for (const [c, n] of [['traditional', 4], ['explorers', 8], ['animals', 9]]) assert.strictEqual(webPieces.filter((p) => p[1] === c).length, n, c + ' has ' + n + ' tokens');
+  const msrc = fs.readFileSync(require('path').join(__dirname, '../../web/src/snakes/models3d.ts'), 'utf8').split('const BUILD')[1];
+  for (const id of PIECE_IDS) assert(new RegExp(`"${id}": |\\b${id}[,\\n ]`).test(msrc), '3D model for ' + id);
+  assert.deepStrictEqual(JSON.parse(tsrc.match(/DEFAULT_PIECES: PieceId\[\] = (\[[^\]]*\])/)[1]), [...DEFAULT_PIECES]);
+  for (const id of PIECE_IDS) assert(new RegExp(`"${id}": `).test(tsrc) || new RegExp(`\\b${id}[,\\n ]`).test(tsrc.split('const ART')[1]), 'artwork for ' + id);
 }
 {
   // Board sanity: no ladder ends on a snake head and no snake ends on a ladder foot.
@@ -100,12 +135,32 @@ server.listen(0, async () => {
     b.send({ t: 'start' }); await b.until(() => b.errs.length);              // not host
     assert(/host/.test(b.errs[0]));
 
+    // Tokens: every seat starts with a different pawn; players can pick from any collection; no two alike.
+    await a.until(() => a.state.seats[1]);
+    assert.deepStrictEqual([a.state.seats[0].piece, a.state.seats[1].piece], ['pawn-gold', 'pawn-green']);
+    b.send({ t: 'piece', id: 'lion' }); await a.until(() => a.state.seats[1].piece === 'lion');
+    a.send({ t: 'piece', id: 'lion' }); await a.until(() => a.errs.some((e) => /already has that token/.test(e)));
+    a.send({ t: 'piece', id: 'dragon' }); await a.until(() => a.errs.some((e) => /Unknown token/.test(e)));
+    a.send({ t: 'piece', id: 'young-explorer' }); await b.until(() => b.state.seats[0].piece === 'young-explorer');
+    b.send({ t: 'piece', id: 'pawn-gold' }); await a.until(() => a.state.seats[1].piece === 'pawn-gold');   // a freed it
+
     a.send({ t: 'start' });                                                  // two players is enough
     await Promise.all([a, b].map((x) => x.until(() => x.state.phase === 'playing')));
     assert.deepStrictEqual(a.state.order, [0, 1]);
     assert(a.state.players.every((p) => p.sq === 0));
     c.send({ t: 'join', game: 'snakes', token: tc, name: 'Cy', code, passcode: '1234' }); await c.until(() => c.errs.length);
     assert(/already started/.test(c.errs[0]));
+    a.send({ t: 'piece', id: 'panda' }); await a.until(() => a.errs.some((e) => /before the match/.test(e)));
+    assert.strictEqual(a.state.seats[0].piece, 'young-explorer', 'tokens are locked during the match');
+
+    // Quick chat: a known phrase reaches everyone; unknown ones are refused; rapid repeats are dropped.
+    const chats = [];
+    b.ws.addEventListener('message', (e) => { const m = JSON.parse(e.data); if (m.t === 'chat') chats.push(m); });
+    a.send({ t: 'chat', k: 'p', i: 2 }); a.send({ t: 'chat', k: 'e', i: 0 });
+    a.send({ t: 'chat', k: 'p', i: 99 }); await a.until(() => a.errs.some((x) => /Unknown chat/.test(x)));
+    await b.until(() => chats.length >= 1);
+    await new Promise((r) => setTimeout(r, 200));
+    assert.strictEqual(chats.length, 1); assert.deepStrictEqual([chats[0].seat, chats[0].k, chats[0].i], [0, 'p', 2]);
 
     // Out-of-turn roll is refused.
     const notTurn = a.state.turn === 0 ? b : a;
@@ -126,12 +181,15 @@ server.listen(0, async () => {
     assert(seen.has('enter'), [...seen].join());
     assert(rolls > 0);
 
-    // Host can start a new game; b can resume b's seat from the same device.
-    a.send({ t: 'again' }); await a.until(() => a.state.phase === 'playing');
-    assert(a.state.players.every((p) => p.sq === 0));
+    // Play again goes back to the waiting room for token selection; b (who left) has given up the seat.
+    a.send({ t: 'again' }); await a.until(() => a.state.phase === 'lobby');
+    assert.strictEqual(a.state.seats[1], null); assert.strictEqual(a.state.seats[0].piece, 'young-explorer', 'tokens are kept');
     const b2 = await open(port);
-    b2.send({ t: 'hello', game: 'snakes', code, token: tb }); await b2.until(() => b2.state);
-    assert.strictEqual(b2.state.you, 1); assert(!b2.state.host);
+    b2.send({ t: 'join', game: 'snakes', code, passcode: '1234', token: tb, name: 'Bo' }); await b2.until(() => b2.state);
+    assert.strictEqual(b2.state.you, 1); assert(!b2.state.host); assert.strictEqual(b2.state.seats[1].piece, 'pawn-green');
+    b2.send({ t: 'piece', id: 'rabbit' }); await a.until(() => a.state.seats[1] && a.state.seats[1].piece === 'rabbit');
+    a.send({ t: 'start' }); await b2.until(() => b2.state.phase === 'playing');
+    assert(b2.state.players.every((p) => p.sq === 0));
 
     // Leaving in the lobby frees the room.
     const [x, y] = await Promise.all([open(port), open(port)]);

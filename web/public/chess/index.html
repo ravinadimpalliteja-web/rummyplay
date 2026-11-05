@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Royal Club Chess</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="theme-color" content="#06231a">
+<meta name="theme-color" content="#f7f5ef">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&family=Playfair+Display:wght@500;600;700&display=swap">
@@ -111,11 +111,12 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--gold-2); ou
 .sq { position: relative; border: 0; padding: 0; margin: 0; display: grid; place-items: center; background: var(--sq-light-image); box-shadow: inset 0 1px 0 rgba(255,255,255,.38), inset 0 -1px 0 rgba(30,35,40,.08); }
 .sq.d { background: var(--sq-dark-image); box-shadow: inset 0 1px 0 rgba(255,255,255,.12), inset 0 -1px 0 rgba(0,0,0,.2); }
 .board-wrap { border-color: var(--board-edge); }
-/* Selectable board finishes. Royal Marble is the default. */
-body[data-board-theme="walnut"] { --light-sq:#d9b98a; --dark-sq:#68432e; --board-edge:#c69b5c; --sq-light-image:linear-gradient(135deg,#f0d5a8,#c49a69 55%,#a77b50); --sq-dark-image:linear-gradient(135deg,#916344,#68432e 58%,#482d20); }
-body[data-board-theme="obsidian"] { --light-sq:#6c6862; --dark-sq:#17191d; --board-edge:#d8b45f; --sq-light-image:linear-gradient(145deg,#918b80,#5b5853 60%,#3f3d3a); --sq-dark-image:linear-gradient(145deg,#3b3b40,#17191d 62%,#090b0e); }
-body[data-board-theme="ivory"] { --light-sq:#fff9e9; --dark-sq:#c8b98f; --board-edge:#d4b66d; --sq-light-image:linear-gradient(145deg,#fffef7,#f4ecd7 60%,#e6dbc0); --sq-dark-image:linear-gradient(145deg,#e0d2ad,#c8b98f 60%,#aa9b72); }
-body[data-board-theme="emerald"] { --light-sq:#d9e7d8; --dark-sq:#176044; --board-edge:#d8b45f; --sq-light-image:linear-gradient(145deg,#f1f7e9,#c7dbc6 60%,#a9c5ae); --sq-dark-image:linear-gradient(145deg,#287d5a,#176044 60%,#0b3f2e); }
+/* Five light, classic board finishes. */
+body[data-board-theme="walnut"] { --light-sq:#e6c69b; --dark-sq:#95613d; --board-edge:#9b7048; --sq-light-image:linear-gradient(135deg,#f4dfbd,#dfb982 60%,#c99c68); --sq-dark-image:linear-gradient(135deg,#b47b4e,#895333 62%,#68402b); }
+body[data-board-theme="slate"] { --light-sq:#e2e3e4; --dark-sq:#737a82; --board-edge:#8b9299; --sq-light-image:linear-gradient(145deg,#f4f5f5,#d5d8da 65%,#c3c8cc); --sq-dark-image:linear-gradient(145deg,#969da4,#737a82 65%,#59616a); }
+body[data-board-theme="sandstone"] { --light-sq:#f5ead5; --dark-sq:#cbb58f; --board-edge:#b69c72; --sq-light-image:linear-gradient(145deg,#fff8e9,#f0e1c5 65%,#e4d2b0); --sq-dark-image:linear-gradient(145deg,#dfcba5,#cbb58f 65%,#b39b70); }
+body[data-board-theme="ocean"] { --light-sq:#e1eaf2; --dark-sq:#547493; --board-edge:#7793ad; --sq-light-image:linear-gradient(145deg,#f4f8fc,#d9e5f0 65%,#c5d6e5); --sq-dark-image:linear-gradient(145deg,#7797b7,#547493 65%,#3d5d7d); }
+body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --board-edge:#57916f; --sq-light-image:linear-gradient(145deg,#f4faf0,#d6e8d6 65%,#c0d9c4); --sq-dark-image:linear-gradient(145deg,#579b76,#327b5a 65%,#205b40); }
 .board-wrap { background:linear-gradient(145deg,#f3dfaa,#96733a 42%,#4e3b22); padding:6px; box-shadow:0 18px 38px #0009, inset 0 1px 0 #fff8, inset 0 -2px 0 #3c2a18; }
 .board { box-shadow:0 2px 8px #0007; }
 .sq.last::before { content: ""; position: absolute; inset: 0; background: rgba(240, 210, 120, .42); }
@@ -171,6 +172,30 @@ body[data-board-theme="emerald"] { --light-sq:#d9e7d8; --dark-sq:#176044; --boar
   #sideBottom { grid-column: 2; grid-row: 2; }
 }
 @media (prefers-reduced-motion: reduce) { .pc.anim { transition: none; } .thinking i { animation: none; } }
+/* Option A light, elegant theme chooser */
+:root{--room:#f7f6f1;--room-2:#eeeee7;--panel:#fff;--line:#d9ddd6;--ivory:#202a25;--muted:#68756d;--gold:#b18b43;--gold-2:#94702f;color-scheme:light}
+body{background:radial-gradient(ellipse at 50% 0%,#fff 0%,#f7f6f1 68%,#edf1eb 100%) fixed;color:#202a25}
+.brand-mark{border-color:#b18b43;color:#b18b43}.brand strong{color:#123b2a}.brand small{color:#8b713e}
+.club-back,.chip{background:#fff;color:#244331;border-color:#d9ddd6}.theme-select option{background:#fff;color:#202a25}
+.setup{max-width:720px}.eyebrow,.setup h1 em{color:#4e8865}
+.mode,.seg,.bar,.act{background:#fff;color:#26332b;border-color:#d9ddd6}.mode[aria-pressed=true]{border-color:#4e9a70;box-shadow:inset 0 0 0 1px #4e9a7040,0 5px 16px #203b2610}
+.mode span,.field>span,.note{color:#69766e}.seg button{color:#4d5b52}.seg button[aria-pressed=true]{background:#dcecdf;color:#17452e}
+.names input,.sheet textarea{background:#fff;color:#26332b;border-color:#d9ddd6}.gold{background:#1d6843;color:#fff}.ghost{border-color:#cbd6cd;color:#285b43}
+.bar.turn{border-color:#69a17b}.thinking,.caps em,.act svg{color:#397b54}.moves span{color:#46564b}.moves span.cur{background:#e5efe5;color:#245d3b}.status{color:#405c49}
+.board-wrap{background:linear-gradient(145deg,#e7d6ae,#b89b60 45%,#927443);box-shadow:0 12px 26px #263b2b20}.overlay{background:rgba(247,246,241,.94)}.overlay h2{color:#245d3b}.overlay p{color:#526258}
+.sheet{background:rgba(28,42,32,.35)}.sheet>div{background:#fff;color:#202a25;border-color:#d9c99f}.sheet h3{color:#234b35}
+.theme-gallery{display:grid;gap:9px;padding:12px;border:1px solid #e2e5de;border-radius:16px;background:#ffffffd9}
+.theme-gallery-head{display:flex;justify-content:space-between;align-items:baseline;color:#234b35;font-weight:800}.theme-gallery-head small{color:#77847b;font-weight:500;font-size:11px}
+.theme-cards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.theme-card{min-width:0;display:grid;gap:6px;padding:7px;border:1px solid #e0e4dd;border-radius:12px;background:#fff;color:#26332b;text-align:left}
+.theme-card[aria-pressed=true]{border:2px solid #26945b;padding:6px;box-shadow:0 3px 12px #26945b18}
+.theme-card b{font-size:clamp(9px,1.7vw,12px);line-height:1.2}.theme-card small{color:#27804d;font-size:10px}
+.theme-preview{display:block;aspect-ratio:1.35;border-radius:7px;border:1px solid #d5d8d2;background-size:25% 25%;background-image:linear-gradient(45deg,#327b5a 25%,transparent 25%,transparent 75%,#327b5a 75%),linear-gradient(45deg,#327b5a 25%,#e1eee2 25%,#e1eee2 75%,#327b5a 75%);background-position:0 0,12.5% 12.5%}
+.walnut-preview{background-image:linear-gradient(45deg,#95613d 25%,transparent 25%,transparent 75%,#95613d 75%),linear-gradient(45deg,#95613d 25%,#e6c69b 25%,#e6c69b 75%,#95613d 75%)}
+.slate-preview{background-image:linear-gradient(45deg,#737a82 25%,transparent 25%,transparent 75%,#737a82 75%),linear-gradient(45deg,#737a82 25%,#e2e3e4 25%,#e2e3e4 75%,#737a82 75%)}
+.sandstone-preview{background-image:linear-gradient(45deg,#cbb58f 25%,transparent 25%,transparent 75%,#cbb58f 75%),linear-gradient(45deg,#cbb58f 25%,#f5ead5 25%,#f5ead5 75%,#cbb58f 75%)}
+.ocean-preview{background-image:linear-gradient(45deg,#547493 25%,transparent 25%,transparent 75%,#547493 75%),linear-gradient(45deg,#547493 25%,#e1eaf2 25%,#e1eaf2 75%,#547493 75%)}
+@media(max-width:520px){.theme-gallery{padding:9px}.theme-cards{grid-template-columns:repeat(3,minmax(0,1fr))}.theme-card b{font-size:11px}}
 </style>
 </head>
 <body>
@@ -182,13 +207,23 @@ body[data-board-theme="emerald"] { --light-sq:#d9e7d8; --dark-sq:#176044; --boar
       <span class="brand-mark" id="brandMark"></span>
       <span><strong>ROYAL CLUB</strong><small>CHESS</small></span>
     </button></span>
-    <span class="top-tools"><label class="sr-only" for="boardTheme">Chessboard theme</label><select class="chip theme-select" id="boardTheme" aria-label="Chessboard theme"><option value="marble">Royal Marble</option><option value="walnut">Classic Walnut</option><option value="obsidian">Obsidian Gold</option><option value="ivory">Ivory Royale</option><option value="emerald">Emerald Royale</option></select><button class="chip" id="topAction" type="button" hidden>New game</button></span>
+    <span class="top-tools"><label class="sr-only" for="boardTheme">Chessboard theme</label><select class="chip theme-select" id="boardTheme" aria-label="Chessboard theme"><option value="emerald">Emerald Classic</option><option value="walnut">Classic Wood</option><option value="slate">Slate Classic</option><option value="sandstone">Sandstone Light</option><option value="ocean">Ocean Classic</option></select><button class="chip" id="topAction" type="button" hidden>New game</button></span>
   </header>
 
   <section class="setup" id="setup">
     <p class="eyebrow">Royal Club · Board games</p>
     <h1>Chess, <em>your move.</em></h1>
     <p class="lead">Play a friend on this phone, or take on the computer at three levels.</p>
+    <section class="theme-gallery" aria-label="Choose a chessboard theme">
+      <div class="theme-gallery-head"><span>Board themes</span><small>Choose your board style</small></div>
+      <div class="theme-cards">
+        <button class="theme-card" type="button" data-theme="emerald" aria-pressed="true"><span class="theme-preview emerald-preview"></span><b>Emerald Classic</b><small>Default</small></button>
+        <button class="theme-card" type="button" data-theme="walnut" aria-pressed="false"><span class="theme-preview walnut-preview"></span><b>Classic Wood</b></button>
+        <button class="theme-card" type="button" data-theme="slate" aria-pressed="false"><span class="theme-preview slate-preview"></span><b>Slate Classic</b></button>
+        <button class="theme-card" type="button" data-theme="sandstone" aria-pressed="false"><span class="theme-preview sandstone-preview"></span><b>Sandstone Light</b></button>
+        <button class="theme-card" type="button" data-theme="ocean" aria-pressed="false"><span class="theme-preview ocean-preview"></span><b>Ocean Classic</b></button>
+      </div>
+    </section>
     <div class="modes">
       <button class="mode" type="button" data-mode="ai" aria-pressed="true"><span class="ico">♚</span><b>vs Computer</b><span>Easy, Medium or Hard.</span></button>
       <button class="mode" type="button" data-mode="local" aria-pressed="false"><span class="ico">⇅</span><b>Two players</b><span>Take turns on this phone.</span></button>
@@ -234,13 +269,13 @@ body[data-board-theme="emerald"] { --light-sq:#d9e7d8; --dark-sq:#176044; --boar
   };
   const SAVE_KEY = 'rc-chess-game';
   const THEME_KEY = 'rc-chess-board-theme';
-  const validThemes = ['marble', 'walnut', 'obsidian', 'ivory', 'emerald'];
+  const validThemes = ['emerald', 'walnut', 'slate', 'sandstone', 'ocean'];
   const savedTheme = store.get(THEME_KEY);
   const initialTheme = validThemes.includes(savedTheme) ? savedTheme : 'emerald';
   document.body.dataset.boardTheme = initialTheme;
   $('boardTheme').value = initialTheme;
   $('boardTheme').addEventListener('change', (e) => {
-    const theme = validThemes.includes(e.target.value) ? e.target.value : 'marble';
+    const theme = validThemes.includes(e.target.value) ? e.target.value : 'emerald';
     document.body.dataset.boardTheme = theme;
     store.set(THEME_KEY, theme);
   });

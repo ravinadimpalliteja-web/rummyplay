@@ -68,6 +68,16 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--gold-2); ou
 .setup h1 { font: 600 clamp(30px, 8vw, 44px)/1.05 var(--font-display); margin: 2px 0 0; letter-spacing: -.02em; text-wrap: balance; }
 .setup h1 em { font-weight: 500; color: var(--gold-2); }
 .lead { margin: 0; color: var(--muted); font-size: 14px; max-width: 46ch; }
+.multiplayer-panel{margin:16px 0 4px;padding:15px;border:1px solid #41634f;border-radius:15px;background:linear-gradient(145deg,#0d3024,#09241b)}
+.multiplayer-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.multiplayer-heading b{font:600 17px var(--font-display);color:var(--gold)}
+.multiplayer-heading span,.multiplayer-note{font-size:11px;color:var(--muted)}
+.multiplayer-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.multiplayer-action{display:grid;gap:5px;text-align:left;padding:12px;border:1px solid #41634f;border-radius:12px;background:#09271d;color:#f5edda;opacity:.72;cursor:not-allowed}
+.multiplayer-action>span{font-size:21px;color:var(--gold)}
+.multiplayer-action b{font-size:13px}
+.multiplayer-action small{font-size:10px;color:var(--muted);line-height:1.35}
+.multiplayer-note{margin:12px 0 0;line-height:1.45}
 .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .mode { text-align: left; padding: 12px; border: 1px solid #41634f; border-radius: 14px; background: linear-gradient(145deg, #0d3024, #09241b); display: grid; gap: 4px; }
 .mode[aria-pressed="true"] { border-color: var(--gold); box-shadow: inset 0 0 0 1px #d9b96f55, 0 10px 26px #0005; }
@@ -214,9 +224,17 @@ body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --boar
     <h1>Chess, <em>your move.</em></h1>
     <p class="lead">Play a friend on this phone, or take on the computer at three levels.</p>
     <div class="modes">
-      <button class="mode" type="button" data-mode="ai" aria-pressed="true"><span class="ico">♚</span><b>vs Computer</b><span>Easy, Medium or Hard.</span></button>
-      <button class="mode" type="button" data-mode="local" aria-pressed="false"><span class="ico">⇅</span><b>Two players</b><span>Take turns on this phone.</span></button>
+      <button class="mode" type="button" data-mode="ai" aria-pressed="true"><span class="ico">♚</span><b>Play vs Computer</b><span>Easy, Medium or Hard.</span></button>
+      <button class="mode" type="button" data-mode="multiplayer" aria-pressed="false"><span class="ico">♟</span><b>Multiplayer</b><span>Play against another person online.</span></button>
     </div>
+    <section class="multiplayer-panel" id="multiplayerPanel" hidden aria-labelledby="multiplayerTitle">
+      <div class="multiplayer-heading"><b id="multiplayerTitle">Play with friends</b><span>Online multiplayer</span></div>
+      <div class="multiplayer-actions">
+        <button class="multiplayer-action" type="button" disabled><span>＋</span><b>Create a room</b><small>Invite a friend with a room code</small></button>
+        <button class="multiplayer-action" type="button" disabled><span>⌁</span><b>Join with code</b><small>Enter a friend's room code</small></button>
+      </div>
+      <p class="multiplayer-note">Private rooms are the first multiplayer feature. Online connection is not active yet.</p>
+    </section>
     <div class="field" id="levelField"><span>Level</span>
       <div class="seg" id="levelSeg"><button type="button" data-v="easy">Easy</button><button type="button" data-v="medium" aria-pressed="true">Medium</button><button type="button" data-v="hard">Hard</button></div>
     </div>
@@ -342,7 +360,9 @@ body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --boar
     setup.mode = b.dataset.mode;
     document.querySelectorAll('.mode').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
     $('levelField').hidden = $('colorField').hidden = setup.mode !== 'ai';
-    $('namesField').hidden = setup.mode !== 'local';
+    $('namesField').hidden = true;
+    $('multiplayerPanel').hidden = setup.mode !== 'multiplayer';
+    $('startBtn').hidden = setup.mode === 'multiplayer';
   }));
   $('startBtn').addEventListener('click', () => {
     const human = setup.color === 'r' ? (Math.random() < .5 ? 'w' : 'b') : setup.color;

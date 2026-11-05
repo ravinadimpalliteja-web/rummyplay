@@ -51,7 +51,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--gold-2); ou
 .brand { display: flex; align-items: center; gap: 10px; background: none; border: 0; padding: 0; text-align: left; }
 .brand-mark { width: 32px; height: 32px; border: 1px solid var(--gold); border-radius: 10px; display: grid; place-items: center; color: var(--gold); }
 .brand-mark svg { width: 20px; height: 20px; }
-.brand strong { display: block; font: 700 14px/1.1 var(--font-display); letter-spacing: .14em; color: #f5e6bd; }
+.brand strong { display: block; font: 700 14px/1.1 var(--font-display); letter-spacing: .14em; color: #f5e6bd; white-space: nowrap; }
 .brand small { display: block; font-size: 8.5px; letter-spacing: .26em; color: #c9b77f; }
 .lead-group { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .club-back { width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 10px; color: var(--gold-2); text-decoration: none; font-size: 18px; background: #0a2a20; }
@@ -101,6 +101,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--gold-2); ou
 .game { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)); }
 .stage { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
 .side { width: 100%; display: grid; gap: 6px; align-content: start; min-width: 0; }
+.rail { display: contents; }
+#sideTop { order: 0; } .board-wrap { order: 1; } #sideBottom { order: 2; } #panel { order: 3; }
 .bar { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 5px 10px; border: 1px solid var(--line); border-radius: 11px; background: #08291fcc; }
 .bar.turn { border-color: var(--gold); box-shadow: inset 0 0 0 1px #d9b96f55; }
 .avatar { width: 28px; height: 28px; flex: none; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 11px; }
@@ -146,10 +148,11 @@ body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --boar
 .moves { display: flex; gap: 4px; overflow-x: auto; padding: 4px 2px; scrollbar-width: none; min-height: 32px; align-items: center; }
 .moves::-webkit-scrollbar { display: none; }
 .moves span { flex: none; font-size: 13px; font-variant-numeric: tabular-nums; padding: 3px 6px; border-radius: 6px; color: #dfe7e2; }
+.moves .pair { flex: none; display: flex; align-items: center; }
 .moves span.n { color: #7f978b; padding-right: 0; }
 .moves span.cur { background: #d9b96f33; color: var(--gold-2); font-weight: 700; }
 .moves .empty { color: #7f978b; font-size: 12px; }
-.actions { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.actions { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
 .act { display: grid; justify-items: center; gap: 2px; padding: 7px 2px 6px; border: 1px solid var(--line); border-radius: 10px; background: #0a2a20; font-size: 11px; font-weight: 700; color: #dce6e0; }
 .act svg { width: 18px; height: 18px; color: var(--gold-2); }
 .act:disabled { opacity: .4; cursor: default; }
@@ -170,19 +173,41 @@ body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --boar
 
 @media (orientation: landscape) and (max-height: 560px) {
   .top { height: 36px; }
-  .stage { display: grid; grid-template-columns: auto minmax(0, 380px); grid-template-rows: auto 1fr; justify-content: center; align-content: center; column-gap: 16px; row-gap: 6px; }
-  .board-wrap { grid-column: 1; grid-row: 1 / 3; width: auto; height: calc(100svh - 48px); min-width: 0; }
-  #sideTop { grid-column: 2; grid-row: 1; align-self: end; }
-  #sideBottom { grid-column: 2; grid-row: 2; }
+  .stage { display: grid; grid-template-columns: auto minmax(0, 380px); justify-content: center; align-content: center; column-gap: 16px; }
+  .board-wrap { width: auto; height: calc(100svh - 48px); min-width: 0; }
   .game { padding-bottom: 6px; }
 }
 @media (min-width: 900px) and (min-height: 561px) {
-  .stage { display: grid; grid-template-columns: auto 340px; grid-template-rows: auto 1fr; justify-content: center; align-content: center; column-gap: 22px; row-gap: 8px; }
-  .board-wrap { grid-column: 1; grid-row: 1 / 3; width: min(640px, calc(100svh - 80px)); }
-  #sideTop { grid-column: 2; grid-row: 1; }
-  #sideBottom { grid-column: 2; grid-row: 2; }
+  .stage { display: grid; grid-template-columns: auto 340px; justify-content: center; align-content: center; column-gap: 22px; }
+  .board-wrap { width: min(640px, calc(100svh - 80px)); }
+  .bar { min-height: 54px; padding: 8px 12px; }
+  .avatar { width: 34px; height: 34px; font-size: 13px; }
+  .who b { font-size: 15px; }
+  .clock { font-size: 22px; min-width: 84px; padding: 6px 10px; }
 }
-@media (prefers-reduced-motion: reduce) { .pc.anim { transition: none; } .thinking i { animation: none; } }
+@media (min-width: 900px) and (min-height: 561px), (orientation: landscape) and (max-height: 560px) {
+  .stage { flex: 0 1 auto; margin-block: auto; align-items: start; }
+  .board-wrap { order: 0; }
+  .rail { order: 1; align-self: stretch; display: flex; flex-direction: column; gap: 8px; min-height: 0; }       /* exactly as tall as the board: cards at its top and bottom */
+  #sideTop { order: 0; } #panel { order: 1; } #sideBottom { order: 2; }
+  #panel { flex: 1; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+  #panel .moves { flex: 1; min-height: 0; flex-wrap: wrap; align-content: flex-start; overflow-x: hidden; overflow-y: auto; padding: 8px; border: 1px solid var(--line); border-radius: 11px; background: #08291f88; }
+  #panel .moves .pair { width: calc(50% - 2px); }
+}
+/* clocks, sound button, hints */
+.clock { flex: none; min-width: 66px; padding: 4px 9px; border: 1px solid var(--line); border-radius: 8px; background: #06211a; color: #cfdcd4; font: 800 17px/1.15 var(--font-body); font-variant-numeric: tabular-nums; text-align: center; }
+.clock.run { background: #f2e3b8; border-color: var(--gold); color: #14251c; }
+.clock.low { background: #9e2a23; border-color: #e0574d; color: #fff; }
+.clock.low.run { animation: lowpulse 1s infinite; }
+@keyframes lowpulse { 50% { box-shadow: 0 0 0 4px #e0574d55; } }
+.icon-chip { width: 36px; min-height: 36px; padding: 0; display: grid; place-items: center; }
+.icon-chip svg { width: 18px; height: 18px; color: var(--gold-2); }
+.sq.hint::after { content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none; box-shadow: inset 0 0 0 4px #f0d99d; background: rgba(240, 217, 157, .32); animation: hintpulse 1s ease-in-out 3; }
+@keyframes hintpulse { 50% { background: rgba(240, 217, 157, .05); } }
+.overlay .eyebrow + h2 { margin-top: -4px; }
+.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; }
+@media (max-width: 600px) { #topAction { display: none !important; } .top-tools { gap: 6px; } .theme-trigger { padding: 6px 10px; } }
+@media (prefers-reduced-motion: reduce) { .pc.anim { transition: none; } .thinking i { animation: none; } .clock.low.run, .sq.hint::after { animation: none; } }
 /* Compact theme shortcut and on-demand theme picker. */
 .theme-trigger{display:inline-flex;align-items:center;gap:7px;min-height:36px}
 .theme-trigger span{font-size:16px;line-height:1}
@@ -217,7 +242,7 @@ body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --boar
       <span class="brand-mark" id="brandMark"></span>
       <span><strong>ROYAL CLUB</strong><small>CHESS</small></span>
     </button></span>
-    <span class="top-tools"><button class="chip theme-trigger" id="themeOpen" type="button" aria-haspopup="dialog" aria-controls="themeDialog"><span aria-hidden="true">▦</span> Themes</button><button class="chip" id="topAction" type="button" hidden>New game</button></span>
+    <span class="top-tools"><button class="chip icon-chip" id="soundBtn" type="button" aria-pressed="true" aria-label="Sound on"></button><button class="chip theme-trigger" id="themeOpen" type="button" aria-haspopup="dialog" aria-controls="themeDialog"><span aria-hidden="true">▦</span> Themes</button><button class="chip" id="topAction" type="button" hidden>New game</button></span>
   </header>
 
   <section class="setup" id="setup">
@@ -242,6 +267,9 @@ body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --boar
     <div class="field" id="colorField"><span>You play</span>
       <div class="seg" id="colorSeg"><button type="button" data-v="w" aria-pressed="true">White</button><button type="button" data-v="b">Black</button><button type="button" data-v="r">Random</button></div>
     </div>
+    <div class="field" id="timeField"><span>Time</span>
+      <div class="seg" id="timeSeg"><button type="button" data-v="none" aria-pressed="true">No timer</button><button type="button" data-v="2+1">2+1 Blitz</button><button type="button" data-v="5+0">5 min</button><button type="button" data-v="10+0">10 min</button></div>
+    </div>
     <div class="field" id="namesField" hidden><span>Players</span>
       <div class="names"><input id="nameW" maxlength="16" placeholder="White" aria-label="White player's name"><input id="nameB" maxlength="16" placeholder="Black" aria-label="Black player's name"></div>
     </div>
@@ -252,11 +280,14 @@ body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --boar
 
   <section class="game" id="game" hidden>
     <div class="stage">
-      <div class="side" id="sideTop"></div>
       <div class="board-wrap" id="boardWrap">
         <div class="board" id="board" role="grid" aria-label="Chess board"></div>
       </div>
-      <div class="side" id="sideBottom"></div>
+      <div class="rail">
+        <div class="side" id="sideTop"></div>
+        <div class="side" id="panel"></div>
+        <div class="side" id="sideBottom"></div>
+      </div>
     </div>
   </section>
 </div>
@@ -290,6 +321,8 @@ body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --boar
     del(k) { try { localStorage.removeItem(k); } catch { /* ignore */ } },
   };
   const SAVE_KEY = 'rc-chess-game';
+  const SOUND_KEY = 'rc-chess-sound';
+  const SETUP_KEY = 'rc-chess-setup';
   const THEME_KEY = 'rc-chess-board-theme';
   const validThemes = ['emerald', 'walnut', 'slate', 'sandstone', 'ocean'];
   const savedTheme = store.get(THEME_KEY);
@@ -342,13 +375,122 @@ body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --boar
     const eye = white ? '#1c2a22' : '#d9b96f';
     return `<svg class="${cls}" viewBox="0 0 45 45" aria-hidden="true"><g fill="${fill}" stroke="${stroke}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">${SHAPES[p.toUpperCase()].replace('class="eye"', `fill="${eye}" stroke="none"`)}</g></svg>`;
   }
+  /* ---------- sound: wooden clicks and soft chimes, made with the Web Audio API (no sound files) ---------- */
+  const sound = (() => {
+    let ctx = null, noise = null, on = store.get(SOUND_KEY) !== false;
+    const ac = () => {
+      if (!ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch { ctx = null; } }
+      if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+      return ctx;
+    };
+    const noiseBuf = (c) => { if (!noise) { noise = c.createBuffer(1, c.sampleRate * .2, c.sampleRate); const d = noise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; } return noise; };
+    // a wooden knock: a short filtered click plus a low thump
+    function knock(c, t, tone, vol) {
+      const src = c.createBufferSource(), bp = c.createBiquadFilter(), g1 = c.createGain();
+      src.buffer = noiseBuf(c); bp.type = 'bandpass'; bp.frequency.value = tone; bp.Q.value = 1.4;
+      g1.gain.setValueAtTime(vol, t); g1.gain.exponentialRampToValueAtTime(.001, t + .06);
+      src.connect(bp).connect(g1).connect(c.destination); src.start(t); src.stop(t + .08);
+      const o = c.createOscillator(), g2 = c.createGain();
+      o.type = 'sine'; o.frequency.setValueAtTime(tone / 9, t); o.frequency.exponentialRampToValueAtTime(tone / 16, t + .08);
+      g2.gain.setValueAtTime(vol * .9, t); g2.gain.exponentialRampToValueAtTime(.001, t + .1);
+      o.connect(g2).connect(c.destination); o.start(t); o.stop(t + .12);
+    }
+    function bell(c, t, f, dur, vol, type = 'sine') {
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = type; o.frequency.value = f;
+      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .015); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+      o.connect(g).connect(c.destination); o.start(t); o.stop(t + dur + .02);
+    }
+    const NOTES = { C4: 261.6, Eb4: 311.1, G4: 392, C5: 523.3, E5: 659.3, G5: 784, C6: 1046.5, A5: 880, D6: 1174.7 };
+    function play(name) {
+      if (!on) return; const c = ac(); if (!c) return; const t = c.currentTime + .01;
+      if (name === 'move') knock(c, t, 1900, .5);
+      else if (name === 'capture') { knock(c, t, 1500, .75); knock(c, t + .045, 2300, .45); }
+      else if (name === 'castle') { knock(c, t, 1900, .45); knock(c, t + .11, 1750, .45); }
+      else if (name === 'check') { knock(c, t, 1900, .45); bell(c, t + .05, NOTES.A5, .28, .16); bell(c, t + .15, NOTES.D6, .35, .14); }
+      else if (name === 'win') ['C5', 'E5', 'G5', 'C6'].forEach((n, i) => bell(c, t + .12 + i * .12, NOTES[n], .6, .16, 'triangle'));
+      else if (name === 'lose') ['G4', 'Eb4', 'C4'].forEach((n, i) => bell(c, t + .12 + i * .18, NOTES[n], .7, .15, 'triangle'));
+      else if (name === 'draw') { bell(c, t + .12, NOTES.G4, .6, .14, 'triangle'); bell(c, t + .32, NOTES.G4, .7, .12, 'triangle'); }
+      else if (name === 'start') { bell(c, t, NOTES.G5, .4, .09); bell(c, t + .08, NOTES.C6, .5, .08); }
+      else if (name === 'tick') bell(c, t, 1600, .05, .07, 'square');
+    }
+    return { play, get on() { return on; }, toggle() { on = !on; store.set(SOUND_KEY, on); if (on) { ac(); play('move'); } return on; }, unlock: ac };
+  })();
+  document.addEventListener('pointerdown', () => { if (sound.on) sound.unlock(); }, { once: true });
+  const SPEAKER = (on) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z"/>${on ? '<path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>' : '<path d="M17 9l5 6M22 9l-5 6"/>'}</svg>`;
+  function showSound() { const b = $('soundBtn'); b.innerHTML = SPEAKER(sound.on); b.setAttribute('aria-pressed', String(sound.on)); b.setAttribute('aria-label', sound.on ? 'Sound on' : 'Sound off'); }
+  $('soundBtn').addEventListener('click', () => { sound.toggle(); showSound(); });
+  showSound();
+  const buzz = (p) => { try { navigator.vibrate?.(p); } catch { /* not supported */ } };
+
+  /* A short burst of gold, emerald and ivory confetti over the page when you win. */
+  function confetti() {
+    if (reduced) return;
+    const cv = document.createElement('canvas'), dpr = Math.min(2, devicePixelRatio || 1), W = innerWidth, H = innerHeight;
+    cv.className = 'confetti'; cv.width = W * dpr; cv.height = H * dpr; document.body.appendChild(cv);
+    const x = cv.getContext('2d'); x.scale(dpr, dpr);
+    const cols = ['#f0d99d', '#d9b96f', '#faf4e4', '#2f9a6a', '#e0574d', '#c79f50'];
+    const bits = Array.from({ length: 150 }, (_, i) => ({ x: W / 2 + (Math.random() - .5) * W * .3, y: H * .35, vx: (Math.random() - .5) * 13, vy: -6 - Math.random() * 9, r: Math.random() * 6.3, vr: (Math.random() - .5) * .35, w: 6 + Math.random() * 6, h: 3 + Math.random() * 4, c: cols[i % cols.length] }));
+    const t0 = performance.now();
+    (function frame(now) {
+      const t = now - t0; x.clearRect(0, 0, W, H);
+      for (const b of bits) { b.vy += .32; b.vx *= .99; b.x += b.vx; b.y += b.vy; b.r += b.vr; x.save(); x.translate(b.x, b.y); x.rotate(b.r); x.globalAlpha = Math.max(0, 1 - t / 2800); x.fillStyle = b.c; x.fillRect(-b.w / 2, -b.h / 2, b.w, b.h); x.restore(); }
+      if (t < 2800) requestAnimationFrame(frame); else cv.remove();
+    })(t0);
+  }
+
   /* Inside the Royal Club site (served at /chess/) show a way back to the club home page. */
   if (/\/chess\/?/.test(location.pathname)) $('clubLink').hidden = false;
   $('brandMark').innerHTML = pieceSVG('k', '').replace('<svg ', '<svg width="20" height="20" ');
 
   /* ---------- state ---------- */
-  const setup = { mode: 'ai', level: 'medium', color: 'w' };
+  const setup = { mode: 'ai', level: 'medium', color: 'w', time: 'none' };
   let g = new Chess(), game = null, selected = null, orient = 'w', thinking = false, lastAnimated = 0, resignArmed = 0, overInfo = null, promoPending = null, overlayHidden = false;
+  let hint = null, hintBusy = false;
+
+  /* ---------- clocks: none, 2+1 blitz, 5 or 10 minutes; a player's clock runs on their turn from White's first move ---------- */
+  const TIME = { '2+1': [120, 1], '5+0': [300, 0], '10+0': [600, 0] };
+  let turnStart = Date.now(), paused = false, lastTick = -1;
+  const clockOn = () => !!(game && game.clock && !isOver() && g.history().length > 0 && !paused);
+  function left(c) { let t = game.clock[c]; if (clockOn() && g.turn() === c) t -= Date.now() - turnStart; return Math.max(0, t); }
+  function fmtClock(ms) {
+    if (ms < 10000) return (Math.floor(ms / 100) / 10).toFixed(1);
+    const s = Math.ceil(ms / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  }
+  /** After `mover` has moved: take the time they used (White's first move is free) and add the increment. */
+  function chargeClock(mover) {
+    if (!game.clock) return;
+    if (g.history().length > 1 && !paused) game.clock[mover] -= Date.now() - turnStart;
+    game.clock[mover] = Math.max(0, game.clock[mover]) + (TIME[game.tc]?.[1] || 0) * 1000;
+    turnStart = Date.now();
+  }
+  function onlyKing(color) { for (const row of g.board()) for (const p of row) if (p && p.toLowerCase() !== 'k' && (p === p.toUpperCase() ? 'w' : 'b') === color) return false; return true; }
+  function flagFall(c) {
+    game.clock[c] = 0; const opp = c === 'w' ? 'b' : 'w';
+    game.result = onlyKing(opp) ? { result: '1/2-1/2', reason: 'timeout vs insufficient material' } : { result: opp === 'w' ? '1-0' : '0-1', reason: 'timeout' };
+    selected = null; promoPending = null; save(); render();
+  }
+  function paintClocks() {
+    if (!game || !game.clock) return;
+    for (const c of ['w', 'b']) {
+      const el = $('clock-' + c); if (!el) continue;
+      const ms = left(c); el.textContent = fmtClock(ms);
+      el.classList.toggle('run', clockOn() && g.turn() === c); el.classList.toggle('low', ms < 10000);
+    }
+  }
+  setInterval(() => {
+    if (!game || !game.clock || isOver() || !clockOn()) return;
+    const c = g.turn(), ms = left(c);
+    if (ms <= 0) { flagFall(c); return; }
+    paintClocks();
+    const sec = Math.ceil(ms / 1000);                                  // a soft tick each second under 10 s on your own clock
+    if (ms < 10000 && sec !== lastTick && (game.mode !== 'ai' || c === game.human)) { lastTick = sec; sound.play('tick'); }
+  }, 100);
+  document.addEventListener('visibilitychange', () => {                // vs the computer, the clocks stop while the page is hidden
+    if (!game || !game.clock || isOver()) return;
+    if (document.hidden && !paused) { if (clockOn()) game.clock[g.turn()] = left(g.turn()); paused = true; save(); }
+    else if (!document.hidden && paused) { paused = false; turnStart = Date.now(); paintClocks(); }
+  });
 
   /* ---------- setup screen ---------- */
   const seg = (id, key) => $(id).addEventListener('click', (e) => {
@@ -356,11 +498,17 @@ body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --boar
     setup[key] = b.dataset.v;
     [...$(id).children].forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
   });
-  seg('levelSeg', 'level'); seg('colorSeg', 'color');
+  seg('levelSeg', 'level'); seg('colorSeg', 'color'); seg('timeSeg', 'time');
+  // remember the last level, colour and time control
+  const lastSetup = store.get(SETUP_KEY) || {};
+  for (const [id, key] of [['levelSeg', 'level'], ['colorSeg', 'color'], ['timeSeg', 'time']]) {
+    const b = [...$(id).children].find((x) => x.dataset.v === lastSetup[key]);
+    if (b) { setup[key] = b.dataset.v; [...$(id).children].forEach((x) => x.setAttribute('aria-pressed', String(x === b))); }
+  }
   document.querySelectorAll('.mode').forEach((b) => b.addEventListener('click', () => {
     setup.mode = b.dataset.mode;
     document.querySelectorAll('.mode').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-    $('levelField').hidden = $('colorField').hidden = setup.mode !== 'ai';
+    $('levelField').hidden = $('colorField').hidden = $('timeField').hidden = setup.mode !== 'ai';
     $('namesField').hidden = true;
     $('multiplayerPanel').hidden = setup.mode !== 'multiplayer';
     $('startBtn').hidden = setup.mode === 'multiplayer';
@@ -370,7 +518,8 @@ body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --boar
     const names = setup.mode === 'ai'
       ? { w: human === 'w' ? 'You' : `Computer · ${cap(setup.level)}`, b: human === 'b' ? 'You' : `Computer · ${cap(setup.level)}` }
       : { w: $('nameW').value.trim() || 'White', b: $('nameB').value.trim() || 'Black' };
-    startGame({ mode: setup.mode, level: setup.level, human: setup.mode === 'ai' ? human : null, names, sans: [], result: null });
+    store.set(SETUP_KEY, { level: setup.level, color: setup.color, time: setup.time });
+    startGame({ mode: setup.mode, level: setup.level, human: setup.mode === 'ai' ? human : null, names, sans: [], result: null, tc: TIME[setup.time] ? setup.time : null });
   });
   $('resumeBtn').addEventListener('click', () => { const s = store.get(SAVE_KEY); if (s) startGame(s); });
   $('homeBtn').addEventListener('click', showSetup);
@@ -378,6 +527,8 @@ body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --boar
   const cap = (s) => s[0].toUpperCase() + s.slice(1);
 
   function showSetup() {
+    if (game && game.clock && !isOver() && !paused) { if (clockOn()) game.clock[g.turn()] = left(g.turn()); paused = true; save(); }   // a timed game waits
+    hint = null; hintBusy = false;
     $('setup').hidden = false; $('game').hidden = true; $('topAction').hidden = true;
     const s = store.get(SAVE_KEY);
     $('resumeBtn').hidden = !(s && s.sans && s.sans.length && !s.result);
@@ -385,13 +536,19 @@ body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --boar
 
   function startGame(saved) {
     game = { ...saved };
+    if (game.tc && TIME[game.tc] && !game.clock) game.clock = { w: TIME[game.tc][0] * 1000, b: TIME[game.tc][0] * 1000 };
+    if (!game.tc) game.clock = null;
+    turnStart = Date.now(); paused = false; lastTick = -1; hint = null; hintBusy = false;
     g = new Chess();
     for (const s of game.sans) if (!g.move(s)) break;
     orient = game.mode === 'ai' ? game.human : 'w';
     selected = null; overInfo = null; promoPending = null; overlayHidden = false; lastAnimated = g.history().length;
     $('setup').hidden = true; $('game').hidden = false; $('topAction').hidden = false;
     save(); render(); maybeComputer();
+    if (!game.sans.length) sound.play('start');
   }
+  /** Same opponent, level, colour and time control, from the start. */
+  function rematch() { startGame({ mode: game.mode, level: game.level, human: game.human, names: game.names, sans: [], result: null, tc: game.tc }); }
   function save() { if (game) { game.sans = g.history().map((m) => m.san); store.set(SAVE_KEY, game); } }
 
   /* ---------- computer opponent (Web Worker, with a main-thread fallback) ---------- */
@@ -415,9 +572,9 @@ body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --boar
     const m = await think(fenAt, game.level);
     await new Promise((r) => setTimeout(r, Math.max(0, 450 - (Date.now() - startedAt))));
     thinking = false;
-    if (!game || g.fen() !== fenAt) { render(); return; }        // the game changed while thinking (undo / new game)
-    if (m) g.move({ from: m.from, to: m.to, promotion: m.promotion });
-    save(); render();
+    if (!game || g.fen() !== fenAt || isOver()) { render(); return; }   // the game changed while thinking (undo, new game, time ran out)
+    const mv = m ? g.move({ from: m.from, to: m.to, promotion: m.promotion }) : null;
+    if (mv) { afterMove(mv); buzz(g.inCheck() ? [30, 40, 30] : 15); } else { save(); render(); }
   }
 
   /* ---------- game helpers ---------- */
@@ -450,6 +607,7 @@ body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --boar
     flag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>',
     pgn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8l4 4v12H8z"/><path d="M16 4v4h4M4 8v12h4"/></svg>',
     plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+    hint: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/></svg>',
   };
   function bar(color) {
     const turn = !isOver() && g.turn() === color;
@@ -457,7 +615,7 @@ body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --boar
     const isComputer = game.mode === 'ai' && color !== game.human;
     return `<div class="bar ${turn ? 'turn' : ''}"><span class="avatar ${color}">${color === 'w' ? 'W' : 'B'}</span>
       <span class="who"><b>${esc(name)}</b><span class="caps">${mat.taken.map((p) => pieceSVG(p, '')).join('')}${mat.diff > 0 ? `<em>+${mat.diff}</em>` : ''}</span></span>
-      ${isComputer && thinking ? '<span class="thinking">Thinking<i></i><i></i><i></i></span>' : ''}</div>`;
+      ${isComputer && thinking ? '<span class="thinking">Thinking<i></i><i></i><i></i></span>' : ''}${game.clock ? `<span class="clock" id="clock-${color}" aria-label="${color === 'w' ? 'White' : 'Black'} clock">${fmtClock(left(color))}</span>` : ''}</div>`;
   }
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -466,12 +624,14 @@ body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --boar
     if (r) return resultText(r);
     const who = game.names[g.turn()];
     if (thinking) return 'The computer is thinking…';
+    if (hintBusy) return 'Looking for a good move…';
+    if (hint) return `Hint: try ${hint.san}.`;
     const you = game.mode === 'ai' && g.turn() === game.human;
     return (g.inCheck() ? 'Check! ' : '') + (you ? 'Your move.' : `${who} to move.`);
   }
   function resultText(r) {
     const why = { checkmate: 'by checkmate', stalemate: 'by stalemate', 'insufficient material': 'by insufficient material',
-      'threefold repetition': 'by threefold repetition', 'fifty-move rule': 'by the fifty-move rule', resignation: 'by resignation' }[r.reason] || '';
+      'threefold repetition': 'by threefold repetition', 'fifty-move rule': 'by the fifty-move rule', resignation: 'by resignation', timeout: 'on time', 'timeout vs insufficient material': 'on time against a lone king' }[r.reason] || '';
     if (r.result === '1/2-1/2') return `Draw ${why}.`;
     const winner = r.result === '1-0' ? 'w' : 'b';
     const name = game.names[winner];
@@ -484,16 +644,20 @@ body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --boar
     const hist = g.history(), last = hist[hist.length - 1];
     const r = result();
     $('sideTop').innerHTML = bar(top);
-    $('sideBottom').innerHTML = bar(bottom) + movesHTML(hist) +
+    $('sideBottom').innerHTML = bar(bottom);
+    const canHint = game.mode === 'ai' && !r && !thinking && !hintBusy && g.turn() === game.human && !promoPending;
+    $('panel').innerHTML = movesHTML(hist) +
       `<div class="actions">
-        <button class="act" id="aUndo" type="button" ${hist.length && !thinking && (!r || !game.result) ? '' : 'disabled'}>${ICONS.undo}Undo</button>
+        <button class="act" id="aUndo" type="button" ${hist.length && !thinking && !game.clock && (!r || !game.result) ? '' : 'disabled'} ${game.clock ? 'title="Undo is off in timed games"' : ''}>${ICONS.undo}Undo</button>
+        <button class="act" id="aHint" type="button" ${canHint ? '' : 'disabled'}>${ICONS.hint}Hint</button>
         <button class="act" id="aFlip" type="button">${ICONS.flip}Flip</button>
         <button class="act ${resignArmed ? 'warn' : ''}" id="aResign" type="button" ${r ? 'disabled' : ''}>${ICONS.flag}${resignArmed ? 'Sure?' : 'Resign'}</button>
         <button class="act" id="aPgn" type="button" ${hist.length ? '' : 'disabled'}>${ICONS.pgn}PGN</button>
         <button class="act" id="aNew" type="button">${ICONS.plus}New</button>
       </div><p class="status" aria-live="polite">${esc(statusText())}</p>`;
     $('aUndo').onclick = undo; $('aFlip').onclick = () => { orient = orient === 'w' ? 'b' : 'w'; render(); };
-    $('aResign').onclick = resign; $('aPgn').onclick = showPgn; $('aNew').onclick = showSetup;
+    $('aResign').onclick = resign; $('aPgn').onclick = showPgn; $('aNew').onclick = showSetup; $('aHint').onclick = showHint;
+    paintClocks();
     const cur = document.querySelector('.moves .cur'); if (cur) cur.scrollIntoView({ block: 'nearest', inline: 'end' });
 
     // board
@@ -504,7 +668,7 @@ body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --boar
     for (let i = 0; i < 64; i++) {
       const row = orient === 'w' ? Math.floor(i / 8) : 7 - Math.floor(i / 8), col = orient === 'w' ? i % 8 : 7 - (i % 8);
       const sq = FILES[col] + (8 - row), p = g.board()[row][col];
-      const cls = ['sq', (row + col) % 2 ? 'd' : '', last && (last.from === sq || last.to === sq) ? 'last' : '', selected === sq ? 'sel' : '', checkSq === sq ? 'check' : ''].join(' ');
+      const cls = ['sq', (row + col) % 2 ? 'd' : '', last && (last.from === sq || last.to === sq) ? 'last' : '', selected === sq ? 'sel' : '', checkSq === sq ? 'check' : '', hint && (hint.from === sq || hint.to === sq) ? 'hint' : ''].join(' ');
       const t = targets.get(sq);
       html += `<button class="${cls}" data-sq="${sq}" type="button" role="gridcell" aria-label="${sq}${p ? ' ' + pieceName(p) : ''}">`
         + (i % 8 === 0 ? `<span class="coord r">${8 - row}</span>` : '') + (i >= 56 ? `<span class="coord f">${FILES[col]}</span>` : '')
@@ -514,8 +678,9 @@ body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --boar
     board.innerHTML = html;
     if (r && !overInfo) overInfo = r;
     if (promoPending) board.insertAdjacentHTML('beforeend', promoHTML());
-    else if (r && !overlayHidden) board.insertAdjacentHTML('beforeend', `<div class="overlay"><span class="eyebrow">${r.result.replace('1/2-1/2', '½–½')}</span><h2>${r.result === '1/2-1/2' ? 'Draw' : resultText(r).split(' by ')[0].replace(/\.$/, '')}</h2><p>${esc(resultText(r))}</p><div class="row"><button class="gold" id="oNew" type="button">New game</button><button class="ghost" id="oPgn" type="button">Save PGN</button><button class="ghost" id="oView" type="button">View board</button></div></div>`);
-    if (r && !promoPending && !overlayHidden) { $('oNew').onclick = showSetup; $('oPgn').onclick = showPgn; $('oView').onclick = () => { overlayHidden = true; render(); }; }
+    else if (r && !overlayHidden) board.insertAdjacentHTML('beforeend', `<div class="overlay"><span class="eyebrow">${r.result.replace('1/2-1/2', '½–½')}</span><h2>${r.result === '1/2-1/2' ? 'Draw' : resultText(r).split(' by ')[0].replace(/\.$/, '')}</h2><p>${esc(resultText(r))}</p><div class="row"><button class="gold" id="oAgain" type="button">Play again</button><button class="ghost" id="oNew" type="button">Change settings</button></div><div class="row"><button class="ghost" id="oPgn" type="button">Save PGN</button><button class="ghost" id="oView" type="button">View board</button></div></div>`);
+    if (r && !promoPending && !overlayHidden) { $('oAgain').onclick = rematch; $('oNew').onclick = showSetup; $('oPgn').onclick = showPgn; $('oView').onclick = () => { overlayHidden = true; render(); }; }
+    if (r && !game.ended) { game.ended = true; save(); gameOverEffects(r); }
     if (promoPending) board.querySelectorAll('.promo button').forEach((b) => b.onclick = () => { const m = promoPending; promoPending = null; play(m.from, m.to, b.dataset.p); });
 
     // slide the last moved piece into place (once per move)
@@ -532,7 +697,11 @@ body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --boar
   function movesHTML(hist) {
     if (!hist.length) return '<div class="moves"><span class="empty">Moves will appear here.</span></div>';
     let s = '<div class="moves">';
-    hist.forEach((m, i) => { if (i % 2 === 0) s += `<span class="n">${i / 2 + 1}.</span>`; s += `<span class="${i === hist.length - 1 ? 'cur' : ''}">${esc(m.san)}</span>`; });
+    hist.forEach((m, i) => {
+      if (i % 2 === 0) s += `<span class="pair"><span class="n">${i / 2 + 1}.</span>`;
+      s += `<span class="${i === hist.length - 1 ? 'cur' : ''}">${esc(m.san)}</span>`;
+      if (i % 2 === 1 || i === hist.length - 1) s += '</span>';
+    });
     return s + '</div>';
   }
   const pieceName = (p) => ({ p: 'pawn', n: 'knight', b: 'bishop', r: 'rook', q: 'queen', k: 'king' }[p.toLowerCase()]) + (p === p.toUpperCase() ? ' white' : ' black');
@@ -548,10 +717,36 @@ body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --boar
 
   /* ---------- input: tap to select and tap to move, or drag ---------- */
   function play(from, to, promotion) {
+    if (isOver()) return false;
     const m = g.move({ from, to, promotion });
     selected = null;
-    if (m) { save(); render(); maybeComputer(); } else render();
+    if (m) { afterMove(m); maybeComputer(); } else render();
     return !!m;
+  }
+  /** Everything that follows a move by either side: the clock, the sound, saving and redrawing. */
+  function afterMove(m) {
+    hint = null; chargeClock(m.color); lastTick = -1;
+    save(); render();
+    if (!g.status().over) sound.play(m.san.includes('+') ? 'check' : m.captured ? 'capture' : (m.flag === 'k' || m.flag === 'q' || /^O-O/.test(m.san)) ? 'castle' : 'move');
+    else sound.play(m.captured ? 'capture' : 'move');
+  }
+  function gameOverEffects(r) {
+    const winner = r.result === '1-0' ? 'w' : r.result === '0-1' ? 'b' : null;
+    const youWon = winner && (game.mode !== 'ai' || winner === game.human);
+    setTimeout(() => sound.play(!winner ? 'draw' : youWon ? 'win' : 'lose'), 180);
+    buzz(youWon ? [40, 60, 40, 60, 80] : 60);
+    if (youWon) confetti();
+  }
+  async function showHint() {
+    if (game.mode !== 'ai' || thinking || hintBusy || isOver() || g.turn() !== game.human) return;
+    hintBusy = true; selected = null; render();
+    const fenAt = g.fen(), m = await think(fenAt, 'medium');
+    hintBusy = false;
+    if (!game || g.fen() !== fenAt || !m) { render(); return; }
+    const legal = g.moves({ square: m.from }).find((x) => x.to === m.to);
+    hint = { from: m.from, to: m.to, san: legal ? legal.san : m.from + '–' + m.to };
+    render();
+    const mine = hint; setTimeout(() => { if (hint === mine) { hint = null; render(); } }, 3500);
   }
   function tryTarget(sq) {
     if (!selected) return false;
@@ -603,8 +798,8 @@ body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --boar
 
   /* ---------- actions ---------- */
   function undo() {
-    if (thinking || !g.history().length) return;
-    game.result = null; overInfo = null; promoPending = null; overlayHidden = false;
+    if (thinking || hintBusy || !g.history().length || game.clock) return;
+    game.result = null; game.ended = false; overInfo = null; promoPending = null; overlayHidden = false; hint = null;
     g.undo();
     if (game.mode === 'ai' && g.turn() !== game.human && g.history().length) g.undo();   // take back your move and the computer's reply
     selected = null; lastAnimated = g.history().length; save(); render(); maybeComputer();
@@ -619,8 +814,8 @@ body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --boar
   }
   function showPgn() {
     const r = result();
-    const text = g.pgn({ White: game.names.w, Black: game.names.b, ...(game.mode === 'ai' ? { Annotator: 'Royal Club', Mode: 'vs Computer ' + cap(game.level) } : { Mode: 'Two players' }),
-      ...(r && r.reason === 'resignation' ? { Termination: (r.result === '1-0' ? 'Black' : 'White') + ' resigned' } : {}) }, r ? r.result : undefined);
+    const text = g.pgn({ White: game.names.w, Black: game.names.b, ...(game.mode === 'ai' ? { Annotator: 'Royal Club', Mode: 'vs Computer ' + cap(game.level) } : { Mode: 'Two players' }), ...(game.tc ? { TimeControl: TIME[game.tc][0] + '+' + TIME[game.tc][1] } : {}),
+      ...(r && r.reason === 'resignation' ? { Termination: (r.result === '1-0' ? 'Black' : 'White') + ' resigned' } : {}), ...(r && /^timeout/.test(r.reason) ? { Termination: 'Time forfeit' } : {}) }, r ? r.result : undefined);
     const sheet = document.createElement('div');
     sheet.className = 'sheet';
     sheet.innerHTML = `<div role="dialog" aria-label="Game record"><h3>Game record (PGN)</h3><p class="note">Standard chess notation. Paste it into any chess app to replay or analyse the game.</p><textarea id="pgnText" readonly>${esc(text)}</textarea><div class="row" style="display:flex;gap:8px"><button class="gold" id="pgnCopy" type="button">Copy</button><button class="ghost" id="pgnClose" type="button">Close</button></div><p class="note" id="pgnMsg"></p></div>`;

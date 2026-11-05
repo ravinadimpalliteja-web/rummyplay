@@ -1,17 +1,17 @@
-/* Royal Club Snakes & Ladders player tokens: three collections, twelve original designs drawn as SVG in code
+/* Royal Club Snakes & Ladders player tokens: three collections (4 pawns, 8 people, 9 animals), original designs drawn as SVG in code
    (no image files, no third-party art). The same picture is used on the selection screen and on the board.
    server/snakes.js keeps the same list of ids (a server test checks they match). */
 
 export type CollectionId = "traditional" | "explorers" | "animals";
 export type PieceId =
   | "pawn-gold" | "pawn-green" | "pawn-red" | "pawn-blue"
-  | "young-explorer" | "jungle-adventurer" | "mountain-adventurer" | "outdoor-explorer"
-  | "lion" | "panda" | "elephant" | "rabbit";
+  | "young-explorer" | "jungle-adventurer" | "mountain-adventurer" | "outdoor-explorer" | "cricketer" | "chef" | "dancer" | "scholar"
+  | "lion" | "panda" | "elephant" | "rabbit" | "peacock" | "monkey" | "fox" | "tiger" | "deer";
 export type Piece = { id: PieceId; name: string; collection: CollectionId; accent: string };
 
 export const COLLECTIONS: { id: CollectionId; name: string; blurb: string }[] = [
   { id: "traditional", name: "Traditional", blurb: "Classic glossy pawns" },
-  { id: "explorers", name: "Explorers & Adventurers", blurb: "Ready for the trail" },
+  { id: "explorers", name: "People", blurb: "Explorers, sport, kitchen and the arts" },
   { id: "animals", name: "Animals", blurb: "Friendly faces" },
 ];
 export const PIECES: Piece[] = [
@@ -23,10 +23,19 @@ export const PIECES: Piece[] = [
   { id: "jungle-adventurer", name: "Jungle Adventurer", collection: "explorers", accent: "#1f9e8f" },
   { id: "mountain-adventurer", name: "Mountain Adventurer", collection: "explorers", accent: "#3a6fc4" },
   { id: "outdoor-explorer", name: "Outdoor Explorer", collection: "explorers", accent: "#e0a526" },
+  { id: "cricketer", name: "Cricketer", collection: "explorers", accent: "#1f7a52" },
+  { id: "chef", name: "Chef", collection: "explorers", accent: "#d23b3b" },
+  { id: "dancer", name: "Classical Dancer", collection: "explorers", accent: "#c2185b" },
+  { id: "scholar", name: "Scholar", collection: "explorers", accent: "#1f3f7a" },
   { id: "lion", name: "Lion", collection: "animals", accent: "#e8a33a" },
   { id: "panda", name: "Panda", collection: "animals", accent: "#2b2f36" },
   { id: "elephant", name: "Elephant", collection: "animals", accent: "#8d9bb0" },
   { id: "rabbit", name: "Rabbit", collection: "animals", accent: "#f2a7bd" },
+  { id: "peacock", name: "Peacock", collection: "animals", accent: "#1f4fb8" },
+  { id: "monkey", name: "Monkey", collection: "animals", accent: "#8a5a34" },
+  { id: "fox", name: "Fox", collection: "animals", accent: "#e2712a" },
+  { id: "tiger", name: "Tiger", collection: "animals", accent: "#f08a24" },
+  { id: "deer", name: "Spotted Deer", collection: "animals", accent: "#c27a3c" },
 ];
 export const PIECE_IDS = PIECES.map((p) => p.id);
 export const pieceById = (id: string | null | undefined): Piece => PIECES.find((p) => p.id === id) ?? PIECES[0];
@@ -232,13 +241,149 @@ const rabbit = () => {
     ${cheeks(51, 12)}${shine(43, 34, 5.5, 2.4, .5)}`);
 };
 
+/* ---------- more people ---------- */
+const cricketer = () => person({
+  skin: ["#c98f62", "#93603a"], shirt: ["#fbfaf4", "#d9d5c8"], pants: "#ece8dc", boots: "#f4f1ea",
+  front: `<rect x="38" y="86" width="10" height="17" rx="3" fill="#fff" ${OUT}/><rect x="52" y="86" width="10" height="17" rx="3" fill="#fff" ${OUT}/>
+    <path d="M39 90 h8 M39 94 h8 M39 98 h8 M53 90 h8 M53 94 h8 M53 98 h8" stroke="#c9c4b6" stroke-width="1"/>
+    <path d="M42 57.5 Q50 63 58 57.5" fill="none" stroke="#1f7a52" stroke-width="2.4"/>
+    <path d="M68 70 L72 104" stroke="#2a1a0e" stroke-width="9" stroke-linecap="round"/><path d="M68 70 L72 104" stroke="#e7c88f" stroke-width="7" stroke-linecap="round"/>
+    <path d="M67 60 L68 71" stroke="#2a2a2a" stroke-width="3.4" stroke-linecap="round"/>`,
+  hair: `<path d="M31 35 Q33 24 50 23 Q67 24 69 35 Q60 30 50 31 Q40 30 31 35 Z" fill="#20140c"/>`,
+  hat: `<path d="M30 30 Q31 13 50 13 Q69 13 70 30 Z" fill="#1f7a52" ${OUT}/><path d="M48 28 Q66 25 78 31 Q66 34 50 32 Z" fill="#17603f" ${OUT}/><circle cx="50" cy="21" r="3" fill="#f1c34a" ${OUT}/>`,
+});
+const chef = () => person({
+  skin: ["#e8b58e", "#b9825a"], shirt: ["#ffffff", "#dcdad4"], pants: "#2b2b30", boots: "#1c1c1f",
+  front: `<circle cx="45" cy="66" r="1.5" fill="#222"/><circle cx="55" cy="66" r="1.5" fill="#222"/><circle cx="45" cy="74" r="1.5" fill="#222"/><circle cx="55" cy="74" r="1.5" fill="#222"/><circle cx="45" cy="82" r="1.5" fill="#222"/><circle cx="55" cy="82" r="1.5" fill="#222"/>
+    <path d="M41 57 Q50 64 59 57 L55 65 L50 61 L45 65 Z" fill="#d23b3b" ${OUT}/>
+    <path d="M72 80 L80 44" stroke="#2a1a0e" stroke-width="4.6" stroke-linecap="round"/><path d="M72 80 L80 44" stroke="#b07a3e" stroke-width="3" stroke-linecap="round"/><ellipse cx="81" cy="40" rx="4.5" ry="6" fill="#b07a3e" ${OUT}/>`,
+  hair: `<path d="M31 36 Q33 26 50 25 Q67 26 69 36 Q60 31 50 32 Q40 31 31 36 Z" fill="#3a2414"/>`,
+  hat: `<rect x="35" y="14" width="30" height="13" rx="2" fill="#fff" ${OUT}/><circle cx="39" cy="11" r="7" fill="#fff" ${OUT}/><circle cx="50" cy="7" r="8" fill="#fff" ${OUT}/><circle cx="61" cy="11" r="7" fill="#fff" ${OUT}/><rect x="36" y="12" width="28" height="8" fill="#fff"/><path d="M35 24 h30" stroke="#d9d6cf" stroke-width="1.4"/>`,
+});
+const dancer = () => {
+  const s = stand();
+  const defs = s.defs + rg("dk", [[0, "#c99066"], [1, "#8c5a36"]], .38, .32, .8) + lg("ds", [[0, "#e5397a"], [1, "#8e0f42"]]) + lg("dg", [[0, "#fff1b8"], [.5, "#d9aa4a"], [1, "#8f6418"]]);
+  return svg(defs, `${s.body}
+    <path d="M30 103 Q32 80 41 66 L59 66 Q68 80 70 103 Q50 108 30 103 Z" fill="url(#ds)" ${OUT}/>
+    <path d="M31 99 Q50 104 69 99" fill="none" stroke="url(#dg)" stroke-width="3.4"/><path d="M38 72 L36 100 M46 70 L45 103 M54 70 L55 103 M62 72 L64 100" stroke="#b81a5c" stroke-width="1.2" opacity=".7"/>
+    <path d="M38 60 Q38 55 44 55 L56 55 Q62 55 62 60 L60 70 L40 70 Z" fill="#7b1fa2" ${OUT}/>
+    <path d="M44 56 L60 70" stroke="#e5397a" stroke-width="6" stroke-linecap="round" opacity=".9"/>
+    <path d="M60 60 Q72 54 70 38" fill="none" stroke="#2a1a0e" stroke-width="7.4" stroke-linecap="round"/><path d="M60 60 Q72 54 70 38" fill="none" stroke="url(#dk)" stroke-width="5.4" stroke-linecap="round"/>
+    <ellipse cx="70" cy="34" rx="3.6" ry="4.6" fill="url(#dk)" ${OUT}/><path d="M66.5 44 h7" stroke="url(#dg)" stroke-width="2.4"/>
+    <path d="M40 60 Q28 66 38 74" fill="none" stroke="#2a1a0e" stroke-width="7.4" stroke-linecap="round"/><path d="M40 60 Q28 66 38 74" fill="none" stroke="url(#dk)" stroke-width="5.4" stroke-linecap="round"/>
+    <path d="M42 57 Q50 64 58 57" fill="none" stroke="url(#dg)" stroke-width="2.6"/>
+    <circle cx="50" cy="13" r="8" fill="#151010" ${OUT}/>${[0, 1, 2, 3, 4, 5, 6].map((i) => `<circle cx="${(43 + i * 2.4).toFixed(1)}" cy="${(8 + Math.abs(i - 3) * 1.6).toFixed(1)}" r="1.7" fill="#fbf8ef"/>`).join("")}
+    <circle cx="29.5" cy="38" r="4" fill="url(#dk)" ${OUT}/><circle cx="70.5" cy="38" r="4" fill="url(#dk)" ${OUT}/><circle cx="29.5" cy="44" r="2" fill="url(#dg)"/><circle cx="70.5" cy="44" r="2" fill="url(#dg)"/>
+    <circle cx="50" cy="36" r="20" fill="url(#dk)" ${OUT}/>
+    <path d="M30 34 Q31 18 50 17 Q69 18 70 34 Q64 25 50 25 Q36 25 30 34 Z" fill="#151010"/>
+    ${eyes(38, 7.5)}<circle cx="50" cy="29" r="1.6" fill="#d9483b"/>${cheeks(45, 12)}
+    <path d="M45.5 47 Q50 50.5 54.5 47" fill="none" stroke="#a3243a" stroke-width="1.8" stroke-linecap="round"/>`);
+};
+const scholar = () => person({
+  skin: ["#d8a67c", "#a8744e"], shirt: ["#2b56a0", "#16305e"], pants: "#efe6d2", boots: "#5a3418",
+  back: `<path d="M34 64 L34 98 Q50 102 66 98 L66 64 Z" fill="#1f3f7a" ${OUT}/><path d="M34 96 Q50 100 66 96" fill="none" stroke="#e0b05a" stroke-width="2"/>`,
+  front: `<path d="M40 57 L58 92" stroke="#e0b05a" stroke-width="7" stroke-linecap="round" opacity=".95"/>
+    <path d="M37 76 L50 80 L63 76 L63 88 L50 92 L37 88 Z" fill="#8a2a1e" ${OUT}/><path d="M39 77.5 L50 81 L61 77.5 L61 86.5 L50 90 L39 86.5 Z" fill="#fbf6e8"/><path d="M50 81 V90" stroke="#8a2a1e" stroke-width="1"/>
+    <path d="M41 80 h6 M41 83 h6 M53 80 h6 M53 83 h6" stroke="#b9ad92" stroke-width=".8"/>`,
+  hair: `<path d="M31 34 Q33 22 50 21 Q67 22 69 34 Q60 28 50 29 Q40 28 31 34 Z" fill="#d9d4cc"/>`,
+  face: `<path d="M36 50 Q50 64 64 50 Q58 56 50 56 Q42 56 36 50 Z" fill="#ece6dc"/>
+    <circle cx="42" cy="41" r="5.6" fill="none" stroke="#c9a038" stroke-width="1.6"/><circle cx="58" cy="41" r="5.6" fill="none" stroke="#c9a038" stroke-width="1.6"/><path d="M47.6 41 h4.8" stroke="#c9a038" stroke-width="1.6"/>`,
+});
+
+/* ---------- more animals ---------- */
+const peacock = () => {
+  const s = stand();
+  const defs = s.defs + rg("pkb", [[0, "#4f86e8"], [1, "#16348a"]], .38, .3, .8) + rg("pkf", [[0, "#58b04a"], [1, "#1f6a2c"]], .5, .8, .9);
+  const fan = Array.from({ length: 11 }, (_, i) => {
+    const a = (-75 + i * 15) * Math.PI / 180, x = 50 + Math.sin(a) * 38, y = 66 - Math.cos(a) * 46;
+    return `<path d="M50 70 L${(50 + Math.sin(a - .12) * 30).toFixed(1)} ${(66 - Math.cos(a - .12) * 36).toFixed(1)} Q${x.toFixed(1)} ${(y - 6).toFixed(1)} ${(50 + Math.sin(a + .12) * 30).toFixed(1)} ${(66 - Math.cos(a + .12) * 36).toFixed(1)} Z" fill="url(#pkf)" stroke="#174a22" stroke-width=".8"/>
+      <ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="5" ry="6" fill="#d9b23a"/><ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="3.4" ry="4.2" fill="#127a6f"/><ellipse cx="${x.toFixed(1)}" cy="${(y + .4).toFixed(1)}" rx="1.8" ry="2.3" fill="#173a8a"/>`;
+  }).join("");
+  return svg(defs, `${s.body}${fan}
+    <path d="M45 101 L46 92 M55 101 L54 92" stroke="#b8a38a" stroke-width="2.6" stroke-linecap="round"/>
+    <ellipse cx="50" cy="84" rx="13" ry="12" fill="url(#pkb)" ${OUT}/>
+    <path d="M46 76 Q44 58 48 44 L54 44 Q57 58 55 76 Z" fill="url(#pkb)" ${OUT}/>
+    <circle cx="51" cy="40" r="7.5" fill="url(#pkb)" ${OUT}/>
+    <path d="M48 32 L46 23 M51 32 L51 22 M54 32 L56 23" stroke="#127a6f" stroke-width="1"/><circle cx="46" cy="22" r="1.8" fill="#2b56c8"/><circle cx="51" cy="21" r="1.8" fill="#2b56c8"/><circle cx="56" cy="22" r="1.8" fill="#2b56c8"/>
+    <path d="M45.5 38.5 Q48 37 50 38.5 M52 38.5 Q54 37 56.5 38.5" fill="none" stroke="#fff" stroke-width="1.4"/>
+    <circle cx="48" cy="40" r="1.6" fill="#1b120c"/><circle cx="54" cy="40" r="1.6" fill="#1b120c"/>
+    <path d="M49.5 43 L51 47 L52.5 43 Z" fill="#8a7a62"/>
+    ${shine(47, 80, 4, 2, .4)}`);
+};
+const monkey = () => {
+  const s = stand();
+  const defs = s.defs + rg("mf", [[0, "#a8774a"], [1, "#5e3a1e"]], .38, .3, .8) + rg("mk", [[0, "#f6d6b4"], [1, "#d6a47c"]], .4, .3, .8);
+  return svg(defs, `${s.body}
+    <path d="M64 96 Q86 96 84 78 Q82 66 72 70 Q80 74 78 82 Q76 90 64 90" fill="none" stroke="#2a1a0e" stroke-width="5.4" stroke-linecap="round"/><path d="M64 96 Q86 96 84 78 Q82 66 72 70 Q80 74 78 82 Q76 90 64 90" fill="none" stroke="#8a5a34" stroke-width="3.6" stroke-linecap="round"/>
+    <ellipse cx="50" cy="86" rx="19" ry="17" fill="url(#mf)" ${OUT}/><ellipse cx="50" cy="88" rx="11" ry="11" fill="#c79566"/>
+    <ellipse cx="40" cy="101" rx="7.5" ry="4.6" fill="url(#mk)" ${OUT}/><ellipse cx="60" cy="101" rx="7.5" ry="4.6" fill="url(#mk)" ${OUT}/>
+    <path d="M41 80 Q50 86 61 78" fill="none" stroke="#2a1a0e" stroke-width="7.4" stroke-linecap="round"/><path d="M41 80 Q50 86 61 78" fill="none" stroke="#8a5a34" stroke-width="5.4" stroke-linecap="round"/>
+    <path d="M56 70 Q66 74 66 84" fill="none" stroke="#2a1a0e" stroke-width="5" stroke-linecap="round"/><path d="M56 70 Q66 74 66 84" fill="none" stroke="#f2cf3a" stroke-width="3.6" stroke-linecap="round"/>
+    <circle cx="27" cy="42" r="8" fill="url(#mk)" ${OUT}/><circle cx="73" cy="42" r="8" fill="url(#mk)" ${OUT}/><circle cx="27" cy="42" r="4" fill="#c99a7a"/><circle cx="73" cy="42" r="4" fill="#c99a7a"/>
+    <circle cx="50" cy="42" r="21" fill="url(#mf)" ${OUT}/>
+    <path d="M50 30 Q38 24 34 36 Q32 50 40 56 Q50 62 60 56 Q68 50 66 36 Q62 24 50 30 Z" fill="url(#mk)"/>
+    ${eyes(40, 7)}<ellipse cx="50" cy="51" rx="9" ry="6" fill="#f0cfae"/>
+    <path d="M47.5 49 h1.6 M51 49 h1.6" stroke="#5a3a2a" stroke-width="1.4" stroke-linecap="round"/><path d="M45 53.5 Q50 57.5 55 53.5" fill="none" stroke="#6a3a2a" stroke-width="1.5" stroke-linecap="round"/>
+    ${shine(43, 30, 5, 2.2, .35)}`);
+};
+const deer = () => {
+  const s = stand();
+  const defs = s.defs + rg("df", [[0, "#dc9858"], [1, "#9a5a26"]], .38, .3, .8);
+  const dots = [[38, 78], [46, 74], [55, 75], [62, 80], [42, 85], [52, 83], [60, 88], [35, 86], [48, 90]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2" fill="#fbf3e2"/>`).join("");
+  return svg(defs, `${s.body}
+    <path d="M36 92 L35 104 M42 93 L42 105 M58 93 L58 105 M64 92 L65 104" stroke="#2a1a0e" stroke-width="5" stroke-linecap="round"/><path d="M36 92 L35 104 M42 93 L42 105 M58 93 L58 105 M64 92 L65 104" stroke="#c27a3c" stroke-width="3.2" stroke-linecap="round"/>
+    <ellipse cx="50" cy="84" rx="20" ry="11" fill="url(#df)" ${OUT}/>${dots}<ellipse cx="50" cy="90" rx="13" ry="4" fill="#fbf3e2" opacity=".8"/>
+    <path d="M44 78 Q44 62 47 52 L56 52 Q57 64 56 78 Z" fill="url(#df)" ${OUT}/><path d="M48 58 Q51 66 50 76" fill="none" stroke="#fbf3e2" stroke-width="3" stroke-linecap="round" opacity=".9"/>
+    <path d="M42 30 L36 14 M37.5 18 L31 15 M58 30 L64 14 M62.5 18 L69 15" stroke="#2a1a0e" stroke-width="3.6" stroke-linecap="round"/><path d="M42 30 L36 14 M37.5 18 L31 15 M58 30 L64 14 M62.5 18 L69 15" stroke="#9a7a52" stroke-width="2" stroke-linecap="round"/>
+    <ellipse cx="32" cy="38" rx="9" ry="4.6" transform="rotate(-25 32 38)" fill="url(#df)" ${OUT}/><ellipse cx="68" cy="38" rx="9" ry="4.6" transform="rotate(25 68 38)" fill="url(#df)" ${OUT}/>
+    <ellipse cx="32" cy="38" rx="5" ry="2.2" transform="rotate(-25 32 38)" fill="#f0d8c0"/><ellipse cx="68" cy="38" rx="5" ry="2.2" transform="rotate(25 68 38)" fill="#f0d8c0"/>
+    <path d="M38 34 Q38 24 50 24 Q62 24 62 34 Q62 44 56 52 Q50 56 44 52 Q38 44 38 34 Z" fill="url(#df)" ${OUT}/>
+    <ellipse cx="50" cy="49" rx="6.5" ry="5" fill="#f5e6d2"/><ellipse cx="50" cy="47" rx="3" ry="2" fill="#1b120c"/>
+    ${eyes(37, 6.5)}${shine(45, 30, 4, 2, .35)}`);
+};
+
+const fox = () => {
+  const s = stand();
+  const defs = s.defs + rg("fo", [[0, "#ffb36a"], [1, "#c9561c"]], .38, .3, .8) + rg("fw", [[0, "#ffffff"], [1, "#efe3d6"]], .4, .3, .8);
+  return svg(defs, `${s.body}
+    <path d="M64 96 Q86 92 84 72 Q83 62 74 60 Q80 70 74 80 Q70 88 62 90 Z" fill="url(#fo)" ${OUT}/><path d="M84 72 Q83 62 74 60 Q79 67 78 72 Z" fill="#fff"/>
+    <ellipse cx="50" cy="84" rx="18" ry="17" fill="url(#fo)" ${OUT}/><path d="M42 72 Q50 96 58 72 Q50 76 42 72 Z" fill="url(#fw)"/>
+    <rect x="38" y="92" width="8" height="11" rx="3.5" fill="#2b1d16" ${OUT}/><rect x="54" y="92" width="8" height="11" rx="3.5" fill="#2b1d16" ${OUT}/>
+    <path d="M30 34 L34 12 L45 27 Z" fill="url(#fo)" ${OUT}/><path d="M70 34 L66 12 L55 27 Z" fill="url(#fo)" ${OUT}/><path d="M33.5 29 L35 17 L41 26 Z M66.5 29 L65 17 L59 26 Z" fill="#3a241a"/>
+    <path d="M28 38 Q30 24 50 24 Q70 24 72 38 Q72 50 50 62 Q28 50 28 38 Z" fill="url(#fo)" ${OUT}/>
+    <path d="M32 44 Q42 46 50 62 Q58 46 68 44 Q64 54 50 62 Q36 54 32 44 Z" fill="url(#fw)"/>
+    ${eyes(40, 8.5)}
+    <ellipse cx="50" cy="56.5" rx="3.4" ry="2.4" fill="#2a1a12"/>
+    ${cheeks(49, 13)}${shine(42, 30, 5, 2.2, .45)}`);
+};
+const tiger = () => {
+  const s = stand();
+  const defs = s.defs + rg("tg", [[0, "#ffc06a"], [1, "#e0701a"]], .38, .3, .8) + rg("tw", [[0, "#ffffff"], [1, "#f1e6d6"]], .4, .3, .8);
+  const k = "#2a1408";
+  return svg(defs, `${s.body}
+    <path d="M66 94 Q84 92 82 76 Q81 68 86 66" fill="none" stroke="#2a1a0e" stroke-width="5.4" stroke-linecap="round"/><path d="M66 94 Q84 92 82 76 Q81 68 86 66" fill="none" stroke="#f08a24" stroke-width="3.6" stroke-linecap="round"/>
+    <path d="M80 80 l4 1 M81 74 l4 0" stroke="${k}" stroke-width="1.6"/>
+    <ellipse cx="50" cy="85" rx="19" ry="17" fill="url(#tg)" ${OUT}/><ellipse cx="50" cy="89" rx="10" ry="10" fill="url(#tw)"/>
+    <path d="M33 80 q5 2 6 6 M67 80 q-5 2 -6 6 M34 90 q5 1 6 5 M66 90 q-5 1 -6 5" fill="none" stroke="${k}" stroke-width="2" stroke-linecap="round"/>
+    <ellipse cx="41" cy="101" rx="7.5" ry="4.6" fill="url(#tg)" ${OUT}/><ellipse cx="59" cy="101" rx="7.5" ry="4.6" fill="url(#tg)" ${OUT}/>
+    <circle cx="33" cy="25" r="6.5" fill="url(#tg)" ${OUT}/><circle cx="67" cy="25" r="6.5" fill="url(#tg)" ${OUT}/><circle cx="33" cy="25" r="3" fill="#fff4e0"/><circle cx="67" cy="25" r="3" fill="#fff4e0"/>
+    <circle cx="50" cy="43" r="21" fill="url(#tg)" ${OUT}/>
+    <path d="M50 22 l-3 8 l3 3 l3 -3 Z M40 24 q2 6 0 10 M60 24 q-2 6 0 10 M29.5 40 q6 1 8 4 M70.5 40 q-6 1 -8 4 M30 48 q6 0 8 2 M70 48 q-6 0 -8 2" fill="${k}" stroke="${k}" stroke-width="1.8" stroke-linecap="round"/>
+    <ellipse cx="44.5" cy="52.5" rx="6.5" ry="5" fill="url(#tw)"/><ellipse cx="55.5" cy="52.5" rx="6.5" ry="5" fill="url(#tw)"/>
+    ${eyes(41, 8, "#3a2a10")}
+    <path d="M46.5 48 Q50 46.5 53.5 48 Q53 51 50 52 Q47 51 46.5 48 Z" fill="#c9566a"/>
+    <path d="M50 52 L50 54.5 M46 55.5 Q50 58 54 55.5" fill="none" stroke="#3a2010" stroke-width="1.4" stroke-linecap="round"/>
+    ${shine(43, 33, 5, 2.4, .4)}`);
+};
+
 const ART: Record<PieceId, () => string> = {
   "pawn-gold": () => pawn(["#fff4b8", "#f2c14e", "#b8860b", "#5e4205"]),
   "pawn-green": () => pawn(["#c8f7d4", "#2fbf6c", "#137a40", "#06331b"]),
   "pawn-red": () => pawn(["#ffd1d1", "#e8434f", "#a3121f", "#4a050c"]),
   "pawn-blue": () => pawn(["#d6e6ff", "#3d7be8", "#1a4fb3", "#081e4f"]),
   "young-explorer": youngExplorer, "jungle-adventurer": jungleAdventurer, "mountain-adventurer": mountainAdventurer, "outdoor-explorer": outdoorExplorer,
-  lion, panda, elephant, rabbit,
+  cricketer, chef, dancer, scholar,
+  lion, panda, elephant, rabbit, peacock, monkey, fox, tiger, deer,
 };
 const urls = new Map<string, string>();
 /** The token picture as an image URL (an SVG data URL), for <img> on the selection screen. */

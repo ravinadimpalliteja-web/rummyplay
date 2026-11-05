@@ -137,11 +137,18 @@
 .sl-opts button:disabled{opacity:.4;cursor:default}
 .sl-opts .sl-swatch{width:22px;height:22px}
 .sl-swatch{width:16px;height:16px;border-radius:50%;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.35),0 0 0 1.5px rgba(255,235,190,.4)}
-.sl-swatch.w-maple{background:conic-gradient(#ecc893 0 25%,#c98f50 0 50%,#ecc893 0 75%,#c98f50 0)}
-.sl-swatch.w-teak{background:linear-gradient(135deg,#d9a465,#a86a30 50%,#73421a)}
-.sl-swatch.w-rosewood{background:linear-gradient(135deg,#a95c41,#7a3424 50%,#40150c)}
-.sl-swatch.w-walnut{background:linear-gradient(135deg,#97704f,#684632 50%,#33200f)}
-.sl-swatch.w-sheesham{background:repeating-linear-gradient(160deg,#d6a46e 0 3px,#9c6438 3px 6px,#4b2a13 6px 7px)}
+.sl-opts.models{grid-template-columns:1fr}
+.sl-opts.models button{gap:12px;padding:8px 12px}
+.sl-opts.models span{display:grid;gap:1px}
+.sl-opts.models b{font-size:13.5px}
+.sl-opts.models small{font-size:11.5px;font-weight:600;color:var(--sl-muted)}
+.sl-opts.themes{grid-template-columns:repeat(4,minmax(0,1fr))}
+.sl-opts.themes button{flex-direction:column;justify-content:center;gap:4px;padding:8px 4px;font-size:12px;text-align:center}
+.sl-opts.themes .sl-swatch{width:30px;height:30px}
+.sl-model{flex:none;width:38px;height:38px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.sl-model.m-tray{background:conic-gradient(#fbf5e6 0 25%,#e8d6b0 0 50%,#fbf5e6 0 75%,#e8d6b0 0) 0 0/12px 12px;border:4px solid #9a6a3a;outline:1.5px solid #d9aa4a;outline-offset:-3px}
+.sl-model.m-marble{background:linear-gradient(90deg,transparent 47%,rgba(120,100,70,.5) 47% 53%,transparent 53%) 0 0/12px 12px,linear-gradient(0deg,transparent 47%,rgba(120,100,70,.5) 47% 53%,transparent 53%) 0 0/12px 12px,linear-gradient(135deg,#fbf7ee,#e9dfcb 45%,#f6efe2 60%,#ddd0b8);border:3px solid #d9aa4a}
+.sl-model.m-inlay{background:linear-gradient(90deg,transparent 44%,#d9aa4a 44% 56%,transparent 56%) 0 0/12px 12px,linear-gradient(0deg,transparent 44%,#d9aa4a 44% 56%,transparent 56%) 0 0/12px 12px,#fbf5e6;border:4px solid #7a4a28;outline:1.5px solid #d9aa4a;outline-offset:-3px}
 .sl-rules ul{margin:0;padding-left:18px;display:grid;gap:5px;font-size:13.5px;line-height:1.5}
 .sl-rules li b{color:var(--sl-gold)}
 .sl-chat-phrases{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
@@ -279,6 +286,8 @@
 .tp-tabs button.on{background:linear-gradient(135deg,#f0d99d,#c79f50);color:#14251c}
 .tp-tabs button.on small{color:#4a3a16}
 .tp-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.tp-grid.n9{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media (max-width:599px){.tp-grid.n9{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .tp-token{position:relative;display:grid;justify-items:center;gap:2px;padding:8px 4px 8px;border:1px solid #41634f;border-radius:14px;background:radial-gradient(ellipse at 50% 30%,#145e46,#08281d 80%);color:#f6f0df}
 .tp-token img{width:100%;max-width:84px;aspect-ratio:100/120;object-fit:contain;filter:drop-shadow(0 5px 6px rgba(0,0,0,.4));transition:transform .18s}
 .tp-token:not(:disabled):hover img{transform:translateY(-3px)}

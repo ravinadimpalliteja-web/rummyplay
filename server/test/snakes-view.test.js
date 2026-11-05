@@ -19,9 +19,12 @@ assert(/if \(row % 2\) col = 9 - col;/.test(src) && /y: PAD \+ \(9 - row\) \* S 
 assert.deepStrictEqual([center(1).x < center(10).x, center(11).x > center(20).x, center(100).y < center(1).y], [true, true, true], 'square order');
 
 // token placement keeps numbers readable
-const [sx, sy] = num(/return \{ x: c\.x \+ (\d+), y: c\.y \+ (\d+) \}; \};/, 'spot');
+// a lone token stands in the middle of its square (its stand a little below the middle on the picture board, so the
+// standing figure looks centred), and the number sits in the square's front-left corner
+const [sy] = num(/export const spot = \(n: number\): Pt => \{ const c = center\(n\); return \{ x: c\.x, y: c\.y \+ (\d+) \}; \};/, 'spot'), sx = 0;
+assert(/export const spot3D = \(n: number\): Pt => center\(n\);/.test(src), 'the 3D board puts a lone token exactly on the centre of its square');
 const [H] = num(/export const PIECE_H = (\d+);/, 'PIECE_H');
-const [nx, ny] = num(/return \{ x: p\.x - S \/ 2 \+ (\d+), y: p\.y - S \/ 2 \+ (\d+) \}; \};/, 'numberAt');
+const [nx, ny] = num(/export const numberAt = \(n: number\): Pt => \{ const p = center\(n\); return \{ x: p\.x - S \/ 2 \+ ([\d.]+), y: p\.y \+ S \/ 2 - ([\d.]+) \}; \};/, 'numberAt');
 const [fontPx] = num(/NUM_FONT = "800 (\d+)px/, 'NUM_FONT');
 const shared = {};
 const sharedSrc = src.slice(src.indexOf('export const SHARED:'), src.indexOf('};', src.indexOf('export const SHARED:')));      // the flat board's layout (the 3D board has its own)
@@ -31,7 +34,7 @@ assert.deepStrictEqual(Object.keys(shared), ['2', '3', '4'], 'layouts for 2, 3 a
 const box = (x, y, s) => { const h = H * s, w = h * 100 / 120; return { x0: x - w * .34, x1: x + w * .34, y0: y - h * .84, y1: y }; };
 const hit = (a, b) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
 const digitW = fontPx * .62;                                            // a wide bold digit, on the safe side
-const numberBox = (digits) => ({ x0: -S / 2 + nx, x1: -S / 2 + nx + digits * digitW, y0: -S / 2 + ny - fontPx * .75, y1: -S / 2 + ny + 1 });
+const numberBox = (digits) => ({ x0: -S / 2 + nx, x1: -S / 2 + nx + digits * digitW, y0: S / 2 - ny - fontPx * .75, y1: S / 2 - ny + 1 });
 const cases = [['alone', [[sx, sy]], 1], ...Object.entries(shared).map(([k, v]) => [k + ' sharing', v.pts, v.s])];
 for (const [name, pts, s] of cases) {
   const boxes = pts.map(([x, y]) => box(x, y, s));
@@ -40,6 +43,8 @@ for (const [name, pts, s] of cases) {
     assert(b.x0 >= -S / 2 - 1 && b.x1 <= S / 2 + 2.5, `${name}: a token leaves its square (${b.x0.toFixed(1)}..${b.x1.toFixed(1)})`);
     // the next square to the right: its number starts S further on
     const right = numberBox(2); assert(!hit(b, { ...right, x0: right.x0 + S, x1: right.x1 + S }), `${name}: a token covers the next square's number`);
+    // a standing figure rises toward the square behind it: that square's number (in its front-left corner) stays clear
+    assert(!hit(b, { ...right, y0: right.y0 - S, y1: right.y1 - S }), `${name}: a token covers the number of the square behind`);
   }
   for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) assert(!hit(boxes[i], boxes[j]), `${name}: tokens ${i} and ${j} overlap`);
 }
@@ -61,7 +66,7 @@ console.log('snakes view: ok (board uses engine positions, numbering unchanged, 
     return dense;
   };
   const segD = (p, a, b) => { const dx = b.x - a.x, dy = b.y - a.y, l = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l)); return Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy); };
-  const SNAKE_HALF = 11.4, LADDER_HALF = 18;                  // widest drawn: 3D snake radius 0.19 square, ladder 0.24 + rail 0.06
+  const SNAKE_HALF = 11.4, LADDER_HALF = +num(/export const LADDER_HALF = (\d+);/, 'LADDER_HALF')[0] + 5.4;   // widest drawn: 3D snake radius 0.19 square; ladder half-width plus its rail
   for (const [h, t] of Object.entries(SN)) {
     const pts = curve(WPS[h]), first = pts[0], last = pts[pts.length - 1], hc = ctr(+h), tc = ctr(t);
     assert(Math.abs(first.x - hc.x) < 30 && Math.abs(first.y - hc.y) < 30, `snake ${h}: head is on square ${h}`);

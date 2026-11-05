@@ -25,12 +25,12 @@ const CHAT_PHRASES = 8;   // Nice move! · Good luck · Well played · Oops! · 
 const CHAT_EMOJIS = 12;
 const CHAT_GAP_MS = 1200;
 
-/* Player tokens: three collections. Must match web/src/snakes/tokens.ts (a test checks this).
+/* Player tokens: three collections (4 pawns, 8 people, 9 animals). Must match web/src/snakes/tokens.ts (a test checks this).
    Every seat always holds a token, and no two seats share one. */
 const PIECE_IDS = Object.freeze([
   'pawn-gold', 'pawn-green', 'pawn-red', 'pawn-blue',
-  'young-explorer', 'jungle-adventurer', 'mountain-adventurer', 'outdoor-explorer',
-  'lion', 'panda', 'elephant', 'rabbit',
+  'young-explorer', 'jungle-adventurer', 'mountain-adventurer', 'outdoor-explorer', 'cricketer', 'chef', 'dancer', 'scholar',
+  'lion', 'panda', 'elephant', 'rabbit', 'peacock', 'monkey', 'fox', 'tiger', 'deer',
 ]);
 const DEFAULT_PIECES = Object.freeze(['pawn-gold', 'pawn-green', 'pawn-red', 'pawn-blue']);
 

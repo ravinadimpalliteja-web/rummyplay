@@ -1,26 +1,60 @@
 import { LADDERS, SNAKES } from "./engine";
+import { MOKSH_DEVA, MOKSH_LATIN } from "./moksh";
 
-/* The board is drawn on a 644 x 644 logical canvas: a raised wooden rim (PAD) with a gold inlay around 10 x 10 raised wooden
-   squares of 60, numbered in a zigzag from the bottom left. Everything is painted in code (no image files), so it stays sharp
-   at any size. The screen tilts this flat picture in 3D (see view3d.ts); tokens are drawn upright on top of it. */
+/* The board is drawn on a 644 x 644 logical canvas: a rim (PAD) around 10 x 10 squares of 60, numbered in a zigzag from the
+   bottom left. Everything is painted in code (no image files), so it stays sharp at any size. There are three board models
+   (a framed tray of raised squares, a polished marble slab, and flat tiles with brass inlay), each in four light themes, so
+   the numbers and tokens always stand out. The screen tilts this flat picture in 3D (view3d.ts) or builds it in WebGL
+   (scene3d.ts); tokens are drawn upright on top. */
 export const PAD = 22, S = 60, W = S * 10 + PAD * 2;
 /** How deep the board is (its front edge), in board units. */
 export const THICK = 26;
 const K = 1.45;                                    // snake size: bodies, heads and markings are drawn this much larger than before
 export type Pt = { x: number; y: number };
 
-/* ---------- woods ---------- */
-export type WoodId = "maple" | "teak" | "rosewood" | "walnut" | "sheesham";
-/* tileA / tileB: the two alternating square woods; ink / inkEdge: number colour and its outline (dark on light woods). */
-type Wood = { name: string; base: string; light: string; dark: string; grain: string; contrast: number; frame: string; tileA: string; tileB: string; ink: string; inkEdge: string };
-export const WOODS: Record<WoodId, Wood> = {
-  maple: { name: "Golden oak", base: "#b8783c", light: "#e2b878", dark: "#7a4519", grain: "#4e2a0c", contrast: .8, frame: "#6a3512", tileA: "#f0bd70", tileB: "#cc8640", ink: "#2b1405", inkEdge: "rgba(255,244,220,.92)" },
-  teak: { name: "Teak", base: "#a8692f", light: "#c98b4a", dark: "#73421a", grain: "#4a2a0e", contrast: .9, frame: "#7a4518", tileA: "#d9a465", tileB: "#a86a30", ink: "#25110a", inkEdge: "rgba(255,240,214,.9)" },
-  rosewood: { name: "Rosewood", base: "#6f2b1d", light: "#8f4029", dark: "#40150c", grain: "#260905", contrast: .9, frame: "#4a170e", tileA: "#a95c41", tileB: "#7a3424", ink: "#fff4dc", inkEdge: "rgba(30,8,2,.92)" },
-  walnut: { name: "Walnut", base: "#5b3c27", light: "#7c5538", dark: "#33200f", grain: "#1c1007", contrast: .85, frame: "#3a2414", tileA: "#97704f", tileB: "#684632", ink: "#fff4dc", inkEdge: "rgba(20,10,2,.92)" },
-  sheesham: { name: "Sheesham", base: "#8c5a33", light: "#c99360", dark: "#4b2a13", grain: "#2c1609", contrast: 1.1, frame: "#5a3418", tileA: "#d6a46e", tileB: "#9c6438", ink: "#24110a", inkEdge: "rgba(255,240,214,.9)" },
+/* ---------- board models and themes ---------- */
+export type ModelId = "tray" | "marble" | "inlay";
+export type ThemeId = "ivory" | "mint" | "sandstone" | "pearl";
+export type Look = { model: ModelId; theme: ThemeId };
+export const MODELS: Record<ModelId, { name: string; blurb: string }> = {
+  tray: { name: "Classic Tray", blurb: "Raised squares in a framed wooden rim" },
+  marble: { name: "Royal Marble", blurb: "Polished slab, engraved lines, gold border" },
+  inlay: { name: "Palace Inlay", blurb: "Flat tiles, brass inlay, carved corners" },
 };
-export const WOOD_IDS = Object.keys(WOODS) as WoodId[];
+export const MODEL_IDS = Object.keys(MODELS) as ModelId[];
+export const THEMES: Record<ThemeId, { name: string; swatch: [string, string, string] }> = {
+  ivory: { name: "Ivory", swatch: ["#fbf5e6", "#efe1c3", "#9a6a3a"] },
+  mint: { name: "Mint", swatch: ["#eef8f1", "#d3ebdc", "#136b4b"] },
+  sandstone: { name: "Sandstone", swatch: ["#f9ead3", "#edd1aa", "#a4583a"] },
+  pearl: { name: "Pearl", swatch: ["#f7f7fa", "#e4e6ef", "#56627a"] },
+};
+export const THEME_IDS = Object.keys(THEMES) as ThemeId[];
+export const DEFAULT_LOOK: Look = { model: "tray", theme: "ivory" };
+/** Every colour a board needs. tileA / tileB: the alternating squares; grain: their texture lines; groove: the gap or engraved
+    line between squares; rim*: the frame; ink / inkEdge: the numbers; metal: gold or brass trim (light, mid, dark). */
+export type Pal = {
+  tileA: string; tileB: string; grain: string; contrast: number; groove: string;
+  rim: string; rimLight: string; rimDark: string; rimGrain: string; ink: string; inkEdge: string;
+  metal: [string, string, string]; vein: string; stone: string;
+};
+const BASE_PAL: Record<ThemeId, Omit<Pal, "groove" | "stone"> & { stoneRim: string }> = {
+  ivory: { tileA: "#fbf5e6", tileB: "#efe0c0", grain: "#a8844e", contrast: .55, rim: "#9a6a3a", rimLight: "#cf9f64", rimDark: "#5a361a", rimGrain: "#3a2210",
+    ink: "#2a1d10", inkEdge: "rgba(255,252,242,.92)", metal: ["#fff1b8", "#d9aa4a", "#8f6418"], vein: "#b6a382", stoneRim: "#e6dac2" },
+  mint: { tileA: "#eef8f1", tileB: "#d2eadb", grain: "#5f9474", contrast: .5, rim: "#136b4b", rimLight: "#33a376", rimDark: "#073d29", rimGrain: "#03281a",
+    ink: "#10281c", inkEdge: "rgba(250,255,251,.92)", metal: ["#fff1b8", "#d9aa4a", "#8f6418"], vein: "#86b39a", stoneRim: "#cfe6d8" },
+  sandstone: { tileA: "#f9ead3", tileB: "#ecd0a8", grain: "#a8744a", contrast: .55, rim: "#a4583a", rimLight: "#d4875e", rimDark: "#62301b", rimGrain: "#3d1a0c",
+    ink: "#2e1a0d", inkEdge: "rgba(255,250,240,.92)", metal: ["#fff1b8", "#d9aa4a", "#8f6418"], vein: "#c79c6c", stoneRim: "#ead2b0" },
+  pearl: { tileA: "#f7f7fa", tileB: "#e3e6ef", grain: "#8a91a8", contrast: .45, rim: "#56627a", rimLight: "#8592ad", rimDark: "#2d3548", rimGrain: "#1a2030",
+    ink: "#1d2333", inkEdge: "rgba(255,255,255,.94)", metal: ["#fff6d6", "#dcc07a", "#8f7430"], vein: "#9da3b8", stoneRim: "#dfe1ea" },
+};
+/** The colours for one model in one theme. The marble slab uses the theme's stone for its border; the other two a wooden rim. */
+export function palette(look: Look): Pal {
+  const b = BASE_PAL[look.theme] ?? BASE_PAL.ivory, m = look.model;
+  const groove = m === "tray" ? mix(b.tileB, b.rimDark, .55) : m === "marble" ? mix(b.vein, "#3a2a18", .35) : b.metal[1];
+  return { ...b, groove, stone: b.stoneRim, tileB: m === "marble" ? mix(b.tileA, b.tileB, .6) : b.tileB };
+}
+const BASE_PAL_TILEB = (l: Look) => (BASE_PAL[l.theme] ?? BASE_PAL.ivory).tileB;
+export const lookKey = (l: Look) => l.model + "-" + l.theme;
 
 export const center = (n: number): Pt => {
   const row = Math.floor((n - 1) / 10);
@@ -28,20 +62,21 @@ export const center = (n: number): Pt => {
   if (row % 2) col = 9 - col;
   return { x: PAD + col * S + S / 2, y: PAD + (9 - row) * S + S / 2 };
 };
-/** Where a token stands on square n when it is alone: right of and below the middle, clear of the square's number. */
-export const spot = (n: number): Pt => { const c = center(n); return { x: c.x + 17, y: c.y + 15 }; };
-/** Where tokens stand when 2 to 4 share a square: a row along the bottom of the square, smaller, still clear of the number. */
+/* Tokens stand in the middle of their square; each square's number sits in its front-left corner (nearest the players),
+   which a token in the middle never covers. */
+/** Flat or tilted picture board: where a lone token's stand touches the board, so its figure looks centred on the square. */
+export const spot = (n: number): Pt => { const c = center(n); return { x: c.x, y: c.y + 9 }; };
+/** Tokens sharing a square (2 to 4), smaller, laid out around the middle and clear of the number in the front-left corner. */
 export const SHARED: Record<number, { pts: [number, number][]; s: number }> = {
-  2: { pts: [[-7, 22], [15, 22]], s: .62 }, 3: { pts: [[-15, 19], [3, 19], [21, 19]], s: .55 }, 4: { pts: [[-21, 17], [-6, 17], [9, 17], [24, 17]], s: .46 },
+  2: { pts: [[-12, 4], [13, 4]], s: .66 }, 3: { pts: [[-12, -4], [12, -4], [12, 18]], s: .56 }, 4: { pts: [[-12, -4], [12, -4], [5, 16], [21, 16]], s: .48 },
 };
-/** On the WebGL 3D board (numbers at the front-left of each square, tokens standing upright): a lone token stands at the
-    back-right of its square; 2 to 4 tokens stand smaller in a row across the middle, so none hides a number or another token. */
-export const spot3D = (n: number): Pt => { const c = center(n); return { x: c.x + 21, y: c.y - 13 }; };
+/** WebGL 3D board: a lone token stands exactly on the centre of its square. */
+export const spot3D = (n: number): Pt => center(n);
 export const SHARED3D: Record<number, { pts: [number, number][]; s: number }> = {
-  2: { pts: [[-10, -4], [18, -4]], s: .5 }, 3: { pts: [[-17, -4], [2, -4], [21, -4]], s: .46 }, 4: { pts: [[-20, -4], [-5, -4], [10, -4], [25, -4]], s: .4 },
+  2: { pts: [[-13, -3], [13, -3]], s: .66 }, 3: { pts: [[-13, -9], [13, -9], [11, 11]], s: .56 }, 4: { pts: [[-13, -11], [13, -11], [4, 11], [21, 11]], s: .5 },
 };
 /** Where a token waits before entering (on the rim, just left of square 1). */
-export const OFF: Pt = { x: PAD * .4, y: center(1).y + 15 };
+export const OFF: Pt = { x: PAD * .4, y: center(1).y + 6 };
 
 /** Centre line of a snake from head to tail; also the path a token slides down. */
 /** Each snake's planned route (board units, head first): worked out once so its body goes around every ladder
@@ -121,6 +156,7 @@ const rgba = (h: string, a: number) => { const [r, g, b] = hex(h); return `rgba(
 const mix = (a: string, b: string, t: number) => { const x = hex(a), y = hex(b); return `rgb(${x.map((v, i) => Math.round(v + (y[i] - v) * t)).join(",")})`; };
 const LIGHT = { x: -0.55, y: -0.83 };                                   // light comes from the top left
 
+type Wood = { base: string; light: string; dark: string; grain: string; contrast: number };
 /** Wood grain filling a rectangle: broad colour bands, flowing grain lines, pores and the odd knot. */
 function grain(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, wood: Wood, seed: number, vertical = false, knotChance = .7) {
   const r = rng(seed);
@@ -165,139 +201,257 @@ const rr = (g: CanvasRenderingContext2D, x: number, y: number, w: number, h: num
   g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
 };
 const poly = (g: CanvasRenderingContext2D, pts: number[][], fill: string) => { g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath(); g.fillStyle = fill; g.fill(); };
+const tileWood = (pal: Pal, base: string): Wood => ({ base, light: mix(base, "#ffffff", .6), dark: mix(base, pal.grain, .2), grain: mix(pal.grain, base, .25), contrast: pal.contrast * .7 });
+const rimWood = (pal: Pal): Wood => ({ base: pal.rim, light: pal.rimLight, dark: pal.rimDark, grain: pal.rimGrain, contrast: .85 });
+const metalGrad = (g: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number, m: [string, string, string]) => {
+  const gr = g.createLinearGradient(x0, y0, x1, y1);
+  gr.addColorStop(0, m[0]); gr.addColorStop(.3, m[1]); gr.addColorStop(.55, mix(m[0], m[1], .4)); gr.addColorStop(1, m[2]); return gr;
+};
 
-/** One raised wooden square: its own grain, a lit top-left bevel, a shaded bottom-right bevel and a soft dome sheen. */
-function tile(g: CanvasRenderingContext2D, x: number, y: number, s: number, wood: Wood, base: string, seed: number, vertical: boolean) {
-  const tw = { ...wood, base, light: mix(base, "#ffdca6", .32), dark: mix(base, "#7a3a0c", .32), grain: mix(wood.grain, "#8a4a14", .35), contrast: wood.contrast * .62 };
+/** Polished stone: a soft cloudy base, a few long branching veins and a fine speckle. */
+function stone(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, base: string, vein: string, seed: number, veins = 3) {
+  const r = rng(seed);
+  g.save(); g.beginPath(); g.rect(x, y, w, h); g.clip();
+  g.fillStyle = base; g.fillRect(x, y, w, h);
+  for (let i = 0; i < 6; i++) {                                                 // clouds
+    const cx = x + r() * w, cy = y + r() * h, rad = (w + h) * (.15 + r() * .2), gr = g.createRadialGradient(cx, cy, 1, cx, cy, rad);
+    gr.addColorStop(0, rgba(r() < .5 ? "#ffffff" : vein, .1 + r() * .08)); gr.addColorStop(1, rgba(vein, 0));
+    g.fillStyle = gr; g.fillRect(x, y, w, h);
+  }
+  g.lineCap = "round";
+  for (let v = 0; v < veins; v++) {                                             // veins: wandering lines with thinner branches
+    let px = x + r() * w, py = y - 4, ang = Math.PI / 2 + (r() - .5) * 1.4;
+    const width = .5 + r() * 1.3, alpha = .2 + r() * .22;
+    g.strokeStyle = rgba(vein, alpha); g.lineWidth = width; g.beginPath(); g.moveTo(px, py);
+    const steps = Math.round((w + h) / 7);
+    for (let i = 0; i < steps; i++) {
+      ang += (r() - .5) * .6; px += Math.cos(ang) * 7; py += Math.sin(ang) * 7; g.lineTo(px, py);
+      if (r() < .08) { g.stroke(); g.save(); g.lineWidth = width * .5; g.strokeStyle = rgba(vein, alpha * .7); g.beginPath(); g.moveTo(px, py); let bx = px, by = py, ba = ang + (r() < .5 ? -1 : 1) * (.5 + r() * .6); for (let j = 0; j < 6; j++) { ba += (r() - .5) * .5; bx += Math.cos(ba) * 5; by += Math.sin(ba) * 5; g.lineTo(bx, by); } g.stroke(); g.restore(); g.beginPath(); g.moveTo(px, py); }
+    }
+    g.stroke();
+  }
+  g.fillStyle = rgba(vein, .12);
+  for (let i = 0; i < w * h / 45; i++) g.fillRect(x + r() * w, y + r() * h, .7, .7);
+  g.restore();
+}
+/** A smooth lacquered tile (the inlay board): a gentle sheen and a hint of fine texture. */
+function lacquer(g: CanvasRenderingContext2D, x: number, y: number, s: number, base: string, pal: Pal, seed: number) {
+  const r = rng(seed);
+  g.fillStyle = base; g.fillRect(x, y, s, s);
+  const sh = g.createLinearGradient(x, y, x + s, y + s);
+  sh.addColorStop(0, "rgba(255,255,255,.35)"); sh.addColorStop(.5, "rgba(255,255,255,0)"); sh.addColorStop(1, rgba(pal.grain, .1));
+  g.fillStyle = sh; g.fillRect(x, y, s, s);
+  g.fillStyle = rgba(pal.grain, .07);
+  for (let i = 0; i < 70; i++) g.fillRect(x + r() * s, y + r() * s, 1.6, .5);
+}
+
+/** One raised square (the tray board): its own light wood, a lit top-left bevel, a shaded bottom-right bevel and a soft sheen. */
+function tile(g: CanvasRenderingContext2D, x: number, y: number, s: number, pal: Pal, base: string, seed: number, vertical: boolean) {
   g.save(); rr(g, x, y, s, s, 3.4); g.clip();
-  grain(g, x, y, s, s, tw, seed, vertical, .1);
-  const b = 4.4;
-  poly(g, [[x, y], [x + s, y], [x + s - b, y + b], [x + b, y + b]], "rgba(255,236,196,.5)");
-  poly(g, [[x, y], [x + b, y + b], [x + b, y + s - b], [x, y + s]], "rgba(255,236,196,.3)");
-  poly(g, [[x, y + s], [x + b, y + s - b], [x + s - b, y + s - b], [x + s, y + s]], "rgba(45,18,3,.45)");
-  poly(g, [[x + s, y], [x + s, y + s], [x + s - b, y + s - b], [x + s - b, y + b]], "rgba(45,18,3,.32)");
+  grain(g, x, y, s, s, tileWood(pal, base), seed, vertical, .05);
+  const b = 4.2;
+  poly(g, [[x, y], [x + s, y], [x + s - b, y + b], [x + b, y + b]], "rgba(255,255,255,.55)");
+  poly(g, [[x, y], [x + b, y + b], [x + b, y + s - b], [x, y + s]], "rgba(255,255,255,.35)");
+  poly(g, [[x, y + s], [x + b, y + s - b], [x + s - b, y + s - b], [x + s, y + s]], rgba(pal.rimDark, .32));
+  poly(g, [[x + s, y], [x + s, y + s], [x + s - b, y + s - b], [x + s - b, y + b]], rgba(pal.rimDark, .22));
   const sh = g.createRadialGradient(x + s * .34, y + s * .28, 2, x + s * .5, y + s * .5, s * .78);
-  sh.addColorStop(0, "rgba(255,240,205,.16)"); sh.addColorStop(.6, "rgba(255,240,205,0)"); sh.addColorStop(1, "rgba(20,8,0,.1)");
+  sh.addColorStop(0, "rgba(255,255,255,.2)"); sh.addColorStop(.6, "rgba(255,255,255,0)"); sh.addColorStop(1, rgba(pal.rimDark, .06));
   g.fillStyle = sh; g.fillRect(x, y, s, s);
   g.restore();
 }
-
-function frameAndSquares(g: CanvasRenderingContext2D, wood: Wood) {
-  // rim: four mitred planks, grain running along each
-  const fw = { ...wood, base: wood.frame, light: mix(wood.frame, wood.light, .5), dark: wood.dark };
-  grain(g, 0, 0, W, PAD, fw, 11);
-  grain(g, 0, W - PAD, W, PAD, fw, 12);
-  grain(g, 0, 0, PAD, W, fw, 13, true);
-  grain(g, W - PAD, 0, PAD, W, fw, 14, true);
-  g.strokeStyle = "rgba(0,0,0,.35)"; g.lineWidth = 1;
-  for (const [a, b, c, d] of [[0, 0, PAD, PAD], [W, 0, W - PAD, PAD], [0, W, PAD, W - PAD], [W, W, W - PAD, W - PAD]]) { g.beginPath(); g.moveTo(a, b); g.lineTo(c, d); g.stroke(); }
-  const line = (x1: number, y1: number, x2: number, y2: number, c: string, w: number) => { g.strokeStyle = c; g.lineWidth = w; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); };
-  // rounded rim: a lit outer edge and a soft roll toward the squares
-  line(1.5, 1.5, W - 1.5, 1.5, "rgba(255,238,205,.45)", 3); line(1.5, 1.5, 1.5, W - 1.5, "rgba(255,238,205,.3)", 3);
-  line(1, W - 1, W - 1, W - 1, "rgba(0,0,0,.5)", 2); line(W - 1, 1, W - 1, W - 1, "rgba(0,0,0,.45)", 2);
-  const roll = g.createLinearGradient(0, 0, 0, PAD);
-  roll.addColorStop(0, "rgba(255,240,210,.18)"); roll.addColorStop(.5, "rgba(255,240,210,0)"); roll.addColorStop(1, "rgba(0,0,0,.25)");
-  g.fillStyle = roll; g.fillRect(0, 0, W, PAD);
-  // gold inlay, just inside the rim (Royal Club gold)
-  const gold = g.createLinearGradient(0, 0, W, W);
-  gold.addColorStop(0, "#fff0b8"); gold.addColorStop(.3, "#d9aa4a"); gold.addColorStop(.55, "#f6dc8e"); gold.addColorStop(1, "#9c6f22");
-  g.strokeStyle = gold; g.lineWidth = 2.4; g.strokeRect(PAD - 7, PAD - 7, S * 10 + 14, S * 10 + 14);
-  g.strokeStyle = "rgba(40,18,0,.55)"; g.lineWidth = .8; g.strokeRect(PAD - 5.4, PAD - 5.4, S * 10 + 10.8, S * 10 + 10.8);
-  // the well the squares sit in: a dark groove between every square
-  g.fillStyle = "#2a1407"; g.fillRect(PAD - 1.5, PAD - 1.5, S * 10 + 3, S * 10 + 3);
-  const inner = g.createLinearGradient(0, PAD, 0, W - PAD);
-  inner.addColorStop(0, "rgba(0,0,0,.35)"); inner.addColorStop(1, "rgba(0,0,0,0)");
-  // raised squares in two alternating woods, grain turned on alternate squares like parquet
-  for (let n = 1; n <= 100; n++) {
-    const p = center(n), row = Math.floor((n - 1) / 10), col = (n - 1) % 10, gap = 1.3;
-    tile(g, p.x - S / 2 + gap, p.y - S / 2 + gap, S - gap * 2, wood, (row + col) % 2 ? wood.tileB : wood.tileA, 1000 + n * 7, (row + col) % 2 === 1);
+/** The faces of the 100 squares for one model, covering the playing area (PAD..W-PAD), with the START plaque and the
+    gold MOKSH engraving on square 100. Used by the picture board and as the WebGL board's surface texture. */
+function squares(g: CanvasRenderingContext2D, look: Look, pal: Pal) {
+  const A = PAD, L = S * 10;
+  if (look.model === "tray") {
+    g.fillStyle = pal.groove; g.fillRect(A - 1.5, A - 1.5, L + 3, L + 3);
+    for (let n = 1; n <= 100; n++) {
+      const p = center(n), row = Math.floor((n - 1) / 10), col = (n - 1) % 10, gap = 1.4;
+      tile(g, p.x - S / 2 + gap, p.y - S / 2 + gap, S - gap * 2, pal, (row + col) % 2 ? pal.tileB : pal.tileA, 1000 + n * 7, (row + col) % 2 === 1);
+    }
+  } else if (look.model === "marble") {
+    stone(g, A, A, L, L, pal.tileA, pal.vein, 77, 7);
+    for (let n = 1; n <= 100; n++) {                                           // the second tone, as a light wash on alternate squares
+      const p = center(n), row = Math.floor((n - 1) / 10), col = (n - 1) % 10;
+      if ((row + col) % 2) { g.fillStyle = rgba(BASE_PAL_TILEB(look), .62); g.fillRect(p.x - S / 2, p.y - S / 2, S, S); }
+    }
+    // engraved lines: a dark cut with a bright lower lip
+    for (let i = 1; i < 10; i++) {
+      const v = A + i * S;
+      g.fillStyle = rgba(pal.groove, .55); g.fillRect(v - 1.1, A, 1.6, L); g.fillRect(A, v - 1.1, L, 1.6);
+      g.fillStyle = "rgba(255,255,255,.75)"; g.fillRect(v + .5, A, .8, L); g.fillRect(A, v + .5, L, .8);
+    }
+    const sheen = g.createLinearGradient(A, A, A + L, A + L);
+    sheen.addColorStop(0, "rgba(255,255,255,.22)"); sheen.addColorStop(.42, "rgba(255,255,255,0)"); sheen.addColorStop(.5, "rgba(255,255,255,.12)"); sheen.addColorStop(.6, "rgba(255,255,255,0)");
+    g.fillStyle = sheen; g.fillRect(A, A, L, L);
+  } else {
+    for (let n = 1; n <= 100; n++) {
+      const p = center(n), row = Math.floor((n - 1) / 10), col = (n - 1) % 10;
+      lacquer(g, p.x - S / 2, p.y - S / 2, S, (row + col) % 2 ? pal.tileB : pal.tileA, pal, 300 + n * 13);
+      // a small carved diamond in the corners where four tiles meet (drawn on the tile's back-right corner)
+    }
+    // brass strips between the tiles (the WebGL board adds them as real metal on top)
+    for (let i = 0; i <= 10; i++) {
+      const v = A + i * S, w = i === 0 || i === 10 ? 3.4 : 2.4;
+      g.fillStyle = metalGrad(g, v - w, A, v + w, A, pal.metal); g.fillRect(v - w / 2, A, w, L);
+      g.fillStyle = metalGrad(g, A, v - w, A, v + w, pal.metal); g.fillRect(A, v - w / 2, L, w);
+    }
+    for (let i = 1; i < 10; i++) for (let j = 1; j < 10; j++) {              // brass studs where strips cross
+      const x = A + i * S, y = A + j * S, gr = g.createRadialGradient(x - .8, y - .8, .2, x, y, 3.4);
+      gr.addColorStop(0, pal.metal[0]); gr.addColorStop(.6, pal.metal[1]); gr.addColorStop(1, pal.metal[2]);
+      g.fillStyle = gr; g.beginPath(); g.arc(x, y, 3.2, 0, Math.PI * 2); g.fill();
+    }
   }
-  // square 100: a warm gold glow and a chequered finish flag
-  const m = center(100);
-  const halo = g.createRadialGradient(m.x + 6, m.y + 4, 3, m.x, m.y, 40);
-  halo.addColorStop(0, "rgba(255,214,120,.55)"); halo.addColorStop(1, "rgba(255,214,120,0)");
-  g.fillStyle = halo; g.fillRect(m.x - S / 2 + 1, m.y - S / 2 + 1, S - 2, S - 2);
-  flag(g, m.x + 12, m.y - 18);
-  // square 1: a green START plaque
+  finishSquare(g, pal);
   start(g, center(1));
 }
 
-/** A small chequered finish flag on a gold pole. */
-function flag(g: CanvasRenderingContext2D, x: number, y: number) {
+/** Square 100, the goal: an emerald enamel panel in a double gold frame, with मोक्ष over MOKSH engraved in gold
+    (the number 100 sits in its usual front-left corner, in gold). */
+function finishSquare(g: CanvasRenderingContext2D, pal: Pal) {
+  const m = center(100), x = m.x - S / 2, y = m.y - S / 2, i = 2.2;
   g.save();
-  g.fillStyle = "rgba(0,0,0,.3)"; g.beginPath(); g.ellipse(x + 2, y + 34, 5, 2, 0, 0, Math.PI * 2); g.fill();
-  const pole = g.createLinearGradient(x - 1.5, 0, x + 1.5, 0); pole.addColorStop(0, "#fff0b8"); pole.addColorStop(1, "#9c6f22");
-  g.fillStyle = pole; g.fillRect(x - 1.3, y, 2.6, 34);
-  const c = 4.2;
-  for (let i = 0; i < 4; i++) for (let j = 0; j < 3; j++) {
-    const wave = Math.sin(i * .9) * 1.4;
-    g.fillStyle = (i + j) % 2 ? "#151515" : "#fbf8f0"; g.fillRect(x + 1.3 + i * c, y + 1 + j * c + wave, c + .3, c + .3);
-  }
-  g.strokeStyle = "rgba(0,0,0,.4)"; g.lineWidth = .6; g.strokeRect(x + 1.3, y + 1, c * 4, c * 3 + 1.4);
-  g.fillStyle = "#ffe08a"; g.beginPath(); g.arc(x, y, 2.3, 0, Math.PI * 2); g.fill();
+  g.shadowColor = "rgba(0,0,0,.35)"; g.shadowBlur = 3; g.shadowOffsetY = 1;
+  rr(g, x + i, y + i, S - i * 2, S - i * 2, 4);
+  const en = g.createRadialGradient(m.x - 8, m.y - 14, 2, m.x, m.y, 46); en.addColorStop(0, "#23a06c"); en.addColorStop(.55, "#0f6b47"); en.addColorStop(1, "#06402a");
+  g.fillStyle = en; g.fill(); g.shadowColor = "transparent";
+  g.strokeStyle = metalGrad(g, x, y, x + S, y + S, pal.metal); g.lineWidth = 1.8; g.stroke();
+  g.lineWidth = .7; g.strokeRect(x + i + 2.6, y + i + 2.6, S - i * 2 - 5.2, S - i * 2 - 5.2);
   g.restore();
+  engraveMoksh(g, m.x + 1, m.y - 9.5, 47);
 }
-/** The START plaque on square 1: green enamel framed in gold, with an arrow. */
-function start(g: CanvasRenderingContext2D, p: Pt, atTop = false) {
-  const x = p.x - S / 2 + 4, y = atTop ? p.y - S / 2 + 5 : p.y + 6, w = S - 8, h = 19;
-  g.save();
-  g.shadowColor = "rgba(0,0,0,.45)"; g.shadowBlur = 3; g.shadowOffsetY = 1.5;
-  rr(g, x, y, w, h, 4); const gr = g.createLinearGradient(0, y, 0, y + h); gr.addColorStop(0, "#1f8a5b"); gr.addColorStop(1, "#0b4a31"); g.fillStyle = gr; g.fill();
-  g.shadowColor = "transparent"; g.strokeStyle = "#e9c877"; g.lineWidth = 1.4; g.stroke();
-  g.fillStyle = "#ffe9a8"; g.font = "800 10.5px 'DM Sans', system-ui, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
-  g.fillText("START", p.x + 4, y + h / 2 + .5);
-  g.strokeStyle = "#ffe9a8"; g.lineWidth = 1.6; g.lineCap = "round"; g.lineJoin = "round";
-  g.beginPath(); g.moveTo(x + 4, y + h / 2); g.lineTo(x + 11, y + h / 2); g.moveTo(x + 8.5, y + h / 2 - 3); g.lineTo(x + 11, y + h / 2); g.lineTo(x + 8.5, y + h / 2 + 3); g.stroke();
+/** मोक्ष (and MOKSH beneath it) cut into the board and gilded, centred on (cx, cy). Light comes from the top left, so the
+    cut's top-left inner wall is in shadow and its lower-right wall catches the light. */
+export function engraveMoksh(g: CanvasRenderingContext2D, cx: number, cy: number, width = 46) {
+  const deva = new Path2D(MOKSH_DEVA.d), latin = new Path2D(MOKSH_LATIN.d);
+  const dw = MOKSH_DEVA.x1 - MOKSH_DEVA.x0, ds = width / dw, dh = (MOKSH_DEVA.y1 - MOKSH_DEVA.y0) * ds;
+  const lw = width * .78, ls = lw / (MOKSH_LATIN.x1 - MOKSH_LATIN.x0), lh = (MOKSH_LATIN.y1 - MOKSH_LATIN.y0) * ls, gap = 2.4;
+  const top = cy - (dh + gap + lh) / 2;
+  const parts: [Path2D, number, number, number][] = [
+    [deva, cx - width / 2 - MOKSH_DEVA.x0 * ds, top - MOKSH_DEVA.y0 * ds, ds],
+    [latin, cx - lw / 2 - MOKSH_LATIN.x0 * ls, top + dh + gap - MOKSH_LATIN.y0 * ls, ls],
+  ];
+  const base = g.getTransform();
+  for (const [p, ox, oy, s] of parts) {
+    const M = (dx: number, dy: number) => base.multiply(new DOMMatrix([s, 0, 0, s, ox + dx, oy + dy]));
+    // the cut's dark shadow just below and right of each letter
+    g.save(); g.setTransform(M(.35, .55)); g.fillStyle = "rgba(0,20,10,.7)"; g.filter = "blur(.5px)"; g.fill(p); g.restore();
+    // the gilded letter
+    g.save(); g.setTransform(M(0, 0)); g.fillStyle = metalGrad(g, 0, -900, 0, 160, ["#fff3c2", "#dcae4c", "#93661a"]); g.fill(p); g.restore();
+    // inner shadow on the top-left walls and a light rim on the lower-right walls
+    for (const [dx, dy, col] of [[.9, 1.1, "rgba(70,40,5,.6)"], [-.6, -.7, "rgba(255,250,225,.8)"]] as [number, number, string][]) {
+      g.save(); g.setTransform(M(0, 0)); g.clip(p);
+      g.setTransform(M(dx, dy));
+      const hole = new Path2D(); hole.rect(-4000, -4000, 12000, 12000); hole.addPath(p);
+      g.fillStyle = col; g.fill(hole, "evenodd"); g.restore();
+    }
+  }
+}
+
+/** The frame around the squares, for one model: a wooden rim with a gold inlay (tray), a marble border with a gold band
+    (marble), or a carved wooden rim with gold rosettes at the corners (inlay). */
+function frame(g: CanvasRenderingContext2D, look: Look, pal: Pal) {
+  const line = (x1: number, y1: number, x2: number, y2: number, c: string, w: number) => { g.strokeStyle = c; g.lineWidth = w; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); };
+  if (look.model === "marble") {
+    stone(g, 0, 0, W, W, pal.stone, pal.vein, 41, 6);
+    line(1.5, 1.5, W - 1.5, 1.5, "rgba(255,255,255,.7)", 3); line(1.5, 1.5, 1.5, W - 1.5, "rgba(255,255,255,.5)", 3);
+    line(1, W - 1, W - 1, W - 1, rgba(pal.groove, .7), 2); line(W - 1, 1, W - 1, W - 1, rgba(pal.groove, .6), 2);
+  } else {
+    const fw = rimWood(pal);
+    grain(g, 0, 0, W, PAD, fw, 11); grain(g, 0, W - PAD, W, PAD, fw, 12);
+    grain(g, 0, 0, PAD, W, fw, 13, true); grain(g, W - PAD, 0, PAD, W, fw, 14, true);
+    g.strokeStyle = "rgba(0,0,0,.35)"; g.lineWidth = 1;
+    for (const [a, b, c, d] of [[0, 0, PAD, PAD], [W, 0, W - PAD, PAD], [0, W, PAD, W - PAD], [W, W, W - PAD, W - PAD]]) { g.beginPath(); g.moveTo(a, b); g.lineTo(c, d); g.stroke(); }
+    line(1.5, 1.5, W - 1.5, 1.5, "rgba(255,238,205,.45)", 3); line(1.5, 1.5, 1.5, W - 1.5, "rgba(255,238,205,.3)", 3);
+    line(1, W - 1, W - 1, W - 1, "rgba(0,0,0,.5)", 2); line(W - 1, 1, W - 1, W - 1, "rgba(0,0,0,.45)", 2);
+    const roll = g.createLinearGradient(0, 0, 0, PAD);
+    roll.addColorStop(0, "rgba(255,240,210,.18)"); roll.addColorStop(.5, "rgba(255,240,210,0)"); roll.addColorStop(1, "rgba(0,0,0,.25)");
+    g.fillStyle = roll; g.fillRect(0, 0, W, PAD);
+  }
+  // the gold band just inside the frame
+  g.strokeStyle = metalGrad(g, 0, 0, W, W, pal.metal); g.lineWidth = look.model === "marble" ? 4.2 : 2.4;
+  g.strokeRect(PAD - 7, PAD - 7, S * 10 + 14, S * 10 + 14);
+  g.strokeStyle = rgba(pal.rimDark, .45); g.lineWidth = .8; g.strokeRect(PAD - 4.6, PAD - 4.6, S * 10 + 9.2, S * 10 + 9.2);
+  if (look.model === "inlay") for (const [x, y] of [[PAD / 2, PAD / 2], [W - PAD / 2, PAD / 2], [PAD / 2, W - PAD / 2], [W - PAD / 2, W - PAD / 2]]) rosette(g, x, y, PAD * .42, pal);
+}
+/** A carved gold rosette (the inlay board's corners). */
+function rosette(g: CanvasRenderingContext2D, x: number, y: number, r: number, pal: Pal) {
+  g.save(); g.translate(x, y);
+  g.fillStyle = "rgba(0,0,0,.3)"; g.beginPath(); g.arc(1, 1.4, r * 1.05, 0, Math.PI * 2); g.fill();
+  for (let i = 0; i < 8; i++) { g.rotate(Math.PI / 4); g.fillStyle = metalGrad(g, -r, -r, r, r, pal.metal); g.beginPath(); g.ellipse(0, -r * .55, r * .28, r * .5, 0, 0, Math.PI * 2); g.fill(); }
+  const gr = g.createRadialGradient(-r * .2, -r * .2, .3, 0, 0, r * .45); gr.addColorStop(0, pal.metal[0]); gr.addColorStop(1, pal.metal[2]);
+  g.fillStyle = gr; g.beginPath(); g.arc(0, 0, r * .38, 0, Math.PI * 2); g.fill();
   g.restore();
 }
 
-/** Square numbers, drawn last so snakes and ladders never hide them: bold figures in the top-left corner of each square,
-    dark on light woods (ivory on dark woods), with an outline so they stay clear where a snake or ladder crosses. */
-export const NUM_FONT = "800 20px 'DM Sans', system-ui, sans-serif";
-export const numberAt = (n: number): Pt => { const p = center(n); return { x: p.x - S / 2 + 4, y: p.y - S / 2 + 22 }; };
-/** On the WebGL 3D board numbers sit at the front-left of each square (nearest the players), so a token standing
-    toward the back of its square never hides one. */
-export const NUM_FONT_3D = "800 22px 'DM Sans', system-ui, sans-serif";
-export const numberAt3D = (n: number): Pt => { const p = center(n); return { x: p.x - S / 2 + 4, y: p.y + S / 2 - 6 }; };
-function numbers(g: CanvasRenderingContext2D, wood: Wood, front = false) {
+/** The START plaque on square 1, along its front edge beside the number: green enamel framed in gold, with an arrow. */
+function start(g: CanvasRenderingContext2D, p: Pt) {
+  const x = p.x - 11, y = p.y + S / 2 - 18, w = S / 2 + 7, h = 13;
   g.save();
-  g.textAlign = "left"; g.textBaseline = "alphabetic"; g.lineJoin = "round"; g.font = front ? NUM_FONT_3D : NUM_FONT;
+  g.shadowColor = "rgba(0,0,0,.35)"; g.shadowBlur = 2.5; g.shadowOffsetY = 1;
+  rr(g, x, y, w, h, 3.5); const gr = g.createLinearGradient(0, y, 0, y + h); gr.addColorStop(0, "#1f8a5b"); gr.addColorStop(1, "#0b4a31"); g.fillStyle = gr; g.fill();
+  g.shadowColor = "transparent"; g.strokeStyle = "#e9c877"; g.lineWidth = 1.2; g.stroke();
+  g.fillStyle = "#ffe9a8"; g.font = "800 8px 'DM Sans', system-ui, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText("START", x + w / 2 + 3, y + h / 2 + .5);
+  g.strokeStyle = "#ffe9a8"; g.lineWidth = 1.3; g.lineCap = "round"; g.lineJoin = "round";
+  g.beginPath(); g.moveTo(x + 3, y + h / 2); g.lineTo(x + 8, y + h / 2); g.moveTo(x + 6, y + h / 2 - 2.3); g.lineTo(x + 8, y + h / 2); g.lineTo(x + 6, y + h / 2 + 2.3); g.stroke();
+  g.restore();
+}
+
+/** Square numbers, drawn last so snakes and ladders never hide them: bold figures in the front-left corner of each square
+    (nearest the players, where a token standing in the middle never covers them), dark with a light outline. */
+export const NUM_FONT = "800 19px 'DM Sans', system-ui, sans-serif";
+export const numberAt = (n: number): Pt => { const p = center(n); return { x: p.x - S / 2 + 4.5, y: p.y + S / 2 - 5.5 }; };
+export const NUM_FONT_3D = NUM_FONT;
+export const numberAt3D = numberAt;
+function numbers(g: CanvasRenderingContext2D, pal: Pal) {
+  g.save();
+  g.textAlign = "left"; g.textBaseline = "alphabetic"; g.lineJoin = "round"; g.font = NUM_FONT;
   for (let n = 1; n <= 100; n++) {
-    const { x, y } = (front ? numberAt3D : numberAt)(n), t = String(n);
-    g.lineWidth = 4; g.strokeStyle = wood.inkEdge; g.strokeText(t, x, y);
-    g.fillStyle = wood.ink; g.fillText(t, x, y);
+    const { x, y } = numberAt(n), t = String(n);
+    g.lineWidth = 4.2; g.strokeStyle = pal.inkEdge; g.strokeText(t, x, y);
+    if (n === 100) { g.strokeStyle = "rgba(4,40,24,.95)"; g.strokeText(t, x, y); }
+    g.fillStyle = n === 100 ? "#ffe39a" : pal.ink; g.fillText(t, x, y);
   }
   g.restore();
 }
 
-/* ---------- ladders: round wooden rails and rungs, casting shadows on the board ---------- */
+/* ---------- ladders: bold rails of dark polished wood with light rungs, so they stand out on light boards ---------- */
+export const LADDER_HALF = 15;
+const RAIL = { base: "#7a3a16", light: "#c97a45", dark: "#3a1606" }, RUNG = { base: "#e2a55a", light: "#ffe0a8", dark: "#8a5520" };
 function ladder(g: CanvasRenderingContext2D, a: number, b: number) {
   const p1 = center(a), p2 = center(b), dx = p2.x - p1.x, dy = p2.y - p1.y, len = Math.hypot(dx, dy);
-  const ux = dx / len, uy = dy / len, nx = -uy, ny = ux, half = 14;
-  const ext = 9, s1 = { x: p1.x - ux * ext, y: p1.y - uy * ext }, s2 = { x: p2.x + ux * ext, y: p2.y + uy * ext };
+  const ux = dx / len, uy = dy / len, nx = -uy, ny = ux, half = LADDER_HALF;
+  const ext = 10, s1 = { x: p1.x - ux * ext, y: p1.y - uy * ext }, s2 = { x: p2.x + ux * ext, y: p2.y + uy * ext };
   const rungs = Math.floor(len / 19);
-  const cylinder = (x1: number, y1: number, x2: number, y2: number, r: number, base: string, light: string, dark: string) => {
+  const cylinder = (x1: number, y1: number, x2: number, y2: number, r: number, c: { base: string; light: string; dark: string }) => {
     const dxx = x2 - x1, dyy = y2 - y1, l = Math.hypot(dxx, dyy), px = -dyy / l, py = dxx / l;
     const gr = g.createLinearGradient(x1 + px * r, y1 + py * r, x1 - px * r, y1 - py * r);
     const lit = px * LIGHT.x + py * LIGHT.y > 0;                         // which side faces the light
-    gr.addColorStop(0, lit ? light : dark); gr.addColorStop(.45, base); gr.addColorStop(1, lit ? dark : light);
+    gr.addColorStop(0, lit ? c.light : c.dark); gr.addColorStop(.42, c.base); gr.addColorStop(1, lit ? c.dark : c.light);
     g.fillStyle = gr; g.beginPath();
     g.moveTo(x1 + px * r, y1 + py * r); g.lineTo(x2 + px * r, y2 + py * r); g.arc(x2, y2, r, Math.atan2(py, px), Math.atan2(-py, -px));
     g.lineTo(x1 - px * r, y1 - py * r); g.arc(x1, y1, r, Math.atan2(-py, -px), Math.atan2(py, px)); g.closePath(); g.fill();
+    g.strokeStyle = "rgba(30,10,0,.55)"; g.lineWidth = .7; g.stroke();
   };
   // shadow first
-  g.save(); g.filter = "blur(3.5px)"; g.strokeStyle = "rgba(0,0,0,.45)"; g.lineCap = "round";
-  for (const s of [1, -1]) { g.beginPath(); g.moveTo(s1.x + nx * half * s + 6, s1.y + ny * half * s + 9); g.lineTo(s2.x + nx * half * s + 6, s2.y + ny * half * s + 9); g.lineWidth = 9; g.stroke(); }
-  for (let i = 1; i < rungs; i++) { const k = i / rungs, x = p1.x + dx * k + 6, y = p1.y + dy * k + 9; g.beginPath(); g.moveTo(x + nx * half, y + ny * half); g.lineTo(x - nx * half, y - ny * half); g.lineWidth = 5.5; g.stroke(); }
+  g.save(); g.filter = "blur(3px)"; g.strokeStyle = "rgba(40,20,0,.5)"; g.lineCap = "round";
+  for (const s of [1, -1]) { g.beginPath(); g.moveTo(s1.x + nx * half * s + 6, s1.y + ny * half * s + 8); g.lineTo(s2.x + nx * half * s + 6, s2.y + ny * half * s + 8); g.lineWidth = 10; g.stroke(); }
+  for (let i = 1; i < rungs; i++) { const k = i / rungs, x = p1.x + dx * k + 6, y = p1.y + dy * k + 8; g.beginPath(); g.moveTo(x + nx * half, y + ny * half); g.lineTo(x - nx * half, y - ny * half); g.lineWidth = 6; g.stroke(); }
   g.restore();
   for (let i = 1; i < rungs; i++) {
     const k = i / rungs, x = p1.x + dx * k, y = p1.y + dy * k;
-    cylinder(x + nx * half, y + ny * half, x - nx * half, y - ny * half, 3.1, "#c78b45", "#f4d196", "#6b4318");
+    cylinder(x + nx * half, y + ny * half, x - nx * half, y - ny * half, 3.5, RUNG);
   }
-  for (const s of [1, -1]) cylinder(s1.x + nx * half * s, s1.y + ny * half * s, s2.x + nx * half * s, s2.y + ny * half * s, 4.6, "#b8782f", "#f2c882", "#5a3210");
-  for (let i = 1; i < rungs; i++) {                                     // wooden pegs where rungs meet rails
+  for (const s of [1, -1]) cylinder(s1.x + nx * half * s, s1.y + ny * half * s, s2.x + nx * half * s, s2.y + ny * half * s, 5.4, RAIL);
+  for (const [p, sgn] of [[s1, 1], [s2, -1]] as [Pt, number][]) for (const s of [1, -1]) {      // gold caps at the rail ends
+    const cx = p.x + nx * half * s - ux * sgn * 1.5, cy = p.y + ny * half * s - uy * sgn * 1.5, gr = g.createRadialGradient(cx - 1.2, cy - 1.2, .4, cx, cy, 5.4);
+    gr.addColorStop(0, "#fff1b8"); gr.addColorStop(.55, "#d9aa4a"); gr.addColorStop(1, "#7a5212");
+    g.fillStyle = gr; g.beginPath(); g.arc(cx, cy, 5, 0, Math.PI * 2); g.fill();
+  }
+  for (let i = 1; i < rungs; i++) {                                     // pegs where rungs meet rails
     const k = i / rungs, x = p1.x + dx * k, y = p1.y + dy * k;
-    for (const s of [1, -1]) { g.fillStyle = "#4a2a0c"; g.beginPath(); g.arc(x + nx * half * s, y + ny * half * s, 1.6, 0, Math.PI * 2); g.fill(); g.fillStyle = "rgba(255,230,180,.5)"; g.beginPath(); g.arc(x + nx * half * s - .5, y + ny * half * s - .5, .6, 0, Math.PI * 2); g.fill(); }
+    for (const s of [1, -1]) { g.fillStyle = "#2a0f02"; g.beginPath(); g.arc(x + nx * half * s, y + ny * half * s, 1.8, 0, Math.PI * 2); g.fill(); g.fillStyle = "rgba(255,230,180,.55)"; g.beginPath(); g.arc(x + nx * half * s - .5, y + ny * half * s - .5, .7, 0, Math.PI * 2); g.fill(); }
   }
 }
 
@@ -482,21 +636,22 @@ function varnish(g: CanvasRenderingContext2D) {
   sheen.addColorStop(0, "rgba(255,245,220,.10)"); sheen.addColorStop(.35, "rgba(255,245,220,.02)"); sheen.addColorStop(.5, "rgba(255,245,220,.07)"); sheen.addColorStop(.62, "rgba(255,245,220,0)"); sheen.addColorStop(1, "rgba(0,0,0,.10)");
   g.fillStyle = sheen; g.fillRect(0, 0, W, W);
   const v = g.createRadialGradient(W / 2, W / 2, W * .35, W / 2, W / 2, W * .75);
-  v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, "rgba(0,0,0,.16)");
+  v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, "rgba(0,0,0,.08)");
   g.fillStyle = v; g.fillRect(0, 0, W, W);
 }
 
-/** Paints the static board (frame, carved squares, ladders, snakes) into `layer` at the given pixel ratio. */
-export function paintBoard(layer: HTMLCanvasElement, dpr: number, woodId: WoodId = "maple") {
-  const wood = WOODS[woodId] ?? WOODS.maple;
+/** Paints the static board (frame, squares, ladders, snakes, numbers) for one model and theme into `layer` at the given pixel ratio. */
+export function paintBoard(layer: HTMLCanvasElement, dpr: number, look: Look = DEFAULT_LOOK) {
+  const pal = palette(look);
   layer.width = layer.height = Math.round(W * dpr);
   const g = layer.getContext("2d")!;
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
-  frameAndSquares(g, wood);
-  Object.entries(LADDERS).forEach(([a, b]) => onLayer(g, boxOf([center(+a), center(b)], 34), (c) => ladder(c, +a, b)));
+  frame(g, look, pal);
+  squares(g, look, pal);
+  Object.entries(LADDERS).forEach(([a, b]) => onLayer(g, boxOf([center(+a), center(b)], 36), (c) => ladder(c, +a, b)));
   Object.entries(SNAKES).forEach(([h, t], i) => onLayer(g, boxOf(snakePath(+h, t), 54), (c) => snake(c, +h, t, SPECIES[i % SPECIES.length], 100 + i)));
   varnish(g);
-  numbers(g, wood);
+  numbers(g, pal);
 }
 
 /* ---------- moving parts drawn over the board during animations ---------- */
@@ -533,18 +688,19 @@ export function ladderSteps(a: number, b: number, rungs: number): Pt[] {
     A contact shadow and a ring in the player's colour sit on the board; the active player's token also gets a gold glow.
     `lift` raises the token off the board (hops), in board units. Until `img` has loaded a plain disc is drawn. */
 /** Height of a standing token, in board units (a square is 60). */
-export const PIECE_H = 52;
-export function paintPiece(g: CanvasRenderingContext2D, x: number, y: number, u: number, sq: number, ring: string, img: HTMLImageElement | null, active: boolean, scale = 1, lift = 0) {
+export const PIECE_H = 44;
+export function paintPiece(g: CanvasRenderingContext2D, x: number, y: number, u: number, sq: number, ring: string, img: HTMLImageElement | null, active: boolean, scale = 1, lift = 0, lean = 0) {
   if (scale <= 0.02) return;
   const k = u * scale, h = PIECE_H * k, w = h * (100 / 120), top = y - lift * u;
   g.save();
-  g.fillStyle = `rgba(0,0,0,${(.45 * Math.max(.3, 1 - lift / 26)).toFixed(3)})`;
-  g.beginPath(); g.ellipse(x + 2 * k, y + 1.2 * k, 15.5 * k * (1 - Math.min(.3, lift / 60)), 15.5 * k * sq, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = `rgba(0,0,0,${(.4 * Math.max(.3, 1 - lift / 26)).toFixed(3)})`;
+  g.beginPath(); g.ellipse(x + 1.6 * k, y + 1 * k, 13 * k * (1 - Math.min(.3, lift / 60)), 13 * k * sq, 0, 0, Math.PI * 2); g.fill();
   if (active) {
-    g.strokeStyle = "rgba(255,226,140,.95)"; g.lineWidth = 2.6 * u; g.shadowColor = "rgba(255,206,100,.95)"; g.shadowBlur = 10 * u;
-    g.beginPath(); g.ellipse(x, y, 19.5 * k, 19.5 * k * sq, 0, 0, Math.PI * 2); g.stroke(); g.shadowBlur = 0;
+    g.strokeStyle = "rgba(255,226,140,.95)"; g.lineWidth = 2.4 * u; g.shadowColor = "rgba(255,206,100,.95)"; g.shadowBlur = 9 * u;
+    g.beginPath(); g.ellipse(x, y, 16.5 * k, 16.5 * k * sq, 0, 0, Math.PI * 2); g.stroke(); g.shadowBlur = 0;
   }
-  g.strokeStyle = ring; g.lineWidth = 2.6 * k; g.beginPath(); g.ellipse(x, y, 15 * k, 15 * k * sq, 0, 0, Math.PI * 2); g.stroke();
+  g.strokeStyle = ring; g.lineWidth = 2.4 * k; g.beginPath(); g.ellipse(x, y, 12.5 * k, 12.5 * k * sq, 0, 0, Math.PI * 2); g.stroke();
+  if (lean) { g.translate(x, top); g.rotate(lean); g.translate(-x, -top); }
   if (img && img.complete && img.naturalWidth) g.drawImage(img, x - w / 2, top - h * (106 / 120), w, h);
   else { g.fillStyle = ring; g.beginPath(); g.arc(x, top - 12 * k, 12 * k, 0, Math.PI * 2); g.fill(); g.strokeStyle = "#fffaf0"; g.lineWidth = 2 * u; g.stroke(); }
   g.restore();
@@ -552,8 +708,8 @@ export function paintPiece(g: CanvasRenderingContext2D, x: number, y: number, u:
 
 type ProjFn = (x: number, y: number, z?: number) => { x: number; y: number; u: number };
 /** What sits under and around the tilted board: its shadow on the table, the board's front and side edges, and palm leaves at the corners. */
-export function paintBase(g: CanvasRenderingContext2D, P: ProjFn, woodId: WoodId) {
-  const wood = WOODS[woodId] ?? WOODS.maple, T = THICK;
+export function paintBase(g: CanvasRenderingContext2D, P: ProjFn, look: Look = DEFAULT_LOOK) {
+  const pal = palette(look), T = THICK, edge = look.model === "marble" ? { frame: mix(pal.stone, pal.vein, .35), light: "#ffffff" } : { frame: pal.rim, light: pal.rimLight };
   const q = (pts: { x: number; y: number }[]) => { g.beginPath(); pts.forEach((p, i) => (i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y))); g.closePath(); };
   const c0 = P(0, 0, -T), c1 = P(W, 0, -T), c2 = P(W, W, -T), c3 = P(0, W, -T), u = P(W / 2, W, 0).u;
   // soft shadow on the table
@@ -568,7 +724,7 @@ export function paintBase(g: CanvasRenderingContext2D, P: ProjFn, woodId: WoodId
     const area = (pts[1].x - pts[0].x) * (pts[2].y - pts[0].y) - (pts[1].y - pts[0].y) * (pts[2].x - pts[0].x);
     if (area <= 0.5) continue;
     const gr = g.createLinearGradient(0, Math.min(pts[0].y, pts[1].y), 0, Math.max(pts[2].y, pts[3].y));
-    gr.addColorStop(0, mix(wood.frame, wood.light, .35 * light)); gr.addColorStop(.25, mix(wood.frame, "#000000", .1 + (1 - light) * .3)); gr.addColorStop(1, mix(wood.frame, "#000000", .55));
+    gr.addColorStop(0, mix(edge.frame, edge.light, .35 * light)); gr.addColorStop(.25, mix(edge.frame, "#000000", .1 + (1 - light) * .3)); gr.addColorStop(1, mix(edge.frame, "#000000", .5));
     q(pts); g.fillStyle = gr; g.fill();
     // grain along the edge
     g.save(); q(pts); g.clip(); g.lineWidth = Math.max(.6, .8 * u);
@@ -599,36 +755,31 @@ function leaves(g: CanvasRenderingContext2D, x: number, y: number, out: number, 
 }
 
 /* ---------- textures for the WebGL 3D board (scene3d.ts) ---------- */
-/** The playing surface (10 x 10 squares, no rim) as a texture: each square's own grain in two alternating woods,
-    the START plaque and the finish flag. `px` is the canvas size in pixels. Numbers are painted separately. */
-export function paintSurface(c: HTMLCanvasElement, px: number, woodId: WoodId) {
-  const wood = WOODS[woodId] ?? WOODS.maple, k = px / (S * 10);
+/** The playing surface (10 x 10 squares, no rim) as a texture for one model and theme, with the START plaque and the
+    MOKSH engraving. `px` is the canvas size in pixels. Numbers are painted separately. */
+export function paintSurface(c: HTMLCanvasElement, px: number, look: Look = DEFAULT_LOOK) {
+  const k = px / (S * 10);
   c.width = c.height = px;
   const g = c.getContext("2d")!; g.setTransform(k, 0, 0, k, -PAD * k, -PAD * k);
-  g.fillStyle = "#2a1407"; g.fillRect(PAD, PAD, S * 10, S * 10);
-  for (let n = 1; n <= 100; n++) {
-    const p = center(n), row = Math.floor((n - 1) / 10), col = (n - 1) % 10, base = (row + col) % 2 ? wood.tileB : wood.tileA;
-    const tw = { ...wood, base, light: mix(base, "#ffdca6", .32), dark: mix(base, "#7a3a0c", .32), grain: mix(wood.grain, "#8a4a14", .35), contrast: wood.contrast * .62 };
-    grain(g, p.x - S / 2, p.y - S / 2, S, S, tw, 1000 + n * 7, (row + col) % 2 === 1, .1);
-  }
-  const m = center(100), halo = g.createRadialGradient(m.x + 6, m.y + 4, 3, m.x, m.y, 40);
-  halo.addColorStop(0, "rgba(255,214,120,.55)"); halo.addColorStop(1, "rgba(255,214,120,0)");
-  g.fillStyle = halo; g.fillRect(m.x - S / 2, m.y - S / 2, S, S);
-  flag(g, m.x + 12, m.y - 18);
-  start(g, center(1), true);
+  squares(g, look, palette(look));
 }
 /** The square numbers alone, on a transparent texture covering the playing surface (drawn above snakes and ladders). */
-export function paintNumbers(c: HTMLCanvasElement, px: number, woodId: WoodId) {
-  const wood = WOODS[woodId] ?? WOODS.maple, k = px / (S * 10);
+export function paintNumbers(c: HTMLCanvasElement, px: number, look: Look = DEFAULT_LOOK) {
+  const k = px / (S * 10);
   c.width = c.height = px;
   const g = c.getContext("2d")!; g.setTransform(k, 0, 0, k, -PAD * k, -PAD * k);
-  numbers(g, wood, true);
+  numbers(g, palette(look));
 }
-/** A plank of wood (rim, sides, ladder rails), grain running along it. */
-export function paintPlank(c: HTMLCanvasElement, w: number, h: number, woodId: WoodId, seed: number, which: "frame" | "light" = "frame") {
-  const wood = WOODS[woodId] ?? WOODS.maple;
+/** The frame's material as a strip `w` x `h` px: wood with the grain running along it, or the marble slab's stone. */
+export function paintPlank(c: HTMLCanvasElement, w: number, h: number, look: Look, seed: number) {
+  const pal = palette(look);
   c.width = w; c.height = h;
   const g = c.getContext("2d")!;
-  const base = which === "frame" ? wood.frame : wood.tileB;
-  grain(g, 0, 0, w, h, { ...wood, base, light: mix(base, wood.light, .5), dark: mix(base, "#000000", .3) }, seed, false, .5);
+  if (look.model === "marble") stone(g, 0, 0, w, h, pal.stone, pal.vein, seed, 4);
+  else grain(g, 0, 0, w, h, rimWood(pal), seed, false, .5);
+}
+/** Polished dark wood for the ladder rails (the same on every board, so ladders always stand out). */
+export function paintRail(c: HTMLCanvasElement, w: number, h: number, seed: number) {
+  c.width = w; c.height = h;
+  grain(c.getContext("2d")!, 0, 0, w, h, { base: RAIL.base, light: RAIL.light, dark: RAIL.dark, grain: "#1e0a02", contrast: .8 }, seed, false, 0);
 }

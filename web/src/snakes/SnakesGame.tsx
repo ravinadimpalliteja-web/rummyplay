@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { RoomClient, deviceToken, randomPasscode, saveRoom, savedRoom, serverUrl, type NetStatus } from "../domain/online";
 import { BOARD_VERSION, CHAT_EMOJIS, CHAT_PHRASES, TIMING, newGame, roll, rollDie, rungsOf, snakeSlideMs, turnOf, type LastRoll, type SLGame } from "./engine";
-import { NUM_FONT, OFF, PIECE_H, SHARED, SHARED3D, W, WOODS, WOOD_IDS, center, ladderSteps, layoutIssues, numberAt, paintBase, paintBoard, paintPiece, paintSnakeBulge, paintSnakeMouth, snakePath, spot, spot3D, type Pt, type WoodId } from "./board";
+import { MODELS, MODEL_IDS, NUM_FONT, OFF, PIECE_H, SHARED, SHARED3D, THEMES, THEME_IDS, W, center, layoutIssues, numberAt, paintBase, paintBoard, paintPiece, paintSnakeBulge, paintSnakeMouth, snakePath, spot, spot3D, type Look, type ModelId, type Pt, type ThemeId } from "./board";
 import { fitView, planeStyle, project, squash, type View } from "./view3d";
 import { setSound, sfx, soundOn, unlock } from "./sound";
 import { celebrate } from "./confetti";
@@ -10,7 +10,7 @@ import { DEFAULT_PIECES, PIECE_IDS, pieceById, pieceImage, pieceUrl, type PieceI
 import "./snakes.css";
 
 const ROOM_KEY = "rc-snakes-room", PIECE_KEY = "rc-snakes-piece";
-const WOOD_KEY = "rc-snakes-wood", DICE_KEY = "rc-snakes-dice", VIEW_KEY = "rc-snakes-view", GL_SLOW_KEY = "rc-snakes-3d-slow";
+const MODEL_KEY = "rc-snakes-model", THEME_KEY = "rc-snakes-theme", DICE_KEY = "rc-snakes-dice", VIEW_KEY = "rc-snakes-view", GL_SLOW_KEY = "rc-snakes-3d-slow";
 const DICE = [
   { id: "ivory", name: "Classic ivory" }, { id: "brass", name: "Polished brass" }, { id: "glass", name: "Emerald glass" },
   { id: "rosewood", name: "Carved rosewood" }, { id: "onyx", name: "Black onyx" },
@@ -39,6 +39,8 @@ const lowPower = () => { const n = navigator as Navigator & { deviceMemory?: num
 type Scene3D = import("./scene3d").BoardScene;
 const DEBUG = typeof location !== "undefined" && /[?&]debug\b/.test(location.search);
 const wait = (ms: number) => new Promise<void>(r => window.setTimeout(r, ms * pace));
+/** How long a climb's gold sparkle and the landing ring last (ms; they fade while the game goes on). */
+const SPARK_MS = 650, BURST_MS = 520;
 
 type SeatInfo = { seat: number; name: string; connected: boolean; away: boolean; piece?: PieceId } | null;
 type SLView = {
@@ -53,7 +55,8 @@ type Table = {
   pos: Record<number, number>; turn: number; streak: number; last: LastRoll | null;
   phase: "playing" | "gameEnd"; winner: number | null; finished: number[]; pieces: Record<number, PieceId>;
 };
-type Disp = Pt & { s?: number; h?: number };
+/** A token as shown: position, scale (s), lift (h), and while climbing its lean, sway and heading (dir). */
+type Disp = Pt & { s?: number; h?: number; lean?: number; sway?: number; dir?: number };
 
 const fromView = (v: SLView): Table | null => v.phase === "lobby" || !v.order ? null : {
   you: v.you, order: v.order,
@@ -114,7 +117,9 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
   const [rolling, setRolling] = useState<number | null>(null);
   const rollingRef = useRef<number | null>(null); rollingRef.current = rolling;
   const [dieValue, setDieValue] = useState(6);
-  const [wood, setWood] = useState<WoodId>(() => readKey(WOOD_KEY, WOOD_IDS, "maple"));
+  const [model, setModel] = useState<ModelId>(() => readKey(MODEL_KEY, MODEL_IDS, "tray"));
+  const [theme, setTheme] = useState<ThemeId>(() => readKey(THEME_KEY, THEME_IDS, "ivory"));
+  const look = useMemo<Look>(() => ({ model, theme }), [model, theme]);
   const [dice, setDice] = useState<DiceId>(() => readKey(DICE_KEY, DICE.map(d => d.id), "ivory"));
   const [panel, setPanel] = useState<"none" | "settings" | "rules" | "chat">("none");
   const [view3d, setView3d] = useState<"3d" | "flat">(() => readKey(VIEW_KEY, ["3d", "flat"], can3d ? "3d" : "flat"));
@@ -140,6 +145,8 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
   const disp = useRef<Record<number, Disp | null>>({}), dirty = useRef(true);
   const overlay = useRef<{ mouth?: { head: number; open: number }; bulge?: { head: number; k: number; color: string } }>({});
   const animatedN = useRef<number | null>(null), chain = useRef<Promise<void>>(Promise.resolve());
+  /** Short-lived effects that outlive a move: gold sparkles from a climb and the ring when a token lands. */
+  const effects = useRef<{ sparks: { x: number; y: number; h: number; born: number }[]; burst: { x: number; y: number; born: number } | null }>({ sparks: [], burst: null });
 
   const online = !!view && view.phase !== "lobby";
   /* In a room, use this device's last chosen token if it is free. */
@@ -292,7 +299,7 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     canvas.addEventListener("webglcontextlost", lost);
     import("./scene3d").then(m => {
       if (!live) return;
-      const sc = new m.BoardScene(canvas, wood, lowPower(), { testLite: DEBUG && /[?&]gllite\b/.test(location.search) });
+      const sc = new m.BoardScene(canvas, look, lowPower(), { testLite: DEBUG && /[?&]gllite\b/.test(location.search) });
       sceneRef.current = sc;
       const fit = () => { const w = stage.clientWidth, h = stage.clientHeight; if (w > 40 && h > 40) { sc.resize(w, h, window.devicePixelRatio || 1); dirty.current = true; } };
       fit(); setGlState("ready");
@@ -300,7 +307,7 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     }).catch(() => { if (live) setGlState("off"); });
     return () => { live = false; ro?.disconnect(); window.clearTimeout(timer); canvas.removeEventListener("webglcontextlost", lost); sceneRef.current?.dispose(); sceneRef.current = null; };
   }, [sub, !!table, useGL]);
-  useEffect(() => { sceneRef.current?.setWood(wood); dirty.current = true; }, [wood]);
+  useEffect(() => { sceneRef.current?.setLook(look); dirty.current = true; }, [look]);
   useEffect(() => { if (!animating) settle(); }, [useGL]);
 
   /* Paint the board picture, the base (shadow, edges, leaves) and size the token and effect layers whenever the fit or the wood changes. */
@@ -311,11 +318,11 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     const paint = () => {
       const dpr = Math.min(2.5, window.devicePixelRatio || 1), pd = Math.min(2, dpr);
       const t0 = performance.now();
-      paintBoard(board, Math.min(2400, Math.round(geo.B * dpr * (geo.A ? 1.3 : 1))) / W, wood);
+      paintBoard(board, Math.min(2400, Math.round(geo.B * dpr * (geo.A ? 1.3 : 1))) / W, look);
       if (DEBUG) (window as unknown as { __slPaints?: number[] }).__slPaints = [...((window as unknown as { __slPaints?: number[] }).__slPaints ?? []), Math.round(performance.now() - t0)];
       for (const c of [base, pieces]) { c.width = Math.round(geo.sw * pd); c.height = Math.round(geo.sh * pd); }
       const bg = base.getContext("2d")!; bg.setTransform(pd, 0, 0, pd, 0, 0);
-      paintBase(bg, (x, y, z) => project(geo, x, y, z), wood);
+      paintBase(bg, (x, y, z) => project(geo, x, y, z), look);
       fx.width = fx.height = Math.round(Math.min(1600, geo.B * pd));
       dirty.current = true;
     };
@@ -324,9 +331,22 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     // repaint once the number font has arrived (only if it was still loading)
     if (document.fonts && document.fonts.status !== "loaded") document.fonts.ready.then(() => { if (live) paint(); }).catch(() => undefined);
     return () => { live = false; };
-  }, [geo, wood, sub]);
+  }, [geo, look, sub]);
 
   /* Each frame (only when something moved): tokens upright at their projected spots, back to front; snake effects on their own layer. */
+  /** The sparkles and landing ring still showing (ages 0..1); keeps the board redrawing while any are alive. */
+  const frozenFx = useRef<ReturnType<typeof liveEffects> | null>(null);
+  const liveEffects = (): { sparks: { x: number; y: number; h: number; age: number }[]; burst?: { x: number; y: number; k: number } } => {
+    if (frozenFx.current) return frozenFx.current;
+    const now = performance.now(), e = effects.current;
+    e.sparks = e.sparks.filter(k => now - k.born < SPARK_MS);
+    if (e.burst && now - e.burst.born > BURST_MS) e.burst = null;
+    if (e.sparks.length || e.burst) dirty.current = true;
+    return {
+      sparks: e.sparks.slice(-48).map(k => ({ x: k.x, y: k.y, h: k.h, age: (now - k.born) / SPARK_MS })),
+      burst: e.burst ? { x: e.burst.x, y: e.burst.y, k: (now - e.burst.born) / BURST_MS } : undefined,
+    };
+  };
   const boxes = useRef<{ seat: number; x0: number; y0: number; x1: number; y1: number }[]>([]);
   const glPrev = useRef(0), glGaps = useRef<number[]>([]);
   useEffect(() => {
@@ -349,8 +369,8 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
           }
         }
         if (!t) return;
-        const turn = rollingRef.current ?? (t.phase === "playing" ? t.turn : -1);
-        sc.frame(t.order.flatMap(s => { const p = disp.current[s]; return p ? [{ seat: s, piece: t.pieces[s], color: COLORS[s], x: p.x, y: p.y, h: p.h ?? 0, s: p.s ?? 1, active: s === turn }] : []; }), overlay.current);
+        const turn = rollingRef.current ?? (t.phase === "playing" ? t.turn : -1), fx3 = liveEffects();
+        sc.frame(t.order.flatMap(s => { const p = disp.current[s]; return p ? [{ seat: s, piece: t.pieces[s], color: COLORS[s], x: p.x, y: p.y, h: p.h ?? 0, s: p.s ?? 1, active: s === turn, lean: p.lean, sway: p.sway, dir: p.dir }] : []; }), { ...overlay.current, ...fx3 });
         return;
       }
       const v = geoRef.current, pc = piecesRef.current, fx = fxRef.current;
@@ -370,11 +390,19 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
       const items = t.order.map(s => ({ s, p: disp.current[s] })).filter((i): i is { s: number; p: Disp } => !!i.p).sort((a, b) => a.p.y - b.p.y || a.p.x - b.p.x);
       for (const { s, p } of items) {
         const q = project(v, p.x, p.y), sc = p.s ?? 1;
-        paintPiece(g, q.x, q.y, q.u, squash(v, p.x, p.y), COLORS[s], pieceImage(t.pieces[s], () => { dirty.current = true; }), s === turn, sc, p.h ?? 0);
+        paintPiece(g, q.x, q.y, q.u, squash(v, p.x, p.y), COLORS[s], pieceImage(t.pieces[s], () => { dirty.current = true; }), s === turn, sc, p.h ?? 0, p.sway ?? 0);
         const h = PIECE_H * q.u * sc, w = h * (100 / 120), top = q.y - (p.h ?? 0) * q.u;
         if (sc > .05) out.push({ seat: s, x0: q.x - w * .34, x1: q.x + w * .34, y0: top - h * .84, y1: q.y });
       }
       boxes.current = out;
+      // gold sparkles and the landing ring
+      const fx2 = liveEffects();
+      if (fx2.burst) { const q = project(v, fx2.burst.x, fx2.burst.y), k = fx2.burst.k, r = (12 + k * 30) * q.u; g.strokeStyle = `rgba(255,217,122,${((1 - k) * .9).toFixed(3)})`; g.lineWidth = 3 * q.u * (1 - k * .6); g.beginPath(); g.ellipse(q.x, q.y, r, r * squash(v, fx2.burst.x, fx2.burst.y), 0, 0, Math.PI * 2); g.stroke(); }
+      for (const k of fx2.sparks) {
+        const q = project(v, k.x, k.y), life = 1 - k.age, r = (3 + 4 * Math.sin(Math.min(1, k.age * 3) * Math.PI / 2)) * life * q.u, y = q.y - (k.h + 18 + k.age * 34) * q.u;
+        const gr = g.createRadialGradient(q.x, y, 0, q.x, y, r * 2.2); gr.addColorStop(0, `rgba(255,255,235,${life})`); gr.addColorStop(.3, `rgba(255,222,130,${life * .9})`); gr.addColorStop(1, "rgba(255,190,60,0)");
+        g.fillStyle = gr; g.fillRect(q.x - r * 2.2, y - r * 2.2, r * 4.4, r * 4.4);
+      }
     };
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
@@ -384,6 +412,22 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     (window as unknown as { __slPerf?: () => unknown }).__slPerf = () => sceneRef.current?.perf();
     (window as unknown as { __slForce?: () => void }).__slForce = () => { dirty.current = true; };
     (window as unknown as { __slOverlay?: (o: typeof overlay.current) => void }).__slOverlay = (o) => { overlay.current = o; dirty.current = true; };
+    (window as unknown as { __slPieces?: (ids: PieceId[]) => void }).__slPieces = (ids) => setLocalPieces(ids);
+    /* a still of the ladder climb (token part-way up ladder a -> b, leaning and swaying, sparkles behind), for photos */
+    (window as unknown as { __slClimbStill?: (a: number, b: number, k: number) => void }).__slClimbStill = (a, b, k) => {
+      const t = tableRef.current; if (!t) return;
+      const p1 = center(a), p2 = center(b), dir = Math.atan2(p2.y - p1.y, p2.x - p1.x), at = (f: number) => ({ x: p1.x + (p2.x - p1.x) * f, y: p1.y + (p2.y - p1.y) * f });
+      disp.current[t.order[0]] = { ...at(k), h: 5, lean: .32, sway: .18, dir };
+      frozenFx.current = { sparks: [.08, .16, .24, .32].flatMap((d, i) => [0, 1, 2].map(j => ({ ...at(Math.max(0, k - d)), x: at(Math.max(0, k - d)).x + (j - 1) * 9, h: 4 + j * 5, age: .15 + i * .2 }))), burst: { ...center(b), k: .35 } };
+      dirty.current = true;
+    };
+    /* place the tokens on given squares (one per seat, 0 = waiting), as a test of where they stand */
+    (window as unknown as { __slPlace?: (sq: number[]) => void }).__slPlace = (sq) => {
+      const t = tableRef.current; if (!t) return;
+      const fake = { ...t, pos: Object.fromEntries(t.order.map((s, i) => [s, sq[i] ?? 0])) };
+      for (const s of t.order) disp.current[s] = restPoint(fake, s) ?? { ...OFF };
+      dirty.current = true;
+    };
   });
   /* Test hook (only with ?debug in the address): where tokens and square numbers are on screen, to check none is hidden. */
   useEffect(() => {
@@ -471,12 +515,28 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     if (l.outcome === "enter") { sfx.hop(); await follow(seat, [OFF, spotOf(1)], TIMING.enter, 16); }
     if (l.outcome === "move") for (let n = l.from + 1; n <= l.landed; n++) { sfx.hop(); await follow(seat, [here(), spotOf(n)], TIMING.step, 12); }
     if (l.via === "ladder") {
-      // climb rung by rung
-      const rungs = rungsOf(l.landed, l.to);
-      await wait(TIMING.ladderBase);
+      /* The climb (same length as the server's pause): the token steps onto the foot of the ladder and leans in, then
+         goes up rung by rung, hand over hand, swaying side to side with a little bounce on each rung and a trail of gold
+         sparkles, and steps off onto the top square with a gold ring. */
+      const rungs = rungsOf(l.landed, l.to), foot = center(l.landed), top = spotOf(l.to), topC = center(l.to);
+      const dir = Math.atan2(topC.y - foot.y, topC.x - foot.x), from = here(), LEAN = .32;
+      await tween(TIMING.ladderBase, t => { const e = t * t * (3 - 2 * t); disp.current[seat] = { x: from.x + (foot.x - from.x) * e, y: from.y + (foot.y - from.y) * e, h: Math.sin(t * Math.PI) * 4, s: 1 - .07 * Math.sin(t * Math.PI), lean: LEAN * e, dir }; });
       sfx.ladder(rungs, TIMING.rung * pace, 0);
-      const steps = ladderSteps(l.landed, l.to, rungs); steps[steps.length - 1] = spotOf(l.to);
-      for (const p of steps) await follow(seat, [here(), p], TIMING.rung, 6);
+      for (let i = 1; i <= rungs; i++) {
+        const k0 = (i - 1) / rungs, k1 = i / rungs, last = i === rungs, side = i % 2 ? 1 : -1;
+        const a = { x: foot.x + (topC.x - foot.x) * k0, y: foot.y + (topC.y - foot.y) * k0 }, b = last ? top : { x: foot.x + (topC.x - foot.x) * k1, y: foot.y + (topC.y - foot.y) * k1 };
+        let sparked = false;
+        await tween(TIMING.rung, t => {
+          const e = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+          disp.current[seat] = { x: a.x + (b.x - a.x) * e, y: a.y + (b.y - a.y) * e, h: Math.sin(t * Math.PI) * (last ? 12 : 6), s: last ? 1 + .1 * Math.sin(t * Math.PI) : 1, lean: last ? LEAN * (1 - e) : LEAN, sway: last ? 0 : side * .2 * Math.sin(t * Math.PI), dir };
+          if (!sparked && t > .45) {
+            sparked = true;
+            const now = performance.now(), p = disp.current[seat]!;
+            for (let j = 0; j < 3; j++) effects.current.sparks.push({ x: p.x + (Math.random() - .5) * 22, y: p.y + (Math.random() - .5) * 14, h: Math.random() * 14, born: now - j * 40 });
+          }
+        });
+      }
+      effects.current.burst = { x: top.x, y: top.y, born: performance.now() };
     }
     if (l.via === "snake") {
       // the snake opens its mouth and swallows the pawn, a bulge slides down its body, and the pawn pops out at the tail
@@ -495,6 +555,7 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
       });
       overlay.current = {};
       const end = spotOf(l.to);
+      effects.current.burst = { x: end.x, y: end.y, born: performance.now() };
       await tween(TIMING.pop, t => { const s = t < .6 ? (t / .6) * 1.25 : 1.25 - ((t - .6) / .4) * .25; disp.current[seat] = { x: end.x, y: end.y, h: Math.sin(t * Math.PI) * 14, s }; });
     }
     if (l.outcome === "three-sixes") { sfx.oops(); await wait(150); await follow(seat, [here(), l.to === 0 ? OFF : spotOf(l.to)], TIMING.ret - 150); }
@@ -543,7 +604,8 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
   });
   const secsLeft = online && view?.deadline != null && table?.turn === table?.you ? Math.max(0, Math.ceil((view.deadline - (Date.now() + skew.current)) / 1000)) : null;
   const showEnd = !!table && table.phase === "gameEnd" && !animating;
-  const chooseWood = (w: WoodId) => { setWood(w); keep(WOOD_KEY, w); };
+  const chooseModel = (m: ModelId) => { setModel(m); keep(MODEL_KEY, m); };
+  const chooseTheme = (t: ThemeId) => { setTheme(t); keep(THEME_KEY, t); };
   const chooseDice = (d: DiceId) => { setDice(d); keep(DICE_KEY, d); };
   const togglePanel = (p: "settings" | "rules" | "chat") => setPanel(x => (x === p ? "none" : p));
   const chooseView = (v: "3d" | "flat") => { setView3d(v); keep(VIEW_KEY, v); if (v === "3d") { keep(GL_SLOW_KEY, ""); setGlState(s => (s === "off" ? "idle" : s)); } };
@@ -713,8 +775,10 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     {panel === "settings" && <div className="sl-sheet" role="dialog" aria-label="Settings">
       <b>Board view</b>
       <div className="sl-opts">{(["3d", "flat"] as const).map(v => <button key={v} className={v === view3d ? "on" : ""} aria-pressed={v === view3d} disabled={v === "3d" && !can3d} onClick={() => chooseView(v)}>{v === "3d" ? "3D board" : "Flat, top-down"}</button>)}</div>
-      <b>Board wood</b>
-      <div className="sl-opts">{WOOD_IDS.map(w => <button key={w} className={w === wood ? "on" : ""} aria-pressed={w === wood} onClick={() => chooseWood(w)}><i className={`sl-swatch w-${w}`} />{WOODS[w].name}</button>)}</div>
+      <b>Board model</b>
+      <div className="sl-opts models">{MODEL_IDS.map(m => <button key={m} className={m === model ? "on" : ""} aria-pressed={m === model} onClick={() => chooseModel(m)}><i className={`sl-model m-${m}`} aria-hidden="true" /><span><b>{MODELS[m].name}</b><small>{MODELS[m].blurb}</small></span></button>)}</div>
+      <b>Theme</b>
+      <div className="sl-opts themes">{THEME_IDS.map(t => { const [a, b, c] = THEMES[t].swatch; return <button key={t} className={t === theme ? "on" : ""} aria-pressed={t === theme} onClick={() => chooseTheme(t)}><i className="sl-swatch" style={{ background: `conic-gradient(${a} 0 25%,${b} 0 50%,${a} 0 75%,${b} 0)`, boxShadow: `inset 0 0 0 3px ${c}, 0 0 0 1.5px rgba(255,235,190,.5)` }} />{THEMES[t].name}</button>; })}</div>
       <b>Dice</b>
       <div className="sl-opts dice">{DICE.map(d => <button key={d.id} className={d.id === dice ? "on" : ""} aria-pressed={d.id === dice} onClick={() => chooseDice(d.id)}><span className={`sl-mini d-${d.id}`}><span className="sl-face"><Face v={5} /></span></span>{d.name}</button>)}</div>
       <div className="sl-sheet-row"><button className="ghost-button" onClick={() => setPanel("rules")}>Rules</button><button className="gold-button" onClick={() => setPanel("none")}>Done</button></div>

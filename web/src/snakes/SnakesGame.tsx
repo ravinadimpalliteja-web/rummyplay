@@ -114,7 +114,7 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
   const [rolling, setRolling] = useState<number | null>(null);
   const rollingRef = useRef<number | null>(null); rollingRef.current = rolling;
   const [dieValue, setDieValue] = useState(6);
-  const [wood, setWood] = useState<WoodId>(() => readKey(WOOD_KEY, WOOD_IDS, "maple"));
+  const [wood, setWood] = useState<WoodId>(() => { const saved = readKey(WOOD_KEY, WOOD_IDS, "emerald"); return saved === "maple" ? "emerald" : saved; });
   const [dice, setDice] = useState<DiceId>(() => readKey(DICE_KEY, DICE.map(d => d.id), "ivory"));
   const [panel, setPanel] = useState<"none" | "settings" | "rules" | "chat">("none");
   const [view3d, setView3d] = useState<"3d" | "flat">(() => readKey(VIEW_KEY, ["3d", "flat"], can3d ? "3d" : "flat"));
@@ -712,7 +712,7 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     {panel === "settings" && <div className="sl-sheet" role="dialog" aria-label="Settings">
       <b>Board view</b>
       <div className="sl-opts">{(["3d", "flat"] as const).map(v => <button key={v} className={v === view3d ? "on" : ""} aria-pressed={v === view3d} disabled={v === "3d" && !can3d} onClick={() => chooseView(v)}>{v === "3d" ? "3D board" : "Flat, top-down"}</button>)}</div>
-      <b>Board wood</b>
+      <b>Board finish</b>
       <div className="sl-opts">{WOOD_IDS.map(w => <button key={w} className={w === wood ? "on" : ""} aria-pressed={w === wood} onClick={() => chooseWood(w)}><i className={`sl-swatch w-${w}`} />{WOODS[w].name}</button>)}</div>
       <b>Dice</b>
       <div className="sl-opts dice">{DICE.map(d => <button key={d.id} className={d.id === dice ? "on" : ""} aria-pressed={d.id === dice} onClick={() => chooseDice(d.id)}><span className={`sl-mini d-${d.id}`}><span className="sl-face"><Face v={5} /></span></span>{d.name}</button>)}</div>

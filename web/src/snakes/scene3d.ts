@@ -46,45 +46,129 @@ const setLayer = (o: Obj, l: number) => o.traverse((c: Obj) => c.layers.set(l));
 
 /* ---------- snake skins ---------- */
 const SKIN_LEN = 1.4;                                                // world length one skin picture covers
-function skinCanvases(spIdx: number) {
-  const sp = SPECIES[spIdx], w = 512, h = 128;
-  const col = document.createElement("canvas"); col.width = w; col.height = h;
-  const g = col.getContext("2d")!;
-  g.fillStyle = sp.body; g.fillRect(0, 0, w, h);
-  // belly (around v = .75), soft edges
-  const bg = g.createLinearGradient(0, h * .55, 0, h * .95);
-  bg.addColorStop(0, sp.body); bg.addColorStop(.25, sp.belly); bg.addColorStop(.75, sp.belly); bg.addColorStop(1, sp.body);
-  g.fillStyle = bg; g.fillRect(0, h * .55, w, h * .4);
-  // pattern on the back (v around .25)
-  const top = h * .25;
-  const name = sp.name;
-  g.save();
-  if (name === "Ruby" || name === "Tiger" || name === "Jade") {
-    const c = name === "Ruby" ? "rgba(246,196,58,.95)" : name === "Tiger" ? "rgba(70,36,8,.88)" : "rgba(10,90,78,.9)", n = name === "Tiger" ? 9 : 6, bw = name === "Ruby" ? 16 : name === "Tiger" ? 9 : 6;
-    for (let i = 0; i < n; i++) {
-      const x = (i + .5) * (w / n);
-      g.fillStyle = c; g.beginPath(); g.ellipse(x, top, bw, h * .3, 0, 0, Math.PI * 2); g.fill();
-      if (name === "Jade") { g.beginPath(); g.ellipse(x + 14, top, bw, h * .3, 0, 0, Math.PI * 2); g.fill(); }
+/** Seeded random numbers, so every skin comes out the same on every device and visit. */
+const rng = (seed: number) => () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+/** A colour made lighter (f > 0, towards white) or darker (f < 0), as CSS. */
+const shade = (c: string, f: number) => { const k = new THREE.Color(c); if (f >= 0) k.lerp(new THREE.Color(1, 1, 1), f); else k.multiplyScalar(1 + f); return "#" + k.getHexString(); };
+/* The skin picture runs along the body (u, head first) and around it (v): the spine is at v = .25, the sides at v = 0, .5
+   and 1, the belly between v = .62 and .88. First the colour pattern is painted freely (counter-shading, then the
+   species' marks with uneven natural edges and a darker rim, then fine speckle); then the skin is rebuilt scale by scale,
+   each scale taking the pattern colour at its centre, as on a real snake, with overlapping dorsal scales on the back and
+   wide belly plates underneath. Matching bump and roughness pictures make the scales raised and glossy and the skin
+   between them dark and matte. Everything repeats seamlessly along the body. */
+function skinCanvases(spIdx: number, low: boolean) {
+  const sp = SPECIES[spIdx], w = low ? 512 : 1024, h = w / 2, k = w / 1024, R = rng(97 + spIdx * 131);
+  const mk = () => { const c = document.createElement("canvas"); c.width = w; c.height = h; return c; };
+  const wrapX = (fn: (dx: number) => void) => { for (const dx of [-w, 0, w]) fn(dx); };
+  const BELLY0 = .62, BELLY1 = .88;
+  // 1. the pattern
+  const pat = mk(), p = pat.getContext("2d")!;
+  const base = p.createLinearGradient(0, 0, 0, h);
+  base.addColorStop(0, sp.body); base.addColorStop(.25, shade(sp.body, -.2)); base.addColorStop(.5, sp.body);
+  base.addColorStop(.57, shade(sp.body, .12)); base.addColorStop(BELLY0 + .02, sp.belly); base.addColorStop(BELLY1 - .02, sp.belly);
+  base.addColorStop(.93, shade(sp.body, .12)); base.addColorStop(1, sp.body);
+  p.fillStyle = base; p.fillRect(0, 0, w, h);
+  const blob = (x: number, y: number, rx: number, ry: number, fill: string, edge: string | null, pts = 14, rough = .22) => {
+    const r = Array.from({ length: pts }, () => 1 - rough + R() * rough * 1.6);
+    wrapX(dx => {
+      p.beginPath();
+      for (let i = 0; i <= pts; i++) { const a = (i / pts) * Math.PI * 2, q = r[i % pts]; const X = x + dx + Math.cos(a) * rx * q, Y = y + Math.sin(a) * ry * q; if (i) p.lineTo(X, Y); else p.moveTo(X, Y); }
+      p.closePath(); if (edge) { p.strokeStyle = edge; p.lineWidth = 5 * k; p.lineJoin = "round"; p.stroke(); } p.fillStyle = fill; p.fill();
+    });
+  };
+  /** A band across the back and down both sides (not under the belly), with wobbly edges. */
+  const band = (x: number, half: number, fill: string, edge: string | null) => {
+    const n = 12, a = Array.from({ length: n + 1 }, () => (R() - .5) * half * .7), b = Array.from({ length: n + 1 }, () => (R() - .5) * half * .7);
+    for (const dy of [0, h]) wrapX(dx => {
+      p.beginPath();
+      for (let i = 0; i <= n; i++) { const v = -.1 + (i / n) * .7, taper = 1 - Math.max(0, (v - .45) / .25) * .6; p.lineTo(x + dx - half * taper + a[i], v * h + dy); }
+      for (let i = n; i >= 0; i--) { const v = -.1 + (i / n) * .7, taper = 1 - Math.max(0, (v - .45) / .25) * .6; p.lineTo(x + dx + half * taper + b[i], v * h + dy); }
+      p.closePath(); if (edge) { p.strokeStyle = edge; p.lineWidth = 6 * k; p.lineJoin = "round"; p.stroke(); } p.fillStyle = fill; p.fill();
+    });
+  };
+  const n = (count: number, fn: (x: number) => void) => { for (let i = 0; i < count; i++) fn((i + .5) * (w / count) + (R() - .5) * (w / count) * .25); };
+  const dark = shade(sp.body, -.55);
+  switch (sp.name) {
+    case "Emerald":            // green tree python: dark paired saddles and a broken row of pale flecks along the spine
+      n(9, x => { blot2(x); });
+      break;
+    case "Ruby":               // banded: yellow rings edged in black
+      n(6, x => band(x, 26 * k, "#f6c43a", "#1c0d08"));
+      break;
+    case "Sapphire":           // carpet-python diamonds: pale centres, dark outlines, dark flecks on the flanks
+      n(6, x => { blob(x, h * .25, 46 * k, h * .19, "rgba(160,210,255,1)", "#0f2a66", 4, .12); blob(x, h * .25, 16 * k, h * .06, sp.body, null, 8); });
+      n(14, x => { for (const v of [.06, .44]) blob(x, h * v, 7 * k, h * .03, dark, null, 9, .35); });
+      break;
+    case "Amethyst":           // paired lilac spots ringed in deep purple
+      n(8, x => { blob(x, h * .14, 22 * k, h * .08, "#f0c2ff", "#3a1260", 11); blob(x + 40 * k, h * .36, 22 * k, h * .08, "#f0c2ff", "#3a1260", 11); });
+      break;
+    case "Tiger":              // irregular dark stripes that thin out down the sides
+      n(7, x => band(x, 24 * k, "#2e1503", null));
+      break;
+    default:                   // Jade: double dark bands
+      n(6, x => { band(x - 16 * k, 10 * k, "#063a32", null); band(x + 16 * k, 10 * k, "#063a32", null); });
+  }
+  function blot2(x: number) {
+    blob(x, h * .14, 30 * k, h * .1, "#16480f", null, 12, .3); blob(x + 50 * k, h * .36, 30 * k, h * .1, "#16480f", null, 12, .3);
+    blob(x + 25 * k, h * .25, 10 * k, h * .04, "#f3f7c4", null, 9, .3);
+  }
+  // fine speckle so no two scales look exactly alike
+  for (let i = 0; i < 2600 * k * k * 4; i++) { p.fillStyle = R() < .5 ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.06)"; p.fillRect(R() * w, R() * h, 2 * k + 1, 2 * k + 1); }
+  const px = p.getImageData(0, 0, w, h).data;
+  const at = (x: number, y: number) => { const X = ((Math.round(x) % w) + w) % w, Y = Math.max(0, Math.min(h - 1, Math.round(y))), i = (Y * w + X) * 4; return `rgb(${px[i]},${px[i + 1]},${px[i + 2]})`; };
+
+  // 2. the skin, scale by scale
+  const col = mk(), g = col.getContext("2d")!, bump = mk(), b = bump.getContext("2d")!, rough = mk(), r = rough.getContext("2d")!;
+  g.fillStyle = shade(sp.body, -.4); g.fillRect(0, 0, w, h);                  // skin showing between the scales
+  b.fillStyle = "#262626"; b.fillRect(0, 0, w, h);
+  r.fillStyle = "#d8d8d8"; r.fillRect(0, 0, w, h);
+  const C = 26, ROWS = 20, sx = w / C, sy = h / ROWS;
+  for (let row = 0; row <= ROWS; row++) {
+    const cy = row * sy, v = cy / h;
+    if (v > BELLY0 - .015 && v < BELLY1 + .015) continue;                     // the belly gets plates instead
+    for (let c = 0; c < C; c++) {
+      const cx = c * sx + (row % 2) * sx / 2, base = at(cx, cy), j = (R() - .5) * .14, fill = j >= 0 ? shade(base, j) : shade(base, j);
+      wrapX(dx => {
+        const X = cx + dx;
+        if (X < -sx || X > w + sx) return;
+        const path = () => { g.beginPath(); g.ellipse(X, cy, sx * .56, sy * .64, 0, 0, Math.PI * 2); };
+        const gr = g.createRadialGradient(X - sx * .12, cy - sy * .15, 1, X, cy, sx * .62);
+        gr.addColorStop(0, shade(fill, .12)); gr.addColorStop(.6, fill); gr.addColorStop(1, shade(fill, -.2));
+        path(); g.fillStyle = gr; g.fill();
+        g.strokeStyle = "rgba(255,255,255,.10)"; g.lineWidth = 1.2 * k + .4; g.beginPath(); g.moveTo(X - sx * .3, cy); g.lineTo(X + sx * .3, cy); g.stroke();   // the keel
+        const bg = b.createRadialGradient(X - sx * .1, cy - sy * .1, 1, X, cy, sx * .6);
+        bg.addColorStop(0, "#ececec"); bg.addColorStop(.7, "#a8a8a8"); bg.addColorStop(1, "#5c5c5c");
+        b.beginPath(); b.ellipse(X, cy, sx * .56, sy * .64, 0, 0, Math.PI * 2); b.fillStyle = bg; b.fill();
+        r.beginPath(); r.ellipse(X, cy, sx * .5, sy * .58, 0, 0, Math.PI * 2); r.fillStyle = "#585858"; r.fill();
+      });
     }
-  } else if (name === "Sapphire") {
-    for (let i = 0; i < 6; i++) { const x = (i + .5) * (w / 6); g.fillStyle = "rgba(150,205,255,.9)"; g.strokeStyle = "rgba(15,50,120,.7)"; g.lineWidth = 3; g.beginPath(); g.moveTo(x - 26, top); g.lineTo(x, top - 22); g.lineTo(x + 26, top); g.lineTo(x, top + 22); g.closePath(); g.fill(); g.stroke(); }
-  } else {
-    const c = name === "Emerald" ? "#2a7420" : "#e7a6ff";
-    for (let i = 0; i < 12; i++) { const x = (i + .5) * (w / 12); for (const dv of [-.11, .11]) { g.fillStyle = c; g.beginPath(); g.ellipse(x + (dv > 0 ? 10 : 0), top + dv * h, 9, 7, 0, 0, Math.PI * 2); g.fill(); } }
   }
-  g.restore();
-  // scales: a fine grid of overlapping arcs, darker edges and a lighter centre
-  const bump = document.createElement("canvas"); bump.width = w; bump.height = h;
-  const b = bump.getContext("2d")!; b.fillStyle = "#808080"; b.fillRect(0, 0, w, h);
-  const sx = 12, sy = 9;
-  for (let y = 0; y < h + sy; y += sy) for (let x = 0; x < w + sx; x += sx) {
-    const ox = (Math.round(y / sy) % 2) * sx / 2;
-    const gr = b.createRadialGradient(x + ox - 2, y - 2, 1, x + ox, y, sx * .7);
-    gr.addColorStop(0, "#c8c8c8"); gr.addColorStop(.8, "#7a7a7a"); gr.addColorStop(1, "#404040");
-    b.fillStyle = gr; b.beginPath(); b.ellipse(x + ox, y, sx * .62, sy * .7, 0, 0, Math.PI * 2); b.fill();
-    g.strokeStyle = "rgba(0,0,0,.16)"; g.lineWidth = 1; g.beginPath(); g.arc(x + ox, y, sx * .55, Math.PI * .1, Math.PI * .9); g.stroke();
+  // belly plates: one wide plate per step along the body, the front edge raised and lit, the rear edge in shadow
+  const y0 = BELLY0 * h, y1 = BELLY1 * h;
+  for (let c = 0; c < C; c++) {
+    const x0 = c * sx, fill = at(x0 + sx / 2, (y0 + y1) / 2);
+    const lg = g.createLinearGradient(x0, 0, x0 + sx, 0); lg.addColorStop(0, shade(fill, .1)); lg.addColorStop(.75, fill); lg.addColorStop(1, shade(fill, -.32));
+    g.fillStyle = lg; g.beginPath(); g.rect(x0 + sx * .04, y0, sx * .92, y1 - y0); g.fill();
+    const bl = b.createLinearGradient(x0, 0, x0 + sx, 0); bl.addColorStop(0, "#dcdcdc"); bl.addColorStop(.8, "#9a9a9a"); bl.addColorStop(1, "#505050");
+    b.fillStyle = bl; b.beginPath(); b.rect(x0 + sx * .04, y0, sx * .92, y1 - y0); b.fill();
+    r.fillStyle = "#6a6a6a"; r.fillRect(x0 + sx * .08, y0 + 2, sx * .84, y1 - y0 - 4);
   }
-  return { col, bump };
+  return { col, bump, rough };
+}
+/** Small overlapping scales for the heads (a grey bump picture, repeated over the head). */
+let headBump: Obj = null;
+function headScales() {
+  if (headBump) return headBump;
+  const w = 256, h = 128, c = document.createElement("canvas"); c.width = w; c.height = h;
+  const g = c.getContext("2d")!; g.fillStyle = "#3a3a3a"; g.fillRect(0, 0, w, h);
+  const sx = 16, sy = 12;
+  for (let row = 0; row <= h / sy; row++) for (let i = -1; i <= w / sx; i++) {
+    const x = i * sx + (row % 2) * sx / 2, y = row * sy, gr = g.createRadialGradient(x - 2, y - 2, 1, x, y, sx * .6);
+    gr.addColorStop(0, "#e8e8e8"); gr.addColorStop(.75, "#9a9a9a"); gr.addColorStop(1, "#5a5a5a");
+    g.fillStyle = gr; g.beginPath(); g.ellipse(x, y, sx * .55, sy * .62, 0, 0, Math.PI * 2); g.fill();
+  }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(7, 4); t.needsUpdate = true;
+  headBump = t; return t;
 }
 
 /** A snake's body: a tube along its path, thick behind the head and tapering to a fine tail, its belly flat on the board. */
@@ -95,7 +179,7 @@ function snakeBody(head: number, tail: number, R: number) {
   const at = (s: number) => { let i = 1; while (i < pts.length - 1 && len[i] < s) i++; const f = (s - len[i - 1]) / ((len[i] - len[i - 1]) || 1); return pts[i - 1].clone().lerp(pts[i], f); };
   const width = (k: number) => (k < .06 ? .62 + .38 * (k / .06) : k < .35 ? 1 : Math.max(.08, 1 - Math.pow((k - .35) / .65, 1.25) * .94));
   const radius = (s: number) => R * width(s / total);
-  const N = 110, RS = 12, pos: number[] = [], uv: number[] = [], idx: number[] = [];
+  const N = 150, RS = 20, pos: number[] = [], uv: number[] = [], idx: number[] = [];
   for (let i = 0; i <= N; i++) {
     const s = (i / N) * total, c = at(s), a = at(Math.max(0, s - .05)), b = at(Math.min(total, s + .05));
     const t = b.sub(a).normalize(), side = new THREE.Vector3(-t.z, 0, t.x), r = radius(s), cy = TILE_TOP + r * .62;
@@ -114,7 +198,7 @@ function snakeBody(head: number, tail: number, R: number) {
 /** A friendly snake head: rounded skull, big eyes, a hinged lower jaw (opens to swallow) and a forked tongue. */
 function snakeHead(sp: (typeof SPECIES)[number], R: number) {
   const grp = new THREE.Group(), skull = new THREE.Group(), jaw = new THREE.Group();
-  const SPH = new THREE.SphereGeometry(1, 20, 14), headM = new THREE.MeshStandardMaterial({ color: sp.head, roughness: .42 });
+  const SPH = new THREE.SphereGeometry(1, 32, 22), headM = new THREE.MeshPhysicalMaterial({ color: sp.head, roughness: .45, bumpMap: headScales(), bumpScale: 1.6, clearcoat: .5, clearcoatRoughness: .3 });
   const k = R / .17 * .95;
   const add = (to: Obj, g: Obj, m: Obj, p: number[], s: number[] | number, r: number[] = [0, 0, 0]) => { const o = new THREE.Mesh(g, m); o.position.set(p[0] * k, p[1] * k, p[2] * k); if (typeof s === "number") o.scale.setScalar(s * k); else o.scale.set(s[0] * k, s[1] * k, s[2] * k); o.rotation.set(r[0], r[1], r[2]); o.castShadow = true; to.add(o); return o; };
   add(skull, SPH, headM, [0, .03, .1], [.2, .12, .27]);
@@ -312,12 +396,12 @@ export class BoardScene {
     const rungM = new THREE.MeshStandardMaterial({ color: "#e9ad62", roughness: .42 });
     for (const [s, e] of Object.entries(LADDERS)) this.ladder(+s, e, railM, rungM, metal);
     // snakes
-    const skins = new Map<number, { col: Obj; bump: Obj }>();
+    const skins = new Map<number, { col: Obj; bump: Obj; rough: Obj }>();
     Object.entries(SNAKES).forEach(([h, t]) => {
       const head = +h, sp = speciesOf(head), si = SPECIES.indexOf(sp);
-      let sk = skins.get(si); if (!sk) { const c = skinCanvases(si); sk = { col: T(c.col), bump: T(c.bump, false) }; for (const x of [sk.col, sk.bump]) { x.wrapS = THREE.RepeatWrapping; x.wrapT = THREE.ClampToEdgeWrapping; x.flipY = false; x.needsUpdate = true; } skins.set(si, sk); }
+      let sk = skins.get(si); if (!sk) { const c = skinCanvases(si, this.low); sk = { col: T(c.col), bump: T(c.bump, false), rough: T(c.rough, false) }; for (const x of [sk.col, sk.bump, sk.rough]) { x.wrapS = THREE.RepeatWrapping; x.wrapT = THREE.ClampToEdgeWrapping; x.flipY = false; x.needsUpdate = true; } skins.set(si, sk); }
       const R = .19, body = snakeBody(head, t, R);
-      const m = new THREE.Mesh(body.g, new THREE.MeshStandardMaterial({ map: sk.col, bumpMap: sk.bump, bumpScale: 2.2, roughness: .5, envMapIntensity: .55 }));
+      const m = new THREE.Mesh(body.g, new THREE.MeshPhysicalMaterial({ map: sk.col, bumpMap: sk.bump, bumpScale: 2.6, roughnessMap: sk.rough, roughness: 1, clearcoat: .45, clearcoatRoughness: .32, envMapIntensity: .7, sheen: .3, sheenColor: new THREE.Color(shade(sp.body, .5)), sheenRoughness: .5 }));
       m.castShadow = true; m.receiveShadow = true; B.add(m);
       const hd = snakeHead(sp, R * 1.05), p0 = body.at(0), p1 = body.at(.35), dir = p0.clone().sub(p1).normalize();
       hd.grp.position.set(p0.x - dir.x * .08, body.cyAt(0) + .01, p0.z - dir.z * .08);

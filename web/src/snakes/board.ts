@@ -688,7 +688,7 @@ export function ladderSteps(a: number, b: number, rungs: number): Pt[] {
     A contact shadow and a ring in the player's colour sit on the board; the active player's token also gets a gold glow.
     `lift` raises the token off the board (hops), in board units. Until `img` has loaded a plain disc is drawn. */
 /** Height of a standing token, in board units (a square is 60). */
-export const PIECE_H = 58;
+export const PIECE_H = 46;
 export function paintPiece(g: CanvasRenderingContext2D, x: number, y: number, u: number, sq: number, ring: string, img: HTMLImageElement | null, active: boolean, scale = 1, lift = 0, lean = 0) {
   if (scale <= 0.02) return;
   const k = u * scale, h = PIECE_H * k, w = h * (100 / 120), top = y - lift * u;

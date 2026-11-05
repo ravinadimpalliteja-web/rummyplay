@@ -272,12 +272,19 @@ body{background:radial-gradient(ellipse at 50% 0%,#fff 0%,#f7f6f1 68%,#edf1eb 10
   const validThemes = ['emerald', 'walnut', 'slate', 'sandstone', 'ocean'];
   const savedTheme = store.get(THEME_KEY);
   const initialTheme = validThemes.includes(savedTheme) ? savedTheme : 'emerald';
-  document.body.dataset.boardTheme = initialTheme;
-  $('boardTheme').value = initialTheme;
-  $('boardTheme').addEventListener('change', (e) => {
-    const theme = validThemes.includes(e.target.value) ? e.target.value : 'emerald';
-    document.body.dataset.boardTheme = theme;
-    store.set(THEME_KEY, theme);
+  function applyTheme(theme) {
+    const selected = validThemes.includes(theme) ? theme : 'emerald';
+    document.body.dataset.boardTheme = selected;
+    $('boardTheme').value = selected;
+    document.querySelectorAll('.theme-card').forEach((button) => {
+      button.setAttribute('aria-pressed', String(button.dataset.theme === selected));
+    });
+    store.set(THEME_KEY, selected);
+  }
+  applyTheme(initialTheme);
+  $('boardTheme').addEventListener('change', (e) => applyTheme(e.target.value));
+  document.querySelectorAll('.theme-card').forEach((button) => {
+    button.addEventListener('click', () => applyTheme(button.dataset.theme));
   });
 
   /* ---------- original Royal Club piece set (SVG, 45 x 45) ---------- */

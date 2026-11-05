@@ -300,3 +300,5 @@
 @media (max-width:380px){.tp-grid{gap:6px}.tp-token span{font-size:10px}.tp-tabs button small{display:none}}
 @media (prefers-reduced-motion:reduce){.tp-stage img{animation:none}.tp-token img{transition:none}}
 
+
+.sl-warn{padding:10px 12px;border:1px solid #e9a03b;border-radius:12px;background:rgba(233,160,59,.12);color:#ffe2b3}

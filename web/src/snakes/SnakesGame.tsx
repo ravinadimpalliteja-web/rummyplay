@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { RoomClient, deviceToken, randomPasscode, saveRoom, savedRoom, serverUrl, type NetStatus } from "../domain/online";
-import { CHAT_EMOJIS, CHAT_PHRASES, TIMING, newGame, roll, rollDie, rungsOf, snakeSlideMs, turnOf, type LastRoll, type SLGame } from "./engine";
-import { NUM_FONT, OFF, PIECE_H, SHARED, SHARED3D, W, WOODS, WOOD_IDS, center, ladderSteps, numberAt, paintBase, paintBoard, paintPiece, paintSnakeBulge, paintSnakeMouth, snakePath, spot, spot3D, type Pt, type WoodId } from "./board";
+import { BOARD_VERSION, CHAT_EMOJIS, CHAT_PHRASES, TIMING, newGame, roll, rollDie, rungsOf, snakeSlideMs, turnOf, type LastRoll, type SLGame } from "./engine";
+import { NUM_FONT, OFF, PIECE_H, SHARED, SHARED3D, W, WOODS, WOOD_IDS, center, ladderSteps, layoutIssues, numberAt, paintBase, paintBoard, paintPiece, paintSnakeBulge, paintSnakeMouth, snakePath, spot, spot3D, type Pt, type WoodId } from "./board";
 import { fitView, planeStyle, project, squash, type View } from "./view3d";
 import { setSound, sfx, soundOn, unlock } from "./sound";
 import { celebrate } from "./confetti";
@@ -42,7 +42,7 @@ const wait = (ms: number) => new Promise<void>(r => window.setTimeout(r, ms * pa
 
 type SeatInfo = { seat: number; name: string; connected: boolean; away: boolean; piece?: PieceId } | null;
 type SLView = {
-  t: "state"; game: "snakes"; code: string; passcode: string; now: number; you: number; host: boolean;
+  t: "state"; game: "snakes"; board?: number; code: string; passcode: string; now: number; you: number; host: boolean;
   phase: "lobby" | "playing" | "gameEnd"; seats: SeatInfo[];
   order?: number[]; players?: { seat: number; sq: number }[]; turn?: number; streak?: number;
   last?: LastRoll | null; winner?: number | null; deadline?: number | null; moving?: boolean; finished?: number[];
@@ -395,7 +395,7 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
       if (sc && st0) {
         const r = st0.getBoundingClientRect(), d = sc.debug(), off = <T extends { x0: number; x1: number; y0: number; y1: number }>(b: T) => ({ ...b, x0: b.x0 + r.left, x1: b.x1 + r.left, y0: b.y0 + r.top, y1: b.y1 + r.top });
         const pr = off(d.projRect);
-        return { mode: "webgl", A: d.elevation, numbers: d.numbers.map(off), tokens: d.tokens.map(off), topSquare: d.topSquare, bottomSquare: d.bottomSquare, fontTop: d.fontTop, fontBottom: d.fontBottom, projRect: pr, planeRect: pr, stage: { x0: r.left, x1: r.right, y0: r.top, y1: r.bottom } };
+        return { mode: "webgl", layout: layoutIssues(), A: d.elevation, numbers: d.numbers.map(off), tokens: d.tokens.map(off), topSquare: d.topSquare, bottomSquare: d.bottomSquare, fontTop: d.fontTop, fontBottom: d.fontBottom, projRect: pr, planeRect: pr, stage: { x0: r.left, x1: r.right, y0: r.top, y1: r.bottom } };
       }
       const v = geoRef.current, st = stageRef.current; if (!v || !st) return null;
       const r = st.getBoundingClientRect(), m = document.createElement("canvas").getContext("2d")!; m.font = NUM_FONT;
@@ -614,6 +614,7 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
       {view.phase !== "lobby" && <ul className="room-seats">{view.seats.map((p, i) => <li key={i} className={p ? "filled" : ""}><span style={p ? { background: COLORS[i], borderColor: COLORS[i], color: "#fff" } : undefined}>{i + 1}</span>{p ? p.name + (i === view.you ? " (you)" : "") + (!p.connected ? " · offline" : "") : "Open seat"}</li>)}</ul>}
       {view.phase === "lobby" ? (() => {
         const seated = view.seats.filter(Boolean) as NonNullable<SeatInfo>[], ready = seated.length >= 2 && seated.every(p => p.connected);
+        if (view.board !== BOARD_VERSION) return <p className="room-note sl-warn" role="alert">This room server still runs the previous board layout, so online games are paused until it is updated. Practice games use the new board now.</p>;
         return <button className="gold-button" disabled={!view.host || !ready} onClick={() => send({ t: "start" })}>
           {!view.host ? "Waiting for the host to start" : ready ? `Start game with ${seated.length} players →` : seated.length < 2 ? "Waiting for at least 1 more player" : "Waiting for everyone to come online"}
         </button>;

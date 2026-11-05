@@ -44,16 +44,56 @@ export const SHARED3D: Record<number, { pts: [number, number][]; s: number }> = 
 export const OFF: Pt = { x: PAD * .4, y: center(1).y + 15 };
 
 /** Centre line of a snake from head to tail; also the path a token slides down. */
+/** Each snake's planned route (board units, head first): worked out once so its body goes around every ladder
+    (a path search over the board, then checked by layoutIssues() and a server test). The curve below smooths it. */
+export const SNAKE_WAYPOINTS: Record<number, [number, number][]> = {
+  49: [[538, 358], [538, 478], [418, 598]],
+  60: [[58, 298], [58, 478], [118, 538]],
+  64: [[238, 238], [250, 250], [250, 526], [238, 538]],
+  73: [[478, 178], [598, 298]],
+  82: [[118, 118], [214, 214], [214, 358], [202, 370]],
+  93: [[478, 58], [452, 135], [440, 215], [385, 240], [352, 285]],
+  98: [[178, 58], [286, 166], [286, 322], [250, 358], [238, 358]],
+};
+/** How far a snake's body swings either side of its route (board units). */
+export const SNAKE_WAVE = 5;
+/** Centre line of a snake from head to tail: a smooth curve through its route with a gentle S-wave (also the path a
+    swallowed token slides down). Falls back to a straight route between the two squares. */
 export function snakePath(head: number, tail: number): Pt[] {
-  const h = center(head), t = center(tail);
-  const dx = t.x - h.x, dy = t.y - h.y, len = Math.hypot(dx, dy);
-  const nx = -dy / len, ny = dx / len, waves = Math.max(1.5, Math.round(len / 78) + .5), amp = Math.min(26, 13 + len / 28), pts: Pt[] = [];
-  for (let i = 0; i <= 120; i++) {
-    const k = i / 120, env = Math.sin(Math.min(1, k * 1.15) * Math.PI) * .85 + .15;
-    const w = Math.sin(k * Math.PI * waves) * amp * env;
-    pts.push({ x: h.x + dx * k + nx * w, y: h.y + dy * k + ny * w });
+  const raw = SNAKE_WAYPOINTS[head] ?? [[center(head).x, center(head).y], [center(tail).x, center(tail).y]];
+  const wp = raw.map(([x, y]) => ({ x, y }));
+  const cat = (p0: Pt, p1: Pt, p2: Pt, p3: Pt, t: number) => {
+    const t2 = t * t, t3 = t2 * t, f = (a: number, b: number, c: number, d: number) => .5 * (2 * b + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (-a + 3 * b - 3 * c + d) * t3);
+    return { x: f(p0.x, p1.x, p2.x, p3.x), y: f(p0.y, p1.y, p2.y, p3.y) };
+  };
+  const dense: Pt[] = [];
+  for (let i = 0; i < wp.length - 1; i++) for (let j = 0; j < 30; j++) dense.push(cat(wp[Math.max(0, i - 1)], wp[i], wp[i + 1], wp[Math.min(wp.length - 1, i + 2)], j / 30));
+  dense.push(wp[wp.length - 1]);
+  const len = [0]; for (let i = 1; i < dense.length; i++) len.push(len[i - 1] + Math.hypot(dense[i].x - dense[i - 1].x, dense[i].y - dense[i - 1].y));
+  const total = len[len.length - 1], N = 120, out: Pt[] = [], waves = Math.max(2, Math.round(total / 70));
+  let j = 1;
+  for (let i = 0; i <= N; i++) {
+    const sd = (i / N) * total; while (j < dense.length - 1 && len[j] < sd) j++;
+    const f = (sd - len[j - 1]) / ((len[j] - len[j - 1]) || 1), a = dense[j - 1], b = dense[j];
+    const x = a.x + (b.x - a.x) * f, y = a.y + (b.y - a.y) * f, tl = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+    const k = i / N, w = Math.sin(k * Math.PI * waves) * SNAKE_WAVE * Math.sin(Math.min(1, k * 1.1) * Math.PI);
+    out.push({ x: x - ((b.y - a.y) / tl) * w, y: y + ((b.x - a.x) / tl) * w });
   }
-  return pts;
+  return out;
+}
+/** Checks the layout: no snake body touches a ladder, and every snake stays on the board. Returns the problems found
+    (empty when all is well). Widths are the widest drawn (the 3D board): snake 11.4, ladder 18 either side of its line. */
+export function layoutIssues(snakeHalf = 11.4, ladderHalf = 18): string[] {
+  const issues = new Set<string>();
+  const segD = (p: Pt, a: Pt, b: Pt) => { const dx = b.x - a.x, dy = b.y - a.y, l = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l)); return Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy); };
+  for (const [h, t] of Object.entries(SNAKES)) {
+    const pts = snakePath(+h, t);
+    for (const p of pts) {
+      for (const [a, b] of Object.entries(LADDERS)) if (segD(p, center(+a), center(b)) < snakeHalf + ladderHalf) issues.add(`snake ${h}-${t} touches ladder ${a}-${b}`);
+      if (p.x - snakeHalf < PAD || p.x + snakeHalf > W - PAD || p.y - snakeHalf < PAD || p.y + snakeHalf > W - PAD) issues.add(`snake ${h}-${t} leaves the board`);
+    }
+  }
+  return [...issues];
 }
 
 /* ---------- helpers ---------- */

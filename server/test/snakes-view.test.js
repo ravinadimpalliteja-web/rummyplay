@@ -44,3 +44,30 @@ for (const [name, pts, s] of cases) {
   for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) assert(!hit(boxes[i], boxes[j]), `${name}: tokens ${i} and ${j} overlap`);
 }
 console.log('snakes view: ok (board uses engine positions, numbering unchanged, token spots clear of numbers for 1 to 4 tokens)');
+
+// The snakes' bodies never touch a ladder: the drawn curve (same algorithm as snakePath in board.ts) against every ladder.
+{
+  const { LADDERS: L, SNAKES: SN } = require('../snakes');
+  const wpSrc = src.slice(src.indexOf('export const SNAKE_WAYPOINTS'), src.indexOf('};', src.indexOf('export const SNAKE_WAYPOINTS')));
+  const WPS = Object.fromEntries([...wpSrc.matchAll(/(\d+): (\[\[[^\n]*\]\]),/g)].map((m) => [m[1], JSON.parse(m[2])]));
+  const [WAVE] = num(/export const SNAKE_WAVE = (\d+);/, 'SNAKE_WAVE');
+  assert.deepStrictEqual(Object.keys(WPS).sort(), Object.keys(SN).sort(), 'a route for every snake');
+  const ctr = (n) => { const r = Math.floor((n - 1) / 10); let c = (n - 1) % 10; if (r % 2) c = 9 - c; return { x: PAD + c * S + S / 2, y: PAD + (9 - r) * S + S / 2 }; };
+  const curve = (raw) => {
+    const wp = raw.map(([x, y]) => ({ x, y })), dense = [];
+    const cat = (p0, p1, p2, p3, t) => { const t2 = t * t, t3 = t2 * t, f = (a, b, c, d) => .5 * (2 * b + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (-a + 3 * b - 3 * c + d) * t3); return { x: f(p0.x, p1.x, p2.x, p3.x), y: f(p0.y, p1.y, p2.y, p3.y) }; };
+    for (let i = 0; i < wp.length - 1; i++) for (let j = 0; j < 30; j++) dense.push(cat(wp[Math.max(0, i - 1)], wp[i], wp[i + 1], wp[Math.min(wp.length - 1, i + 2)], j / 30));
+    dense.push(wp[wp.length - 1]);
+    return dense;
+  };
+  const segD = (p, a, b) => { const dx = b.x - a.x, dy = b.y - a.y, l = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l)); return Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy); };
+  const SNAKE_HALF = 11.4, LADDER_HALF = 18;                  // widest drawn: 3D snake radius 0.19 square, ladder 0.24 + rail 0.06
+  for (const [h, t] of Object.entries(SN)) {
+    const pts = curve(WPS[h]), first = pts[0], last = pts[pts.length - 1], hc = ctr(+h), tc = ctr(t);
+    assert(Math.abs(first.x - hc.x) < 30 && Math.abs(first.y - hc.y) < 30, `snake ${h}: head is on square ${h}`);
+    // a tail tip may sit at the edge of its square when that square is also a ladder's top (kept clear of the ladder)
+    assert(Math.abs(last.x - tc.x) <= 32 && Math.abs(last.y - tc.y) <= 32, `snake ${h}: tail is on square ${t}`);
+    for (const p of pts) for (const [a, b] of Object.entries(L)) assert(segD(p, ctr(+a), ctr(b)) >= SNAKE_HALF + LADDER_HALF + WAVE - 5, `snake ${h}-${t} crosses ladder ${a}-${b}`);
+  }
+  console.log(`snakes view: ok (${Object.keys(SN).length} snakes routed around all ${Object.keys(L).length} ladders)`);
+}

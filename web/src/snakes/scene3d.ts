@@ -232,7 +232,7 @@ export class BoardScene {
     Object.entries(SNAKES).forEach(([h, t]) => {
       const head = +h, sp = speciesOf(head), si = SPECIES.indexOf(sp);
       let sk = skins.get(si); if (!sk) { const c = skinCanvases(si); sk = { col: T(c.col), bump: T(c.bump, false) }; for (const x of [sk.col, sk.bump]) { x.wrapS = THREE.RepeatWrapping; x.wrapT = THREE.ClampToEdgeWrapping; x.flipY = false; x.needsUpdate = true; } skins.set(si, sk); }
-      const R = .21, body = snakeBody(head, t, R);
+      const R = .19, body = snakeBody(head, t, R);
       const m = new THREE.Mesh(body.g, new THREE.MeshStandardMaterial({ map: sk.col, bumpMap: sk.bump, bumpScale: 2.2, roughness: .5, envMapIntensity: .55 }));
       m.castShadow = true; m.receiveShadow = true; B.add(m);
       const hd = snakeHead(sp, R * 1.05), p0 = body.at(0), p1 = body.at(.35), dir = p0.clone().sub(p1).normalize();

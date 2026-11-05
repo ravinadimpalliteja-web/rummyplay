@@ -4,9 +4,11 @@ import { CHAT_EMOJIS, CHAT_PHRASES, TIMING, newGame, roll, rollDie, rungsOf, sna
 import { OFF, W, WOODS, WOOD_IDS, center, ladderSteps, paintBoard, paintSnakeBulge, paintSnakeMouth, paintToken, snakePath, type Pt, type WoodId } from "./board";
 import { setSound, sfx, soundOn, unlock } from "./sound";
 import { celebrate } from "./confetti";
+import TokenPicker from "./TokenPicker";
+import { DEFAULT_PIECES, PIECE_IDS, pieceById, pieceImage, pieceUrl, type PieceId } from "./tokens";
 import "./snakes.css";
 
-const ROOM_KEY = "rc-snakes-room";
+const ROOM_KEY = "rc-snakes-room", PIECE_KEY = "rc-snakes-piece";
 const WOOD_KEY = "rc-snakes-wood", DICE_KEY = "rc-snakes-dice";
 const DICE = [
   { id: "ivory", name: "Classic ivory" }, { id: "brass", name: "Polished brass" }, { id: "glass", name: "Emerald glass" },
@@ -26,7 +28,7 @@ const reduced = typeof window !== "undefined" && window.matchMedia?.("(prefers-r
 const pace = reduced ? 0.3 : 1;
 const wait = (ms: number) => new Promise<void>(r => window.setTimeout(r, ms * pace));
 
-type SeatInfo = { seat: number; name: string; connected: boolean; away: boolean } | null;
+type SeatInfo = { seat: number; name: string; connected: boolean; away: boolean; piece?: PieceId } | null;
 type SLView = {
   t: "state"; game: "snakes"; code: string; passcode: string; now: number; you: number; host: boolean;
   phase: "lobby" | "playing" | "gameEnd"; seats: SeatInfo[];
@@ -37,7 +39,7 @@ type SLView = {
 type Table = {
   you: number; order: number[]; names: Record<number, string>; away: Record<number, boolean>;
   pos: Record<number, number>; turn: number; streak: number; last: LastRoll | null;
-  phase: "playing" | "gameEnd"; winner: number | null; finished: number[];
+  phase: "playing" | "gameEnd"; winner: number | null; finished: number[]; pieces: Record<number, PieceId>;
 };
 type Disp = Pt & { s?: number };
 
@@ -48,10 +50,12 @@ const fromView = (v: SLView): Table | null => v.phase === "lobby" || !v.order ? 
   pos: Object.fromEntries((v.players ?? []).map(p => [p.seat, p.sq])),
   turn: v.turn ?? 0, streak: v.streak ?? 0, last: v.last ?? null, phase: v.phase === "gameEnd" ? "gameEnd" : "playing", winner: v.winner ?? null,
   finished: v.finished ?? [],
+  pieces: Object.fromEntries(v.order.map(s => [s, v.seats[s]?.piece ?? DEFAULT_PIECES[s]])),
 };
-const fromLocal = (g: SLGame, names: string[]): Table => ({
+const fromLocal = (g: SLGame, names: string[], pieces: PieceId[]): Table => ({
   you: 0, order: g.order, names: Object.fromEntries(g.order.map(s => [s, names[s]])), away: {},
   pos: g.pos, turn: turnOf(g), streak: g.streak, last: g.last, phase: g.phase, winner: g.winner, finished: g.finished,
+  pieces: Object.fromEntries(g.order.map(s => [s, pieces[s] ?? DEFAULT_PIECES[s]])),
 });
 
 function describe(l: LastRoll, t: Table): string {
@@ -77,12 +81,14 @@ const SoundIcon = ({ on }: { on: boolean }) => <svg viewBox="0 0 24 24" width="1
 const Face = ({ v }: { v: number }) => <>{Array.from({ length: 9 }, (_, i) => <i key={i} className={PIPS[v].includes(i) ? "on" : ""} />)}</>;
 
 export default function SnakesGame({ onHome }: { onHome: () => void }) {
-  type Sub = "lobby" | "room" | "table";
+  type Sub = "lobby" | "tokens" | "room" | "table";
   const [sub, setSub] = useState<Sub>("lobby");
   const [pick, setPick] = useState<"practice" | "online" | "room">("practice");
   const [bots, setBots] = useState(1);
   const [local, setLocal] = useState<SLGame | null>(null);
   const [localNames, setLocalNames] = useState<string[]>(["You", ...BOTS]);
+  const [localPieces, setLocalPieces] = useState<PieceId[]>(() => { const mine = readKey<PieceId>(PIECE_KEY, PIECE_IDS, "pawn-gold"); return [mine, ...DEFAULT_PIECES.filter(p => p !== mine)]; });
+  const [picking, setPicking] = useState(0);
   const [view, setView] = useState<SLView | null>(null);
   const [net, setNet] = useState<NetStatus>("idle");
   const [roomTab, setRoomTab] = useState<"create" | "join">("create");
@@ -108,7 +114,17 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
   const animatedN = useRef<number | null>(null), chain = useRef<Promise<void>>(Promise.resolve());
 
   const online = !!view && view.phase !== "lobby";
-  const table = useMemo<Table | null>(() => (online && view ? fromView(view) : local ? fromLocal(local, localNames) : null), [online, view, local, localNames]);
+  /* In a room, use this device's last chosen token if it is free. */
+  const prefSent = useRef<string | null>(null);
+  useEffect(() => {
+    if (!view || view.phase !== "lobby") return;
+    const me = view.seats[view.you], key = view.code + ":" + view.you;
+    if (!me || prefSent.current === key) return;
+    prefSent.current = key;
+    const pref = readKey<PieceId | "">(PIECE_KEY, PIECE_IDS, "");
+    if (pref && me.piece !== pref && !view.seats.some(o => o && o.seat !== view.you && o.piece === pref)) clientRef.current?.send({ t: "piece", id: pref });
+  }, [view]);
+  const table = useMemo<Table | null>(() => (online && view ? fromView(view) : local ? fromLocal(local, localNames, localPieces) : null), [online, view, local, localNames, localPieces]);
   const tableRef = useRef<Table | null>(table); tableRef.current = table;
 
   /* sound can only start after a tap */
@@ -183,8 +199,21 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
   };
 
   /* ---------- practice ---------- */
-  const startPractice = () => {
+  /** Practice: choose tokens first (every player, any collection, all different), then start. */
+  const choosePracticeTokens = () => {
     const names = ["You", ...BOTS.slice(0, bots)];
+    setLocalNames(names); setPicking(0); setLocal(null); setSub("tokens");
+  };
+  const pickLocal = (seat: number, id: PieceId) => {
+    setLocalPieces(ps => {
+      const next = [...ps], other = next.indexOf(id);
+      if (other >= 0 && other !== seat) next[other] = next[seat];          // swap, so tokens stay unique
+      next[seat] = id; return next;
+    });
+    if (seat === 0) keep(PIECE_KEY, id);
+  };
+  const startPractice = () => {
+    const names = localNames;
     setLocalNames(names); animatedN.current = null; disp.current = {}; overlay.current = {}; setBanner(null); setPanel("none");
     setLocal(newGame(names.map((_, i) => i))); setMsg("You go first. Roll a 6 to enter the board.");
     setSub("table");
@@ -204,7 +233,7 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     const c = center(sq);
     if (same.length === 1) return c;
     const k = same.indexOf(seat), o = 12, spots = [[-o, -o], [o, -o], [-o, o], [o, o]];
-    return { x: c.x + spots[k][0], y: c.y + spots[k][1] + 3 };
+    return { x: c.x + spots[k][0], y: c.y + spots[k][1] + 3, s: .78 };
   };
   const settle = () => { const t = tableRef.current; if (!t) return; for (const s of t.order) disp.current[s] = restPoint(t, s); overlay.current = {}; dirty.current = true; };
 
@@ -226,9 +255,10 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
       if (ov.bulge) paintSnakeBulge(g, ov.bulge.head, ov.bulge.k, ov.bulge.color);
       if (!t) return;
       const turn = t.phase === "playing" ? t.turn : -1;
-      for (const s of [...t.order.filter(x => x !== turn), ...(turn >= 0 ? [turn] : [])]) {
+      // back to front, so a token lower on the screen stands in front of one above it
+      for (const s of [...t.order].sort((a, b) => (disp.current[a]?.y ?? -1) - (disp.current[b]?.y ?? -1))) {
         const p = disp.current[s];
-        if (p) paintToken(g, p, COLORS[s], s === t.you ? "Y" : (t.names[s][0] || "?").toUpperCase(), s === turn, p.s ?? 1);
+        if (p) paintToken(g, p, COLORS[s], pieceImage(t.pieces[s], () => { dirty.current = true; }), s === turn, p.s ?? 1);
       }
       if (ov.mouth) paintSnakeMouth(g, ov.mouth.head, ov.mouth.open);
     };
@@ -382,10 +412,19 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
       <button className={pick === "room" ? "mode-card selected" : "mode-card"} onClick={() => setPick("room")}><span className="mode-ico">♛</span><strong>Room</strong><p>Play with 1 to 3 friends using a code.</p></button>
     </div>
     {pick === "practice" && <div className="sl-bots"><span>Computer players</span>{[1, 2, 3].map(n => <button key={n} className={bots === n ? "on" : ""} aria-pressed={bots === n} onClick={() => setBots(n)}>{n}</button>)}</div>}
-    <button className="gold-button" disabled={pick === "online"} onClick={() => (pick === "practice" ? startPractice() : pick === "room" ? setSub("room") : undefined)}>
-      {pick === "practice" ? "Start practice →" : pick === "room" ? "Create or join a room →" : "Coming soon"}
+    <button className="gold-button" disabled={pick === "online"} onClick={() => (pick === "practice" ? choosePracticeTokens() : pick === "room" ? setSub("room") : undefined)}>
+      {pick === "practice" ? "Choose tokens →" : pick === "room" ? "Create or join a room →" : "Coming soon"}
     </button>
     <p className="room-note">Rules: roll a 6 to enter · a 6 rolls again · three 6s in a row cancel the turn · land exactly on 100 · play on for 1st, 2nd and 3rd.</p>
+  </section>;
+
+  if (sub === "tokens") return <section className="mode-page sl-mode sl-tokens-page">
+    <button className="back-link" onClick={() => setSub("lobby")}>← Back</button>
+    <div className="eyebrow">ROYAL CLUB · SNAKES &amp; LADDERS</div>
+    <h1>Choose your tokens</h1>
+    <TokenPicker players={localNames.map((n, i) => ({ key: i, name: n, piece: localPieces[i], color: COLORS[i], editable: true }))}
+      active={picking} onActive={setPicking} onPick={pickLocal} note="Tap a player, then a token. Mix any collections; each player's token is different." />
+    <button className="gold-button" onClick={startPractice}>Start match →</button>
   </section>;
 
   if (sub === "room") return <section className="mode-page room-page sl-mode">
@@ -416,7 +455,11 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
           try { navigator.clipboard.writeText(t).then(() => setRoomMsg("Invite copied."), () => setRoomMsg(t)); } catch { setRoomMsg(t); }
         }}>Copy invite</button>
       </div>
-      <ul className="room-seats">{view.seats.map((p, i) => <li key={i} className={p ? "filled" : ""}><span style={p ? { background: COLORS[i], borderColor: COLORS[i], color: "#fff" } : undefined}>{i + 1}</span>{p ? p.name + (i === view.you ? " (you)" : "") + (!p.connected ? " · offline" : "") : "Open seat"}</li>)}</ul>
+      {view.phase === "lobby" && <TokenPicker
+        players={(view.seats.filter(Boolean) as NonNullable<SeatInfo>[]).map(p => ({ key: p.seat, name: p.seat === view.you ? "You" : p.name + (!p.connected ? " · offline" : ""), piece: p.piece ?? DEFAULT_PIECES[p.seat], color: COLORS[p.seat], editable: p.seat === view.you }))}
+        active={view.you} onActive={() => undefined} onPick={(_, id) => { keep(PIECE_KEY, id); send({ t: "piece", id }); }}
+        note={`${view.seats.filter(Boolean).length} of 4 seats filled. Pick your token — each player's is different.`} />}
+      {view.phase !== "lobby" && <ul className="room-seats">{view.seats.map((p, i) => <li key={i} className={p ? "filled" : ""}><span style={p ? { background: COLORS[i], borderColor: COLORS[i], color: "#fff" } : undefined}>{i + 1}</span>{p ? p.name + (i === view.you ? " (you)" : "") + (!p.connected ? " · offline" : "") : "Open seat"}</li>)}</ul>}
       {view.phase === "lobby" ? (() => {
         const seated = view.seats.filter(Boolean) as NonNullable<SeatInfo>[], ready = seated.length >= 2 && seated.every(p => p.connected);
         return <button className="gold-button" disabled={!view.host || !ready} onClick={() => send({ t: "start" })}>
@@ -445,9 +488,9 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
       {table.order.map(s => {
         const r = rankOf(s), b = bubbles[s];
         return <li key={s} className={(table.phase === "playing" && table.turn === s ? "turn " : "") + (r ? "done" : "")}>
-          <span className="sl-dot" style={{ background: COLORS[s] }} />
-          <span className="sl-name">{table.names[s]}{table.away[s] && <em> · away</em>}</span>
-          <span className="sl-sq">{r ? `${MEDAL[r - 1]} ${PLACE[r - 1]}` : table.pos[s] ? table.pos[s] : "Start"}</span>
+          <span className="sl-avatar" style={{ borderColor: COLORS[s] }}><img src={pieceUrl(table.pieces[s])} alt={pieceById(table.pieces[s]).name} /></span>
+          <span className="sl-info"><span className="sl-name">{table.names[s]}{table.away[s] && <em> · away</em>}</span>
+          <span className="sl-sq">{r ? `${MEDAL[r - 1]} ${PLACE[r - 1]}` : table.pos[s] ? table.pos[s] : "Start"}</span></span>
           {b && <span key={b.id} className={`sl-bubble ${[...b.text].length <= 2 ? "emoji" : ""}`} role="status">{b.text}</span>}
         </li>;
       })}
@@ -475,10 +518,10 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
       </div>}
       {showEnd && <div className="sl-win">
         <span className="eyebrow">FINAL STANDINGS</span>
-        <ol className="sl-standings">{table.finished.map((s, i) => <li key={s} className={i === 0 ? "first" : ""}><span className="medal">{MEDAL[i]}</span><span className="sl-dot" style={{ background: COLORS[s] }} /><b>{table.names[s]}</b><span>{PLACE[i]}</span></li>)}</ol>
+        <ol className="sl-standings">{table.finished.map((s, i) => <li key={s} className={i === 0 ? "first" : ""}><span className="medal">{MEDAL[i]}</span><span className="sl-avatar" style={{ borderColor: COLORS[s] }}><img src={pieceUrl(table.pieces[s])} alt="" /></span><b>{table.names[s]}</b><span>{PLACE[i]}</span></li>)}</ol>
         <div className="sl-win-actions">
           {online ? (view?.host ? <button className="gold-button" onClick={() => send({ t: "again" })}>Play again</button> : <p className="sl-small">Waiting for the host to start a new game.</p>)
-            : <button className="gold-button" onClick={startPractice}>Play again</button>}
+            : <button className="gold-button" onClick={() => setSub("tokens")}>Play again</button>}
           <button className="ghost-button" onClick={() => (online ? leaveRoom() : setSub("lobby"))}>{online ? "Leave room" : "Back to lobby"}</button>
         </div>
       </div>}

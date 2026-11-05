@@ -458,19 +458,19 @@ export function ladderSteps(a: number, b: number, rungs: number): Pt[] {
   return out;
 }
 
-/** A polished playing piece: a glossy enamel dome on a brass base, with its shadow. */
-export function paintToken(g: CanvasRenderingContext2D, p: Pt, color: string, label: string, active: boolean, scale = 1) {
+/** A player's token standing on the board: a coloured ring in the player's colour, a soft shadow, then the token art.
+    `img` is the token picture; until it has loaded a plain disc in the player's colour is drawn. */
+export function paintToken(g: CanvasRenderingContext2D, p: Pt, ring: string, img: HTMLImageElement | null, active: boolean, scale = 1) {
   if (scale <= 0.02) return;
-  const r = 15.5 * scale;
-  g.save(); g.filter = "blur(2.5px)"; g.fillStyle = "rgba(0,0,0,.5)"; g.beginPath(); g.ellipse(p.x + 4, p.y + 6, r, r * .75, 0, 0, Math.PI * 2); g.fill(); g.restore();
-  if (active) { g.strokeStyle = "rgba(255,228,150,.95)"; g.lineWidth = 2.5; g.beginPath(); g.arc(p.x, p.y, r + 5, 0, Math.PI * 2); g.stroke(); }
-  const brass = g.createRadialGradient(p.x - 5, p.y - 6, 2, p.x, p.y, r);
-  brass.addColorStop(0, "#fff4c8"); brass.addColorStop(.5, "#d6a743"); brass.addColorStop(1, "#6e4c10");
-  g.fillStyle = brass; g.beginPath(); g.arc(p.x, p.y, r, 0, Math.PI * 2); g.fill();
-  const dome = g.createRadialGradient(p.x - 3.5, p.y - 4.5, 1, p.x, p.y, r * .77);
-  dome.addColorStop(0, mix(color, "#ffffff", .55)); dome.addColorStop(.45, color); dome.addColorStop(1, mix(color, "#000000", .45));
-  g.fillStyle = dome; g.beginPath(); g.arc(p.x, p.y, r * .77, 0, Math.PI * 2); g.fill();
-  g.fillStyle = "rgba(255,255,255,.65)"; g.beginPath(); g.ellipse(p.x - r * .24, p.y - r * .3, r * .24, r * .14, -.6, 0, Math.PI * 2); g.fill();
-  g.fillStyle = "rgba(255,255,255,.95)"; g.font = `800 ${Math.round(12 * scale)}px 'DM Sans', sans-serif`; g.textAlign = "center"; g.textBaseline = "middle";
-  g.fillText(label, p.x, p.y + 1.5); g.textBaseline = "alphabetic";
+  const h = 56 * scale, w = h * (100 / 120), baseY = p.y + 9 * scale;
+  g.save();
+  g.fillStyle = "rgba(0,0,0,.38)"; g.beginPath(); g.ellipse(p.x + 3 * scale, baseY + 2 * scale, 17 * scale, 6.5 * scale, 0, 0, Math.PI * 2); g.fill();
+  if (active) {
+    g.strokeStyle = "rgba(255,226,140,.95)"; g.lineWidth = 3; g.shadowColor = "rgba(255,210,110,.9)"; g.shadowBlur = 8;
+    g.beginPath(); g.ellipse(p.x, baseY, 21 * scale, 8.5 * scale, 0, 0, Math.PI * 2); g.stroke(); g.shadowBlur = 0;
+  }
+  g.strokeStyle = ring; g.lineWidth = 2.6 * scale; g.beginPath(); g.ellipse(p.x, baseY, 16.5 * scale, 6.2 * scale, 0, 0, Math.PI * 2); g.stroke();
+  if (img && img.complete && img.naturalWidth) g.drawImage(img, p.x - w / 2, baseY - h * (106 / 120), w, h);
+  else { g.fillStyle = ring; g.beginPath(); g.arc(p.x, p.y, 12 * scale, 0, Math.PI * 2); g.fill(); g.strokeStyle = "#fffaf0"; g.lineWidth = 2; g.stroke(); }
+  g.restore();
 }

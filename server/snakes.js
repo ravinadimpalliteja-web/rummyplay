@@ -7,23 +7,37 @@
  *  - A six is needed to enter the board (you enter on square 1).
  *  - A six gives another roll. Three sixes in a row cancel that whole turn: the token goes back to where it was
  *    when the turn began, and play passes on.
- *  - You must land exactly on 100 to win; a roll that would go past 100 does not move.
- * The server rolls the die. Clients only send intents: 'start', 'roll', 'again', 'leave'.
+ *  - You must land exactly on 100; a roll that would go past 100 does not move.
+ *  - Rankings: the game goes on after someone reaches 100. Each finisher takes the next place (1st, 2nd, 3rd);
+ *    the game ends when only one player is left, who takes last place.
+ * The server rolls the die. Clients only send intents: 'start', 'roll', 'again', 'leave', 'chat'.
  */
 const crypto = require('crypto');
 
-const LADDERS = Object.freeze({ 4: 25, 13: 46, 33: 49, 42: 63, 50: 69, 62: 81, 74: 92 });
-const SNAKES = Object.freeze({ 27: 5, 40: 3, 43: 18, 54: 31, 66: 45, 76: 58, 89: 53, 99: 41 });
+/* A tougher board: ten long snakes, six short ladders. Must match web/src/snakes/engine.ts (a test checks this). */
+const LADDERS = Object.freeze({ 3: 23, 12: 32, 16: 36, 35: 54, 57: 76, 74: 95 });
+const SNAKES = Object.freeze({ 49: 8, 60: 19, 64: 17, 67: 15, 71: 31, 81: 42, 92: 53, 96: 55, 98: 58, 99: 61 });
 const TARGET = 100;
+
+/* Quick chat: players pick from these by index; no free text yet. Must match the web client's lists. */
+const CHAT_PHRASES = 8;   // Nice move! · Good luck · Well played · Oops! · Hurry up · So close! · Haha · Thank you
+const CHAT_EMOJIS = 12;
+const CHAT_GAP_MS = 1200;
 
 /* ---------- pure rules ---------- */
 function newGame(order) {
   if (!Array.isArray(order) || order.length < 2 || order.length > 4) throw new Error('Snakes & Ladders needs 2 to 4 players');
   const pos = {};
   for (const s of order) pos[s] = 0;
-  return { order: order.slice(), pos, turnIdx: 0, streak: 0, turnStart: 0, phase: 'playing', winner: null, last: null, rolls: 0 };
+  return { order: order.slice(), pos, turnIdx: 0, streak: 0, turnStart: 0, phase: 'playing', winner: null, last: null, rolls: 0, finished: [] };
 }
 const turnOf = (g) => g.order[g.turnIdx];
+function nextTurn(g) {
+  for (let i = 0; i < g.order.length; i++) {
+    g.turnIdx = (g.turnIdx + 1) % g.order.length;
+    if (!g.finished.includes(g.order[g.turnIdx])) return;
+  }
+}
 
 /** Applies one roll for `seat`. Mutates and returns the game; `g.last` describes what happened. */
 function roll(g, seat, value) {
@@ -47,22 +61,37 @@ function roll(g, seat, value) {
   g.pos[seat] = to;
   const win = to === TARGET;
   const extra = value === 6 && outcome !== 'three-sixes' && !win;
-  g.last = { n: ++g.rolls, seat, value, from, landed, to, via, outcome, extra, win, streak: g.streak };
-  if (win) { g.phase = 'gameEnd'; g.winner = seat; }
-  else if (!extra) { g.streak = 0; g.turnIdx = (g.turnIdx + 1) % g.order.length; }
+  let rank = null, ended = false;
+  if (win) {
+    g.finished.push(seat); rank = g.finished.length;
+    const left = g.order.filter((s) => !g.finished.includes(s));
+    if (left.length <= 1) { g.finished.push(...left); g.phase = 'gameEnd'; g.winner = g.finished[0]; ended = true; }
+  }
+  g.last = { n: ++g.rolls, seat, value, from, landed, to, via, outcome, extra, win, rank, ended, streak: g.streak };
+  if (!ended && !extra) { g.streak = 0; nextTurn(g); }
   return g;
 }
+
+/* ---------- animation timing, shared with the web client (web/src/snakes/engine.ts) ---------- */
+const TIMING = Object.freeze({ die: 1100, settle: 120, step: 230, enter: 300, ret: 800, rung: 120, ladderBase: 150,
+  mouth: 380, slideBase: 500, slidePerSquare: 230, pop: 320, finish1: 3200, finishN: 1700, gap: 250 });
+const sqXY = (n) => { const row = Math.floor((n - 1) / 10); let col = (n - 1) % 10; if (row % 2) col = 9 - col; return [col, row]; };
+const dist = (a, b) => { const [x1, y1] = sqXY(a), [x2, y2] = sqXY(b); return Math.hypot(x2 - x1, y2 - y1); };
+const rungsOf = (a, b) => Math.max(3, Math.floor((dist(a, b) * 60) / 19));
+const ladderMs = (a, b) => TIMING.ladderBase + rungsOf(a, b) * TIMING.rung;
+const snakeMs = (h, t) => Math.round(TIMING.mouth + TIMING.slideBase + dist(h, t) * TIMING.slidePerSquare + TIMING.pop);
 
 /** How long clients spend animating a roll (die spin + steps + ladder/snake). The server waits this long. */
 function animMs(last) {
   if (!last) return 0;
-  let t = 1220;                                                  // die thrown across the board, plus a short pause
-  if (last.outcome === 'move') t += Math.abs(last.landed - last.from) * 230;
-  if (last.outcome === 'enter') t += 300;
-  if (last.outcome === 'three-sixes') t += 800;
-  if (last.via === 'ladder') t += 850;
-  if (last.via === 'snake') t += 1250;
-  return t + 250;
+  let t = TIMING.die + TIMING.settle;
+  if (last.outcome === 'move') t += Math.abs(last.landed - last.from) * TIMING.step;
+  if (last.outcome === 'enter') t += TIMING.enter;
+  if (last.outcome === 'three-sixes') t += TIMING.ret;
+  if (last.via === 'ladder') t += ladderMs(last.landed, last.to);
+  if (last.via === 'snake') t += snakeMs(last.landed, last.to);
+  if (last.win) t += last.rank === 1 ? TIMING.finish1 : TIMING.finishN;
+  return t + TIMING.gap;
 }
 
 /* ---------- live room ---------- */
@@ -108,7 +137,7 @@ class SnakesRoom {
     return {
       ...base,
       order: g.order, players: g.order.map((s) => ({ seat: s, sq: g.pos[s] })),
-      turn: turnOf(g), streak: g.streak, last: g.last, winner: g.winner,
+      turn: turnOf(g), streak: g.streak, last: g.last, winner: g.winner, finished: g.finished,
       deadline: this.deadline, moving: Date.now() < this.pauseUntil,
     };
   }
@@ -189,6 +218,16 @@ class SnakesRoom {
         if (Date.now() < this.pauseUntil) throw new Error('Wait for the last move to finish');
         this.seats[seat].missed = 0;
         return this.doRoll(seat);
+      case 'chat': {
+        const kind = m.k === 'e' ? 'e' : 'p', i = Number(m.i);
+        if (!Number.isInteger(i) || i < 0 || i >= (kind === 'e' ? CHAT_EMOJIS : CHAT_PHRASES)) throw new Error('Unknown chat message');
+        const s = this.seats[seat], now = Date.now();
+        if (s.lastChat && now - s.lastChat < CHAT_GAP_MS) return;           // quietly drop rapid repeats
+        s.lastChat = now;
+        const out = JSON.stringify({ t: 'chat', seat, k: kind, i, at: now });
+        for (const x of this.seats) if (x && x.ws && x.ws.open) x.ws.send(out);
+        return;
+      }
       case 'leave': {
         const s = this.seats[seat];
         if (!g) {                                   // lobby: free the seat
@@ -219,4 +258,4 @@ class SnakesRoom {
   destroy() { this.clearTimer(); this.dead = true; for (const s of this.seats) if (s && s.ws) s.ws.terminate(); }
 }
 
-module.exports = { LADDERS, SNAKES, TARGET, ROLL_SECS, newGame, roll, animMs, turnOf, SnakesRoom };
+module.exports = { LADDERS, SNAKES, TARGET, ROLL_SECS, TIMING, CHAT_PHRASES, CHAT_EMOJIS, newGame, roll, animMs, turnOf, rungsOf, SnakesRoom };

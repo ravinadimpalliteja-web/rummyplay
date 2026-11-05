@@ -1,8 +1,9 @@
 import { LADDERS, SNAKES } from "./engine";
 
-/* The board is drawn on a 640 x 640 logical canvas: a raised wooden frame (PAD) around 10 x 10 carved squares of 60,
+/* The board is drawn on a 624 x 624 logical canvas: a thin raised wooden frame (PAD) around 10 x 10 carved squares of 60,
    numbered in a zigzag from the bottom left. Everything is painted in code (no image files), so it stays sharp at any size. */
-export const PAD = 20, S = 60, W = S * 10 + PAD * 2;
+export const PAD = 12, S = 60, W = S * 10 + PAD * 2;
+const K = 1.45;                                    // snake size: bodies, heads and markings are drawn this much larger than before
 export type Pt = { x: number; y: number };
 
 /* ---------- woods ---------- */
@@ -131,31 +132,31 @@ function frameAndSquares(g: CanvasRenderingContext2D, wood: Wood) {
     bevel(v, PAD, v, W - PAD, "rgba(15,6,0,.55)", 1.6); bevel(v + 1.4, PAD, v + 1.4, W - PAD, "rgba(255,230,190,.16)", 1);
     bevel(PAD, v, W - PAD, v, "rgba(15,6,0,.55)", 1.6); bevel(PAD, v + 1.4, W - PAD, v + 1.4, "rgba(255,230,190,.16)", 1);
   }
-  // inlaid brass numbers, cut into the wood
-  g.textAlign = "left";
-  for (let n = 1; n < 100; n++) {
-    const p = center(n), x = p.x - S / 2 + 6, y = p.y - S / 2 + 17;
-    g.font = "700 14px 'Playfair Display', Georgia, serif";
-    g.fillStyle = "rgba(0,0,0,.55)"; g.fillText(String(n), x + .8, y + 1);
-    const br = g.createLinearGradient(0, y - 12, 0, y);
-    br.addColorStop(0, "#fff0bf"); br.addColorStop(.5, "#d9ab52"); br.addColorStop(1, "#8f6620");
-    g.fillStyle = br; g.fillText(String(n), x, y);
-  }
-  const s = center(1);
-  g.textAlign = "center"; g.font = "800 9px 'DM Sans', sans-serif"; g.fillStyle = "rgba(0,0,0,.5)"; g.fillText("START", s.x + .6, s.y + 23.6);
-  g.fillStyle = "#e3bb67"; g.fillText("START", s.x, s.y + 23);
   // square 100: an inlaid brass-and-ivory lotus
   const m = center(100);
   const halo = g.createRadialGradient(m.x, m.y, 4, m.x, m.y, 34);
   halo.addColorStop(0, "rgba(255,215,140,.35)"); halo.addColorStop(1, "rgba(255,215,140,0)");
   g.fillStyle = halo; g.fillRect(m.x - S / 2, m.y - S / 2, S, S);
-  lotus(g, m.x, m.y - 2);
-  g.font = "700 11px 'Noto Sans Devanagari', 'Kohinoor Devanagari', 'Mangal', sans-serif";
-  g.fillStyle = "rgba(0,0,0,.55)"; g.fillText("मोक्ष", m.x + .7, m.y + 25.7);
-  g.fillStyle = "#f2d38a"; g.fillText("मोक्ष", m.x, m.y + 25);
-  g.textAlign = "left"; g.font = "700 12px 'Playfair Display', Georgia, serif";
-  g.fillStyle = "rgba(0,0,0,.55)"; g.fillText("100", m.x - S / 2 + 6.8, m.y - S / 2 + 15);
-  g.fillStyle = "#f0d08a"; g.fillText("100", m.x - S / 2 + 6, m.y - S / 2 + 14);
+  lotus(g, m.x + 4, m.y + 2);
+}
+
+/** Square numbers, drawn last so snakes and ladders never hide them: bold ivory figures with a dark outline. */
+function numbers(g: CanvasRenderingContext2D) {
+  g.save();
+  g.textAlign = "left"; g.textBaseline = "alphabetic"; g.lineJoin = "round";
+  for (let n = 1; n <= 100; n++) {
+    const p = center(n), x = p.x - S / 2 + 4, y = p.y - S / 2 + 19, t = String(n);
+    g.font = "800 19px 'DM Sans', system-ui, sans-serif";
+    g.lineWidth = 4.2; g.strokeStyle = "rgba(22,10,2,.92)"; g.strokeText(t, x, y);
+    g.fillStyle = n === 100 ? "#ffe08a" : "#fff4dc"; g.fillText(t, x, y);
+  }
+  const s = center(1);
+  g.textAlign = "center"; g.font = "800 10px 'DM Sans', system-ui, sans-serif"; g.lineWidth = 3;
+  g.strokeText("START", s.x, s.y + 24); g.fillStyle = "#ffe08a"; g.fillText("START", s.x, s.y + 24);
+  const m = center(100);
+  g.font = "700 12px 'Noto Sans Devanagari', 'Kohinoor Devanagari', 'Mangal', sans-serif";
+  g.strokeText("मोक्ष", m.x + 4, m.y + 25); g.fillStyle = "#ffe08a"; g.fillText("मोक्ष", m.x + 4, m.y + 25);
+  g.restore();
 }
 
 function lotus(g: CanvasRenderingContext2D, x: number, y: number) {
@@ -206,57 +207,70 @@ function ladder(g: CanvasRenderingContext2D, a: number, b: number) {
 
 /* ---------- snakes: Indian species with scaled, rounded bodies ---------- */
 type Species = { name: string; body: string; belly: string; head: string; eye: string; pupil: "slit" | "round"; hood: boolean; mark: (ctx: MarkCtx) => void };
-type MarkCtx = { g: CanvasRenderingContext2D; at: (s: number) => { p: Pt; n: Pt; t: Pt; w: number }; total: number };
+type MarkCtx = { g: CanvasRenderingContext2D; at: (s: number) => { p: Pt; n: Pt; t: Pt; w: number }; total: number; k: number };
 const band = (c: MarkCtx, s: number, thick: number, color: string, across = 1) => {
   const { g } = c, a = c.at(s); if (!a) return;
-  g.strokeStyle = color; g.lineWidth = thick; g.beginPath();
+  g.strokeStyle = color; g.lineWidth = thick * c.k; g.beginPath();
   g.moveTo(a.p.x + a.n.x * a.w * .6 * across, a.p.y + a.n.y * a.w * .6 * across); g.lineTo(a.p.x - a.n.x * a.w * .6 * across, a.p.y - a.n.y * a.w * .6 * across); g.stroke();
 };
 const blot = (c: MarkCtx, s: number, off: number, rx: number, ry: number, fill: string, edge: string, edgeW = 1.2) => {
   const { g } = c, a = c.at(s); if (!a) return;
   g.save(); g.translate(a.p.x + a.n.x * off * a.w, a.p.y + a.n.y * off * a.w); g.rotate(Math.atan2(a.t.y, a.t.x));
-  g.beginPath(); g.ellipse(0, 0, rx, Math.min(ry, a.w * .5), 0, 0, Math.PI * 2);
-  g.fillStyle = fill; g.fill(); g.strokeStyle = edge; g.lineWidth = edgeW; g.stroke(); g.restore();
+  g.beginPath(); g.ellipse(0, 0, rx * c.k, Math.min(ry * c.k, a.w * .5), 0, 0, Math.PI * 2);
+  g.fillStyle = fill; g.fill(); g.strokeStyle = edge; g.lineWidth = edgeW * c.k; g.stroke(); g.restore();
 };
+const each = (c: MarkCtx, first: number, gap: number, endPad: number, f: (s: number) => void) => { for (let s = first * c.k; s < c.total - endPad * c.k; s += gap * c.k) f(s); };
 const SPECIES: Species[] = [
   { name: "Indian python", body: "#9a8657", belly: "#d7c89c", head: "#7c6a43", eye: "#b8892a", pupil: "slit", hood: false,
-    mark: (c) => { for (let s = 10; s < c.total - 16; s += 17) { blot(c, s, 0, 7.5, 7, "#5a4026", "#2e1f10", 1.6); blot(c, s + 8, .62, 3, 2.4, "#4a331d", "#2e1f10", .8); blot(c, s + 8, -.62, 3, 2.4, "#4a331d", "#2e1f10", .8); } } },
+    mark: (c) => each(c, 10, 17, 16, (s) => { blot(c, s, 0, 7.5, 7, "#5a4026", "#2e1f10", 1.6); blot(c, s + 8 * c.k, .62, 3, 2.4, "#4a331d", "#2e1f10", .8); blot(c, s + 8 * c.k, -.62, 3, 2.4, "#4a331d", "#2e1f10", .8); }) },
   { name: "King cobra", body: "#4d4a26", belly: "#cfc488", head: "#5b5730", eye: "#3a2a12", pupil: "round", hood: true,
-    mark: (c) => { for (let s = 14; s < c.total - 8; s += 12) band(c, s, 2.4, "rgba(232,222,150,.85)"); } },
+    mark: (c) => each(c, 14, 12, 8, (s) => band(c, s, 2.4, "rgba(232,222,150,.85)")) },
   { name: "Russell's viper", body: "#a77f4b", belly: "#e2cfa4", head: "#8d673a", eye: "#c49a3c", pupil: "slit", hood: false,
-    mark: (c) => { for (let s = 9; s < c.total - 12; s += 13) { blot(c, s, 0, 5.4, 4.2, "#5b3a1c", "#141008", 1.3); blot(c, s + 6.5, .66, 2.8, 2.3, "#5b3a1c", "#141008", .9); blot(c, s + 6.5, -.66, 2.8, 2.3, "#5b3a1c", "#141008", .9); } } },
+    mark: (c) => each(c, 9, 13, 12, (s) => { blot(c, s, 0, 5.4, 4.2, "#5b3a1c", "#141008", 1.3); blot(c, s + 6.5 * c.k, .66, 2.8, 2.3, "#5b3a1c", "#141008", .9); blot(c, s + 6.5 * c.k, -.66, 2.8, 2.3, "#5b3a1c", "#141008", .9); }) },
   { name: "Common krait", body: "#1d1f28", belly: "#6c6e78", head: "#22242e", eye: "#111", pupil: "round", hood: false,
-    mark: (c) => { for (let s = 16; s < c.total - 6; s += 13) { band(c, s, 1.3, "rgba(240,240,236,.92)"); band(c, s + 3.2, 1.3, "rgba(240,240,236,.92)"); } } },
+    mark: (c) => each(c, 16, 13, 6, (s) => { band(c, s, 1.3, "rgba(240,240,236,.92)"); band(c, s + 3.2 * c.k, 1.3, "rgba(240,240,236,.92)"); }) },
   { name: "Spectacled cobra", body: "#6a4728", belly: "#d6b98a", head: "#5e3f22", eye: "#2a1a0c", pupil: "round", hood: true,
-    mark: (c) => { for (let s = 20; s < c.total - 10; s += 19) band(c, s, 4, "rgba(40,22,8,.35)"); } },
+    mark: (c) => each(c, 20, 19, 10, (s) => band(c, s, 4, "rgba(40,22,8,.35)")) },
   { name: "Green vine snake", body: "#4f8a2e", belly: "#c8e08a", head: "#4a8229", eye: "#d1b23a", pupil: "slit", hood: false,
     mark: () => { /* plain green with a pale belly line */ } },
 ];
+const speciesOf = (head: number) => SPECIES[Math.max(0, Object.keys(SNAKES).indexOf(String(head))) % SPECIES.length];
 
-function snake(g: CanvasRenderingContext2D, head: number, tail: number, sp: Species, seed: number) {
-  const r = rng(seed);
-  const pts = snakePath(head, tail), N = pts.length;
-  const len: number[] = [0];
+/** Shape of one snake: its centre line, cumulative length, width and a lookup by distance from the head. */
+type Geom = { pts: Pt[]; len: number[]; total: number; WD: number[]; L: Pt[]; R: Pt[]; tan: (i: number) => Pt; at: (s: number) => { p: Pt; n: Pt; t: Pt; w: number }; angle: number };
+const geoms = new Map<string, Geom>();
+function geom(head: number, tail: number): Geom {
+  const key = head + ">" + tail, hit = geoms.get(key); if (hit) return hit;
+  const pts = snakePath(head, tail), N = pts.length, len: number[] = [0];
   for (let i = 1; i < N; i++) len.push(len[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y));
-  const total = len[N - 1], maxW = 15.5;
-  const width = (k: number) => maxW * (k < .07 ? .72 + .28 * (k / .07) : k < .5 ? 1 : Math.max(.1, 1 - (k - .5) / .5 * .92));
+  const total = len[N - 1], maxW = 15.5 * K;
+  // a real snake's build: narrow neck, thickest a third of the way down, a long fine tail
+  const width = (k: number) => maxW * (k < .06 ? .62 + .38 * (k / .06) : k < .35 ? 1 : Math.max(.08, 1 - Math.pow((k - .35) / .65, 1.25) * .94));
   const tan = (i: number) => { const a = pts[Math.max(0, i - 1)], b = pts[Math.min(N - 1, i + 1)], l = Math.hypot(b.x - a.x, b.y - a.y) || 1; return { x: (b.x - a.x) / l, y: (b.y - a.y) / l }; };
   const L: Pt[] = [], R: Pt[] = [], WD: number[] = [];
   for (let i = 0; i < N; i++) {
     const t = tan(i), n = { x: -t.y, y: t.x }, w = width(len[i] / total) / 2; WD.push(w * 2);
     L.push({ x: pts[i].x + n.x * w, y: pts[i].y + n.y * w }); R.push({ x: pts[i].x - n.x * w, y: pts[i].y - n.y * w });
   }
-  const outline = () => { g.beginPath(); g.moveTo(L[0].x, L[0].y); for (let i = 1; i < N; i++) g.lineTo(L[i].x, L[i].y); for (let i = N - 1; i >= 0; i--) g.lineTo(R[i].x, R[i].y); g.closePath(); };
   const at = (s: number) => {
     if (s < 0 || s > total) return null as unknown as { p: Pt; n: Pt; t: Pt; w: number };
     let i = 1; while (i < N - 1 && len[i] < s) i++;
-    const t = tan(i); return { p: pts[i], n: { x: -t.y, y: t.x }, t, w: WD[i] };
+    const f = (s - len[i - 1]) / ((len[i] - len[i - 1]) || 1), t = tan(i);
+    return { p: { x: pts[i - 1].x + (pts[i].x - pts[i - 1].x) * f, y: pts[i - 1].y + (pts[i].y - pts[i - 1].y) * f }, n: { x: -t.y, y: t.x }, t, w: WD[i] };
   };
-  const angle = Math.atan2(pts[0].y - pts[3].y, pts[0].x - pts[3].x);        // the way the head points
+  const angle = Math.atan2(pts[0].y - pts[3].y, pts[0].x - pts[3].x);
+  const g = { pts, len, total, WD, L, R, tan, at, angle };
+  geoms.set(key, g); return g;
+}
+
+function snake(g: CanvasRenderingContext2D, head: number, tail: number, sp: Species, seed: number) {
+  const r = rng(seed);
+  const { pts, total, WD, L, R, tan, at, angle } = geom(head, tail), N = pts.length;
+  const outline = () => { g.beginPath(); g.moveTo(L[0].x, L[0].y); for (let i = 1; i < N; i++) g.lineTo(L[i].x, L[i].y); for (let i = N - 1; i >= 0; i--) g.lineTo(R[i].x, R[i].y); g.closePath(); };
 
   // shadow on the wood
   g.save(); g.filter = "blur(4px)"; g.translate(5, 7); outline(); g.fillStyle = "rgba(0,0,0,.45)"; g.fill();
-  g.beginPath(); g.ellipse(pts[0].x + Math.cos(angle) * (sp.hood ? 0 : 8), pts[0].y + Math.sin(angle) * (sp.hood ? 0 : 8), sp.hood ? 17 : 11, sp.hood ? 15 : 8, angle, 0, Math.PI * 2); g.fill(); g.restore();
+  g.beginPath(); g.ellipse(pts[0].x + Math.cos(angle) * (sp.hood ? 0 : 8 * K), pts[0].y + Math.sin(angle) * (sp.hood ? 0 : 8 * K), (sp.hood ? 17 : 11) * K, (sp.hood ? 15 : 8) * K, angle, 0, Math.PI * 2); g.fill(); g.restore();
   // a cobra's spread hood sits under the head
   if (sp.hood) hood(g, pts[0], angle, sp);
   // body
@@ -267,20 +281,21 @@ function snake(g: CanvasRenderingContext2D, head: number, tail: number, sp: Spec
   for (let i = 0; i < N; i++) { const t = tan(i), n = { x: -t.y, y: t.x }, w = WD[i] / 2, side = n.x * LIGHT.x + n.y * LIGHT.y > 0 ? -1 : 1; const q = { x: pts[i].x + n.x * w * side, y: pts[i].y + n.y * w * side }; i ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y); }
   for (let i = N - 1; i >= 0; i--) { const t = tan(i), n = { x: -t.y, y: t.x }, w = WD[i] / 2, side = n.x * LIGHT.x + n.y * LIGHT.y > 0 ? -1 : 1; g.lineTo(pts[i].x + n.x * w * side * .35, pts[i].y + n.y * w * side * .35); }
   g.closePath(); g.fill();
-  sp.mark({ g, at, total });
-  // scales: rows of small overlapping arcs
-  g.lineWidth = .55;
-  for (let s = 2; s < total; s += 3.1) {
+  sp.mark({ g, at, total, k: K });
+  // scales: staggered rows of small overlapping arcs, each with a faint glint
+  const sc = 2.6, step = 3.6;
+  g.lineWidth = .65;
+  for (let s = 2; s < total; s += step) {
     const a = at(s); if (!a) continue;
-    const ang = Math.atan2(a.t.y, a.t.x), rows = Math.max(2, Math.round(a.w / 3.2)), off = (Math.round(s / 3.1) % 2) * .5;
+    const ang = Math.atan2(a.t.y, a.t.x), rows = Math.max(2, Math.round(a.w / 4)), off = (Math.round(s / step) % 2) * .5, rr = Math.min(sc, a.w / 4);
     for (let j = 0; j <= rows; j++) {
       const across = ((j + off) / rows - .5) * a.w, cx = a.p.x + a.n.x * across, cy = a.p.y + a.n.y * across;
-      g.strokeStyle = "rgba(0,0,0,.22)"; g.beginPath(); g.arc(cx, cy, 1.8, ang + Math.PI * .5, ang + Math.PI * 1.5); g.stroke();
-      g.strokeStyle = "rgba(255,255,255,.07)"; g.beginPath(); g.arc(cx - a.t.x * .6, cy - a.t.y * .6, 1.8, ang + Math.PI * .6, ang + Math.PI * 1.1); g.stroke();
+      g.strokeStyle = "rgba(0,0,0,.24)"; g.beginPath(); g.arc(cx, cy, rr, ang + Math.PI * .5, ang + Math.PI * 1.5); g.stroke();
+      g.strokeStyle = "rgba(255,255,255,.09)"; g.beginPath(); g.arc(cx - a.t.x * .7, cy - a.t.y * .7, rr, ang + Math.PI * .6, ang + Math.PI * 1.1); g.stroke();
     }
   }
   // rounded shading: dark flanks and a soft highlight on the side facing the light
-  g.filter = "blur(2.6px)";
+  g.filter = "blur(3.4px)";
   const strip = (from: number, to: number, color: string) => {
     g.beginPath();
     for (let i = 0; i < N; i++) { const t = tan(i), n = { x: -t.y, y: t.x }, w = WD[i] / 2; const q = { x: pts[i].x + n.x * w * from, y: pts[i].y + n.y * w * from }; i ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y); }
@@ -293,15 +308,15 @@ function snake(g: CanvasRenderingContext2D, head: number, tail: number, sp: Spec
   g.beginPath();
   for (let i = 0; i < N; i++) { const t = tan(i), n = { x: -t.y, y: t.x }, w = WD[i] / 2, sd = n.x * LIGHT.x + n.y * LIGHT.y > 0 ? 1 : -1; const q = { x: pts[i].x + n.x * w * .62 * sd, y: pts[i].y + n.y * w * .62 * sd }; i ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y); }
   for (let i = N - 1; i >= 0; i--) { const t = tan(i), n = { x: -t.y, y: t.x }, w = WD[i] / 2, sd = n.x * LIGHT.x + n.y * LIGHT.y > 0 ? 1 : -1; g.lineTo(pts[i].x + n.x * w * .12 * sd, pts[i].y + n.y * w * .12 * sd); }
-  g.closePath(); g.fillStyle = "rgba(255,250,235,.26)"; g.fill();
+  g.closePath(); g.fillStyle = "rgba(255,250,235,.3)"; g.fill();
   g.filter = "none";
   g.restore();
-  outline(); g.strokeStyle = "rgba(0,0,0,.45)"; g.lineWidth = .8; g.stroke();
-  snakeHead(g, pts[0], angle, WD[0], sp, r);
+  outline(); g.strokeStyle = "rgba(0,0,0,.5)"; g.lineWidth = 1; g.stroke();
+  snakeHead(g, pts[0], angle, WD[0], sp, r() < .5);
 }
 
 function hood(g: CanvasRenderingContext2D, p: Pt, ang: number, sp: Species) {
-  g.save(); g.translate(p.x, p.y); g.rotate(ang);
+  g.save(); g.translate(p.x, p.y); g.rotate(ang); g.scale(K, K);
   const gr = g.createRadialGradient(-6, -4, 2, -6, 0, 17);
   gr.addColorStop(0, mixHex(sp.body, "#ffffff", .25)); gr.addColorStop(.7, sp.body); gr.addColorStop(1, mixHex(sp.body, "#000000", .45));
   // a spread hood: widest just behind the head, narrowing back into the neck
@@ -324,9 +339,38 @@ function hood(g: CanvasRenderingContext2D, p: Pt, ang: number, sp: Species) {
 }
 const mixHex = (a: string, b: string, t: number) => mix(a, b, t);
 
-function snakeHead(g: CanvasRenderingContext2D, p: Pt, ang: number, neck: number, sp: Species, r: () => number) {
-  g.save(); g.translate(p.x, p.y); g.rotate(ang);
-  const viper = sp.name === "Russell's viper", hw = neck * (viper ? .78 : sp.hood ? .6 : .66), len = viper ? 17 : 15;
+function snakeHead(g: CanvasRenderingContext2D, p: Pt, ang: number, neckPx: number, sp: Species, tongue: boolean, open = 0) {
+  g.save(); g.translate(p.x, p.y); g.rotate(ang); g.scale(K, K);
+  const neck = neckPx / K, viper = sp.name === "Russell's viper", hw = neck * (viper ? .78 : sp.hood ? .6 : .66), len = viper ? 17 : 15;
+  if (open > 0) {
+    // mouth open: cover the closed head with the throat, then draw the two jaws swung apart
+    const piv = len * .12, a = open * .5;
+    // the throat shows only between the two jaws
+    const tip = (side: number) => { const x = len - piv, y = side * hw * .12; return { x: piv + x * Math.cos(side * a) - y * Math.sin(side * a), y: x * Math.sin(side * a) + y * Math.cos(side * a) }; };
+    const up = tip(-1), lo = tip(1);
+    g.beginPath(); g.moveTo(piv, 0); g.lineTo(up.x, up.y); g.quadraticCurveTo(len + hw * .2, 0, lo.x, lo.y); g.closePath();
+    const th = g.createRadialGradient(piv + 1, 0, .5, piv + 2, 0, len * .9);
+    th.addColorStop(0, "#2a050a"); th.addColorStop(.55, "#8e2633"); th.addColorStop(1, "#d86b7a");
+    g.fillStyle = th; g.fill();
+    for (const side of [-1, 1]) {
+      g.save(); g.translate(piv, 0); g.rotate(side * a); g.translate(-piv, 0);
+      g.beginPath();
+      if (side < 0) { g.moveTo(-3, -neck * .48); g.bezierCurveTo(3, -hw * 1.05, len * .7, -hw * .9, len, -hw * .25); g.quadraticCurveTo(len + 1.5, -hw * .05, len - 1, 0); g.lineTo(-3, 0); }
+      else { g.moveTo(-3, neck * .48); g.bezierCurveTo(3, hw * 1.05, len * .7, hw * .9, len, hw * .25); g.quadraticCurveTo(len + 1.5, hw * .05, len - 1, 0); g.lineTo(-3, 0); }
+      g.closePath();
+      const jg = g.createLinearGradient(0, side * -hw, 0, side * hw * .2);
+      jg.addColorStop(0, mix(sp.head, "#000000", .35)); jg.addColorStop(.6, sp.head); jg.addColorStop(1, mix(sp.head, "#ffffff", .2));
+      g.fillStyle = jg; g.fill(); g.strokeStyle = "rgba(0,0,0,.6)"; g.lineWidth = .7; g.stroke();
+      // fangs and the eye on this jaw
+      g.fillStyle = "#fbf6e8"; g.beginPath(); g.moveTo(len - 3.2, 0); g.lineTo(len - 2.4, side * -.4); g.lineTo(len - 1.6, side * 2.6); g.closePath(); g.fill();
+      const ex = len * .58, ey = side * hw * .66;
+      g.fillStyle = sp.eye; g.beginPath(); g.ellipse(ex, ey, 2.4, 2.1, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#050505"; g.beginPath(); g.ellipse(ex, ey, sp.pupil === "slit" ? .55 : 1.25, sp.pupil === "slit" ? 1.8 : 1.25, 0, 0, Math.PI * 2); g.fill();
+      g.restore();
+    }
+    g.restore();
+    return;
+  }
   const shape = () => {
     g.beginPath(); g.moveTo(-3, -neck * .48);
     g.bezierCurveTo(3, -hw * 1.05, len * .7, -hw * (viper ? 1 : .9), len, -hw * .25);
@@ -355,7 +399,7 @@ function snakeHead(g: CanvasRenderingContext2D, p: Pt, ang: number, neck: number
   g.fillStyle = "rgba(0,0,0,.65)";
   for (const s of [-1, 1]) { g.beginPath(); g.ellipse(len - 1.6, s * hw * .2, .7, .45, 0, 0, Math.PI * 2); g.fill(); }
   // a flicking tongue on some snakes
-  if (r() < .5) {
+  if (tongue) {
     g.strokeStyle = "#b3141c"; g.lineWidth = 1.1; g.lineCap = "round";
     g.beginPath(); g.moveTo(len + 1.5, 0); g.lineTo(len + 7, 0); g.lineTo(len + 10, -2.2); g.moveTo(len + 7, 0); g.lineTo(len + 10, 2.2); g.stroke();
   }
@@ -380,22 +424,53 @@ export function paintBoard(layer: HTMLCanvasElement, dpr: number, woodId: WoodId
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
   frameAndSquares(g, wood);
   Object.entries(LADDERS).forEach(([a, b]) => onLayer(g, boxOf([center(+a), center(b)], 34), (c) => ladder(c, +a, b)));
-  Object.entries(SNAKES).forEach(([h, t], i) => onLayer(g, boxOf(snakePath(+h, t), 42), (c) => snake(c, +h, t, SPECIES[i % SPECIES.length], 100 + i)));
+  Object.entries(SNAKES).forEach(([h, t], i) => onLayer(g, boxOf(snakePath(+h, t), 54), (c) => snake(c, +h, t, SPECIES[i % SPECIES.length], 100 + i)));
   varnish(g);
+  numbers(g);
+}
+
+/* ---------- moving parts drawn over the board during animations ---------- */
+/** The snake at `head` with its mouth open (0 = closed, 1 = wide). */
+export function paintSnakeMouth(g: CanvasRenderingContext2D, head: number, open: number) {
+  const tail = SNAKES[head]; if (!tail) return;
+  const sp = speciesOf(head), gm = geom(head, tail);
+  if (sp.hood) hood(g, gm.pts[0], gm.angle, sp);
+  snakeHead(g, gm.pts[0], gm.angle, gm.WD[0], sp, false, Math.max(0.001, open));
+}
+/** A swallowed pawn as a bulge travelling down the snake's body (`k` 0 = at the head, 1 = at the tail). */
+export function paintSnakeBulge(g: CanvasRenderingContext2D, head: number, k: number, color: string) {
+  const tail = SNAKES[head]; if (!tail) return;
+  const sp = speciesOf(head), gm = geom(head, tail), a = gm.at(Math.min(gm.total - 1, Math.max(4, k * gm.total)));
+  if (!a) return;
+  const ang = Math.atan2(a.t.y, a.t.x), rw = Math.max(a.w * .7, 8.5), rl = rw * 1.85;
+  g.save(); g.translate(a.p.x, a.p.y); g.rotate(ang);
+  g.fillStyle = "rgba(0,0,0,.35)"; g.beginPath(); g.ellipse(3, 4, rl, rw, 0, 0, Math.PI * 2); g.fill();
+  const gr = g.createRadialGradient(-rl * .25, -rw * .45, 1, 0, 0, rl);
+  gr.addColorStop(0, mix(sp.body, "#ffffff", .45)); gr.addColorStop(.5, mix(sp.body, color, .22)); gr.addColorStop(1, mix(sp.body, "#000000", .45));
+  g.fillStyle = gr; g.beginPath(); g.ellipse(0, 0, rl, rw, 0, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = "rgba(0,0,0,.4)"; g.lineWidth = .8; g.stroke();
+  g.restore();
+}
+/** Points a pawn steps through while climbing: each rung from the bottom, then the top square. */
+export function ladderSteps(a: number, b: number, rungs: number): Pt[] {
+  const p1 = center(a), p2 = center(b), out: Pt[] = [];
+  for (let i = 1; i <= rungs; i++) { const k = i / rungs; out.push({ x: p1.x + (p2.x - p1.x) * k, y: p1.y + (p2.y - p1.y) * k }); }
+  return out;
 }
 
 /** A polished playing piece: a glossy enamel dome on a brass base, with its shadow. */
-export function paintToken(g: CanvasRenderingContext2D, p: Pt, color: string, label: string, active: boolean) {
-  const r = 13.5;
+export function paintToken(g: CanvasRenderingContext2D, p: Pt, color: string, label: string, active: boolean, scale = 1) {
+  if (scale <= 0.02) return;
+  const r = 15.5 * scale;
   g.save(); g.filter = "blur(2.5px)"; g.fillStyle = "rgba(0,0,0,.5)"; g.beginPath(); g.ellipse(p.x + 4, p.y + 6, r, r * .75, 0, 0, Math.PI * 2); g.fill(); g.restore();
   if (active) { g.strokeStyle = "rgba(255,228,150,.95)"; g.lineWidth = 2.5; g.beginPath(); g.arc(p.x, p.y, r + 5, 0, Math.PI * 2); g.stroke(); }
   const brass = g.createRadialGradient(p.x - 5, p.y - 6, 2, p.x, p.y, r);
   brass.addColorStop(0, "#fff4c8"); brass.addColorStop(.5, "#d6a743"); brass.addColorStop(1, "#6e4c10");
   g.fillStyle = brass; g.beginPath(); g.arc(p.x, p.y, r, 0, Math.PI * 2); g.fill();
-  const dome = g.createRadialGradient(p.x - 3.5, p.y - 4.5, 1, p.x, p.y, r - 3.5);
+  const dome = g.createRadialGradient(p.x - 3.5, p.y - 4.5, 1, p.x, p.y, r * .77);
   dome.addColorStop(0, mix(color, "#ffffff", .55)); dome.addColorStop(.45, color); dome.addColorStop(1, mix(color, "#000000", .45));
-  g.fillStyle = dome; g.beginPath(); g.arc(p.x, p.y, r - 3.5, 0, Math.PI * 2); g.fill();
-  g.fillStyle = "rgba(255,255,255,.65)"; g.beginPath(); g.ellipse(p.x - 3.4, p.y - 4.4, 3.4, 2, -.6, 0, Math.PI * 2); g.fill();
-  g.fillStyle = "rgba(255,255,255,.92)"; g.font = "800 10px 'DM Sans', sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillStyle = dome; g.beginPath(); g.arc(p.x, p.y, r * .77, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "rgba(255,255,255,.65)"; g.beginPath(); g.ellipse(p.x - r * .24, p.y - r * .3, r * .24, r * .14, -.6, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "rgba(255,255,255,.95)"; g.font = `800 ${Math.round(12 * scale)}px 'DM Sans', sans-serif`; g.textAlign = "center"; g.textBaseline = "middle";
   g.fillText(label, p.x, p.y + 1.5); g.textBaseline = "alphabetic";
 }

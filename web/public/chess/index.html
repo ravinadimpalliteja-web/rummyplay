@@ -68,6 +68,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--gold-2); ou
 .setup h1 { font: 600 clamp(30px, 8vw, 44px)/1.05 var(--font-display); margin: 2px 0 0; letter-spacing: -.02em; text-wrap: balance; }
 .setup h1 em { font-weight: 500; color: var(--gold-2); }
 .lead { margin: 0; color: var(--muted); font-size: 14px; max-width: 46ch; }
+.coming-soon-label{display:inline-block;margin-left:6px;padding:3px 6px;border:1px solid #9a793e;border-radius:999px;color:#e2c27c;font:600 9px/1.2 var(--font-body);vertical-align:middle;letter-spacing:.04em}
 .multiplayer-panel{margin:16px 0 4px;padding:15px;border:1px solid #41634f;border-radius:15px;background:linear-gradient(145deg,#0d3024,#09241b)}
 .multiplayer-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
 .multiplayer-heading b{font:600 17px var(--font-display);color:var(--gold)}
@@ -225,7 +226,7 @@ body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --boar
     <p class="lead">Play a friend on this phone, or take on the computer at three levels.</p>
     <div class="modes">
       <button class="mode" type="button" data-mode="ai" aria-pressed="true"><span class="ico">♚</span><b>Play vs Computer</b><span>Easy, Medium or Hard.</span></button>
-      <button class="mode" type="button" data-mode="multiplayer" aria-pressed="false"><span class="ico">♟</span><b>Multiplayer</b><span>Play against another person online.</span></button>
+      <button class="mode" type="button" data-mode="multiplayer" aria-pressed="false"><span class="ico">♟</span><b>Multiplayer <small class="coming-soon-label">Coming Soon</small></b><span>Private rooms and online matches are coming soon.</span></button>
     </div>
     <section class="multiplayer-panel" id="multiplayerPanel" hidden aria-labelledby="multiplayerTitle">
       <div class="multiplayer-heading"><b id="multiplayerTitle">Play with friends</b><span>Online multiplayer</span></div>

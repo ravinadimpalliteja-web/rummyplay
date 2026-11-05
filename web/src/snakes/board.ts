@@ -10,10 +10,11 @@ const K = 1.45;                                    // snake size: bodies, heads 
 export type Pt = { x: number; y: number };
 
 /* ---------- woods ---------- */
-export type WoodId = "maple" | "teak" | "rosewood" | "walnut" | "sheesham";
+export type WoodId = "emerald" | "maple" | "teak" | "rosewood" | "walnut" | "sheesham";
 /* tileA / tileB: the two alternating square woods; ink / inkEdge: number colour and its outline (dark on light woods). */
 type Wood = { name: string; base: string; light: string; dark: string; grain: string; contrast: number; frame: string; tileA: string; tileB: string; ink: string; inkEdge: string };
 export const WOODS: Record<WoodId, Wood> = {
+  emerald: { name: "Emerald Royale", base: "#164c35", light: "#2c7752", dark: "#082d20", grain: "#061f16", contrast: .72, frame: "#073522", tileA: "#f2ead5", tileB: "#4f8b68", ink: "#102c20", inkEdge: "rgba(255,246,220,.96)" },
   maple: { name: "Golden oak", base: "#b8783c", light: "#e2b878", dark: "#7a4519", grain: "#4e2a0c", contrast: .8, frame: "#6a3512", tileA: "#f0bd70", tileB: "#cc8640", ink: "#2b1405", inkEdge: "rgba(255,244,220,.92)" },
   teak: { name: "Teak", base: "#a8692f", light: "#c98b4a", dark: "#73421a", grain: "#4a2a0e", contrast: .9, frame: "#7a4518", tileA: "#d9a465", tileB: "#a86a30", ink: "#25110a", inkEdge: "rgba(255,240,214,.9)" },
   rosewood: { name: "Rosewood", base: "#6f2b1d", light: "#8f4029", dark: "#40150c", grain: "#260905", contrast: .9, frame: "#4a170e", tileA: "#a95c41", tileB: "#7a3424", ink: "#fff4dc", inkEdge: "rgba(30,8,2,.92)" },

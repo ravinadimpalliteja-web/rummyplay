@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Royal Club Chess</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="theme-color" content="#f7f5ef">
+<meta name="theme-color" content="#06231a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&family=Playfair+Display:wght@500;600;700&display=swap">
@@ -172,24 +172,15 @@ body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --boar
   #sideBottom { grid-column: 2; grid-row: 2; }
 }
 @media (prefers-reduced-motion: reduce) { .pc.anim { transition: none; } .thinking i { animation: none; } }
-/* Option A light, elegant theme chooser */
-:root{--room:#f7f6f1;--room-2:#eeeee7;--panel:#fff;--line:#d9ddd6;--ivory:#202a25;--muted:#68756d;--gold:#b18b43;--gold-2:#94702f;color-scheme:light}
-body{background:radial-gradient(ellipse at 50% 0%,#fff 0%,#f7f6f1 68%,#edf1eb 100%) fixed;color:#202a25}
-.brand-mark{border-color:#b18b43;color:#b18b43}.brand strong{color:#123b2a}.brand small{color:#8b713e}
-.club-back,.chip{background:#fff;color:#244331;border-color:#d9ddd6}.theme-select option{background:#fff;color:#202a25}
-.setup{max-width:720px}.eyebrow,.setup h1 em{color:#4e8865}
-.mode,.seg,.bar,.act{background:#fff;color:#26332b;border-color:#d9ddd6}.mode[aria-pressed=true]{border-color:#4e9a70;box-shadow:inset 0 0 0 1px #4e9a7040,0 5px 16px #203b2610}
-.mode span,.field>span,.note{color:#69766e}.seg button{color:#4d5b52}.seg button[aria-pressed=true]{background:#dcecdf;color:#17452e}
-.names input,.sheet textarea{background:#fff;color:#26332b;border-color:#d9ddd6}.gold{background:#1d6843;color:#fff}.ghost{border-color:#cbd6cd;color:#285b43}
-.bar.turn{border-color:#69a17b}.thinking,.caps em,.act svg{color:#397b54}.moves span{color:#46564b}.moves span.cur{background:#e5efe5;color:#245d3b}.status{color:#405c49}
-.board-wrap{background:linear-gradient(145deg,#e7d6ae,#b89b60 45%,#927443);box-shadow:0 12px 26px #263b2b20}.overlay{background:rgba(247,246,241,.94)}.overlay h2{color:#245d3b}.overlay p{color:#526258}
-.sheet{background:rgba(28,42,32,.35)}.sheet>div{background:#fff;color:#202a25;border-color:#d9c99f}.sheet h3{color:#234b35}
-.theme-gallery{display:grid;gap:9px;padding:12px;border:1px solid #e2e5de;border-radius:16px;background:#ffffffd9}
-.theme-gallery-head{display:flex;justify-content:space-between;align-items:baseline;color:#234b35;font-weight:800}.theme-gallery-head small{color:#77847b;font-weight:500;font-size:11px}
+/* Preserve the original Royal Club emerald-and-gold interface. Keep only the theme chooser cards as a light, minimal panel. */
+.theme-gallery{display:grid;gap:9px;padding:12px;border:1px solid #315846;border-radius:16px;background:rgba(8,39,28,.72)}
+.theme-gallery-head{display:flex;justify-content:space-between;align-items:baseline;color:#f0d99d;font-weight:800}
+.theme-gallery-head small{color:#c4cbbf;font-weight:500;font-size:11px}
 .theme-cards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
-.theme-card{min-width:0;display:grid;gap:6px;padding:7px;border:1px solid #e0e4dd;border-radius:12px;background:#fff;color:#26332b;text-align:left}
-.theme-card[aria-pressed=true]{border:2px solid #26945b;padding:6px;box-shadow:0 3px 12px #26945b18}
-.theme-card b{font-size:clamp(9px,1.7vw,12px);line-height:1.2}.theme-card small{color:#27804d;font-size:10px}
+.theme-card{min-width:0;display:grid;gap:6px;padding:7px;border:1px solid #315846;border-radius:12px;background:#103a2b;color:#f5edda;text-align:left}
+.theme-card[aria-pressed=true]{border:2px solid #d6b45e;padding:6px;box-shadow:0 3px 12px #0003}
+.theme-card b{font-size:clamp(9px,1.7vw,12px);line-height:1.2}
+.theme-card small{color:#e1c77d;font-size:10px}
 .theme-preview{display:block;aspect-ratio:1.35;border-radius:7px;border:1px solid #d5d8d2;background-size:25% 25%;background-image:linear-gradient(45deg,#327b5a 25%,transparent 25%,transparent 75%,#327b5a 75%),linear-gradient(45deg,#327b5a 25%,#e1eee2 25%,#e1eee2 75%,#327b5a 75%);background-position:0 0,12.5% 12.5%}
 .walnut-preview{background-image:linear-gradient(45deg,#95613d 25%,transparent 25%,transparent 75%,#95613d 75%),linear-gradient(45deg,#95613d 25%,#e6c69b 25%,#e6c69b 75%,#95613d 75%)}
 .slate-preview{background-image:linear-gradient(45deg,#737a82 25%,transparent 25%,transparent 75%,#737a82 75%),linear-gradient(45deg,#737a82 25%,#e2e3e4 25%,#e2e3e4 75%,#737a82 75%)}

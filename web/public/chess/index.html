@@ -63,7 +63,27 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--gold-2); ou
 @media(max-width:380px) { .theme-select { max-width:116px; padding:6px 7px; font-size:11px; } .brand strong { font-size:12px; } }
 
 /* ---------- setup ---------- */
-.setup { flex: 1; min-height: 0; overflow-y: auto; display: grid; align-content: start; gap: 14px; padding: 8px 0 20px; max-width: 520px; width: 100%; margin: 0 auto; }
+.setup { flex: 1; min-height: 0; overflow-y: auto; display: block; padding: 8px 0 20px; width: 100%; margin: 0 auto; }
+.setup-stage { width: min(100%, 760px); min-height: 100%; margin: 0 auto; display: grid; grid-template-columns: minmax(38px, 62px) minmax(0, 520px) minmax(38px, 62px); align-items: stretch; justify-content: center; gap: clamp(6px, 1.8vw, 16px); }
+.setup-content { min-width: 0; display: grid; align-content: start; gap: 14px; }
+.piece-rail { min-width: 0; display: flex; flex-direction: column; justify-content: space-evenly; align-items: center; gap: 10px; padding: 30px 0; pointer-events: none; }
+.setup-piece { width: 100%; max-width: 62px; aspect-ratio: .78; display: grid; place-items: center; border: 1px solid rgba(217,185,111,.48); border-radius: 13px; background: linear-gradient(155deg,rgba(20,65,47,.92),rgba(5,30,22,.88)); box-shadow: inset 0 1px 0 rgba(255,245,210,.12), 0 8px 18px rgba(0,0,0,.22); color: #f1d28a; font-family: "Segoe UI Symbol","DejaVu Sans",serif; font-size: clamp(27px, 4vw, 42px); line-height: 1; text-shadow: 0 2px 0 #6c4d1f, 0 5px 10px rgba(0,0,0,.7); }
+.piece-rail.right .setup-piece { color: #fff0c5; }
+@media(max-width:480px) {
+  .setup-stage { grid-template-columns: minmax(32px, 42px) minmax(0,1fr) minmax(32px,42px); gap: 5px; }
+  .setup-content { gap: 12px; }
+  .piece-rail { gap: 8px; padding: 24px 0; }
+  .setup-piece { border-radius: 9px; font-size: clamp(25px, 8vw, 34px); }
+  .setup h1 { font-size: clamp(27px, 7.5vw, 36px); }
+  .lead { font-size: 12px; }
+  .mode { padding: 10px 8px; }
+  .mode b { font-size: 15px; }
+  .mode span { font-size: 11px; }
+}
+@media(min-width:900px) {
+  .setup-stage { grid-template-columns: 68px minmax(0,520px) 68px; gap: 20px; }
+  .setup-piece { max-width: 68px; font-size: 46px; }
+}
 .eyebrow { font-size: 10px; font-weight: 700; letter-spacing: .25em; color: var(--gold); text-transform: uppercase; margin: 0; }
 .setup h1 { font: 600 clamp(30px, 8vw, 44px)/1.05 var(--font-display); margin: 2px 0 0; letter-spacing: -.02em; text-wrap: balance; }
 .setup h1 em { font-weight: 500; color: var(--gold-2); }
@@ -221,6 +241,9 @@ body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --boar
   </header>
 
   <section class="setup" id="setup">
+    <div class="setup-stage">
+      <aside class="piece-rail left" aria-hidden="true"><span class="setup-piece">♘</span><span class="setup-piece">♖</span><span class="setup-piece">♗</span><span class="setup-piece">♙</span></aside>
+      <div class="setup-content">
     <p class="eyebrow">Royal Club · Board games</p>
     <h1>Chess, <em>your move.</em></h1>
     <p class="lead">Play a friend on this phone, or take on the computer at three levels.</p>
@@ -248,6 +271,9 @@ body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --boar
     <button class="gold" id="startBtn" type="button">Start game →</button>
     <button class="ghost" id="resumeBtn" type="button" hidden>Continue your last game</button>
     <p class="note">Full rules: castling, en passant, promotion, check, checkmate, stalemate and draws. Every game is saved in standard PGN.</p>
+      </div>
+      <aside class="piece-rail right" aria-hidden="true"><span class="setup-piece">♔</span><span class="setup-piece">♕</span></aside>
+    </div>
   </section>
 
   <section class="game" id="game" hidden>

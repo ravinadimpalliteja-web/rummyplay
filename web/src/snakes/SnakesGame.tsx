@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { RoomClient, deviceToken, randomPasscode, saveRoom, savedRoom, serverUrl, type NetStatus } from "../domain/online";
 import { CHAT_EMOJIS, CHAT_PHRASES, TIMING, newGame, roll, rollDie, rungsOf, snakeSlideMs, turnOf, type LastRoll, type SLGame } from "./engine";
-import { OFF, W, WOODS, WOOD_IDS, center, ladderSteps, paintBoard, paintSnakeBulge, paintSnakeMouth, paintToken, snakePath, type Pt, type WoodId } from "./board";
+import { NUM_FONT, OFF, PIECE_H, SHARED, W, WOODS, WOOD_IDS, center, ladderSteps, numberAt, paintBase, paintBoard, paintPiece, paintSnakeBulge, paintSnakeMouth, snakePath, spot, type Pt, type WoodId } from "./board";
+import { fitView, planeStyle, project, squash, type View } from "./view3d";
 import { setSound, sfx, soundOn, unlock } from "./sound";
 import { celebrate } from "./confetti";
 import TokenPicker from "./TokenPicker";
@@ -9,7 +10,7 @@ import { DEFAULT_PIECES, PIECE_IDS, pieceById, pieceImage, pieceUrl, type PieceI
 import "./snakes.css";
 
 const ROOM_KEY = "rc-snakes-room", PIECE_KEY = "rc-snakes-piece";
-const WOOD_KEY = "rc-snakes-wood", DICE_KEY = "rc-snakes-dice";
+const WOOD_KEY = "rc-snakes-wood", DICE_KEY = "rc-snakes-dice", VIEW_KEY = "rc-snakes-view";
 const DICE = [
   { id: "ivory", name: "Classic ivory" }, { id: "brass", name: "Polished brass" }, { id: "glass", name: "Emerald glass" },
   { id: "rosewood", name: "Carved rosewood" }, { id: "onyx", name: "Black onyx" },
@@ -19,6 +20,9 @@ const readKey = <T extends string>(key: string, ok: readonly string[], dflt: T):
 const keep = (key: string, v: string) => { try { window.localStorage.setItem(key, v); } catch { /* storage off: still works for this visit */ } };
 /* Final orientation of the die for each value (faces: front 1, right 2, top 3, bottom 4, left 5, back 6). */
 const FACE_ROT: Record<number, [number, number]> = { 1: [0, 0], 2: [0, -90], 3: [-90, 0], 4: [90, 0], 5: [0, 90], 6: [0, 180] };
+/** The die at rest on its pedestal showing `v`, turned a little so three faces catch the light. */
+const VIEW_TILT = "rotateX(-24deg) rotateY(32deg)";
+const restRot = (v: number) => { const [x, y] = FACE_ROT[v] ?? [0, 0]; return `${VIEW_TILT} rotateZ(0deg) rotateX(${x}deg) rotateY(${y}deg)`; };
 const FACES: [string, number][] = [["front", 1], ["right", 2], ["top", 3], ["bottom", 4], ["left", 5], ["back", 6]];
 const COLORS = ["#d23b45", "#2f6fd6", "#e3a21a", "#8a4fd0"];
 const BOTS = ["Maya", "Alex", "Jordan"];
@@ -26,6 +30,8 @@ const PIPS: Record<number, number[]> = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0,
 const PLACE = ["1st", "2nd", "3rd", "4th"], MEDAL = ["🥇", "🥈", "🥉", "🎖️"];
 const reduced = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 const pace = reduced ? 0.3 : 1;
+const can3d = typeof CSS !== "undefined" && !!CSS.supports?.("transform-style", "preserve-3d");
+const DEBUG = typeof location !== "undefined" && /[?&]debug\b/.test(location.search);
 const wait = (ms: number) => new Promise<void>(r => window.setTimeout(r, ms * pace));
 
 type SeatInfo = { seat: number; name: string; connected: boolean; away: boolean; piece?: PieceId } | null;
@@ -41,7 +47,7 @@ type Table = {
   pos: Record<number, number>; turn: number; streak: number; last: LastRoll | null;
   phase: "playing" | "gameEnd"; winner: number | null; finished: number[]; pieces: Record<number, PieceId>;
 };
-type Disp = Pt & { s?: number };
+type Disp = Pt & { s?: number; h?: number };
 
 const fromView = (v: SLView): Table | null => v.phase === "lobby" || !v.order ? null : {
   you: v.you, order: v.order,
@@ -77,6 +83,9 @@ function describe(l: LastRoll, t: Table): string {
 
 const DiceIcon = () => <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>;
 const ChatIcon = () => <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>;
+const InfoIcon = () => <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>;
+const GearIcon = () => <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8l1.6 2.4 2.8-.7.7 2.8 2.4 1.6-1.2 2.6 1.2 2.6-2.4 1.6-.7 2.8-2.8-.7L12 21.2l-1.6-2.4-2.8.7-.7-2.8-2.4-1.6L5.7 12 4.5 9.4l2.4-1.6.7-2.8 2.8.7z"/></svg>;
+const Crown = () => <svg className="sl-crown" viewBox="0 0 64 34" aria-hidden="true"><defs><linearGradient id="slcg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fff2b8"/><stop offset=".5" stopColor="#e2b44e"/><stop offset="1" stopColor="#8f6216"/></linearGradient></defs><path d="M6 28 3 8l14 10L32 2l15 16L61 8l-3 20z" fill="url(#slcg)" stroke="#5a3a08" strokeWidth="1.4" strokeLinejoin="round"/><rect x="6" y="27" width="52" height="5" rx="2" fill="url(#slcg)" stroke="#5a3a08" strokeWidth="1.2"/><circle cx="32" cy="2.8" r="2.6" fill="#ffe9a8"/><circle cx="3" cy="8" r="2.2" fill="#ffe9a8"/><circle cx="61" cy="8" r="2.2" fill="#ffe9a8"/><circle cx="32" cy="20" r="3" fill="#d23b45"/><circle cx="19" cy="22" r="2.2" fill="#2f9e6a"/><circle cx="45" cy="22" r="2.2" fill="#2f9e6a"/></svg>;
 const SoundIcon = ({ on }: { on: boolean }) => <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10z"/>{on ? <path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/> : <path d="M17 9l5 6M22 9l-5 6"/>}</svg>;
 const Face = ({ v }: { v: number }) => <>{Array.from({ length: 9 }, (_, i) => <i key={i} className={PIPS[v].includes(i) ? "on" : ""} />)}</>;
 
@@ -95,20 +104,26 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
   const [roomName, setRoomName] = useState(""), [roomCode, setRoomCode] = useState(""), [roomPass, setRoomPass] = useState("");
   const [roomMsg, setRoomMsg] = useState("");
   const [animating, setAnimating] = useState(false);
+  /** While a roll is being shown, the player who rolled stays highlighted (the game has already moved the turn on). */
+  const [rolling, setRolling] = useState<number | null>(null);
+  const rollingRef = useRef<number | null>(null); rollingRef.current = rolling;
   const [dieValue, setDieValue] = useState(6);
-  const [wood, setWood] = useState<WoodId>(() => readKey(WOOD_KEY, WOOD_IDS, "teak"));
+  const [wood, setWood] = useState<WoodId>(() => readKey(WOOD_KEY, WOOD_IDS, "maple"));
   const [dice, setDice] = useState<DiceId>(() => readKey(DICE_KEY, DICE.map(d => d.id), "ivory"));
-  const [panel, setPanel] = useState<"none" | "style" | "rules" | "chat">("none");
+  const [panel, setPanel] = useState<"none" | "settings" | "rules" | "chat">("none");
+  const [view3d, setView3d] = useState<"3d" | "flat">(() => readKey(VIEW_KEY, ["3d", "flat"], can3d ? "3d" : "flat"));
+  const [geo, setGeo] = useState<View | null>(null);
   const [sound, setSoundState] = useState(soundOn());
   const [bubbles, setBubbles] = useState<Record<number, { text: string; id: number }>>({});
   const [banner, setBanner] = useState<{ text: string; big: boolean } | null>(null);
   const [msg, setMsg] = useState(""), [, setTick] = useState(0);
   const [chatGap, setChatGap] = useState(false);
 
-  const wrapRef = useRef<HTMLDivElement | null>(null), diceRef = useRef<HTMLDivElement | null>(null), cubeRef = useRef<HTMLDivElement | null>(null), shadowRef = useRef<HTMLDivElement | null>(null);
-  const fadeTimer = useRef(0), bubbleId = useRef(0);
+  const stageRef = useRef<HTMLDivElement | null>(null), diceRef = useRef<HTMLDivElement | null>(null), cubeRef = useRef<HTMLDivElement | null>(null), shadowRef = useRef<HTMLDivElement | null>(null);
+  const baseRef = useRef<HTMLCanvasElement | null>(null), boardRef = useRef<HTMLCanvasElement | null>(null), piecesRef = useRef<HTMLCanvasElement | null>(null), fxRef = useRef<HTMLCanvasElement | null>(null);
+  const geoRef = useRef<View | null>(null); geoRef.current = geo;
+  const bubbleId = useRef(0);
   const clientRef = useRef<RoomClient | null>(null), skew = useRef(0), lastPhase = useRef<string | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const disp = useRef<Record<number, Disp | null>>({}), dirty = useRef(true);
   const overlay = useRef<{ mouth?: { head: number; open: number }; bulge?: { head: number; k: number; color: string } }>({});
   const animatedN = useRef<number | null>(null), chain = useRef<Promise<void>>(Promise.resolve());
@@ -230,41 +245,109 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     const sq = t.pos[seat];
     if (!sq) return null;
     const same = t.order.filter(s => t.pos[s] === sq);
-    const c = center(sq);
-    if (same.length === 1) return c;
-    const k = same.indexOf(seat), o = 12, spots = [[-o, -o], [o, -o], [-o, o], [o, o]];
-    return { x: c.x + spots[k][0], y: c.y + spots[k][1] + 3, s: .78 };
+    if (same.length === 1) return spot(sq);
+    const c = center(sq), lay = SHARED[same.length], [dx, dy] = lay.pts[same.indexOf(seat)];
+    return { x: c.x + dx, y: c.y + dy, s: lay.s };
   };
   const settle = () => { const t = tableRef.current; if (!t) return; for (const s of t.order) disp.current[s] = restPoint(t, s); overlay.current = {}; dirty.current = true; };
 
+  /* The stage: measure the space, fit the tilted board into it (debounced while the window is resized or turned). */
   useEffect(() => {
     if (sub !== "table") return;
-    const canvas = canvasRef.current; if (!canvas) return;
-    const layer = document.createElement("canvas");
-    const paint = () => { const dpr = Math.min(3, window.devicePixelRatio || 1); paintBoard(layer, Math.min(dpr, 2.5), wood); canvas.width = canvas.height = Math.round(W * dpr); dirty.current = true; };
+    const stage = stageRef.current; if (!stage) return;
+    let timer = 0;
+    const measure = () => {
+      const w = stage.clientWidth, h = stage.clientHeight; if (w < 40 || h < 40) return;
+      const A = view3d === "flat" ? 0 : w > h * 1.15 ? 30 : h > w * 1.2 ? 19 : 24;     // tall space: tilt a little less so the board fills more of it
+      const g = geoRef.current;
+      if (g && Math.abs(g.sw - w) < 1 && Math.abs(g.sh - h) < 1 && g.A === A) return;
+      setGeo(fitView(w, h, A));
+    };
+    measure();
+    const ro = new ResizeObserver(() => { window.clearTimeout(timer); timer = window.setTimeout(measure, 90); });
+    ro.observe(stage);
+    return () => { ro.disconnect(); window.clearTimeout(timer); };
+  }, [sub, !!table, view3d]);
+
+  /* Paint the board picture, the base (shadow, edges, leaves) and size the token and effect layers whenever the fit or the wood changes. */
+  useEffect(() => {
+    if (!geo || sub !== "table") return;
+    const board = boardRef.current, base = baseRef.current, pieces = piecesRef.current, fx = fxRef.current;
+    if (!board || !base || !pieces || !fx) return;
+    const paint = () => {
+      const dpr = Math.min(2.5, window.devicePixelRatio || 1), pd = Math.min(2, dpr);
+      const t0 = performance.now();
+      paintBoard(board, Math.min(2400, Math.round(geo.B * dpr * (geo.A ? 1.3 : 1))) / W, wood);
+      if (DEBUG) (window as unknown as { __slPaints?: number[] }).__slPaints = [...((window as unknown as { __slPaints?: number[] }).__slPaints ?? []), Math.round(performance.now() - t0)];
+      for (const c of [base, pieces]) { c.width = Math.round(geo.sw * pd); c.height = Math.round(geo.sh * pd); }
+      const bg = base.getContext("2d")!; bg.setTransform(pd, 0, 0, pd, 0, 0);
+      paintBase(bg, (x, y, z) => project(geo, x, y, z), wood);
+      fx.width = fx.height = Math.round(Math.min(1600, geo.B * pd));
+      dirty.current = true;
+    };
     paint();
-    document.fonts?.ready.then(paint).catch(() => undefined);
-    let raf = 0;
+    let live = true;
+    // repaint once the number font has arrived (only if it was still loading)
+    if (document.fonts && document.fonts.status !== "loaded") document.fonts.ready.then(() => { if (live) paint(); }).catch(() => undefined);
+    return () => { live = false; };
+  }, [geo, wood, sub]);
+
+  /* Each frame (only when something moved): tokens upright at their projected spots, back to front; snake effects on their own layer. */
+  const boxes = useRef<{ seat: number; x0: number; y0: number; x1: number; y1: number }[]>([]);
+  useEffect(() => {
+    if (sub !== "table") return;
+    let raf = 0, fxUsed = true;
     const frame = () => {
       raf = requestAnimationFrame(frame);
-      if (!dirty.current) return;
+      const v = geoRef.current, pc = piecesRef.current, fx = fxRef.current;
+      if (!dirty.current || !v || !pc || !fx || !pc.width) return;
       dirty.current = false;
-      const g = canvas.getContext("2d")!, t = tableRef.current, dpr = canvas.width / W;
-      g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(layer, 0, 0, canvas.width, canvas.height); g.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const ov = overlay.current;
-      if (ov.bulge) paintSnakeBulge(g, ov.bulge.head, ov.bulge.k, ov.bulge.color);
-      if (!t) return;
-      const turn = t.phase === "playing" ? t.turn : -1;
-      // back to front, so a token lower on the screen stands in front of one above it
-      for (const s of [...t.order].sort((a, b) => (disp.current[a]?.y ?? -1) - (disp.current[b]?.y ?? -1))) {
-        const p = disp.current[s];
-        if (p) paintToken(g, p, COLORS[s], pieceImage(t.pieces[s], () => { dirty.current = true; }), s === turn, p.s ?? 1);
+      const t = tableRef.current, ov = overlay.current, pd = pc.width / v.sw;
+      if (fxUsed || ov.bulge || ov.mouth) {
+        const f = fx.getContext("2d")!; f.setTransform(1, 0, 0, 1, 0, 0); f.clearRect(0, 0, fx.width, fx.height);
+        const fs = fx.width / W; f.setTransform(fs, 0, 0, fs, 0, 0);
+        if (ov.bulge) paintSnakeBulge(f, ov.bulge.head, ov.bulge.k, ov.bulge.color);
+        if (ov.mouth) paintSnakeMouth(f, ov.mouth.head, ov.mouth.open);
+        fxUsed = !!(ov.bulge || ov.mouth);
       }
-      if (ov.mouth) paintSnakeMouth(g, ov.mouth.head, ov.mouth.open);
+      const g = pc.getContext("2d")!; g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, pc.width, pc.height); g.setTransform(pd, 0, 0, pd, 0, 0);
+      if (!t) return;
+      const turn = rollingRef.current ?? (t.phase === "playing" ? t.turn : -1), out: typeof boxes.current = [];
+      const items = t.order.map(s => ({ s, p: disp.current[s] })).filter((i): i is { s: number; p: Disp } => !!i.p).sort((a, b) => a.p.y - b.p.y || a.p.x - b.p.x);
+      for (const { s, p } of items) {
+        const q = project(v, p.x, p.y), sc = p.s ?? 1;
+        paintPiece(g, q.x, q.y, q.u, squash(v, p.x, p.y), COLORS[s], pieceImage(t.pieces[s], () => { dirty.current = true; }), s === turn, sc, p.h ?? 0);
+        const h = PIECE_H * q.u * sc, w = h * (100 / 120), top = q.y - (p.h ?? 0) * q.u;
+        if (sc > .05) out.push({ seat: s, x0: q.x - w * .34, x1: q.x + w * .34, y0: top - h * .84, y1: q.y });
+      }
+      boxes.current = out;
     };
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
-  }, [sub, !!table, wood]);
+  }, [sub, !!table]);
+  /* Test hook (only with ?debug in the address): where tokens and square numbers are on screen, to check none is hidden. */
+  useEffect(() => {
+    if (!DEBUG) return;
+    const w = window as unknown as { __slDebug?: () => unknown };
+    w.__slDebug = () => {
+      const v = geoRef.current, st = stageRef.current; if (!v || !st) return null;
+      const r = st.getBoundingClientRect(), m = document.createElement("canvas").getContext("2d")!; m.font = NUM_FONT;
+      const numbers = Array.from({ length: 100 }, (_, i) => {
+        const n = i + 1, a = numberAt(n), tw = m.measureText(String(n)).width;
+        const c = [[a.x, a.y - 15], [a.x + tw, a.y - 15], [a.x, a.y + 1], [a.x + tw, a.y + 1]].map(([x, y]) => project(v, x, y));
+        return { n, x0: r.left + Math.min(...c.map(p => p.x)), x1: r.left + Math.max(...c.map(p => p.x)), y0: r.top + Math.min(...c.map(p => p.y)), y1: r.top + Math.max(...c.map(p => p.y)) };
+      });
+      const sq = (n: number) => { const c = center(n), a = project(v, c.x - 30, c.y - 30), b = project(v, c.x + 30, c.y + 30); return { w: b.x - a.x, h: b.y - a.y }; };
+      const plane = st.querySelector(".sl-plane")!.getBoundingClientRect(), corners = [[0, 0], [W, 0], [0, W], [W, W]].map(([x, y]) => project(v, x, y));
+      return {
+        A: v.A, B: v.B, numbers, tokens: boxes.current.map(b => ({ ...b, x0: b.x0 + r.left, x1: b.x1 + r.left, y0: b.y0 + r.top, y1: b.y1 + r.top })),
+        topSquare: sq(95), bottomSquare: sq(5), fontTop: project(v, W / 2, 30).u * 21, fontBottom: project(v, W / 2, W - 30).u * 21,
+        planeRect: { x0: plane.left, x1: plane.right, y0: plane.top, y1: plane.bottom },
+        projRect: { x0: r.left + Math.min(...corners.map(p => p.x)), x1: r.left + Math.max(...corners.map(p => p.x)), y0: r.top + Math.min(...corners.map(p => p.y)), y1: r.top + Math.max(...corners.map(p => p.y)) },
+        stage: { x0: r.left, x1: r.right, y0: r.top, y1: r.bottom },
+      };
+    };
+  });
 
   /** Moves a token along a path over `ms`, with an optional hop and a size change. */
   const follow = (seat: number, pts: Pt[], ms: number, hop = 0, s0 = 1, s1 = 1) => new Promise<void>(res => {
@@ -275,7 +358,7 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
       const t = Math.min(1, (now - t0) / dur), e = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2, d = e * total;
       let i = 1; while (i < seg.length - 1 && seg[i] < d) i++;
       const k = (d - seg[i - 1]) / ((seg[i] - seg[i - 1]) || 1);
-      disp.current[seat] = { x: pts[i - 1].x + (pts[i].x - pts[i - 1].x) * k, y: pts[i - 1].y + (pts[i].y - pts[i - 1].y) * k - Math.sin(t * Math.PI) * hop, s: s0 + (s1 - s0) * t };
+      disp.current[seat] = { x: pts[i - 1].x + (pts[i].x - pts[i - 1].x) * k, y: pts[i - 1].y + (pts[i].y - pts[i - 1].y) * k, h: Math.sin(t * Math.PI) * hop, s: s0 + (s1 - s0) * t };
       dirty.current = true;
       if (t < 1) requestAnimationFrame(step); else res();
     };
@@ -288,34 +371,29 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     requestAnimationFrame(step);
   });
 
-  /* Throws a 3D die across the board: it tumbles, bounces and settles showing `value`. */
+  /* Rolls the 3D die on its pedestal: it is tossed up, tumbles, bounces and settles showing `value`.
+     The value always comes from the game (engine or server); this only shows it. */
   const throwDie = (value: number) => new Promise<void>((resolve) => {
-    const wrap = wrapRef.current, el = diceRef.current, cube = cubeRef.current, sh = shadowRef.current;
-    if (!wrap || !el || !cube || !sh) { resolve(); return; }
-    window.clearTimeout(fadeTimer.current);
-    const B = wrap.clientWidth, size = Math.round(B * .088);
-    wrap.style.setProperty("--ds", size + "px");
-    const from = { x: B * (.5 + (Math.random() - .5) * .5), y: B * 1.05 }, to = { x: B * (.22 + Math.random() * .56), y: B * (.28 + Math.random() * .44) };
-    const [bx, by] = FACE_ROT[value] ?? [0, 0], fx = bx - 16, fy = by + 10, fz = (Math.random() - .5) * 50;
+    const el = diceRef.current, cube = cubeRef.current, sh = shadowRef.current;
+    if (!el || !cube || !sh) { resolve(); return; }
+    const size = el.clientWidth || 56;
+    const [fx, fy] = FACE_ROT[value] ?? [0, 0];
     const dir = () => (Math.random() < .5 ? -1 : 1);
-    const sx = fx + 360 * (2 + Math.floor(Math.random() * 2)) * dir(), sy = fy + 360 * (1 + Math.floor(Math.random() * 2)) * dir(), sz = fz + (200 + Math.random() * 160) * dir();
-    const dur = reduced ? 250 : TIMING.die, t0 = performance.now();
-    el.classList.add("show"); sh.classList.add("show");
+    const sx = fx + 360 * (2 + Math.floor(Math.random() * 2)) * dir(), sy = fy + 360 * (1 + Math.floor(Math.random() * 2)) * dir(), sz = (200 + Math.random() * 160) * dir();
+    const jx = (Math.random() - .5) * size * .6, dur = reduced ? 250 : TIMING.die, t0 = performance.now();
     sfx.dice(dur);
     const step = (now: number) => {
       const t = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - t, 3), rot = 1 - Math.pow(1 - t, 2.2);
-      const x = from.x + (to.x - from.x) * e, y = from.y + (to.y - from.y) * e;
-      const h = reduced ? 0 : B * .2 * Math.pow(1 - t, 1.7) * Math.abs(Math.cos(t * Math.PI * 2.5));
-      el.style.transform = `translate(${x - size / 2}px, ${y - size / 2 - h}px) scale(${1 + h / B * 1.1})`;
-      cube.style.transform = `rotateZ(${sz + (fz - sz) * rot}deg) rotateX(${sx + (fx - sx) * rot}deg) rotateY(${sy + (fy - sy) * rot}deg)`;
-      sh.style.transform = `translate(${x - size / 2 + h * .25}px, ${y - size / 2 + size * .18 + h * .1}px) scale(${1.15 - h / B * 1.5})`;
-      sh.style.opacity = String(Math.max(.15, .7 - h / B * 2.2));
+      const h = reduced ? 0 : size * 1.5 * Math.pow(1 - t, 1.6) * Math.abs(Math.cos(t * Math.PI * 2.5)), x = jx * (1 - e);
+      el.style.transform = `translate(${x}px, ${-h}px)`;
+      cube.style.transform = t < 1 ? `${VIEW_TILT} rotateZ(${sz * (1 - rot)}deg) rotateX(${sx + (fx - sx) * rot}deg) rotateY(${sy + (fy - sy) * rot}deg)` : restRot(value);
+      sh.style.transform = `translateX(${x}px) scale(${Math.max(.45, 1 - h / size * .4)})`;
+      sh.style.opacity = String(Math.max(.2, .6 - h / size * .3));
       if (t < 1) requestAnimationFrame(step);
-      else { try { navigator.vibrate?.(18); } catch { /* not supported */ } resolve(); }
+      else { el.style.transform = ""; try { navigator.vibrate?.(18); } catch { /* not supported */ } resolve(); }
     };
     requestAnimationFrame(step);
   });
-  const restDie = () => { window.clearTimeout(fadeTimer.current); fadeTimer.current = window.setTimeout(() => { diceRef.current?.classList.remove("show"); shadowRef.current?.classList.remove("show"); }, 1400); };
 
   /* Plays one roll on the board. Its length matches the server's pause (TIMING in engine.ts). */
   const play = async (l: LastRoll) => {
@@ -323,14 +401,14 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     setDieValue(l.value);
     await wait(TIMING.settle);
     const seat = l.seat, here = () => disp.current[seat] ?? OFF;
-    if (l.outcome === "enter") { sfx.hop(); await follow(seat, [OFF, center(1)], TIMING.enter, 12); }
-    if (l.outcome === "move") for (let n = l.from + 1; n <= l.landed; n++) { sfx.hop(); await follow(seat, [here(), center(n)], TIMING.step, 9); }
+    if (l.outcome === "enter") { sfx.hop(); await follow(seat, [OFF, spot(1)], TIMING.enter, 16); }
+    if (l.outcome === "move") for (let n = l.from + 1; n <= l.landed; n++) { sfx.hop(); await follow(seat, [here(), spot(n)], TIMING.step, 12); }
     if (l.via === "ladder") {
       // climb rung by rung
       const rungs = rungsOf(l.landed, l.to);
       await wait(TIMING.ladderBase);
       sfx.ladder(rungs, TIMING.rung * pace, 0);
-      for (const p of ladderSteps(l.landed, l.to, rungs)) await follow(seat, [here(), p], TIMING.rung, 5);
+      for (const p of ladderSteps(l.landed, l.to, rungs)) await follow(seat, [here(), p], TIMING.rung, 6);
     }
     if (l.via === "snake") {
       // the snake opens its mouth and swallows the pawn, a bulge slides down its body, and the pawn pops out at the tail
@@ -348,10 +426,10 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
         overlay.current.bulge = { head, k: .03 + .97 * (t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2), color };
       });
       overlay.current = {};
-      const end = center(l.to);
-      await tween(TIMING.pop, t => { const s = t < .6 ? (t / .6) * 1.25 : 1.25 - ((t - .6) / .4) * .25; disp.current[seat] = { x: end.x, y: end.y - Math.sin(t * Math.PI) * 10, s }; });
+      const end = spot(l.to);
+      await tween(TIMING.pop, t => { const s = t < .6 ? (t / .6) * 1.25 : 1.25 - ((t - .6) / .4) * .25; disp.current[seat] = { x: end.x, y: end.y, h: Math.sin(t * Math.PI) * 14, s }; });
     }
-    if (l.outcome === "three-sixes") { sfx.oops(); await wait(150); await follow(seat, [here(), l.to === 0 ? OFF : center(l.to)], TIMING.ret - 150); }
+    if (l.outcome === "three-sixes") { sfx.oops(); await wait(150); await follow(seat, [here(), l.to === 0 ? OFF : spot(l.to)], TIMING.ret - 150); }
     if (l.win && l.rank) {
       const t = tableRef.current, who = t ? t.names[seat] : "";
       const big = l.rank === 1;
@@ -375,16 +453,16 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     }
     if (l.n === animatedN.current) { if (!animating) settle(); return; }
     animatedN.current = l.n;
-    setAnimating(true); setMsg(`${table.names[l.seat]} ${l.seat === table.you ? "roll" : "rolls"}…`);
+    setAnimating(true); setRolling(l.seat); setMsg(`${table.names[l.seat]} ${l.seat === table.you ? "roll" : "rolls"}…`);
     chain.current = chain.current.then(() => play(l)).catch(() => undefined).then(() => {
-      settle(); setAnimating(false); restDie();
+      settle(); setAnimating(false); setRolling(null);
       const t = tableRef.current; if (t) setMsg(describe(l, t));
       if (!online && l.seat === 0 && l.via === "snake" && Math.random() < .5) botSay(300, [["p", 3], ["p", 6], ["e", 1], ["e", 10]]);
     });
   }, [table, sub]);
 
   /* ---------- actions ---------- */
-  const myTurn = !!table && table.phase === "playing" && table.turn === table.you && !animating && !(online && view?.moving);
+  const myTurn = !!table && table.phase === "playing" && table.turn === table.you && !animating && !(online && view?.moving) && (!table.last || table.last.n === animatedN.current);
   const doRoll = () => {
     if (!myTurn) return;
     unlock();
@@ -399,7 +477,13 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
   const showEnd = !!table && table.phase === "gameEnd" && !animating;
   const chooseWood = (w: WoodId) => { setWood(w); keep(WOOD_KEY, w); };
   const chooseDice = (d: DiceId) => { setDice(d); keep(DICE_KEY, d); };
-  const togglePanel = (p: "style" | "rules" | "chat") => setPanel(x => (x === p ? "none" : p));
+  const togglePanel = (p: "settings" | "rules" | "chat") => setPanel(x => (x === p ? "none" : p));
+  const chooseView = (v: "3d" | "flat") => { setView3d(v); keep(VIEW_KEY, v); };
+  useEffect(() => {
+    if (panel === "none") return;
+    const k = (e: KeyboardEvent) => { if (e.key === "Escape") setPanel("none"); };
+    window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k);
+  }, [panel]);
 
   /* ---------- screens ---------- */
   if (sub === "lobby") return <section className="mode-page sl-mode">
@@ -476,47 +560,47 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
   if (!table) return <section className="mode-page sl-mode"><button className="back-link" onClick={() => setSub("lobby")}>← Back</button><p className="room-note">Loading the board…</p></section>;
   const turnName = table.names[table.turn];
   const rankOf = (s: number) => { const i = table.finished.indexOf(s); return i < 0 ? 0 : i + 1; };
-  return <section className="sl-screen">
-    <div className="sl-top">
+  const playing = table.phase === "playing";
+  const rollLabel = table.phase === "gameEnd" ? "Game over" : myTurn ? (table.streak > 0 ? "Roll again" : "Roll dice") : animating ? "Rolling…" : rankOf(table.you) ? "You've finished" : `${turnName}'s turn`;
+  const where = online && view ? `Room ${view.code}` : "Practice";
+  return <section className={`sl-screen ${view3d === "flat" ? "flat" : ""}`}>
+    <header className="sl-head">
       <button className="sl-icon-btn" onClick={() => setSub(online ? "room" : "lobby")} aria-label={online ? "Back to the room" : "Back to the lobby"}>←</button>
-      <strong>Snakes &amp; Ladders<span>{online && view ? `Room ${view.code}` : "Practice"}</span></strong>
-      <button className="sl-icon-btn" onClick={toggleSound} aria-label={sound ? "Turn sound off" : "Turn sound on"} aria-pressed={sound}><SoundIcon on={sound} /></button>
-      <button className="sl-chip" onClick={() => togglePanel("style")} aria-expanded={panel === "style"}><i className={`sl-swatch w-${wood}`} />Style</button>
-      <button className="sl-chip" onClick={() => togglePanel("rules")} aria-expanded={panel === "rules"}>Rules</button>
-    </div>
-    <ul className="sl-players">
-      {table.order.map(s => {
-        const r = rankOf(s), b = bubbles[s];
-        return <li key={s} className={(table.phase === "playing" && table.turn === s ? "turn " : "") + (r ? "done" : "")}>
-          <span className="sl-avatar" style={{ borderColor: COLORS[s] }}><img src={pieceUrl(table.pieces[s])} alt={pieceById(table.pieces[s]).name} /></span>
-          <span className="sl-info"><span className="sl-name">{table.names[s]}{table.away[s] && <em> · away</em>}</span>
-          <span className="sl-sq">{r ? `${MEDAL[r - 1]} ${PLACE[r - 1]}` : table.pos[s] ? table.pos[s] : "Start"}</span></span>
-          {b && <span key={b.id} className={`sl-bubble ${[...b.text].length <= 2 ? "emoji" : ""}`} role="status">{b.text}</span>}
-        </li>;
-      })}
-    </ul>
-    <div className="sl-board-wrap" ref={wrapRef}>
-      <canvas ref={canvasRef} className="sl-board" aria-label={`Snakes and ladders board. ${table.order.map(s => `${table.names[s]} on ${table.pos[s] || "start"}`).join(", ")}.`} />
-      <div className="sl-dice-shadow" ref={shadowRef} />
-      <div className={`sl-dice d-${dice}`} ref={diceRef} aria-hidden="true">
-        <div className="sl-cube" ref={cubeRef}>
-          {FACES.map(([f, v]) => <div key={f} className={`sl-face ${f}`}><Face v={v} /></div>)}
-        </div>
+      <div className="sl-crest" role="img" aria-label={`Royal Club Snakes and Ladders, ${where}`}>
+        <Crown /><b>ROYAL CLUB</b><span>SNAKES &amp; LADDERS</span>
       </div>
+      <div className="sl-head-end">
+        <button className="sl-icon-btn" onClick={toggleSound} aria-label={sound ? "Turn sound off" : "Turn sound on"} aria-pressed={sound}><SoundIcon on={sound} /></button>
+        <button className="sl-icon-btn" onClick={() => togglePanel("settings")} aria-label="Settings" aria-expanded={panel === "settings"}><GearIcon /></button>
+      </div>
+    </header>
+
+    <aside className="sl-left" aria-label="Players">
+      <div className="sl-side-title"><b>Players ({table.order.length})</b><small>{where}</small></div>
+      <ul className="sl-players">
+        {table.order.map(s => {
+          const r = rankOf(s), b = bubbles[s], now = rolling !== null ? rolling === s : playing && table.turn === s;
+          return <li key={s} className={(now ? "turn " : "") + (r ? "done" : "")} aria-current={now ? "true" : undefined}>
+            <span className="sl-avatar" style={{ borderColor: COLORS[s] }}><img src={pieceUrl(table.pieces[s])} alt={pieceById(table.pieces[s]).name} /></span>
+            <span className="sl-info">
+              <span className="sl-name">{table.names[s]}{table.away[s] && <em> · away</em>}</span>
+              <span className="sl-sq"><i className="sl-dot" style={{ background: COLORS[s] }} />{r ? `${MEDAL[r - 1]} ${PLACE[r - 1]}` : table.pos[s] ? table.pos[s] : "Start"}</span>
+            </span>
+            {now && <span className="sl-turn-tag">{s === table.you ? "Your turn" : "Turn"}</span>}
+            {b && <span key={b.id} className={`sl-bubble ${[...b.text].length <= 2 ? "emoji" : ""}`} role="status">{b.text}</span>}
+          </li>;
+        })}
+      </ul>
+    </aside>
+
+    <div className="sl-stage" ref={stageRef} role="img" aria-label={`Snakes and ladders board. ${table.order.map(s => `${table.names[s]} on ${table.pos[s] || "start"}`).join(", ")}.`}>
+      <canvas className="sl-base" ref={baseRef} style={geo ? { width: geo.sw + "px", height: geo.sh + "px" } : undefined} />
+      <div className="sl-plane" style={geo ? planeStyle(geo) : { visibility: "hidden" }}><canvas className="sl-board" ref={boardRef} /></div>
+      <canvas className="sl-pieces" ref={piecesRef} style={geo ? { width: geo.sw + "px", height: geo.sh + "px" } : undefined} />
+      <div className="sl-plane fx" style={geo ? planeStyle(geo) : { visibility: "hidden" }}><canvas ref={fxRef} /></div>
       {banner && <div className={`sl-banner ${banner.big ? "big" : ""}`} role="status">{banner.text}</div>}
-      {panel === "style" && <div className="sl-panel" role="dialog" aria-label="Board and dice style">
-        <b>Board wood</b>
-        <div className="sl-opts">{WOOD_IDS.map(w => <button key={w} className={w === wood ? "on" : ""} aria-pressed={w === wood} onClick={() => chooseWood(w)}><i className={`sl-swatch w-${w}`} />{WOODS[w].name}</button>)}</div>
-        <b>Dice</b>
-        <div className="sl-opts dice">{DICE.map(d => <button key={d.id} className={d.id === dice ? "on" : ""} aria-pressed={d.id === dice} onClick={() => chooseDice(d.id)}><span className={`sl-mini d-${d.id}`}><span className="sl-face"><Face v={5} /></span></span>{d.name}</button>)}</div>
-        <button className="ghost-button" onClick={() => setPanel("none")}>Done</button>
-      </div>}
-      {panel === "rules" && <div className="sl-rules" role="dialog" aria-label="Rules">
-        <b>House rules</b>
-        <ul><li>Roll a <b>6</b> to enter the board on square 1.</li><li>A <b>6</b> gives you another roll.</li><li><b>Three 6s in a row</b> cancel that whole turn — your token goes back to where the turn began.</li><li>Ladders lift you up; snakes swallow you and bring you down to their tail.</li><li>Land <b>exactly</b> on 100. A roll that goes past 100 doesn't move.</li><li>The game goes on after someone finishes: <b>1st, 2nd, 3rd</b>, until one player is left.</li>{online && <li>You have 15 seconds to roll, then the game rolls for you.</li>}</ul>
-        <button className="ghost-button" onClick={() => setPanel("none")}>Close</button>
-      </div>}
       {showEnd && <div className="sl-win">
+        <Crown />
         <span className="eyebrow">FINAL STANDINGS</span>
         <ol className="sl-standings">{table.finished.map((s, i) => <li key={s} className={i === 0 ? "first" : ""}><span className="medal">{MEDAL[i]}</span><span className="sl-avatar" style={{ borderColor: COLORS[s] }}><img src={pieceUrl(table.pieces[s])} alt="" /></span><b>{table.names[s]}</b><span>{PLACE[i]}</span></li>)}</ol>
         <div className="sl-win-actions">
@@ -526,20 +610,49 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
         </div>
       </div>}
     </div>
-    <div className="sl-dock">
-      <div className="sl-dock-row">
-        <button className="sl-chat-btn" onClick={() => togglePanel("chat")} aria-expanded={panel === "chat"} aria-label="Chat"><ChatIcon /></button>
-        <button className="sl-roll" disabled={!myTurn} onClick={doRoll} aria-label={myTurn ? "Roll dice" : undefined}>
-          <DiceIcon />{table.phase === "gameEnd" ? "Game over" : myTurn ? (table.streak > 0 ? "Roll again" : "Roll dice") : animating ? "Rolling…" : rankOf(table.you) ? "You've finished" : `${turnName}'s turn`}
-        </button>
-        {secsLeft !== null && myTurn ? <span className={`timer-chip ${secsLeft <= 5 ? "urgent" : ""}`}>⏱ {secsLeft}s</span> : <span className="sl-dock-spacer" />}
+
+    <aside className="sl-right" aria-label="Dice and actions">
+      <div className="sl-tray">
+        <div className="sl-pedestal" aria-hidden="true" />
+        <div className="sl-dice-shadow" ref={shadowRef} />
+        <div className={`sl-dice d-${dice}`} ref={diceRef} aria-hidden="true">
+          <div className="sl-cube" ref={cubeRef} style={{ transform: restRot(dieValue) }}>
+            {FACES.map(([f, v]) => <div key={f} className={`sl-face ${f}`}><Face v={v} /></div>)}
+          </div>
+        </div>
       </div>
-      <p className="sl-msg" aria-live="polite">{msg}{table.streak > 0 && table.phase === "playing" && !animating ? ` · Sixes this turn: ${table.streak} of 3` : ""}</p>
+      <button className={`sl-roll ${myTurn ? "ready" : ""}`} disabled={!myTurn} onClick={doRoll} aria-label={myTurn ? "Roll dice" : undefined}>
+        <DiceIcon />{rollLabel}
+      </button>
+      {secsLeft !== null && myTurn && <span className={`timer-chip ${secsLeft <= 5 ? "urgent" : ""}`}>⏱ {secsLeft}s</span>}
+      <div className="sl-last">
+        <b className="sl-last-title">{table.last ? "Last turn" : "Ready"}</b>
+        {table.last && <div className="sl-last-roll"><span className={`sl-mini d-${dice}`}><span className="sl-face"><Face v={dieValue} /></span></span><strong>{animating ? "…" : dieValue}</strong></div>}
+        <p className="sl-msg" aria-live="polite">{(rolling ?? table.last?.seat) != null && <i className="sl-dot" style={{ background: COLORS[(rolling ?? table.last?.seat) as number] }} />}{msg}{table.streak > 0 && playing && !animating ? ` · Sixes this turn: ${table.streak} of 3` : ""}</p>
+      </div>
+      <button className="sl-act sl-rules-btn" onClick={() => togglePanel("rules")} aria-expanded={panel === "rules"}><InfoIcon /><span>Rules</span></button>
+      <button className="sl-act sl-chat-btn" onClick={() => togglePanel("chat")} aria-expanded={panel === "chat"} aria-label="Chat"><ChatIcon /><span>Chat</span></button>
       <span className="sl-sr" aria-live="polite">{animating ? "" : `Die shows ${dieValue}`}</span>
-      {panel === "chat" && <div className="sl-chat" role="dialog" aria-label="Quick chat">
-        <div className="sl-chat-phrases">{CHAT_PHRASES.map((p, i) => <button key={p} disabled={chatGap} onClick={() => sendChat("p", i)}>{p}</button>)}</div>
-        <div className="sl-chat-emojis">{CHAT_EMOJIS.map((e, i) => <button key={e} disabled={chatGap} onClick={() => sendChat("e", i)} aria-label={`Send ${e}`}>{e}</button>)}</div>
-      </div>}
-    </div>
+    </aside>
+
+    {panel !== "none" && <div className="sl-backdrop" onClick={() => setPanel("none")} />}
+    {panel === "settings" && <div className="sl-sheet" role="dialog" aria-label="Settings">
+      <b>Board view</b>
+      <div className="sl-opts">{(["3d", "flat"] as const).map(v => <button key={v} className={v === view3d ? "on" : ""} aria-pressed={v === view3d} disabled={v === "3d" && !can3d} onClick={() => chooseView(v)}>{v === "3d" ? "3D table view" : "Flat, top-down"}</button>)}</div>
+      <b>Board wood</b>
+      <div className="sl-opts">{WOOD_IDS.map(w => <button key={w} className={w === wood ? "on" : ""} aria-pressed={w === wood} onClick={() => chooseWood(w)}><i className={`sl-swatch w-${w}`} />{WOODS[w].name}</button>)}</div>
+      <b>Dice</b>
+      <div className="sl-opts dice">{DICE.map(d => <button key={d.id} className={d.id === dice ? "on" : ""} aria-pressed={d.id === dice} onClick={() => chooseDice(d.id)}><span className={`sl-mini d-${d.id}`}><span className="sl-face"><Face v={5} /></span></span>{d.name}</button>)}</div>
+      <div className="sl-sheet-row"><button className="ghost-button" onClick={() => setPanel("rules")}>Rules</button><button className="gold-button" onClick={() => setPanel("none")}>Done</button></div>
+    </div>}
+    {panel === "rules" && <div className="sl-sheet sl-rules" role="dialog" aria-label="Rules">
+      <b>House rules</b>
+      <ul><li>Roll a <b>6</b> to enter the board on square 1.</li><li>A <b>6</b> gives you another roll.</li><li><b>Three 6s in a row</b> cancel that whole turn — your token goes back to where the turn began.</li><li>Ladders lift you up; snakes swallow you and bring you down to their tail.</li><li>Land <b>exactly</b> on 100. A roll that goes past 100 doesn't move.</li><li>The game goes on after someone finishes: <b>1st, 2nd, 3rd</b>, until one player is left.</li>{online && <li>You have 15 seconds to roll, then the game rolls for you.</li>}</ul>
+      <button className="gold-button" onClick={() => setPanel("none")}>Close</button>
+    </div>}
+    {panel === "chat" && <div className="sl-sheet sl-chat" role="dialog" aria-label="Quick chat">
+      <div className="sl-chat-phrases">{CHAT_PHRASES.map((p, i) => <button key={p} disabled={chatGap} onClick={() => sendChat("p", i)}>{p}</button>)}</div>
+      <div className="sl-chat-emojis">{CHAT_EMOJIS.map((e, i) => <button key={e} disabled={chatGap} onClick={() => sendChat("e", i)} aria-label={`Send ${e}`}>{e}</button>)}</div>
+    </div>}
   </section>;
 }

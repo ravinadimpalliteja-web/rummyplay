@@ -21,8 +21,11 @@
   --muted: #a9bdb2;
   --gold: #d9b96f;
   --gold-2: #f0d99d;
-  --light-sq: #efe3c2;
-  --dark-sq: #3e7a5d;
+  --light-sq: #f2eee5;
+  --dark-sq: #343b43;
+  --board-edge: #b99a58;
+  --sq-light-image: linear-gradient(145deg, #fffdf8 0%, #e9e3d8 52%, #d9d1c3 100%);
+  --sq-dark-image: linear-gradient(145deg, #59616b 0%, #343b43 55%, #252b32 100%);
   --hl: rgba(240, 217, 157, .55);
   --check: #d2443b;
   --font-display: "Playfair Display", Georgia, serif;
@@ -53,6 +56,11 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--gold-2); ou
 .lead-group { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .club-back { width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 10px; color: var(--gold-2); text-decoration: none; font-size: 18px; background: #0a2a20; }
 .chip { border: 1px solid #987b42; border-radius: 9px; background: #143a2c; color: #fff4d9; padding: 6px 12px; font-size: 13px; font-weight: 700; }
+.top-tools { display:flex; align-items:center; gap:7px; }
+.theme-select { max-width: 142px; min-height:36px; }
+.theme-select option { background:#0b2c21; color:#fff4d9; }
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+@media(max-width:380px) { .theme-select { max-width:116px; padding:6px 7px; font-size:11px; } .brand strong { font-size:12px; } }
 
 /* ---------- setup ---------- */
 .setup { flex: 1; min-height: 0; overflow-y: auto; display: grid; align-content: start; gap: 14px; padding: 8px 0 20px; max-width: 520px; width: 100%; margin: 0 auto; }
@@ -100,8 +108,16 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--gold-2); ou
 .board-wrap { position: relative; width: min(100%, calc(100svh - 304px)); min-width: min(100%, 260px); aspect-ratio: 1; max-width: 100%; flex: none;
   padding: 5px; border: 1px solid #c3a45b; border-radius: 12px; background: linear-gradient(145deg, #0d3a2b, #06251b); box-shadow: 0 16px 36px #0008; }
 .board { position: relative; width: 100%; height: 100%; display: grid; grid-template: repeat(8, 1fr) / repeat(8, 1fr); border-radius: 6px; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
-.sq { position: relative; border: 0; padding: 0; margin: 0; display: grid; place-items: center; background: var(--light-sq); }
-.sq.d { background: var(--dark-sq); }
+.sq { position: relative; border: 0; padding: 0; margin: 0; display: grid; place-items: center; background: var(--sq-light-image); box-shadow: inset 0 1px 0 rgba(255,255,255,.38), inset 0 -1px 0 rgba(30,35,40,.08); }
+.sq.d { background: var(--sq-dark-image); box-shadow: inset 0 1px 0 rgba(255,255,255,.12), inset 0 -1px 0 rgba(0,0,0,.2); }
+.board-wrap { border-color: var(--board-edge); }
+/* Selectable board finishes. Royal Marble is the default. */
+body[data-board-theme="walnut"] { --light-sq:#d9b98a; --dark-sq:#68432e; --board-edge:#c69b5c; --sq-light-image:linear-gradient(135deg,#f0d5a8,#c49a69 55%,#a77b50); --sq-dark-image:linear-gradient(135deg,#916344,#68432e 58%,#482d20); }
+body[data-board-theme="obsidian"] { --light-sq:#6c6862; --dark-sq:#17191d; --board-edge:#d8b45f; --sq-light-image:linear-gradient(145deg,#918b80,#5b5853 60%,#3f3d3a); --sq-dark-image:linear-gradient(145deg,#3b3b40,#17191d 62%,#090b0e); }
+body[data-board-theme="ivory"] { --light-sq:#fff9e9; --dark-sq:#c8b98f; --board-edge:#d4b66d; --sq-light-image:linear-gradient(145deg,#fffef7,#f4ecd7 60%,#e6dbc0); --sq-dark-image:linear-gradient(145deg,#e0d2ad,#c8b98f 60%,#aa9b72); }
+body[data-board-theme="emerald"] { --light-sq:#d9e7d8; --dark-sq:#176044; --board-edge:#d8b45f; --sq-light-image:linear-gradient(145deg,#f1f7e9,#c7dbc6 60%,#a9c5ae); --sq-dark-image:linear-gradient(145deg,#287d5a,#176044 60%,#0b3f2e); }
+.board-wrap { background:linear-gradient(145deg,#f3dfaa,#96733a 42%,#4e3b22); padding:6px; box-shadow:0 18px 38px #0009, inset 0 1px 0 #fff8, inset 0 -2px 0 #3c2a18; }
+.board { box-shadow:0 2px 8px #0007; }
 .sq.last::before { content: ""; position: absolute; inset: 0; background: rgba(240, 210, 120, .42); }
 .sq.sel::before { content: ""; position: absolute; inset: 0; background: rgba(240, 210, 120, .7); }
 .sq.check::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle, rgba(232, 70, 60, .95) 0%, rgba(232, 70, 60, .55) 45%, transparent 75%); }
@@ -166,7 +182,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--gold-2); ou
       <span class="brand-mark" id="brandMark"></span>
       <span><strong>ROYAL CLUB</strong><small>CHESS</small></span>
     </button></span>
-    <button class="chip" id="topAction" type="button" hidden>New game</button>
+    <span class="top-tools"><label class="sr-only" for="boardTheme">Chessboard theme</label><select class="chip theme-select" id="boardTheme" aria-label="Chessboard theme"><option value="marble">Royal Marble</option><option value="walnut">Classic Walnut</option><option value="obsidian">Obsidian Gold</option><option value="ivory">Ivory Royale</option><option value="emerald">Emerald Royale</option></select><button class="chip" id="topAction" type="button" hidden>New game</button></span>
   </header>
 
   <section class="setup" id="setup">
@@ -217,6 +233,17 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--gold-2); ou
     del(k) { try { localStorage.removeItem(k); } catch { /* ignore */ } },
   };
   const SAVE_KEY = 'rc-chess-game';
+  const THEME_KEY = 'rc-chess-board-theme';
+  const validThemes = ['marble', 'walnut', 'obsidian', 'ivory', 'emerald'];
+  const savedTheme = store.get(THEME_KEY);
+  const initialTheme = validThemes.includes(savedTheme) ? savedTheme : 'marble';
+  document.body.dataset.boardTheme = initialTheme;
+  $('boardTheme').value = initialTheme;
+  $('boardTheme').addEventListener('change', (e) => {
+    const theme = validThemes.includes(e.target.value) ? e.target.value : 'marble';
+    document.body.dataset.boardTheme = theme;
+    store.set(THEME_KEY, theme);
+  });
 
   /* ---------- original Royal Club piece set (SVG, 45 x 45) ---------- */
   const BASE = '<path d="M11 39.5h23v-2.3a2.2 2.2 0 0 0-2.2-2.2H13.2a2.2 2.2 0 0 0-2.2 2.2z"/>';

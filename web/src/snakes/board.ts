@@ -9,7 +9,6 @@ import { MOKSH_DEVA, MOKSH_LATIN } from "./moksh";
 export const PAD = 22, S = 60, W = S * 10 + PAD * 2;
 /** How deep the board is (its front edge), in board units. */
 export const THICK = 26;
-const K = 1.45;                                    // snake size: bodies, heads and markings are drawn this much larger than before
 export type Pt = { x: number; y: number };
 
 /* ---------- board models and themes ---------- */
@@ -480,186 +479,7 @@ function ladder(g: CanvasRenderingContext2D, a: number, b: number, golden = fals
   }
 }
 
-/* ---------- snakes: Indian species with scaled, rounded bodies ---------- */
-type Species = { name: string; body: string; belly: string; head: string; eye: string; pupil: "slit" | "round"; hood: boolean; mark: (ctx: MarkCtx) => void };
-type MarkCtx = { g: CanvasRenderingContext2D; at: (s: number) => { p: Pt; n: Pt; t: Pt; w: number }; total: number; k: number };
-const band = (c: MarkCtx, s: number, thick: number, color: string, across = 1) => {
-  const { g } = c, a = c.at(s); if (!a) return;
-  g.strokeStyle = color; g.lineWidth = thick * c.k; g.beginPath();
-  g.moveTo(a.p.x + a.n.x * a.w * .6 * across, a.p.y + a.n.y * a.w * .6 * across); g.lineTo(a.p.x - a.n.x * a.w * .6 * across, a.p.y - a.n.y * a.w * .6 * across); g.stroke();
-};
-const blot = (c: MarkCtx, s: number, off: number, rx: number, ry: number, fill: string, edge: string, edgeW = 1.2) => {
-  const { g } = c, a = c.at(s); if (!a) return;
-  g.save(); g.translate(a.p.x + a.n.x * off * a.w, a.p.y + a.n.y * off * a.w); g.rotate(Math.atan2(a.t.y, a.t.x));
-  g.beginPath(); g.ellipse(0, 0, rx * c.k, Math.min(ry * c.k, a.w * .5), 0, 0, Math.PI * 2);
-  g.fillStyle = fill; g.fill(); g.strokeStyle = edge; g.lineWidth = edgeW * c.k; g.stroke(); g.restore();
-};
-const each = (c: MarkCtx, first: number, gap: number, endPad: number, f: (s: number) => void) => { for (let s = first * c.k; s < c.total - endPad * c.k; s += gap * c.k) f(s); };
-/* Friendly, glossy snakes in clear colours, each with its own pattern. Cycled over the board's snakes in order. */
-export const SPECIES: Species[] = [
-  { name: "Emerald", body: "#3c9a30", belly: "#dcf08e", head: "#46a83a", eye: "#ffd94a", pupil: "round", hood: false,
-    mark: (c) => each(c, 12, 13, 14, (s) => { blot(c, s, .38, 2.6, 2.1, "#2a7420", "rgba(0,0,0,0)", 0); blot(c, s + 6.5 * c.k, -.38, 2.6, 2.1, "#2a7420", "rgba(0,0,0,0)", 0); }) },
-  { name: "Ruby", body: "#cc3428", belly: "#ffe3a6", head: "#d5402f", eye: "#ffe07a", pupil: "round", hood: false,
-    mark: (c) => each(c, 13, 15, 10, (s) => band(c, s, 3.4, "rgba(246,196,58,.95)")) },
-  { name: "Sapphire", body: "#2c69cc", belly: "#cfe7ff", head: "#3577dc", eye: "#ffe07a", pupil: "round", hood: false,
-    mark: (c) => each(c, 11, 14, 12, (s) => blot(c, s, 0, 4.4, 3.4, "rgba(150,205,255,.85)", "rgba(15,50,120,.6)", .8)) },
-  { name: "Amethyst", body: "#8644c4", belly: "#f3d4ff", head: "#904ecf", eye: "#ffe07a", pupil: "round", hood: false,
-    mark: (c) => each(c, 12, 12, 12, (s) => { blot(c, s, .42, 2.2, 2, "#e7a6ff", "rgba(0,0,0,0)", 0); blot(c, s + 6 * c.k, -.42, 2.2, 2, "#e7a6ff", "rgba(0,0,0,0)", 0); }) },
-  { name: "Tiger", body: "#e2862a", belly: "#ffeab8", head: "#e99234", eye: "#fff1a8", pupil: "round", hood: false,
-    mark: (c) => each(c, 14, 11, 10, (s) => band(c, s, 2.3, "rgba(70,36,8,.85)")) },
-  { name: "Jade", body: "#1d9c8b", belly: "#d4f7eb", head: "#24a895", eye: "#ffe07a", pupil: "round", hood: false,
-    mark: (c) => each(c, 14, 15, 10, (s) => { band(c, s, 1.5, "rgba(10,90,78,.9)"); band(c, s + 3.6 * c.k, 1.5, "rgba(10,90,78,.9)"); }) },
-  // the Indian cobra: dark olive-brown with faint pale cross-bands, a pale throat, round dark-gold eyes, and a hood
-  { name: "Cobra", body: "#4b3a28", belly: "#e8dab2", head: "#3f3021", eye: "#c99a3a", pupil: "round", hood: true,
-    mark: (c) => each(c, 16, 14, 9, (s) => band(c, s, 1.2, "rgba(214,196,150,.55)")) },
-];
-const PLAIN_SPECIES = SPECIES.filter((s) => !s.hood), COBRA = SPECIES.find((s) => s.hood)!;
-/** Which species each snake is: the cobra on COBRA_HEAD, the others in turn. */
-export const speciesOf = (head: number) => head === COBRA_HEAD ? COBRA
-  : PLAIN_SPECIES[Math.max(0, Object.keys(SNAKES).filter((h) => +h !== COBRA_HEAD).indexOf(String(head))) % PLAIN_SPECIES.length];
-
-/** Shape of one snake: its centre line, cumulative length, width and a lookup by distance from the head. */
-type Geom = { pts: Pt[]; len: number[]; total: number; WD: number[]; L: Pt[]; R: Pt[]; tan: (i: number) => Pt; at: (s: number) => { p: Pt; n: Pt; t: Pt; w: number }; angle: number };
-const geoms = new Map<string, Geom>();
-function geom(head: number, tail: number): Geom {
-  const key = head + ">" + tail, hit = geoms.get(key); if (hit) return hit;
-  const pts = snakePath(head, tail), N = pts.length, len: number[] = [0];
-  for (let i = 1; i < N; i++) len.push(len[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y));
-  const total = len[N - 1], maxW = 15.5 * K;
-  // a real snake's build: narrow neck, thickest a third of the way down, a long fine tail
-  const width = (k: number) => maxW * (k < .06 ? .62 + .38 * (k / .06) : k < .35 ? 1 : Math.max(.08, 1 - Math.pow((k - .35) / .65, 1.25) * .94));
-  const tan = (i: number) => { const a = pts[Math.max(0, i - 1)], b = pts[Math.min(N - 1, i + 1)], l = Math.hypot(b.x - a.x, b.y - a.y) || 1; return { x: (b.x - a.x) / l, y: (b.y - a.y) / l }; };
-  const L: Pt[] = [], R: Pt[] = [], WD: number[] = [];
-  for (let i = 0; i < N; i++) {
-    const t = tan(i), n = { x: -t.y, y: t.x }, w = width(len[i] / total) / 2; WD.push(w * 2);
-    L.push({ x: pts[i].x + n.x * w, y: pts[i].y + n.y * w }); R.push({ x: pts[i].x - n.x * w, y: pts[i].y - n.y * w });
-  }
-  const at = (s: number) => {
-    if (s < 0 || s > total) return null as unknown as { p: Pt; n: Pt; t: Pt; w: number };
-    let i = 1; while (i < N - 1 && len[i] < s) i++;
-    const f = (s - len[i - 1]) / ((len[i] - len[i - 1]) || 1), t = tan(i);
-    return { p: { x: pts[i - 1].x + (pts[i].x - pts[i - 1].x) * f, y: pts[i - 1].y + (pts[i].y - pts[i - 1].y) * f }, n: { x: -t.y, y: t.x }, t, w: WD[i] };
-  };
-  const angle = Math.atan2(pts[0].y - pts[3].y, pts[0].x - pts[3].x);
-  const g = { pts, len, total, WD, L, R, tan, at, angle };
-  geoms.set(key, g); return g;
-}
-
-function snake(g: CanvasRenderingContext2D, head: number, tail: number, sp: Species, seed: number) {
-  const r = rng(seed);
-  const { pts, total, WD, L, R, tan, at, angle } = geom(head, tail), N = pts.length;
-  const outline = () => { g.beginPath(); g.moveTo(L[0].x, L[0].y); for (let i = 1; i < N; i++) g.lineTo(L[i].x, L[i].y); for (let i = N - 1; i >= 0; i--) g.lineTo(R[i].x, R[i].y); g.closePath(); };
-
-  // shadow on the wood
-  g.save(); g.filter = "blur(4px)"; g.translate(5, 7); outline(); g.fillStyle = "rgba(0,0,0,.45)"; g.fill();
-  g.beginPath(); g.ellipse(pts[0].x + Math.cos(angle) * 8 * K, pts[0].y + Math.sin(angle) * 8 * K, 11 * K, 9 * K, angle, 0, Math.PI * 2); g.fill(); g.restore();
-  // body
-  outline(); g.fillStyle = sp.body; g.fill();
-  g.save(); outline(); g.clip();
-  // belly colour showing along the lower side
-  g.fillStyle = rgba(sp.belly, .55); g.beginPath();
-  for (let i = 0; i < N; i++) { const t = tan(i), n = { x: -t.y, y: t.x }, w = WD[i] / 2, side = n.x * LIGHT.x + n.y * LIGHT.y > 0 ? -1 : 1; const q = { x: pts[i].x + n.x * w * side, y: pts[i].y + n.y * w * side }; i ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y); }
-  for (let i = N - 1; i >= 0; i--) { const t = tan(i), n = { x: -t.y, y: t.x }, w = WD[i] / 2, side = n.x * LIGHT.x + n.y * LIGHT.y > 0 ? -1 : 1; g.lineTo(pts[i].x + n.x * w * side * .35, pts[i].y + n.y * w * side * .35); }
-  g.closePath(); g.fill();
-  sp.mark({ g, at, total, k: K });
-  // scales: staggered rows of small overlapping arcs, each with a faint glint
-  const sc = 2.6, step = 3.6;
-  g.lineWidth = .65;
-  for (let s = 2; s < total; s += step) {
-    const a = at(s); if (!a) continue;
-    const ang = Math.atan2(a.t.y, a.t.x), rows = Math.max(2, Math.round(a.w / 4)), off = (Math.round(s / step) % 2) * .5, rr = Math.min(sc, a.w / 4);
-    for (let j = 0; j <= rows; j++) {
-      const across = ((j + off) / rows - .5) * a.w, cx = a.p.x + a.n.x * across, cy = a.p.y + a.n.y * across;
-      g.strokeStyle = "rgba(0,0,0,.24)"; g.beginPath(); g.arc(cx, cy, rr, ang + Math.PI * .5, ang + Math.PI * 1.5); g.stroke();
-      g.strokeStyle = "rgba(255,255,255,.09)"; g.beginPath(); g.arc(cx - a.t.x * .7, cy - a.t.y * .7, rr, ang + Math.PI * .6, ang + Math.PI * 1.1); g.stroke();
-    }
-  }
-  // rounded shading: dark flanks and a soft highlight on the side facing the light
-  g.filter = "blur(3.4px)";
-  const strip = (from: number, to: number, color: string) => {
-    g.beginPath();
-    for (let i = 0; i < N; i++) { const t = tan(i), n = { x: -t.y, y: t.x }, w = WD[i] / 2; const q = { x: pts[i].x + n.x * w * from, y: pts[i].y + n.y * w * from }; i ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y); }
-    for (let i = N - 1; i >= 0; i--) { const t = tan(i), n = { x: -t.y, y: t.x }, w = WD[i] / 2; g.lineTo(pts[i].x + n.x * w * to, pts[i].y + n.y * w * to); }
-    g.closePath(); g.fillStyle = color; g.fill();
-  };
-  strip(1.3, .45, "rgba(0,0,0,.42)"); strip(-.45, -1.3, "rgba(0,0,0,.42)");
-  g.filter = "blur(1.6px)";
-  // the lit side is whichever normal points toward the light, segment by segment
-  g.beginPath();
-  for (let i = 0; i < N; i++) { const t = tan(i), n = { x: -t.y, y: t.x }, w = WD[i] / 2, sd = n.x * LIGHT.x + n.y * LIGHT.y > 0 ? 1 : -1; const q = { x: pts[i].x + n.x * w * .62 * sd, y: pts[i].y + n.y * w * .62 * sd }; i ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y); }
-  for (let i = N - 1; i >= 0; i--) { const t = tan(i), n = { x: -t.y, y: t.x }, w = WD[i] / 2, sd = n.x * LIGHT.x + n.y * LIGHT.y > 0 ? 1 : -1; g.lineTo(pts[i].x + n.x * w * .12 * sd, pts[i].y + n.y * w * .12 * sd); }
-  g.closePath(); g.fillStyle = "rgba(255,252,240,.4)"; g.fill();
-  // a crisp specular streak along the lit side
-  g.filter = "blur(.6px)"; g.lineWidth = 1.3; g.strokeStyle = "rgba(255,255,255,.45)"; g.lineCap = "round"; g.beginPath();
-  for (let i = 3; i < N * .8; i++) { const t = tan(i), n = { x: -t.y, y: t.x }, w = WD[i] / 2, sd = n.x * LIGHT.x + n.y * LIGHT.y > 0 ? 1 : -1; const q = { x: pts[i].x + n.x * w * .45 * sd, y: pts[i].y + n.y * w * .45 * sd }; i > 3 ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y); }
-  g.stroke();
-  g.filter = "none";
-  g.restore();
-  outline(); g.strokeStyle = "rgba(0,0,0,.5)"; g.lineWidth = 1; g.stroke();
-  snakeHead(g, pts[0], angle, WD[0], sp, r() < .7);
-}
-
-const mixHex = (a: string, b: string, t: number) => mix(a, b, t);
-
-/** A friendly eye: white, a coloured iris, a round pupil and a bright catch-light. */
-function eye(g: CanvasRenderingContext2D, x: number, y: number, sp: Species) {
-  g.fillStyle = "#fffdf6"; g.beginPath(); g.ellipse(x, y, 3.3, 3, 0, 0, Math.PI * 2); g.fill();
-  g.strokeStyle = "rgba(0,0,0,.55)"; g.lineWidth = .6; g.stroke();
-  g.fillStyle = sp.eye; g.beginPath(); g.arc(x + .5, y, 2.1, 0, Math.PI * 2); g.fill();
-  g.fillStyle = "#0b0b0b"; g.beginPath(); g.arc(x + .7, y, 1.35, 0, Math.PI * 2); g.fill();
-  g.fillStyle = "#ffffff"; g.beginPath(); g.arc(x - .1, y - .8, .7, 0, Math.PI * 2); g.fill();
-}
-
-/** A rounded, friendly head with big eyes (closed), or the two jaws swung apart with the throat showing (`open` > 0). */
-function snakeHead(g: CanvasRenderingContext2D, p: Pt, ang: number, neckPx: number, sp: Species, tongue: boolean, open = 0) {
-  g.save(); g.translate(p.x, p.y); g.rotate(ang); g.scale(K, K);
-  const neck = neckPx / K, hw = neck * .8, len = 16;
-  if (open > 0) {
-    const piv = len * .12, a = open * .5;
-    const tip = (side: number) => { const x = len - piv, y = side * hw * .12; return { x: piv + x * Math.cos(side * a) - y * Math.sin(side * a), y: x * Math.sin(side * a) + y * Math.cos(side * a) }; };
-    const up = tip(-1), lo = tip(1);
-    g.beginPath(); g.moveTo(piv, 0); g.lineTo(up.x, up.y); g.quadraticCurveTo(len + hw * .2, 0, lo.x, lo.y); g.closePath();
-    const th = g.createRadialGradient(piv + 1, 0, .5, piv + 2, 0, len * .9);
-    th.addColorStop(0, "#3a070d"); th.addColorStop(.55, "#b23345"); th.addColorStop(1, "#f08a98");
-    g.fillStyle = th; g.fill();
-    for (const side of [-1, 1]) {
-      g.save(); g.translate(piv, 0); g.rotate(side * a); g.translate(-piv, 0);
-      g.beginPath(); g.moveTo(-3, side * neck * .48); g.bezierCurveTo(3, side * hw * 1.1, len * .72, side * hw, len, side * hw * .3); g.quadraticCurveTo(len + 1.8, side * hw * .05, len - 1, 0); g.lineTo(-3, 0); g.closePath();
-      const jg = g.createLinearGradient(0, side * -hw, 0, side * hw * .2);
-      jg.addColorStop(0, mix(sp.head, "#000000", .3)); jg.addColorStop(.6, sp.head); jg.addColorStop(1, mix(sp.head, "#ffffff", .25));
-      g.fillStyle = jg; g.fill(); g.strokeStyle = "rgba(0,0,0,.55)"; g.lineWidth = .7; g.stroke();
-      eye(g, len * .5, side * hw * .62, sp);
-      g.restore();
-    }
-    g.restore();
-    return;
-  }
-  const shape = () => {
-    g.beginPath(); g.moveTo(-3, -neck * .48);
-    g.bezierCurveTo(2, -hw * 1.15, len * .78, -hw * 1.02, len, -hw * .32);
-    g.quadraticCurveTo(len + 2.6, 0, len, hw * .32);
-    g.bezierCurveTo(len * .78, hw * 1.02, 2, hw * 1.15, -3, neck * .48); g.closePath();
-  };
-  const gr = g.createRadialGradient(len * .38, -hw * .4, 1, len * .45, 0, len * 1.05);
-  gr.addColorStop(0, mix(sp.head, "#ffffff", .42)); gr.addColorStop(.5, sp.head); gr.addColorStop(1, mix(sp.head, "#000000", .42));
-  shape(); g.fillStyle = gr; g.fill(); g.strokeStyle = "rgba(0,0,0,.5)"; g.lineWidth = .8; g.stroke();
-  // pale chin and a gentle smile
-  g.save(); shape(); g.clip(); g.fillStyle = rgba(sp.belly, .45); g.beginPath(); g.ellipse(len * .55, 0, len * .42, hw * .28, 0, 0, Math.PI * 2); g.fill(); g.restore();
-  g.strokeStyle = "rgba(40,10,5,.55)"; g.lineWidth = .7; g.lineCap = "round";
-  g.beginPath(); g.moveTo(len * .55, -hw * .22); g.quadraticCurveTo(len * .95, 0, len * .55, hw * .22); g.stroke();
-  // big eyes on top of the head
-  for (const s of [-1, 1]) eye(g, len * .46, s * hw * .62, sp);
-  // nostrils
-  g.fillStyle = "rgba(0,0,0,.6)";
-  for (const s of [-1, 1]) { g.beginPath(); g.ellipse(len - 1.4, s * hw * .18, .65, .42, 0, 0, Math.PI * 2); g.fill(); }
-  // gloss on the crown of the head
-  g.fillStyle = "rgba(255,255,255,.35)"; g.beginPath(); g.ellipse(len * .25, -hw * .35, 3.6, 1.4, -.25, 0, Math.PI * 2); g.fill();
-  if (tongue) {
-    g.strokeStyle = "#d61f2c"; g.lineWidth = 1.15; g.lineCap = "round";
-    g.beginPath(); g.moveTo(len + 1.6, 0); g.lineTo(len + 6.5, 0); g.lineTo(len + 9.2, -2); g.moveTo(len + 6.5, 0); g.lineTo(len + 9.2, 2); g.stroke();
-  }
-  g.restore();
-}
+/* The snakes are painted and animated in snake2d.ts (on both boards). */
 
 /* ---------- final polish: varnish sheen and vignette ---------- */
 function varnish(g: CanvasRenderingContext2D) {
@@ -672,7 +492,10 @@ function varnish(g: CanvasRenderingContext2D) {
 }
 
 /** Paints the static board (frame, squares, ladders, snakes, numbers) for one model and theme into `layer` at the given pixel ratio. */
-export function paintBoard(layer: HTMLCanvasElement, dpr: number, look: Look = DEFAULT_LOOK) {
+/** The board picture (frame, squares, ladders, varnish). The snakes are painted and animated separately (snake2d.ts)
+    on a layer above this one; `numbers: false` leaves the square numbers out, for boards that show them on their own
+    layer above the snakes (paintNumberLayer), so a snake never hides a number. */
+export function paintBoard(layer: HTMLCanvasElement, dpr: number, look: Look = DEFAULT_LOOK, opts: { numbers?: boolean } = {}) {
   const pal = palette(look);
   layer.width = layer.height = Math.round(W * dpr);
   const g = layer.getContext("2d")!;
@@ -681,32 +504,17 @@ export function paintBoard(layer: HTMLCanvasElement, dpr: number, look: Look = D
   squares(g, look, pal);
   Object.entries(LADDERS).forEach(([a, b]) => onLayer(g, boxOf([center(+a), center(b)], 36), (c) => ladder(c, +a, b)));
   Object.entries(RARE_LADDERS).forEach(([a, b]) => onLayer(g, boxOf([center(+a), center(b)], 36), (c) => ladder(c, +a, b, true)));
-  Object.entries(SNAKES).forEach(([h, t], i) => onLayer(g, boxOf(snakePath(+h, t), 54), (c) => snake(c, +h, t, speciesOf(+h), 100 + i)));
   varnish(g);
-  numbers(g, pal);
+  if (opts.numbers !== false) numbers(g, pal);
+}
+/** The square numbers alone on a transparent board-sized layer (the lighter board shows it above the snakes). */
+export function paintNumberLayer(layer: HTMLCanvasElement, dpr: number, look: Look = DEFAULT_LOOK) {
+  layer.width = layer.height = Math.round(W * dpr);
+  const g = layer.getContext("2d")!;
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  numbers(g, palette(look));
 }
 
-/* ---------- moving parts drawn over the board during animations ---------- */
-/** The snake at `head` with its mouth open (0 = closed, 1 = wide). */
-export function paintSnakeMouth(g: CanvasRenderingContext2D, head: number, open: number) {
-  const tail = SNAKES[head]; if (!tail) return;
-  const sp = speciesOf(head), gm = geom(head, tail);
-  snakeHead(g, gm.pts[0], gm.angle, gm.WD[0], sp, false, Math.max(0.001, open));
-}
-/** A swallowed pawn as a bulge travelling down the snake's body (`k` 0 = at the head, 1 = at the tail). */
-export function paintSnakeBulge(g: CanvasRenderingContext2D, head: number, k: number, color: string) {
-  const tail = SNAKES[head]; if (!tail) return;
-  const sp = speciesOf(head), gm = geom(head, tail), a = gm.at(Math.min(gm.total - 1, Math.max(4, k * gm.total)));
-  if (!a) return;
-  const ang = Math.atan2(a.t.y, a.t.x), rw = Math.max(a.w * .7, 8.5), rl = rw * 1.85;
-  g.save(); g.translate(a.p.x, a.p.y); g.rotate(ang);
-  g.fillStyle = "rgba(0,0,0,.35)"; g.beginPath(); g.ellipse(3, 4, rl, rw, 0, 0, Math.PI * 2); g.fill();
-  const gr = g.createRadialGradient(-rl * .25, -rw * .45, 1, 0, 0, rl);
-  gr.addColorStop(0, mix(sp.body, "#ffffff", .45)); gr.addColorStop(.5, mix(sp.body, color, .22)); gr.addColorStop(1, mix(sp.body, "#000000", .45));
-  g.fillStyle = gr; g.beginPath(); g.ellipse(0, 0, rl, rw, 0, 0, Math.PI * 2); g.fill();
-  g.strokeStyle = "rgba(0,0,0,.4)"; g.lineWidth = .8; g.stroke();
-  g.restore();
-}
 /** Points a pawn steps through while climbing: each rung from the bottom, then the top square. */
 export function ladderSteps(a: number, b: number, rungs: number): Pt[] {
   const p1 = center(a), p2 = center(b), out: Pt[] = [];

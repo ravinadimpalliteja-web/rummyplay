@@ -66,7 +66,7 @@ console.log('snakes view: ok (board uses engine positions, numbering unchanged, 
     return dense;
   };
   const segD = (p, a, b) => { const dx = b.x - a.x, dy = b.y - a.y, l = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l)); return Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy); };
-  const SNAKE_HALF = 11.4, LADDER_HALF = +num(/export const LADDER_HALF = (\d+);/, 'LADDER_HALF')[0] + 5.4;   // widest drawn: 3D snake radius 0.19 square; ladder half-width plus its rail
+  const SNAKE_HALF = 10.8, LADDER_HALF = +num(/export const LADDER_HALF = (\d+);/, 'LADDER_HALF')[0] + 5.4;   // widest drawn: 3D snake radius 0.18 square; ladder half-width plus its rail
   for (const [h, t] of Object.entries(SN)) {
     const pts = curve(WPS[h]), first = pts[0], last = pts[pts.length - 1], hc = ctr(+h), tc = ctr(t);
     assert(Math.abs(first.x - hc.x) < 30 && Math.abs(first.y - hc.y) < 30, `snake ${h}: head is on square ${h}`);
@@ -74,5 +74,17 @@ console.log('snakes view: ok (board uses engine positions, numbering unchanged, 
     assert(Math.abs(last.x - tc.x) <= 32 && Math.abs(last.y - tc.y) <= 32, `snake ${h}: tail is on square ${t}`);
     for (const p of pts) for (const [a, b] of Object.entries(L)) assert(segD(p, ctr(+a), ctr(b)) >= SNAKE_HALF + LADDER_HALF + WAVE - 5, `snake ${h}-${t} crosses ladder ${a}-${b}`);
   }
-  console.log(`snakes view: ok (${Object.keys(SN).length} snakes routed around all ${Object.keys(L).length} ladders)`);
+  // Nothing overlaps: no two ladders touch, and no two snakes' bodies touch (widest drawn, with their sway).
+  const lads = Object.entries(L).map(([a, b]) => [ctr(+a), ctr(b)]);
+  const segSeg = (a, b, c, d) => Math.min(segD(a, c, d), segD(b, c, d), segD(c, a, b), segD(d, a, b));
+  const cross = (a, b, c, d) => { const o = (p, q, r) => Math.sign((q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x)); return o(a, b, c) !== o(a, b, d) && o(c, d, a) !== o(c, d, b); };
+  for (let i = 0; i < lads.length; i++) for (let j = i + 1; j < lads.length; j++) {
+    assert(!cross(...lads[i], ...lads[j]) && segSeg(...lads[i], ...lads[j]) >= 2 * LADDER_HALF, `ladders ${Object.keys(L)[i]} and ${Object.keys(L)[j]} overlap`);
+  }
+  const bodies = Object.entries(SN).map(([h, t]) => [h, curve(WPS[h])]);
+  for (let i = 0; i < bodies.length; i++) for (let j = i + 1; j < bodies.length; j++) {
+    let m = Infinity; for (const p of bodies[i][1]) for (const q of bodies[j][1]) m = Math.min(m, Math.hypot(p.x - q.x, p.y - q.y));
+    assert(m >= 2 * (SNAKE_HALF + WAVE), `snakes ${bodies[i][0]} and ${bodies[j][0]} touch (${m.toFixed(1)})`);
+  }
+  console.log(`snakes view: ok (${Object.keys(SN).length} snakes routed around all ${Object.keys(L).length} ladders; no ladders or snakes overlap)`);
 }

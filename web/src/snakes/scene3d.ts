@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { LADDERS, RARE_LADDERS, SNAKES } from "./engine";
-import { NUM_FONT_3D, S, SPECIES, W, center, lookKey, numberAt3D, paintNumbers, paintPlank, paintRail, paintSurface, palette, snakePath, speciesOf, type Look } from "./board";
+import { NUM_FONT_3D, PAD, S, W, center, lookKey, numberAt3D, paintNumbers, paintPlank, paintRail, paintSurface, palette, type Look } from "./board";
+import { SnakeArt, type SnakeOverlay } from "./snake2d";
 import { buildFigure, gloss, gold, mat } from "./models3d";
 import type { PieceId } from "./tokens";
 
@@ -16,7 +17,10 @@ type Obj = any;
     leans toward `dir` (radians on the board, 0 = toward +x) by `lean` and sways side to side by `sway`. */
 export type Piece3D = { seat: number; piece: PieceId; color: string; x: number; y: number; h: number; s: number; active: boolean; lean?: number; sway?: number; dir?: number };
 /** Effects over the board: a snake's open mouth, a swallowed token's bulge, gold sparkles (age 0..1) and a landing ring. */
-export type Overlay3D = { mouth?: { head: number; open: number }; bulge?: { head: number; k: number; color: string }; sparks?: { x: number; y: number; h: number; age: number }[]; burst?: { x: number; y: number; k: number } };
+/** What to draw over the board this frame: the snakes' mouth and bulge (snake2d.ts), the squares tokens stand on (the
+    snakes turn toward a token next to them), whether the snakes may slither (false: reduced motion or a hidden page),
+    gold sparkles and the landing ring. */
+export type Overlay3D = SnakeOverlay & { tokens?: number[]; motion?: boolean; sparks?: { x: number; y: number; h: number; age: number }[]; burst?: { x: number; y: number; k: number } };
 export type Box = { x0: number; x1: number; y0: number; y1: number };
 
 const wx = (x: number) => (x - W / 2) / S, wz = (y: number) => (y - W / 2) / S;
@@ -44,182 +48,6 @@ function canvasTex(c: HTMLCanvasElement, aniso: number, srgb = true) {
 }
 const setLayer = (o: Obj, l: number) => o.traverse((c: Obj) => c.layers.set(l));
 
-/* ---------- snake skins ---------- */
-const SKIN_LEN = 1.4;                                                // world length one skin picture covers
-/** Seeded random numbers, so every skin comes out the same on every device and visit. */
-const rng = (seed: number) => () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
-/** A colour made lighter (f > 0, towards white) or darker (f < 0), as CSS. */
-const shade = (c: string, f: number) => { const k = new THREE.Color(c); if (f >= 0) k.lerp(new THREE.Color(1, 1, 1), f); else k.multiplyScalar(1 + f); return "#" + k.getHexString(); };
-/* The skin picture runs along the body (u, head first) and around it (v): the spine is at v = .25, the sides at v = 0, .5
-   and 1, the belly between v = .62 and .88. First the colour pattern is painted freely (counter-shading, then the
-   species' marks with uneven natural edges and a darker rim, then fine speckle); then the skin is rebuilt scale by scale,
-   each scale taking the pattern colour at its centre, as on a real snake, with overlapping dorsal scales on the back and
-   wide belly plates underneath. Matching bump and roughness pictures make the scales raised and glossy and the skin
-   between them dark and matte. Everything repeats seamlessly along the body. */
-function skinCanvases(spIdx: number, low: boolean) {
-  const sp = SPECIES[spIdx], w = low ? 512 : 1024, h = w / 2, k = w / 1024, R = rng(97 + spIdx * 131);
-  const mk = () => { const c = document.createElement("canvas"); c.width = w; c.height = h; return c; };
-  const wrapX = (fn: (dx: number) => void) => { for (const dx of [-w, 0, w]) fn(dx); };
-  const BELLY0 = .62, BELLY1 = .88;
-  // 1. the pattern
-  const pat = mk(), p = pat.getContext("2d")!;
-  const base = p.createLinearGradient(0, 0, 0, h);
-  base.addColorStop(0, sp.body); base.addColorStop(.25, shade(sp.body, -.2)); base.addColorStop(.5, sp.body);
-  base.addColorStop(.57, shade(sp.body, .12)); base.addColorStop(BELLY0 + .02, sp.belly); base.addColorStop(BELLY1 - .02, sp.belly);
-  base.addColorStop(.93, shade(sp.body, .12)); base.addColorStop(1, sp.body);
-  p.fillStyle = base; p.fillRect(0, 0, w, h);
-  const blob = (x: number, y: number, rx: number, ry: number, fill: string, edge: string | null, pts = 14, rough = .22) => {
-    const r = Array.from({ length: pts }, () => 1 - rough + R() * rough * 1.6);
-    wrapX(dx => {
-      p.beginPath();
-      for (let i = 0; i <= pts; i++) { const a = (i / pts) * Math.PI * 2, q = r[i % pts]; const X = x + dx + Math.cos(a) * rx * q, Y = y + Math.sin(a) * ry * q; if (i) p.lineTo(X, Y); else p.moveTo(X, Y); }
-      p.closePath(); if (edge) { p.strokeStyle = edge; p.lineWidth = 5 * k; p.lineJoin = "round"; p.stroke(); } p.fillStyle = fill; p.fill();
-    });
-  };
-  /** A band across the back and down both sides (not under the belly), with wobbly edges. */
-  const band = (x: number, half: number, fill: string, edge: string | null) => {
-    const n = 12, a = Array.from({ length: n + 1 }, () => (R() - .5) * half * .7), b = Array.from({ length: n + 1 }, () => (R() - .5) * half * .7);
-    for (const dy of [0, h]) wrapX(dx => {
-      p.beginPath();
-      for (let i = 0; i <= n; i++) { const v = -.1 + (i / n) * .7, taper = 1 - Math.max(0, (v - .45) / .25) * .6; p.lineTo(x + dx - half * taper + a[i], v * h + dy); }
-      for (let i = n; i >= 0; i--) { const v = -.1 + (i / n) * .7, taper = 1 - Math.max(0, (v - .45) / .25) * .6; p.lineTo(x + dx + half * taper + b[i], v * h + dy); }
-      p.closePath(); if (edge) { p.strokeStyle = edge; p.lineWidth = 6 * k; p.lineJoin = "round"; p.stroke(); } p.fillStyle = fill; p.fill();
-    });
-  };
-  const n = (count: number, fn: (x: number) => void) => { for (let i = 0; i < count; i++) fn((i + .5) * (w / count) + (R() - .5) * (w / count) * .25); };
-  const dark = shade(sp.body, -.55);
-  switch (sp.name) {
-    case "Emerald":            // green tree python: dark paired saddles and a broken row of pale flecks along the spine
-      n(9, x => { blot2(x); });
-      break;
-    case "Ruby":               // banded: yellow rings edged in black
-      n(6, x => band(x, 26 * k, "#f6c43a", "#1c0d08"));
-      break;
-    case "Sapphire":           // carpet-python diamonds: pale centres, dark outlines, dark flecks on the flanks
-      n(6, x => { blob(x, h * .25, 46 * k, h * .19, "rgba(160,210,255,1)", "#0f2a66", 4, .12); blob(x, h * .25, 16 * k, h * .06, sp.body, null, 8); });
-      n(14, x => { for (const v of [.06, .44]) blob(x, h * v, 7 * k, h * .03, dark, null, 9, .35); });
-      break;
-    case "Amethyst":           // paired lilac spots ringed in deep purple
-      n(8, x => { blob(x, h * .14, 22 * k, h * .08, "#f0c2ff", "#3a1260", 11); blob(x + 40 * k, h * .36, 22 * k, h * .08, "#f0c2ff", "#3a1260", 11); });
-      break;
-    case "Tiger":              // irregular dark stripes that thin out down the sides
-      n(7, x => band(x, 24 * k, "#2e1503", null));
-      break;
-    default:                   // Jade: double dark bands
-      n(6, x => { band(x - 16 * k, 10 * k, "#063a32", null); band(x + 16 * k, 10 * k, "#063a32", null); });
-  }
-  function blot2(x: number) {
-    blob(x, h * .14, 30 * k, h * .1, "#16480f", null, 12, .3); blob(x + 50 * k, h * .36, 30 * k, h * .1, "#16480f", null, 12, .3);
-    blob(x + 25 * k, h * .25, 10 * k, h * .04, "#f3f7c4", null, 9, .3);
-  }
-  // fine speckle so no two scales look exactly alike
-  for (let i = 0; i < 2600 * k * k * 4; i++) { p.fillStyle = R() < .5 ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.06)"; p.fillRect(R() * w, R() * h, 2 * k + 1, 2 * k + 1); }
-  const px = p.getImageData(0, 0, w, h).data;
-  const at = (x: number, y: number) => { const X = ((Math.round(x) % w) + w) % w, Y = Math.max(0, Math.min(h - 1, Math.round(y))), i = (Y * w + X) * 4; return `rgb(${px[i]},${px[i + 1]},${px[i + 2]})`; };
-
-  // 2. the skin, scale by scale
-  const col = mk(), g = col.getContext("2d")!, bump = mk(), b = bump.getContext("2d")!, rough = mk(), r = rough.getContext("2d")!;
-  g.fillStyle = shade(sp.body, -.4); g.fillRect(0, 0, w, h);                  // skin showing between the scales
-  b.fillStyle = "#262626"; b.fillRect(0, 0, w, h);
-  r.fillStyle = "#d8d8d8"; r.fillRect(0, 0, w, h);
-  const C = 26, ROWS = 20, sx = w / C, sy = h / ROWS;
-  for (let row = 0; row <= ROWS; row++) {
-    const cy = row * sy, v = cy / h;
-    if (v > BELLY0 - .015 && v < BELLY1 + .015) continue;                     // the belly gets plates instead
-    for (let c = 0; c < C; c++) {
-      const cx = c * sx + (row % 2) * sx / 2, base = at(cx, cy), j = (R() - .5) * .14, fill = j >= 0 ? shade(base, j) : shade(base, j);
-      wrapX(dx => {
-        const X = cx + dx;
-        if (X < -sx || X > w + sx) return;
-        const path = () => { g.beginPath(); g.ellipse(X, cy, sx * .56, sy * .64, 0, 0, Math.PI * 2); };
-        const gr = g.createRadialGradient(X - sx * .12, cy - sy * .15, 1, X, cy, sx * .62);
-        gr.addColorStop(0, shade(fill, .12)); gr.addColorStop(.6, fill); gr.addColorStop(1, shade(fill, -.2));
-        path(); g.fillStyle = gr; g.fill();
-        g.strokeStyle = "rgba(255,255,255,.10)"; g.lineWidth = 1.2 * k + .4; g.beginPath(); g.moveTo(X - sx * .3, cy); g.lineTo(X + sx * .3, cy); g.stroke();   // the keel
-        const bg = b.createRadialGradient(X - sx * .1, cy - sy * .1, 1, X, cy, sx * .6);
-        bg.addColorStop(0, "#ececec"); bg.addColorStop(.7, "#a8a8a8"); bg.addColorStop(1, "#5c5c5c");
-        b.beginPath(); b.ellipse(X, cy, sx * .56, sy * .64, 0, 0, Math.PI * 2); b.fillStyle = bg; b.fill();
-        r.beginPath(); r.ellipse(X, cy, sx * .5, sy * .58, 0, 0, Math.PI * 2); r.fillStyle = "#585858"; r.fill();
-      });
-    }
-  }
-  // belly plates: one wide plate per step along the body, the front edge raised and lit, the rear edge in shadow
-  const y0 = BELLY0 * h, y1 = BELLY1 * h;
-  for (let c = 0; c < C; c++) {
-    const x0 = c * sx, fill = at(x0 + sx / 2, (y0 + y1) / 2);
-    const lg = g.createLinearGradient(x0, 0, x0 + sx, 0); lg.addColorStop(0, shade(fill, .1)); lg.addColorStop(.75, fill); lg.addColorStop(1, shade(fill, -.32));
-    g.fillStyle = lg; g.beginPath(); g.rect(x0 + sx * .04, y0, sx * .92, y1 - y0); g.fill();
-    const bl = b.createLinearGradient(x0, 0, x0 + sx, 0); bl.addColorStop(0, "#dcdcdc"); bl.addColorStop(.8, "#9a9a9a"); bl.addColorStop(1, "#505050");
-    b.fillStyle = bl; b.beginPath(); b.rect(x0 + sx * .04, y0, sx * .92, y1 - y0); b.fill();
-    r.fillStyle = "#6a6a6a"; r.fillRect(x0 + sx * .08, y0 + 2, sx * .84, y1 - y0 - 4);
-  }
-  return { col, bump, rough };
-}
-/** Small overlapping scales for the heads (a grey bump picture, repeated over the head). */
-let headBump: Obj = null;
-function headScales() {
-  if (headBump) return headBump;
-  const w = 256, h = 128, c = document.createElement("canvas"); c.width = w; c.height = h;
-  const g = c.getContext("2d")!; g.fillStyle = "#3a3a3a"; g.fillRect(0, 0, w, h);
-  const sx = 16, sy = 12;
-  for (let row = 0; row <= h / sy; row++) for (let i = -1; i <= w / sx; i++) {
-    const x = i * sx + (row % 2) * sx / 2, y = row * sy, gr = g.createRadialGradient(x - 2, y - 2, 1, x, y, sx * .6);
-    gr.addColorStop(0, "#e8e8e8"); gr.addColorStop(.75, "#9a9a9a"); gr.addColorStop(1, "#5a5a5a");
-    g.fillStyle = gr; g.beginPath(); g.ellipse(x, y, sx * .55, sy * .62, 0, 0, Math.PI * 2); g.fill();
-  }
-  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(7, 4); t.needsUpdate = true;
-  headBump = t; return t;
-}
-
-/** A snake's body: a tube along its path, thick behind the head and tapering to a fine tail, its belly flat on the board. */
-function snakeBody(head: number, tail: number, R: number) {
-  const pts = snakePath(head, tail).map(p => new THREE.Vector3(wx(p.x), 0, wz(p.y)));
-  const len = [0]; for (let i = 1; i < pts.length; i++) len.push(len[i - 1] + pts[i].distanceTo(pts[i - 1]));
-  const total = len[len.length - 1];
-  const at = (s: number) => { let i = 1; while (i < pts.length - 1 && len[i] < s) i++; const f = (s - len[i - 1]) / ((len[i] - len[i - 1]) || 1); return pts[i - 1].clone().lerp(pts[i], f); };
-  const width = (k: number) => (k < .06 ? .62 + .38 * (k / .06) : k < .35 ? 1 : Math.max(.08, 1 - Math.pow((k - .35) / .65, 1.25) * .94));
-  const radius = (s: number) => R * width(s / total);
-  const N = 150, RS = 20, pos: number[] = [], uv: number[] = [], idx: number[] = [];
-  for (let i = 0; i <= N; i++) {
-    const s = (i / N) * total, c = at(s), a = at(Math.max(0, s - .05)), b = at(Math.min(total, s + .05));
-    const t = b.sub(a).normalize(), side = new THREE.Vector3(-t.z, 0, t.x), r = radius(s), cy = TILE_TOP + r * .62;
-    for (let j = 0; j <= RS; j++) {
-      const ang = (j / RS) * Math.PI * 2, sn = Math.sin(ang), up = sn >= 0 ? sn * .92 : sn * .62;
-      pos.push(c.x + side.x * Math.cos(ang) * r, cy + up * r, c.z + side.z * Math.cos(ang) * r);
-      uv.push(s / SKIN_LEN, j / RS);
-    }
-  }
-  for (let i = 0; i < N; i++) for (let j = 0; j < RS; j++) { const a = i * (RS + 1) + j, b = a + RS + 1; idx.push(a, b, a + 1, b, b + 1, a + 1); }
-  const g = new THREE.BufferGeometry();
-  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
-  return { g, at, radius, total, cyAt: (s: number) => TILE_TOP + radius(s) * .62 };
-}
-
-/** A friendly snake head: rounded skull, big eyes, a hinged lower jaw (opens to swallow) and a forked tongue. */
-function snakeHead(sp: (typeof SPECIES)[number], R: number) {
-  const grp = new THREE.Group(), skull = new THREE.Group(), jaw = new THREE.Group();
-  const SPH = new THREE.SphereGeometry(1, 32, 22), headM = new THREE.MeshPhysicalMaterial({ color: sp.head, roughness: .45, bumpMap: headScales(), bumpScale: 1.6, clearcoat: .5, clearcoatRoughness: .3 });
-  const k = R / .17 * .95;
-  const add = (to: Obj, g: Obj, m: Obj, p: number[], s: number[] | number, r: number[] = [0, 0, 0]) => { const o = new THREE.Mesh(g, m); o.position.set(p[0] * k, p[1] * k, p[2] * k); if (typeof s === "number") o.scale.setScalar(s * k); else o.scale.set(s[0] * k, s[1] * k, s[2] * k); o.rotation.set(r[0], r[1], r[2]); o.castShadow = true; to.add(o); return o; };
-  add(skull, SPH, headM, [0, .03, .1], [.2, .12, .27]);
-  add(skull, SPH, mat(sp.belly, .5), [0, .0, .16], [.15, .06, .2]);
-  for (const s of [-1, 1]) {
-    add(skull, SPH, gloss("#fffdf6", .2), [s * .1, .1, .17], .06);
-    add(skull, SPH, gloss(sp.eye, .2), [s * .108, .105, .215], .036);
-    add(skull, SPH, gloss("#0b0b0b", .1), [s * .11, .107, .238], .022);
-    add(skull, SPH, mat("#ffffff", .3), [s * .1, .125, .25], .009);
-    add(skull, SPH, gloss("#111111", .3), [s * .035, .06, .36], .012);
-  }
-  add(jaw, SPH, headM, [0, -.04, .1], [.17, .05, .23]);
-  add(jaw, SPH, mat("#b23345", .6), [0, -.005, .12], [.13, .025, .19]);
-  jaw.position.set(0, -.01 * k, -.02 * k);
-  const tongue = new THREE.Group(), red = mat("#d61f2c", .5), CY = new THREE.CylinderGeometry(1, 1, 1, 6);
-  add(tongue, CY, red, [0, 0, .42], [.008, .12, .008], [Math.PI / 2, 0, 0]);
-  for (const s of [-1, 1]) add(tongue, CY, red, [s * .015, 0, .5], [.006, .05, .006], [Math.PI / 2, 0, s * .6]);
-  grp.add(skull, jaw, tongue);
-  return { grp, skull, jaw, tongue };
-}
-
 /** Several box geometries joined into one (fewer draw calls). */
 function mergeBoxes(gs: Obj[]) {
   let n = 0; for (const g of gs) n += (g.index ? g.toNonIndexed() : g).attributes.position.count;
@@ -243,8 +71,8 @@ export class BoardScene {
   renderer: Obj; scene: Obj; camera: Obj; light: Obj;
   private board = new THREE.Group(); private numbersMesh: Obj = null; private texes: Obj[] = [];
   private figures = new Map<number, { id: PieceId; grp: Obj; tilt: Obj; fig: Obj; ring: Obj; glow: Obj }>();
-  private snakes = new Map<number, { body: ReturnType<typeof snakeBody>; head: ReturnType<typeof snakeHead>; color: string; headPos: Obj; dir: Obj }>();
-  private bulge: Obj;
+  /** The painted snakes: drawn into a canvas that lies on the playing surface as a transparent texture. */
+  private snakeArt: SnakeArt; private snakeCanvas = document.createElement("canvas"); private snakeTex: Obj = null;
   private size = { w: 1, h: 1 };
   private aniso = 4; private low: boolean; private look: Look;
   private sparks: Obj[] = []; private burst: Obj;
@@ -252,6 +80,7 @@ export class BoardScene {
 
   private ratioCap = 2; private dpr = 1; private level = 0;
   constructor(canvas: HTMLCanvasElement, look: Look, low: boolean, opts: { testLite?: boolean } = {}) {
+    this.snakeArt = new SnakeArt(low ? 2.2 : 3);
     this.low = low; this.look = look; this.ratioCap = opts.testLite ? .75 : low ? 1.5 : 2;
     const r = new THREE.WebGLRenderer({ canvas, antialias: !opts.testLite, alpha: true, powerPreference: "high-performance" });
     r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.NeutralToneMapping; r.toneMappingExposure = 1;
@@ -284,8 +113,6 @@ export class BoardScene {
     table.rotation.x = -Math.PI / 2; table.position.y = BASE - .01; table.receiveShadow = true; scene.add(table);
     this.camera = new THREE.PerspectiveCamera(30, 1, .5, 120);
     this.camera.layers.enableAll();
-    const bm = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 14), new THREE.MeshPhysicalMaterial({ color: "#888", roughness: .4, clearcoat: .5 }));
-    bm.visible = false; bm.castShadow = true; this.bulge = bm; scene.add(bm);
     // gold sparkles (a small pool, reused) and the ring that flashes when a token lands at the top of a ladder
     const sc2 = document.createElement("canvas"); sc2.width = sc2.height = 64;
     const sg = sc2.getContext("2d")!, gr = sg.createRadialGradient(32, 32, 0, 32, 32, 32);
@@ -308,7 +135,7 @@ export class BoardScene {
     const B = this.board, look = this.look, pal = palette(look), px = this.low ? 1536 : 2048;
     for (const t of this.texes) t.dispose(); this.texes = [];
     B.traverse((o: Obj) => { o.geometry?.dispose?.(); });
-    B.clear(); this.snakes.clear();
+    B.clear();
     const T = (c: HTMLCanvasElement, srgb = true) => { const t = canvasTex(c, this.aniso, srgb); this.texes.push(t); return t; };
     const surf = document.createElement("canvas"); paintSurface(surf, px, look);
     const surfTex = T(surf), hgt = RIM_TOP - BASE;
@@ -333,7 +160,7 @@ export class BoardScene {
       tile.dispose();
       const tiles = new THREE.BufferGeometry();
       tiles.setAttribute("position", new THREE.BufferAttribute(P, 3)); tiles.setAttribute("normal", new THREE.BufferAttribute(N, 3)); tiles.setAttribute("uv", new THREE.BufferAttribute(U, 2));
-      const tm = new THREE.Mesh(tiles, new THREE.MeshStandardMaterial({ map: surfTex, roughness: .5, metalness: 0, envMapIntensity: .8 }));
+      const tm = new THREE.Mesh(tiles, new THREE.MeshPhysicalMaterial({ map: surfTex, bumpMap: surfTex, bumpScale: .9, roughness: .5, metalness: 0, clearcoat: .25, clearcoatRoughness: .45, envMapIntensity: .8 }));
       tm.receiveShadow = true; tm.castShadow = true; B.add(tm);
       const floor = new THREE.Mesh(new THREE.BoxGeometry(10.04, -BASE, 10.04), mat(pal.groove, .9)); floor.position.y = BASE / 2; floor.receiveShadow = true; B.add(floor);
       this.woodRim(B, rimTex, hgt);
@@ -344,10 +171,10 @@ export class BoardScene {
     } else if (look.model === "marble") {
       // one polished slab of stone; the squares, their engraved lines and the MOKSH engraving are in its top texture
       const stoneTex = rimTex.clone(); stoneTex.needsUpdate = true; this.texes.push(stoneTex); stoneTex.repeat.set(3, 3);
-      const stoneM = new THREE.MeshPhysicalMaterial({ map: stoneTex, roughness: .28, metalness: 0, clearcoat: .7, clearcoatRoughness: .12, envMapIntensity: .9 });
+      const stoneM = new THREE.MeshPhysicalMaterial({ map: stoneTex, roughness: .22, metalness: 0, clearcoat: 1, clearcoatRoughness: .08, envMapIntensity: 1 });
       const slab = new THREE.Mesh(new THREE.BoxGeometry(HALF * 2, TILE_TOP - BASE - .004, HALF * 2), stoneM);
       slab.position.y = (TILE_TOP - .004 + BASE) / 2; slab.castShadow = true; slab.receiveShadow = true; B.add(slab);
-      const top = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshPhysicalMaterial({ map: surfTex, roughness: .24, metalness: 0, clearcoat: .8, clearcoatRoughness: .1, envMapIntensity: .9 }));
+      const top = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshPhysicalMaterial({ map: surfTex, bumpMap: surfTex, bumpScale: .25, roughness: .2, metalness: 0, clearcoat: 1, clearcoatRoughness: .06, envMapIntensity: 1 }));
       top.rotation.x = -Math.PI / 2; top.position.y = TILE_TOP; top.receiveShadow = true; B.add(top);
       // a raised gold border around the squares and a gold lip around the slab's top edge
       for (const [x, z, w, d] of [[0, -5.1, 10.32, .1], [0, 5.1, 10.32, .1], [-5.1, 0, .1, 10.32], [5.1, 0, .1, 10.32]]) {
@@ -361,7 +188,7 @@ export class BoardScene {
     } else {
       // flat tiles with real brass strips between them; a carved wooden rim with gold rosettes on raised corner blocks
       const floor = new THREE.Mesh(new THREE.BoxGeometry(10.04, TILE_TOP - BASE, 10.04), mat(pal.tileB, .6)); floor.position.y = (TILE_TOP + BASE) / 2; floor.receiveShadow = true; B.add(floor);
-      const top = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshPhysicalMaterial({ map: surfTex, roughness: .32, metalness: 0, clearcoat: .5, clearcoatRoughness: .2, envMapIntensity: .8 }));
+      const top = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshPhysicalMaterial({ map: surfTex, bumpMap: surfTex, bumpScale: .5, roughness: .36, metalness: 0, clearcoat: .55, clearcoatRoughness: .22, envMapIntensity: .8 }));
       top.rotation.x = -Math.PI / 2; top.position.y = TILE_TOP + .001; top.receiveShadow = true; B.add(top);
       const strips: Obj[] = [];
       for (let i = 0; i <= 10; i++) {
@@ -399,26 +226,18 @@ export class BoardScene {
     const goldRail = new THREE.MeshPhysicalMaterial({ color: "#d4a640", roughness: .26, metalness: .85, clearcoat: .6, clearcoatRoughness: .15 });
     const goldRung = new THREE.MeshStandardMaterial({ color: "#f2d47a", roughness: .3, metalness: .75 });
     for (const [s, e] of Object.entries(RARE_LADDERS)) this.ladder(+s, e, goldRail, goldRung, metal);
-    // snakes
-    const skins = new Map<number, { col: Obj; bump: Obj; rough: Obj }>();
-    Object.entries(SNAKES).forEach(([h, t]) => {
-      const head = +h, sp = speciesOf(head), si = SPECIES.indexOf(sp);
-      let sk = skins.get(si); if (!sk) { const c = skinCanvases(si, this.low); sk = { col: T(c.col), bump: T(c.bump, false), rough: T(c.rough, false) }; for (const x of [sk.col, sk.bump, sk.rough]) { x.wrapS = THREE.RepeatWrapping; x.wrapT = THREE.ClampToEdgeWrapping; x.flipY = false; x.needsUpdate = true; } skins.set(si, sk); }
-      const R = .19, body = snakeBody(head, t, R);
-      const m = new THREE.Mesh(body.g, new THREE.MeshPhysicalMaterial({ map: sk.col, bumpMap: sk.bump, bumpScale: 2.6, roughnessMap: sk.rough, roughness: 1, clearcoat: .45, clearcoatRoughness: .32, envMapIntensity: .7, sheen: .3, sheenColor: new THREE.Color(shade(sp.body, .5)), sheenRoughness: .5 }));
-      m.castShadow = true; m.receiveShadow = true; B.add(m);
-      const hd = snakeHead(sp, R * 1.05), p0 = body.at(0), p1 = body.at(.35), dir = p0.clone().sub(p1).normalize();
-      hd.grp.position.set(p0.x - dir.x * .08, body.cyAt(0) + .01, p0.z - dir.z * .08);
-      hd.grp.rotation.y = Math.atan2(dir.x, dir.z);
-      B.add(hd.grp);
-      this.snakes.set(head, { body, head: hd, color: sp.body, headPos: p0, dir });
-    });
+    // snakes: painted in 2D on a transparent layer just above the squares (and the inlay's brass strips), under the
+    // ladders, the numbers and the tokens; it catches the tokens' and ladders' shadows like the board does
+    const spx = this.low ? 1024 : 1536; this.snakeCanvas.width = this.snakeCanvas.height = spx;
+    const stex = T(this.snakeCanvas); stex.anisotropy = Math.min(4, this.aniso); this.snakeTex = stex;
+    const sm = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshStandardMaterial({ map: stex, transparent: true, depthWrite: false, roughness: .55, metalness: 0, alphaTest: .01 }));
+    sm.rotation.x = -Math.PI / 2; sm.position.y = TILE_TOP + .026; sm.receiveShadow = true; sm.renderOrder = 2; B.add(sm);
     B.traverse((o: Obj) => { if (o.layers.mask === 1) o.layers.set(L_BOARD); });
     this.renderer.shadowMap.needsUpdate = true;
   }
   /** The wooden rim: four planks with grain running along them and a rounded top edge. */
   private woodRim(B: Obj, rimTex: Obj, hgt: number) {
-    const rimMat = new THREE.MeshStandardMaterial({ map: rimTex, roughness: .5, metalness: 0 });
+    const rimMat = new THREE.MeshPhysicalMaterial({ map: rimTex, bumpMap: rimTex, bumpScale: .8, roughness: .48, metalness: 0, clearcoat: .3, clearcoatRoughness: .4 });
     for (const [x, z, w, d] of [[0, -(5 + RIM / 2), HALF * 2, RIM], [0, 5 + RIM / 2, HALF * 2, RIM], [-(5 + RIM / 2), 0, RIM, 10], [5 + RIM / 2, 0, RIM, 10]]) {
       const m = new THREE.Mesh(new THREE.BoxGeometry(w, hgt, d), rimMat); m.position.set(x, BASE + hgt / 2, z); m.castShadow = true; m.receiveShadow = true; B.add(m);
       if (d === RIM) { const lip = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, w, 12), rimMat); lip.rotation.z = Math.PI / 2; lip.position.set(x, RIM_TOP, z + (z > 0 ? RIM / 2 : -RIM / 2)); B.add(lip); }
@@ -448,7 +267,7 @@ export class BoardScene {
       r.castShadow = true; r.receiveShadow = true; this.board.add(r);
       for (const [p, k] of [[s, -1], [e, 1]] as [Obj, number][]) { const m = new THREE.Mesh(cap, metal), q = p.clone().addScaledVector(side, half * sg).addScaledVector(u, (ext + .01) * k); m.position.set(q.x, RY, q.z); m.castShadow = true; this.board.add(m); }
     }
-    const rungs = Math.floor((len * 60) / 19);
+    const rungs = Math.max(5, Math.floor((len * 60) / 19));      // short ladders still get a full set of rungs
     for (let i = 1; i < rungs; i++) {
       const c = s.clone().addScaledVector(d, i / rungs), r = new THREE.Mesh(rung, rungM);
       r.position.set(c.x, RY + .03, c.z); r.rotation.set(0, 0, Math.PI / 2); r.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), ang);
@@ -492,7 +311,7 @@ export class BoardScene {
   toScreen(x: number, y: number, z: number) { const q = new THREE.Vector3(x, y, z).project(this.camera); return { x: (q.x + 1) / 2 * this.size.w, y: (1 - q.y) / 2 * this.size.h }; }
 
   /* ----- per frame: tokens and swallow effects, then draw ----- */
-  frame(pieces: Piece3D[], ov: Overlay3D) {
+  frame(pieces: Piece3D[], ov: Overlay3D): boolean {
     const seen = new Set<number>();
     for (const p of pieces) {
       seen.add(p.seat);
@@ -528,18 +347,20 @@ export class BoardScene {
     });
     if (ov.burst) { const k = ov.burst.k; this.burst.visible = true; this.burst.position.set(wx(ov.burst.x), TILE_TOP + .03, wz(ov.burst.y)); this.burst.scale.setScalar(.35 + k * 1.1); this.burst.material.opacity = (1 - k) * .9; }
     else this.burst.visible = false;
-    // snake effects
-    for (const [head, sn] of this.snakes) {
-      const open = ov.mouth && ov.mouth.head === head ? ov.mouth.open : 0;
-      sn.head.jaw.rotation.x = open * .75; sn.head.skull.rotation.x = -open * .28; sn.head.tongue.visible = open < .05;
-    }
-    const bl = ov.bulge && this.snakes.get(ov.bulge.head);
-    if (bl && ov.bulge) {
-      const s = Math.min(bl.body.total - .05, Math.max(.1, ov.bulge.k * bl.body.total)), c = bl.body.at(s), r = bl.body.radius(s);
-      this.bulge.visible = true; this.bulge.position.set(c.x, bl.body.cyAt(s) + r * .1, c.z); this.bulge.scale.set(Math.max(r * 1.55, .14), Math.max(r * 1.35, .12), Math.max(r * 1.55, .14));
-      this.bulge.material.color.set(bl.color).lerp(new THREE.Color(ov.bulge.color), .2);
-    } else this.bulge.visible = false;
+    // the snakes: slithering, heads turning, the swallow
+    const busy = this.paintSnakes(ov);
     this.render();
+    return busy;
+  }
+  /** For tests: the snake heads' angles. */
+  snakeState() { return this.snakeArt.state(); }
+  /** Repaints the snake layer for this moment. Returns true while a head is turning or a tongue is out. */
+  private paintSnakes(ov: Overlay3D) {
+    const c = this.snakeCanvas, g = c.getContext("2d")!, k = c.width / (S * 10);
+    g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, c.width, c.height); g.setTransform(k, 0, 0, k, -PAD * k, -PAD * k);
+    const busy = this.snakeArt.paint(g, performance.now(), ov, ov.tokens ?? [], ov.motion !== false);
+    if (this.snakeTex) this.snakeTex.needsUpdate = true;
+    return busy;
   }
   render() {
     const r = this.renderer, cam = this.camera;

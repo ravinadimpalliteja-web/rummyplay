@@ -6,16 +6,18 @@
    - Rankings: play goes on after someone reaches 100; each finisher takes the next place, and the game ends
      when one player is left (last place). */
 
-/* The board layout (chosen by the owner): five ladders and seven snakes. Each snake's body is routed around the
-   ladders (board.ts, SNAKE_WAYPOINTS); a server test checks no snake crosses a ladder. */
-export const LADDERS: Record<number, number> = { 14: 28, 22: 43, 35: 54, 59: 63, 74: 95 };
-export const SNAKES: Record<number, number> = { 49: 7, 60: 19, 66: 17, 73: 51, 82: 43, 93: 55, 98: 44 };
+/* The board layout: nine ladders and seven snakes spread over the whole board (catch-up ladders low and mid-board,
+   long snakes in the upper half for a tense finish), designed with game simulations so races stay close: about 35
+   rolls a player, frequent lead changes. No ladder overlaps another, and each snake's body is routed clear of every
+   ladder and every other snake (board.ts, SNAKE_WAYPOINTS; checked by a server test). */
+export const LADDERS: Record<number, number> = { 3: 24, 8: 30, 20: 41, 33: 52, 37: 64, 45: 66, 59: 80, 68: 89, 71: 91 };
+export const SNAKES: Record<number, number> = { 23: 2, 27: 7, 36: 5, 70: 50, 87: 47, 95: 65, 97: 39 };
 /** The golden ladder: landing on its foot climbs it only once in RARE_ODDS landings; every other time the square is
     an ordinary square. */
-export const RARE_LADDERS: Record<number, number> = { 81: 99 };
+export const RARE_LADDERS: Record<number, number> = { 82: 99 };
 export const RARE_ODDS = 1000;
 /** Bumped when the board layout changes, so a client can tell if a room server still runs an older board. */
-export const BOARD_VERSION = 3;
+export const BOARD_VERSION = 6;
 export const TARGET = 100;
 
 export type Outcome = "need-six" | "enter" | "move" | "overshoot" | "three-sixes";

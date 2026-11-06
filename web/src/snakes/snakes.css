@@ -65,7 +65,7 @@
 .sl-base,.sl-pieces{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
 .sl-plane{position:absolute;transform-origin:50% 50%;pointer-events:none;backface-visibility:hidden}
 .sl-plane canvas{display:block;width:100%;height:100%}
-.sl-base{z-index:1}.sl-plane{z-index:2}.sl-pieces{z-index:3}.sl-plane.fx{z-index:4}
+.sl-base{z-index:1}.sl-plane{z-index:2}.sl-plane.snakes{z-index:2}.sl-plane.nums{z-index:2}.sl-pieces{z-index:3}   /* board, then snakes, then numbers (always readable), then tokens */
 .sl-gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:manipulation}
 .sl-gl-wait{position:absolute;inset:0;display:grid;place-items:center;margin:0;color:var(--sl-gold);font-weight:700;font-size:14px;letter-spacing:.04em}
 

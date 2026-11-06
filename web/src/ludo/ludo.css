@@ -116,3 +116,20 @@
 .ludo-score{border-bottom-color:#31534488}
 .ludo-board-wrap,.ludo-board,.ludo-cell,.ludo-token,.ludo-die{transition:box-shadow .2s ease,filter .2s ease}
 @media(max-width:800px){.ludo-board-wrap{padding:8px;border-radius:13px}.ludo-board-wrap:before{inset:3px}}
+
+
+/* Centre emblem: replace the Royal Club crown/logo with a clear HOME marker. */
+.ludo-board:after{
+  content:"HOME";
+  left:43%;top:43%;width:14%;height:14%;
+  display:grid;place-items:center;
+  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);
+  background:radial-gradient(circle at 35% 28%,#fff2c5,#d9b96f 58%,#80602d);
+  color:#0b3327;
+  font-family:'DM Sans',sans-serif;
+  font-size:clamp(6px,1vw,11px);
+  font-weight:900;
+  letter-spacing:.08em;
+  text-shadow:0 1px 0 #fff9;
+  pointer-events:none;z-index:3;
+}

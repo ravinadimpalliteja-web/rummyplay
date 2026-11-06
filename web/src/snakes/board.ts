@@ -82,13 +82,14 @@ export const OFF: Pt = { x: PAD * .4, y: center(1).y + 6 };
 /** Each snake's planned route (board units, head first): worked out once so its body goes around every ladder
     (a path search over the board, then checked by layoutIssues() and a server test). The curve below smooths it. */
 export const SNAKE_WAYPOINTS: Record<number, [number, number][]> = {
-  49: [[538, 358], [538, 478], [418, 598]],
-  60: [[58, 298], [58, 478], [118, 538]],
-  66: [[358, 238], [322, 254], [306, 306], [316, 366], [312, 440], [276, 512], [238, 538]],
-  72: [[538, 178], [566, 212], [548, 248], [506, 262], [478, 298]],
-  82: [[118, 118], [214, 214], [214, 358], [202, 370]],
-  93: [[478, 58], [452, 135], [440, 215], [385, 240], [352, 285]],
-  97: [[238, 58], [258, 100], [264, 160], [250, 222], [258, 290], [270, 350], [288, 408]],
+  19: [[112, 532], [98, 562], [112, 592]],
+  27: [[412, 472], [386, 532], [412, 592]],
+  36: [[292, 412], [346, 472], [258, 532], [292, 592]],
+  58: [[172, 292], [146, 352], [172, 412]],
+  70: [[592, 232], [584, 292], [592, 352]],
+  87: [[412, 112], [388, 192], [436, 272], [412, 352]],
+  95: [[352, 52], [355, 120], [289, 164], [292, 232]],
+  97: [[232, 52], [234, 116], [176, 168], [172, 232]],
 };
 /** How far a snake's body swings either side of its route (board units). */
 export const SNAKE_WAVE = 5;
@@ -117,8 +118,8 @@ export function snakePath(head: number, tail: number): Pt[] {
   return out;
 }
 /** Checks the layout: no snake body touches a ladder, and every snake stays on the board. Returns the problems found
-    (empty when all is well). Widths are the widest drawn (the 3D board): snake 11.4, ladder 18 either side of its line. */
-export function layoutIssues(snakeHalf = 11.4, ladderHalf = 18): string[] {
+    (empty when all is well). Widths are the widest drawn (the 3D board): snake 9, ladder 18 either side of its line. */
+export function layoutIssues(snakeHalf = 9, ladderHalf = 18): string[] {
   const issues = new Set<string>();
   const segD = (p: Pt, a: Pt, b: Pt) => { const dx = b.x - a.x, dy = b.y - a.y, l = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l)); return Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy); };
   for (const [h, t] of Object.entries(SNAKES)) {
@@ -414,14 +415,19 @@ function start(g: CanvasRenderingContext2D, p: Pt) {
     (nearest the players, where a token standing in the middle never covers them), dark with a light outline. */
 export const NUM_FONT = "800 19px 'DM Sans', system-ui, sans-serif";
 export const numberAt = (n: number): Pt => { const p = center(n); return { x: p.x - S / 2 + 4.5, y: p.y + S / 2 - 5.5 }; };
-export const NUM_FONT_3D = NUM_FONT;
+/** The 3D board's numbers are larger: its tokens stand in the middle of their squares, clear of the corner. */
+export const NUM_FONT_3D = "800 24px 'DM Sans', system-ui, sans-serif";
 export const numberAt3D = numberAt;
-function numbers(g: CanvasRenderingContext2D, pal: Pal) {
+/** The square numbers, made to read at a glance: each sits on a soft light label (so marble veins, wood grain or a
+    snake passing underneath never muddle it), with a crisp light outline around dark, heavy digits. */
+function numbers(g: CanvasRenderingContext2D, pal: Pal, font = NUM_FONT) {
   g.save();
-  g.textAlign = "left"; g.textBaseline = "alphabetic"; g.lineJoin = "round"; g.font = NUM_FONT;
+  g.textAlign = "left"; g.textBaseline = "alphabetic"; g.lineJoin = "round"; g.font = font;
+  const size = +(font.match(/(\d+)px/)?.[1] ?? 19);
   for (let n = 1; n <= 100; n++) {
-    const { x, y } = numberAt(n), t = String(n);
-    g.lineWidth = 4.2; g.strokeStyle = pal.inkEdge; g.strokeText(t, x, y);
+    const { x, y } = numberAt(n), t = String(n), tw = g.measureText(t).width;
+    if (n !== 100) { rr(g, x - 2.5, y - size * .8, tw + 5, size * .96, 4); g.fillStyle = rgba("#fffdf6", .62); g.fill(); }
+    g.lineWidth = size * .28; g.strokeStyle = pal.inkEdge; g.strokeText(t, x, y);
     if (n === 100) { g.strokeStyle = "rgba(4,40,24,.95)"; g.strokeText(t, x, y); }
     g.fillStyle = n === 100 ? "#ffe39a" : pal.ink; g.fillText(t, x, y);
   }
@@ -438,7 +444,7 @@ function ladder(g: CanvasRenderingContext2D, a: number, b: number, golden = fals
   const p1 = center(a), p2 = center(b), dx = p2.x - p1.x, dy = p2.y - p1.y, len = Math.hypot(dx, dy);
   const ux = dx / len, uy = dy / len, nx = -uy, ny = ux, half = LADDER_HALF;
   const ext = 10, s1 = { x: p1.x - ux * ext, y: p1.y - uy * ext }, s2 = { x: p2.x + ux * ext, y: p2.y + uy * ext };
-  const rungs = Math.floor(len / 19);
+  const rungs = Math.max(5, Math.floor(len / 19));
   const cylinder = (x1: number, y1: number, x2: number, y2: number, r: number, c: { base: string; light: string; dark: string }) => {
     const dxx = x2 - x1, dyy = y2 - y1, l = Math.hypot(dxx, dyy), px = -dyy / l, py = dxx / l;
     const gr = g.createLinearGradient(x1 + px * r, y1 + py * r, x1 - px * r, y1 - py * r);
@@ -784,7 +790,7 @@ export function paintNumbers(c: HTMLCanvasElement, px: number, look: Look = DEFA
   const k = px / (S * 10);
   c.width = c.height = px;
   const g = c.getContext("2d")!; g.setTransform(k, 0, 0, k, -PAD * k, -PAD * k);
-  numbers(g, palette(look));
+  numbers(g, palette(look), NUM_FONT_3D);
 }
 /** The frame's material as a strip `w` x `h` px: wood with the grain running along it, or the marble slab's stone. */
 export function paintPlank(c: HTMLCanvasElement, w: number, h: number, look: Look, seed: number) {

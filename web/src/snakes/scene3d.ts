@@ -177,45 +177,83 @@ function snakeBody(head: number, tail: number, R: number) {
   const len = [0]; for (let i = 1; i < pts.length; i++) len.push(len[i - 1] + pts[i].distanceTo(pts[i - 1]));
   const total = len[len.length - 1];
   const at = (s: number) => { let i = 1; while (i < pts.length - 1 && len[i] < s) i++; const f = (s - len[i - 1]) / ((len[i] - len[i - 1]) || 1); return pts[i - 1].clone().lerp(pts[i], f); };
-  const width = (k: number) => (k < .06 ? .62 + .38 * (k / .06) : k < .35 ? 1 : Math.max(.08, 1 - Math.pow((k - .35) / .65, 1.25) * .94));
+  // a real snake's build: a slim neck behind the head, the body filling out to its thickest around a third of the way
+  // along, then a long, even taper to a fine tail tip
+  const width = (k: number) => (k < .1 ? .7 + .3 * smooth01(k / .1) : k < .4 ? 1 : Math.max(.05, 1 - Math.pow((k - .4) / .6, 1.35) * .95));
   const radius = (s: number) => R * width(s / total);
   const N = 150, RS = 20, pos: number[] = [], uv: number[] = [], idx: number[] = [];
   for (let i = 0; i <= N; i++) {
     const s = (i / N) * total, c = at(s), a = at(Math.max(0, s - .05)), b = at(Math.min(total, s + .05));
-    const t = b.sub(a).normalize(), side = new THREE.Vector3(-t.z, 0, t.x), r = radius(s), cy = TILE_TOP + r * .62;
+    const t = b.sub(a).normalize(), side = new THREE.Vector3(-t.z, 0, t.x), r = radius(s), cy = TILE_TOP + r * .5;
     for (let j = 0; j <= RS; j++) {
-      const ang = (j / RS) * Math.PI * 2, sn = Math.sin(ang), up = sn >= 0 ? sn * .92 : sn * .62;
-      pos.push(c.x + side.x * Math.cos(ang) * r, cy + up * r, c.z + side.z * Math.cos(ang) * r);
+      const ang = (j / RS) * Math.PI * 2, sn = Math.sin(ang), up = sn >= 0 ? Math.pow(sn, .85) * .86 : sn * .5, wide = r * 1.08;   // rounded back, flat belly
+      pos.push(c.x + side.x * Math.cos(ang) * wide, cy + up * r, c.z + side.z * Math.cos(ang) * wide);
       uv.push(s / SKIN_LEN, j / RS);
     }
   }
   for (let i = 0; i < N; i++) for (let j = 0; j < RS; j++) { const a = i * (RS + 1) + j, b = a + RS + 1; idx.push(a, b, a + 1, b, b + 1, a + 1); }
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
-  return { g, at, radius, total, cyAt: (s: number) => TILE_TOP + radius(s) * .62 };
+  return { g, at, radius, total, cyAt: (s: number) => TILE_TOP + radius(s) * .5 };
 }
 
-/** A friendly snake head: rounded skull, big eyes, a hinged lower jaw (opens to swallow) and a forked tongue. */
-function snakeHead(sp: (typeof SPECIES)[number], R: number) {
-  const grp = new THREE.Group(), skull = new THREE.Group(), jaw = new THREE.Group();
-  const SPH = new THREE.SphereGeometry(1, 32, 22), headM = new THREE.MeshPhysicalMaterial({ color: sp.head, roughness: .45, bumpMap: headScales(), bumpScale: 1.6, clearcoat: .5, clearcoatRoughness: .3 });
-  const k = R / .17 * .95;
-  const add = (to: Obj, g: Obj, m: Obj, p: number[], s: number[] | number, r: number[] = [0, 0, 0]) => { const o = new THREE.Mesh(g, m); o.position.set(p[0] * k, p[1] * k, p[2] * k); if (typeof s === "number") o.scale.setScalar(s * k); else o.scale.set(s[0] * k, s[1] * k, s[2] * k); o.rotation.set(r[0], r[1], r[2]); o.castShadow = true; to.add(o); return o; };
-  add(skull, SPH, headM, [0, .03, .1], [.2, .12, .27]);
-  add(skull, SPH, mat(sp.belly, .5), [0, .0, .16], [.15, .06, .2]);
-  for (const s of [-1, 1]) {
-    add(skull, SPH, gloss("#fffdf6", .2), [s * .1, .1, .17], .06);
-    add(skull, SPH, gloss(sp.eye, .2), [s * .108, .105, .215], .036);
-    add(skull, SPH, gloss("#0b0b0b", .1), [s * .11, .107, .238], .022);
-    add(skull, SPH, mat("#ffffff", .3), [s * .1, .125, .25], .009);
-    add(skull, SPH, gloss("#111111", .3), [s * .035, .06, .36], .012);
+const smooth01 = (t: number) => { const x = Math.max(0, Math.min(1, t)); return x * x * (3 - 2 * x); };
+/** A tube of changing cross-section along z (from z0 to z1): `w(f)` is the half-width, `top(f)` and `bot(f)` the height
+    above and below the centre line, f running 0..1 from back to front; the front end closes to a point. Texture u runs
+    along it (scaled to match the body's skin) and v around it, with the back on top as on the body. */
+function headTube(z0: number, z1: number, w: (f: number) => number, top: (f: number) => number, bot: (f: number) => number, uScale: number, flatTop = .78) {
+  const ST = 22, AR = 24, pos: number[] = [], uv: number[] = [], idx: number[] = [];
+  for (let i = 0; i <= ST; i++) {
+    const f = i / ST, z = z0 + (z1 - z0) * f, tip = f > .9 ? Math.sqrt(Math.max(0, 1 - Math.pow((f - .9) / .1, 2))) : 1;
+    for (let j = 0; j <= AR; j++) {
+      const a = (j / AR) * Math.PI * 2, c = Math.cos(a), sn = Math.sin(a);
+      const y = sn >= 0 ? Math.pow(sn, flatTop) * top(f) : sn * bot(f);
+      pos.push(c * w(f) * tip, y * tip, z); uv.push(f * uScale, j / AR);
+    }
   }
-  add(jaw, SPH, headM, [0, -.04, .1], [.17, .05, .23]);
-  add(jaw, SPH, mat("#b23345", .6), [0, -.005, .12], [.13, .025, .19]);
-  jaw.position.set(0, -.01 * k, -.02 * k);
-  const tongue = new THREE.Group(), red = mat("#d61f2c", .5), CY = new THREE.CylinderGeometry(1, 1, 1, 6);
-  add(tongue, CY, red, [0, 0, .42], [.008, .12, .008], [Math.PI / 2, 0, 0]);
-  for (const s of [-1, 1]) add(tongue, CY, red, [s * .015, 0, .5], [.006, .05, .006], [Math.PI / 2, 0, s * .6]);
+  for (let i = 0; i < ST; i++) for (let j = 0; j < AR; j++) { const a = i * (AR + 1) + j, b = a + AR + 1; idx.push(a, a + 1, b, b, a + 1, b + 1); }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
+  return g;
+}
+/** A realistic snake head: a long, slightly flattened wedge that widens over the jaw hinge and narrows to a rounded
+    snout, covered in the snake's own scaled skin; small glossy eyes set high on the sides, with vertical slit pupils
+    under a jutting brow scale; two nostrils; a hinged lower jaw in the belly colour with a pink mouth inside (it opens
+    to swallow) and a forked tongue. Faces +z; the jaw hinge is at the origin. */
+function snakeHead(sp: (typeof SPECIES)[number], R: number, skin?: { col: Obj; bump: Obj; rough: Obj }) {
+  const grp = new THREE.Group(), skull = new THREE.Group(), jaw = new THREE.Group();
+  const L = R * 3.3, z0 = -L * .22, z1 = L * .78, uS = L / SKIN_LEN;
+  const headM = skin ? new THREE.MeshPhysicalMaterial({ map: skin.col, bumpMap: skin.bump, bumpScale: 1.6, roughnessMap: skin.rough, roughness: 1, clearcoat: .5, clearcoatRoughness: .3, sheen: .3, sheenColor: new THREE.Color(sp.head) })
+    : new THREE.MeshPhysicalMaterial({ color: sp.head, roughness: .42, clearcoat: .5 });
+  const bellyM = new THREE.MeshPhysicalMaterial({ color: sp.belly, roughness: .5, clearcoat: .3 });
+  // half-width: a slim neck, widest over the jaw hinge, then a gently narrowing, rounded snout
+  const w = (f: number) => R * (f < .3 ? .78 + .34 * smooth01(f / .3) : 1.12 - .62 * Math.pow((f - .3) / .7, 1.5));
+  const top = (f: number) => R * (f < .3 ? .55 + .12 * smooth01(f / .3) : .67 - .33 * Math.pow((f - .3) / .7, 1.2));
+  const sk = new THREE.Mesh(headTube(z0, z1, w, top, (f) => R * (.2 - .06 * f), uS), headM); sk.castShadow = true; skull.add(sk);
+  // lower jaw: a shallow wedge under the skull, pale like the belly, with the pink mouth lining on top
+  const jw = (f: number) => w(Math.min(1, f + .02)) * .9;
+  const jawMesh = new THREE.Mesh(headTube(z0 + L * .05, z1 - L * .02, jw, () => R * .05, (f) => R * (.3 - .16 * f), uS, 1), bellyM);
+  jawMesh.position.y = -R * .17; jawMesh.castShadow = true; jaw.add(jawMesh);
+  const mouth = new THREE.Mesh(headTube(z0 + L * .12, z1 - L * .08, (f) => jw(f) * .82, () => R * .015, () => R * .04, 1, 1), mat("#c4566a", .55));
+  mouth.position.y = -R * .13; jaw.add(mouth);
+  // eyes: high on the sides, about two thirds of the way forward, looking out and a little ahead
+  const SPH = new THREE.SphereGeometry(1, 20, 14);
+  const fe = .6, ez = z0 + (z1 - z0) * fe, ex = w(fe) * .82, ey = top(fe) * .55, er = R * .17;
+  for (const s of [-1, 1]) {
+    const eye = new THREE.Group(); eye.position.set(s * ex, ey, ez); eye.rotation.y = s * (Math.PI / 2 - .5); skull.add(eye);
+    const part = (m: Obj, p: number[], sc: number[]) => { const o = new THREE.Mesh(SPH, m); o.position.set(p[0], p[1], p[2]); o.scale.set(sc[0], sc[1], sc[2]); eye.add(o); return o; };
+    part(mat("#14100c", .6), [0, 0, -er * .2], [er * 1.12, er * 1.02, er * .7]);              // dark socket rim
+    part(gloss(sp.eye, .15), [0, 0, 0], [er, er * .95, er * .6]);                                // iris
+    part(gloss("#050505", .05), [0, 0, er * .38], [er * .16, er * .72, er * .2]);              // vertical slit pupil
+    part(mat("#ffffff", .1), [er * .3, er * .38, er * .5], [er * .16, er * .16, er * .12]);    // catch-light
+    const brow = new THREE.Mesh(SPH, headM); brow.position.set(s * (ex - er * .2), ey + er * .85, ez); brow.scale.set(er * 1.15, er * .45, er * 1.4); brow.rotation.z = s * -.35; skull.add(brow);   // brow scale
+  }
+  for (const s of [-1, 1]) { const n = new THREE.Mesh(SPH, mat("#0d0907", .8)); n.position.set(s * R * .16, top(.95) * .7, z1 - L * .06); n.scale.set(R * .05, R * .035, R * .04); skull.add(n); }   // nostrils
+  // forked tongue (flicks out when the mouth is closed)
+  const tongue = new THREE.Group(), red = mat("#c0182a", .5), CY = new THREE.CylinderGeometry(1, 1, 1, 6);
+  const tp = (p: number[], sc: number[], r: number[]) => { const o = new THREE.Mesh(CY, red); o.position.set(p[0], p[1], p[2]); o.scale.set(sc[0], sc[1], sc[2]); o.rotation.set(r[0], r[1], r[2]); tongue.add(o); };
+  tp([0, -R * .1, z1 + R * .25], [R * .035, R * .7, R * .035], [Math.PI / 2, 0, 0]);
+  for (const s of [-1, 1]) tp([s * R * .06, -R * .1, z1 + R * .7], [R * .025, R * .28, R * .025], [Math.PI / 2, 0, s * .6]);
   grp.add(skull, jaw, tongue);
   return { grp, skull, jaw, tongue };
 }
@@ -404,12 +442,15 @@ export class BoardScene {
     Object.entries(SNAKES).forEach(([h, t]) => {
       const head = +h, sp = speciesOf(head), si = SPECIES.indexOf(sp);
       let sk = skins.get(si); if (!sk) { const c = skinCanvases(si, this.low); sk = { col: T(c.col), bump: T(c.bump, false), rough: T(c.rough, false) }; for (const x of [sk.col, sk.bump, sk.rough]) { x.wrapS = THREE.RepeatWrapping; x.wrapT = THREE.ClampToEdgeWrapping; x.flipY = false; x.needsUpdate = true; } skins.set(si, sk); }
-      const R = .19, body = snakeBody(head, t, R);
+      const R = .15, body = snakeBody(head, t, R);
       const m = new THREE.Mesh(body.g, new THREE.MeshPhysicalMaterial({ map: sk.col, bumpMap: sk.bump, bumpScale: 2.6, roughnessMap: sk.rough, roughness: 1, clearcoat: .45, clearcoatRoughness: .32, envMapIntensity: .7, sheen: .3, sheenColor: new THREE.Color(shade(sp.body, .5)), sheenRoughness: .5 }));
       m.castShadow = true; m.receiveShadow = true; B.add(m);
-      const hd = snakeHead(sp, R * 1.05), p0 = body.at(0), p1 = body.at(.35), dir = p0.clone().sub(p1).normalize();
-      hd.grp.position.set(p0.x - dir.x * .08, body.cyAt(0) + .01, p0.z - dir.z * .08);
-      hd.grp.rotation.y = Math.atan2(dir.x, dir.z);
+      const hd = snakeHead(sp, R, sk), p0 = body.at(0), p1 = body.at(.35), dir = p0.clone().sub(p1).normalize();
+      hd.grp.position.set(p0.x, body.cyAt(0) + R * .12, p0.z);
+      // the head carries on from the body but turns (up to about 70 degrees at the neck) toward the players, so its
+      // face and eyes show instead of the back of its head
+      const yaw = Math.atan2(dir.x, dir.z), turn = Math.max(-1.2, Math.min(1.2, Math.atan2(Math.sin(yaw), Math.cos(yaw))));
+      hd.grp.rotation.y = yaw - turn;
       B.add(hd.grp);
       this.snakes.set(head, { body, head: hd, color: sp.body, headPos: p0, dir });
     });
@@ -448,7 +489,7 @@ export class BoardScene {
       r.castShadow = true; r.receiveShadow = true; this.board.add(r);
       for (const [p, k] of [[s, -1], [e, 1]] as [Obj, number][]) { const m = new THREE.Mesh(cap, metal), q = p.clone().addScaledVector(side, half * sg).addScaledVector(u, (ext + .01) * k); m.position.set(q.x, RY, q.z); m.castShadow = true; this.board.add(m); }
     }
-    const rungs = Math.floor((len * 60) / 19);
+    const rungs = Math.max(5, Math.floor((len * 60) / 19));      // short ladders still get a full set of rungs
     for (let i = 1; i < rungs; i++) {
       const c = s.clone().addScaledVector(d, i / rungs), r = new THREE.Mesh(rung, rungM);
       r.position.set(c.x, RY + .03, c.z); r.rotation.set(0, 0, Math.PI / 2); r.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), ang);

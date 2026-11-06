@@ -333,7 +333,7 @@ export class BoardScene {
       tile.dispose();
       const tiles = new THREE.BufferGeometry();
       tiles.setAttribute("position", new THREE.BufferAttribute(P, 3)); tiles.setAttribute("normal", new THREE.BufferAttribute(N, 3)); tiles.setAttribute("uv", new THREE.BufferAttribute(U, 2));
-      const tm = new THREE.Mesh(tiles, new THREE.MeshStandardMaterial({ map: surfTex, roughness: .5, metalness: 0, envMapIntensity: .8 }));
+      const tm = new THREE.Mesh(tiles, new THREE.MeshPhysicalMaterial({ map: surfTex, bumpMap: surfTex, bumpScale: .9, roughness: .5, metalness: 0, clearcoat: .25, clearcoatRoughness: .45, envMapIntensity: .8 }));
       tm.receiveShadow = true; tm.castShadow = true; B.add(tm);
       const floor = new THREE.Mesh(new THREE.BoxGeometry(10.04, -BASE, 10.04), mat(pal.groove, .9)); floor.position.y = BASE / 2; floor.receiveShadow = true; B.add(floor);
       this.woodRim(B, rimTex, hgt);
@@ -344,10 +344,10 @@ export class BoardScene {
     } else if (look.model === "marble") {
       // one polished slab of stone; the squares, their engraved lines and the MOKSH engraving are in its top texture
       const stoneTex = rimTex.clone(); stoneTex.needsUpdate = true; this.texes.push(stoneTex); stoneTex.repeat.set(3, 3);
-      const stoneM = new THREE.MeshPhysicalMaterial({ map: stoneTex, roughness: .28, metalness: 0, clearcoat: .7, clearcoatRoughness: .12, envMapIntensity: .9 });
+      const stoneM = new THREE.MeshPhysicalMaterial({ map: stoneTex, roughness: .22, metalness: 0, clearcoat: 1, clearcoatRoughness: .08, envMapIntensity: 1 });
       const slab = new THREE.Mesh(new THREE.BoxGeometry(HALF * 2, TILE_TOP - BASE - .004, HALF * 2), stoneM);
       slab.position.y = (TILE_TOP - .004 + BASE) / 2; slab.castShadow = true; slab.receiveShadow = true; B.add(slab);
-      const top = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshPhysicalMaterial({ map: surfTex, roughness: .24, metalness: 0, clearcoat: .8, clearcoatRoughness: .1, envMapIntensity: .9 }));
+      const top = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshPhysicalMaterial({ map: surfTex, bumpMap: surfTex, bumpScale: .25, roughness: .2, metalness: 0, clearcoat: 1, clearcoatRoughness: .06, envMapIntensity: 1 }));
       top.rotation.x = -Math.PI / 2; top.position.y = TILE_TOP; top.receiveShadow = true; B.add(top);
       // a raised gold border around the squares and a gold lip around the slab's top edge
       for (const [x, z, w, d] of [[0, -5.1, 10.32, .1], [0, 5.1, 10.32, .1], [-5.1, 0, .1, 10.32], [5.1, 0, .1, 10.32]]) {
@@ -361,7 +361,7 @@ export class BoardScene {
     } else {
       // flat tiles with real brass strips between them; a carved wooden rim with gold rosettes on raised corner blocks
       const floor = new THREE.Mesh(new THREE.BoxGeometry(10.04, TILE_TOP - BASE, 10.04), mat(pal.tileB, .6)); floor.position.y = (TILE_TOP + BASE) / 2; floor.receiveShadow = true; B.add(floor);
-      const top = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshPhysicalMaterial({ map: surfTex, roughness: .32, metalness: 0, clearcoat: .5, clearcoatRoughness: .2, envMapIntensity: .8 }));
+      const top = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshPhysicalMaterial({ map: surfTex, bumpMap: surfTex, bumpScale: .5, roughness: .36, metalness: 0, clearcoat: .55, clearcoatRoughness: .22, envMapIntensity: .8 }));
       top.rotation.x = -Math.PI / 2; top.position.y = TILE_TOP + .001; top.receiveShadow = true; B.add(top);
       const strips: Obj[] = [];
       for (let i = 0; i <= 10; i++) {
@@ -418,7 +418,7 @@ export class BoardScene {
   }
   /** The wooden rim: four planks with grain running along them and a rounded top edge. */
   private woodRim(B: Obj, rimTex: Obj, hgt: number) {
-    const rimMat = new THREE.MeshStandardMaterial({ map: rimTex, roughness: .5, metalness: 0 });
+    const rimMat = new THREE.MeshPhysicalMaterial({ map: rimTex, bumpMap: rimTex, bumpScale: .8, roughness: .48, metalness: 0, clearcoat: .3, clearcoatRoughness: .4 });
     for (const [x, z, w, d] of [[0, -(5 + RIM / 2), HALF * 2, RIM], [0, 5 + RIM / 2, HALF * 2, RIM], [-(5 + RIM / 2), 0, RIM, 10], [5 + RIM / 2, 0, RIM, 10]]) {
       const m = new THREE.Mesh(new THREE.BoxGeometry(w, hgt, d), rimMat); m.position.set(x, BASE + hgt / 2, z); m.castShadow = true; m.receiveShadow = true; B.add(m);
       if (d === RIM) { const lip = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, w, 12), rimMat); lip.rotation.z = Math.PI / 2; lip.position.set(x, RIM_TOP, z + (z > 0 ? RIM / 2 : -RIM / 2)); B.add(lip); }

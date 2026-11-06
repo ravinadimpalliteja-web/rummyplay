@@ -10,7 +10,7 @@ import { DEFAULT_PIECES, PIECE_IDS, pieceById, pieceImage, pieceUrl, type PieceI
 import "./snakes.css";
 
 const ROOM_KEY = "rc-snakes-room", PIECE_KEY = "rc-snakes-piece";
-const MODEL_KEY = "rc-snakes-model", THEME_KEY = "rc-snakes-theme", DICE_KEY = "rc-snakes-dice", VIEW_KEY = "rc-snakes-view", GL_SLOW_KEY = "rc-snakes-3d-slow";
+const MODEL_KEY = "rc-snakes-board", THEME_KEY = "rc-snakes-theme", DICE_KEY = "rc-snakes-dice", VIEW_KEY = "rc-snakes-view", GL_SLOW_KEY = "rc-snakes-3d-slow";
 const DICE = [
   { id: "ivory", name: "Classic ivory" }, { id: "brass", name: "Polished brass" }, { id: "glass", name: "Emerald glass" },
   { id: "rosewood", name: "Carved rosewood" }, { id: "onyx", name: "Black onyx" },
@@ -117,7 +117,7 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
   const [rolling, setRolling] = useState<number | null>(null);
   const rollingRef = useRef<number | null>(null); rollingRef.current = rolling;
   const [dieValue, setDieValue] = useState(6);
-  const [model, setModel] = useState<ModelId>(() => readKey(MODEL_KEY, MODEL_IDS, "tray"));
+  const [model, setModel] = useState<ModelId>(() => readKey(MODEL_KEY, MODEL_IDS, "marble"));
   const [theme, setTheme] = useState<ThemeId>(() => readKey(THEME_KEY, THEME_IDS, "ivory"));
   const look = useMemo<Look>(() => ({ model, theme }), [model, theme]);
   const [dice, setDice] = useState<DiceId>(() => readKey(DICE_KEY, DICE.map(d => d.id), "ivory"));

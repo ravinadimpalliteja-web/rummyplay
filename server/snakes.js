@@ -16,11 +16,12 @@ const crypto = require('crypto');
 
 /* A tougher board: ten long snakes, six short ladders. Must match web/src/snakes/engine.ts (a test checks this). */
 const LADDERS = Object.freeze({ 14: 28, 22: 43, 35: 54, 59: 63, 74: 95 });
-const SNAKES = Object.freeze({ 49: 7, 60: 19, 66: 17, 73: 51, 82: 43, 93: 55, 98: 44 });
-/* The golden ladder: landing on 81 climbs to 99 only once in RARE_ODDS landings (a separate draw with every roll). */
-const RARE_LADDERS = Object.freeze({ 81: 99 });
+const SNAKES = Object.freeze({ 49: 7, 60: 19, 66: 17, 72: 53, 82: 43, 93: 55, 97: 36 });
+/* The golden ladder: landing on 80 climbs to 99 only once in RARE_ODDS landings (a separate draw with every roll),
+   the rarest event in the game. */
+const RARE_LADDERS = Object.freeze({ 80: 99 });
 const RARE_ODDS = 1000;
-const BOARD_VERSION = 3;          // must match web/src/snakes/engine.ts; clients won't start a room game on another board
+const BOARD_VERSION = 4;          // must match web/src/snakes/engine.ts; clients won't start a room game on another board
 const TARGET = 100;
 
 /* Quick chat: players pick from these by index; no free text yet. Must match the web client's lists. */

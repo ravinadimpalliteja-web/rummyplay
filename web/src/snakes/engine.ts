@@ -9,13 +9,13 @@
 /* The board layout (chosen by the owner): five ladders and seven snakes. Each snake's body is routed around the
    ladders (board.ts, SNAKE_WAYPOINTS); a server test checks no snake crosses a ladder. */
 export const LADDERS: Record<number, number> = { 14: 28, 22: 43, 35: 54, 59: 63, 74: 95 };
-export const SNAKES: Record<number, number> = { 49: 7, 60: 19, 66: 17, 73: 51, 82: 43, 93: 55, 98: 44 };
+export const SNAKES: Record<number, number> = { 49: 7, 60: 19, 66: 17, 72: 53, 82: 43, 93: 55, 97: 36 };
 /** The golden ladder: landing on its foot climbs it only once in RARE_ODDS landings; every other time the square is
     an ordinary square. */
-export const RARE_LADDERS: Record<number, number> = { 81: 99 };
+export const RARE_LADDERS: Record<number, number> = { 80: 99 };
 export const RARE_ODDS = 1000;
 /** Bumped when the board layout changes, so a client can tell if a room server still runs an older board. */
-export const BOARD_VERSION = 3;
+export const BOARD_VERSION = 4;
 export const TARGET = 100;
 
 export type Outcome = "need-six" | "enter" | "move" | "overshoot" | "three-sixes";

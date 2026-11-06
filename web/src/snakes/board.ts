@@ -17,9 +17,9 @@ export type ModelId = "tray" | "marble" | "inlay";
 export type ThemeId = "ivory" | "mint" | "sandstone" | "pearl";
 export type Look = { model: ModelId; theme: ThemeId };
 export const MODELS: Record<ModelId, { name: string; blurb: string }> = {
-  tray: { name: "Classic Tray", blurb: "Raised squares in a framed wooden rim" },
-  marble: { name: "Royal Marble", blurb: "Polished slab, engraved lines, gold border" },
-  inlay: { name: "Palace Inlay", blurb: "Flat tiles, brass inlay, carved corners" },
+  marble: { name: "Royal Marble", blurb: "Polished veined marble, engraved lines, gold border" },
+  tray: { name: "Classic Tray", blurb: "Raised squares of natural wood in a framed rim" },
+  inlay: { name: "Palace Inlay", blurb: "Wood veneer tiles, brass inlay, carved corners" },
 };
 export const MODEL_IDS = Object.keys(MODELS) as ModelId[];
 export const THEMES: Record<ThemeId, { name: string; swatch: [string, string, string] }> = {
@@ -29,7 +29,7 @@ export const THEMES: Record<ThemeId, { name: string; swatch: [string, string, st
   pearl: { name: "Pearl", swatch: ["#f7f7fa", "#e4e6ef", "#56627a"] },
 };
 export const THEME_IDS = Object.keys(THEMES) as ThemeId[];
-export const DEFAULT_LOOK: Look = { model: "tray", theme: "ivory" };
+export const DEFAULT_LOOK: Look = { model: "marble", theme: "ivory" };
 /** Every colour a board needs. tileA / tileB: the alternating squares; grain: their texture lines; groove: the gap or engraved
     line between squares; rim*: the frame; ink / inkEdge: the numbers; metal: gold or brass trim (light, mid, dark). */
 export type Pal = {
@@ -84,11 +84,11 @@ export const OFF: Pt = { x: PAD * .4, y: center(1).y + 6 };
 export const SNAKE_WAYPOINTS: Record<number, [number, number][]> = {
   49: [[538, 358], [538, 478], [418, 598]],
   60: [[58, 298], [58, 478], [118, 538]],
-  66: [[358, 238], [330, 262], [318, 330], [298, 450], [262, 520], [238, 538]],
-  73: [[478, 178], [598, 298]],
+  66: [[358, 238], [322, 254], [306, 306], [316, 366], [312, 440], [276, 512], [238, 538]],
+  72: [[538, 178], [566, 212], [548, 248], [506, 262], [478, 298]],
   82: [[118, 118], [214, 214], [214, 358], [202, 370]],
   93: [[478, 58], [452, 135], [440, 215], [385, 240], [352, 285]],
-  98: [[178, 58], [286, 166], [286, 322], [250, 358], [238, 358]],
+  97: [[238, 58], [258, 100], [264, 160], [250, 222], [258, 290], [270, 350], [288, 408]],
 };
 /** How far a snake's body swings either side of its route (board units). */
 export const SNAKE_WAVE = 5;
@@ -151,49 +151,96 @@ const boxOf = (pts: Pt[], pad: number) => {
   return { x: x0 - pad, y: y0 - pad, w: x1 - x0 + pad * 2, h: y1 - y0 + pad * 2 };
 };
 function rng(seed: number) { return () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }; }
-const hex = (h: string) => { const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; };
+const hex = (h: string) => { const m = h.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/); if (m) return [+m[1], +m[2], +m[3]]; const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; };
+/** Whether square n is a "second tone" square: a true chessboard pattern on screen (the numbering zigzags row by row). */
+const altSquare = (n: number) => { const row = Math.floor((n - 1) / 10), c = (n - 1) % 10, col = row % 2 ? 9 - c : c; return (row + col) % 2 === 1; };
 const rgba = (h: string, a: number) => { const [r, g, b] = hex(h); return `rgba(${r},${g},${b},${a})`; };
 const mix = (a: string, b: string, t: number) => { const x = hex(a), y = hex(b); return `rgb(${x.map((v, i) => Math.round(v + (y[i] - v) * t)).join(",")})`; };
 const LIGHT = { x: -0.55, y: -0.83 };                                   // light comes from the top left
 
 type Wood = { base: string; light: string; dark: string; grain: string; contrast: number };
-/** Wood grain filling a rectangle: broad colour bands, flowing grain lines, pores and the odd knot. */
-function grain(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, wood: Wood, seed: number, vertical = false, knotChance = .7) {
-  const r = rng(seed);
-  g.save();
-  g.beginPath(); g.rect(x, y, w, h); g.clip();
-  if (vertical) { g.translate(x + w, y); g.rotate(Math.PI / 2); [w, h] = [h, w]; x = 0; y = 0; }
-  const band = g.createLinearGradient(0, y, 0, y + h);
-  for (let i = 0; i <= 12; i++) band.addColorStop(i / 12, mix(wood.base, r() < .5 ? wood.light : wood.dark, r() * .45 * wood.contrast));
-  g.fillStyle = band; g.fillRect(x, y, w, h);
-  const lines = Math.round(h / 2.3);
-  const f1 = .004 + r() * .004, f2 = .013 + r() * .01;
-  for (let i = 0; i < lines; i++) {
-    const y0 = y + (i / lines) * h + (r() - .5) * 3, p1 = r() * 6.3, p2 = r() * 6.3, a1 = 4 + r() * 9, a2 = .8 + r() * 2.2;
-    const dark = r() < .62;
-    g.strokeStyle = rgba(dark ? wood.grain : wood.light, (dark ? .05 + r() * .13 : .04 + r() * .09) * wood.contrast);
-    g.lineWidth = .35 + r() * (dark ? 1.3 : 1);
-    g.beginPath();
-    for (let xx = x; xx <= x + w + 8; xx += 8) {
-      const yy = y0 + Math.sin(xx * f1 + p1) * a1 + Math.sin(xx * f2 + p2) * a2;
-      if (xx === x) g.moveTo(xx, yy); else g.lineTo(xx, yy);
-    }
-    g.stroke();
+
+/* ---------- natural textures: smooth noise, wood and marble painted pixel by pixel ---------- */
+/** Seeded smooth value noise (0..1) and fractal noise built from it. */
+function makeNoise(seed: number) {
+  const r = rng(seed), perm = new Uint8Array(512), val = new Float32Array(256);
+  const p = Array.from({ length: 256 }, (_, i) => i);
+  for (let i = 255; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [p[i], p[j]] = [p[j], p[i]]; }
+  for (let i = 0; i < 512; i++) perm[i] = p[i & 255];
+  for (let i = 0; i < 256; i++) val[i] = r();
+  const noise = (x: number, y: number) => {
+    const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, X = xi & 255, Y = yi & 255;
+    const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+    const a = val[perm[perm[X] + Y]], b = val[perm[perm[X + 1] + Y]], c = val[perm[perm[X] + Y + 1]], d = val[perm[perm[X + 1] + Y + 1]];
+    return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+  };
+  const fbm = (x: number, y: number, oct = 4) => { let s = 0, amp = .5, f = 1, norm = 0; for (let i = 0; i < oct; i++) { s += amp * noise(x * f, y * f); norm += amp; amp *= .5; f *= 2.03; } return s / norm; };
+  return { noise, fbm };
+}
+const smooth = (a: number, b: number, x: number) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+/** Paints `w` x `h` board units at (x, y) pixel by pixel: `shade(u, v)` gives the colour at a point (in board units)
+    as [r, g, b]. The picture is made at up to `maxScale` pixels per unit (smooth enough for stone and wood) and drawn
+    scaled to the context's resolution. */
+function pixels(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, maxScale: number, shade: (u: number, v: number) => [number, number, number]) {
+  const t = g.getTransform(), sc = Math.max(.6, Math.min(maxScale, Math.hypot(t.a, t.b)));
+  const pw = Math.max(2, Math.ceil(w * sc)), ph = Math.max(2, Math.ceil(h * sc));
+  const c = document.createElement("canvas"); c.width = pw; c.height = ph;
+  const cx = c.getContext("2d")!, img = cx.createImageData(pw, ph), d = img.data;
+  for (let py = 0, i = 0; py < ph; py++) for (let px = 0; px < pw; px++, i += 4) {
+    const [R, G, B] = shade((px + .5) / sc, (py + .5) / sc);
+    d[i] = R; d[i + 1] = G; d[i + 2] = B; d[i + 3] = 255;
   }
-  // pores
-  g.fillStyle = rgba(wood.grain, .18 * wood.contrast);
-  for (let i = 0; i < w * h / 90; i++) g.fillRect(x + r() * w, y + r() * h, 1.4 + r() * 2.2, .6);
-  // a knot or two
-  const knots = r() < knotChance ? 1 + Math.floor(r() * 2) : 0;
-  for (let k = 0; k < knots; k++) {
-    const kx = x + r() * w, ky = y + r() * h, rx = 6 + r() * 7;
-    for (let ring = 0; ring < 7; ring++) {
-      g.strokeStyle = rgba(wood.grain, .22 - ring * .025); g.lineWidth = 1;
-      g.beginPath(); g.ellipse(kx, ky, rx + ring * 3.2, (rx + ring * 3.2) * .42, 0, 0, Math.PI * 2); g.stroke();
+  cx.putImageData(img, 0, 0);
+  g.save(); g.beginPath(); g.rect(x, y, w, h); g.clip(); g.imageSmoothingQuality = "high"; g.drawImage(c, x, y, w, h); g.restore();
+}
+const lerp3 = (a: number[], b: number[], t: number): [number, number, number] => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+
+/** Natural wood filling a rectangle: growth rings bent by slow waves, darker latewood bands, fine streaks along the
+    grain, soft colour clouds and (now and then) a knot that the rings flow around. `vertical` turns the grain to run
+    up and down; `straight` gives the tight, even grain of quarter-sawn veneer. */
+function grain(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, wood: Wood, seed: number, vertical = false, knotChance = .7, straight = false) {
+  const r = rng(seed), N = makeNoise(seed * 7 + 3);
+  const base = hex(wood.base), light = hex(wood.light), dark = hex(wood.dark), gr = hex(wood.grain), k = wood.contrast;
+  const along = vertical ? h : w, across = vertical ? w : h;
+  const ringF = straight ? .55 + r() * .25 : .16 + r() * .12, warpA = straight ? 2.5 : 10 + r() * 10, off = r() * 200;
+  const knots = r() < knotChance ? Array.from({ length: 1 + Math.floor(r() * 2) }, () => ({ u: r() * along, v: r() * across, s: 4 + r() * 6 })) : [];
+  pixels(g, x, y, w, h, straight ? 2.6 : 2.2, (px, py) => {
+    const u = vertical ? py : px, v = vertical ? px : py;
+    let ring = v + N.fbm(u * .006 + off, v * .02, 3) * warpA * 2 - warpA;
+    let knotDark = 0;
+    for (const kn of knots) {                                  // rings swirl around a knot
+      const du = (u - kn.u) * .55, dv = v - kn.v, d2 = du * du + dv * dv, e = Math.exp(-d2 / (kn.s * kn.s * 6));
+      ring += e * Math.sign(dv || 1) * kn.s * 2.2; knotDark = Math.max(knotDark, Math.exp(-d2 / (kn.s * kn.s * .5)));
     }
-    g.fillStyle = rgba(wood.grain, .45); g.beginPath(); g.ellipse(kx, ky, rx * .55, rx * .25, 0, 0, Math.PI * 2); g.fill();
-  }
-  g.restore();
+    const f = (ring * ringF) % 1, fr = f < 0 ? f + 1 : f;
+    const late = smooth(.62, .9, fr) * (1 - smooth(.93, 1, fr));                       // latewood band
+    const streak = N.noise(u * .09 + off, v * 2.2) - .5;                                // fine streaks along the grain
+    const cloud = N.fbm(u * .015 + 9, v * .03 + off, 3);
+    let c = lerp3(base, cloud > .5 ? light : dark, Math.abs(cloud - .5) * 1.1 * k);
+    c = lerp3(c, gr, Math.min(1, late * .55 * k + Math.max(0, streak) * .28 * k + knotDark * .7));
+    c = lerp3(c, light, Math.max(0, -streak) * .18 * k);
+    return c;
+  });
+}
+/** Polished marble: a soft cloudy ground crossed by flowing veins (main veins that fade in and out, and a web of finer
+    ones), all bent by turbulence the way real stone is, with a faint crystalline speckle. Each seed is a different cut. */
+function stone(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, base: string, vein: string, seed: number, veins = 3) {
+  const r = rng(seed), N = makeNoise(seed * 13 + 5), B = hex(base), V = hex(vein), Wt = [255, 255, 255];
+  const ang = r() * Math.PI, ca = Math.cos(ang), sa = Math.sin(ang), freq = (.012 + veins * .0022) * Math.PI * 2;
+  const o1 = r() * 100, o2 = r() * 100, o3 = r() * 100, deep = lerp3(V, [40, 34, 30], .35);
+  pixels(g, x, y, w, h, 1.9, (u, v) => {
+    const t = N.fbm(u * .022 + o1, v * .022 + o2, 5);
+    const s1 = Math.sin((u * ca + v * sa) * freq + t * 11);
+    const main = Math.pow(1 - Math.abs(s1), 12) * smooth(.3, .7, N.fbm(u * .01 + o3, v * .01, 2));    // main veins fade in and out
+    const s2 = Math.sin((u * sa - v * ca) * freq * 2.3 + N.fbm(u * .05 + o2, v * .05 + o3, 4) * 16);
+    const fine = Math.pow(1 - Math.abs(s2), 26) * .55;
+    const cloud = N.fbm(u * .01 + o3, v * .01 + o1, 3);
+    let c = lerp3(B, cloud > .5 ? Wt : V, Math.abs(cloud - .5) * (cloud > .5 ? .5 : .32));
+    c = lerp3(c, V, Math.min(1, fine * .7));
+    c = lerp3(c, deep, Math.min(1, main * .85));
+    const sp = N.noise(u * 1.7 + o1, v * 1.7) > .93 ? .06 : 0;                                       // crystal glints
+    return lerp3(c, Wt, sp);
+  });
 }
 
 /* ---------- board ---------- */
@@ -207,43 +254,6 @@ const metalGrad = (g: CanvasRenderingContext2D, x0: number, y0: number, x1: numb
   const gr = g.createLinearGradient(x0, y0, x1, y1);
   gr.addColorStop(0, m[0]); gr.addColorStop(.3, m[1]); gr.addColorStop(.55, mix(m[0], m[1], .4)); gr.addColorStop(1, m[2]); return gr;
 };
-
-/** Polished stone: a soft cloudy base, a few long branching veins and a fine speckle. */
-function stone(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, base: string, vein: string, seed: number, veins = 3) {
-  const r = rng(seed);
-  g.save(); g.beginPath(); g.rect(x, y, w, h); g.clip();
-  g.fillStyle = base; g.fillRect(x, y, w, h);
-  for (let i = 0; i < 6; i++) {                                                 // clouds
-    const cx = x + r() * w, cy = y + r() * h, rad = (w + h) * (.15 + r() * .2), gr = g.createRadialGradient(cx, cy, 1, cx, cy, rad);
-    gr.addColorStop(0, rgba(r() < .5 ? "#ffffff" : vein, .1 + r() * .08)); gr.addColorStop(1, rgba(vein, 0));
-    g.fillStyle = gr; g.fillRect(x, y, w, h);
-  }
-  g.lineCap = "round";
-  for (let v = 0; v < veins; v++) {                                             // veins: wandering lines with thinner branches
-    let px = x + r() * w, py = y - 4, ang = Math.PI / 2 + (r() - .5) * 1.4;
-    const width = .5 + r() * 1.3, alpha = .2 + r() * .22;
-    g.strokeStyle = rgba(vein, alpha); g.lineWidth = width; g.beginPath(); g.moveTo(px, py);
-    const steps = Math.round((w + h) / 7);
-    for (let i = 0; i < steps; i++) {
-      ang += (r() - .5) * .6; px += Math.cos(ang) * 7; py += Math.sin(ang) * 7; g.lineTo(px, py);
-      if (r() < .08) { g.stroke(); g.save(); g.lineWidth = width * .5; g.strokeStyle = rgba(vein, alpha * .7); g.beginPath(); g.moveTo(px, py); let bx = px, by = py, ba = ang + (r() < .5 ? -1 : 1) * (.5 + r() * .6); for (let j = 0; j < 6; j++) { ba += (r() - .5) * .5; bx += Math.cos(ba) * 5; by += Math.sin(ba) * 5; g.lineTo(bx, by); } g.stroke(); g.restore(); g.beginPath(); g.moveTo(px, py); }
-    }
-    g.stroke();
-  }
-  g.fillStyle = rgba(vein, .12);
-  for (let i = 0; i < w * h / 45; i++) g.fillRect(x + r() * w, y + r() * h, .7, .7);
-  g.restore();
-}
-/** A smooth lacquered tile (the inlay board): a gentle sheen and a hint of fine texture. */
-function lacquer(g: CanvasRenderingContext2D, x: number, y: number, s: number, base: string, pal: Pal, seed: number) {
-  const r = rng(seed);
-  g.fillStyle = base; g.fillRect(x, y, s, s);
-  const sh = g.createLinearGradient(x, y, x + s, y + s);
-  sh.addColorStop(0, "rgba(255,255,255,.35)"); sh.addColorStop(.5, "rgba(255,255,255,0)"); sh.addColorStop(1, rgba(pal.grain, .1));
-  g.fillStyle = sh; g.fillRect(x, y, s, s);
-  g.fillStyle = rgba(pal.grain, .07);
-  for (let i = 0; i < 70; i++) g.fillRect(x + r() * s, y + r() * s, 1.6, .5);
-}
 
 /** One raised square (the tray board): its own light wood, a lit top-left bevel, a shaded bottom-right bevel and a soft sheen. */
 function tile(g: CanvasRenderingContext2D, x: number, y: number, s: number, pal: Pal, base: string, seed: number, vertical: boolean) {
@@ -266,14 +276,13 @@ function squares(g: CanvasRenderingContext2D, look: Look, pal: Pal) {
   if (look.model === "tray") {
     g.fillStyle = pal.groove; g.fillRect(A - 1.5, A - 1.5, L + 3, L + 3);
     for (let n = 1; n <= 100; n++) {
-      const p = center(n), row = Math.floor((n - 1) / 10), col = (n - 1) % 10, gap = 1.4;
-      tile(g, p.x - S / 2 + gap, p.y - S / 2 + gap, S - gap * 2, pal, (row + col) % 2 ? pal.tileB : pal.tileA, 1000 + n * 7, (row + col) % 2 === 1);
+      const p = center(n), gap = 1.4, alt = altSquare(n);
+      tile(g, p.x - S / 2 + gap, p.y - S / 2 + gap, S - gap * 2, pal, alt ? pal.tileB : pal.tileA, 1000 + n * 7, alt);
     }
   } else if (look.model === "marble") {
-    stone(g, A, A, L, L, pal.tileA, pal.vein, 77, 7);
-    for (let n = 1; n <= 100; n++) {                                           // the second tone, as a light wash on alternate squares
-      const p = center(n), row = Math.floor((n - 1) / 10), col = (n - 1) % 10;
-      if ((row + col) % 2) { g.fillStyle = rgba(BASE_PAL_TILEB(look), .62); g.fillRect(p.x - S / 2, p.y - S / 2, S, S); }
+    for (let n = 1; n <= 100; n++) {                                           // each square cut from its own piece of stone
+      const p = center(n), alt = altSquare(n);
+      stone(g, p.x - S / 2, p.y - S / 2, S, S, alt ? mix(pal.tileA, BASE_PAL_TILEB(look), .7) : pal.tileA, alt ? mix(pal.vein, "#5a4a38", .25) : pal.vein, 500 + n * 31, alt ? 4 : 3);
     }
     // engraved lines: a dark cut with a bright lower lip
     for (let i = 1; i < 10; i++) {
@@ -286,8 +295,11 @@ function squares(g: CanvasRenderingContext2D, look: Look, pal: Pal) {
     g.fillStyle = sheen; g.fillRect(A, A, L, L);
   } else {
     for (let n = 1; n <= 100; n++) {
-      const p = center(n), row = Math.floor((n - 1) / 10), col = (n - 1) % 10;
-      lacquer(g, p.x - S / 2, p.y - S / 2, S, (row + col) % 2 ? pal.tileB : pal.tileA, pal, 300 + n * 13);
+      const p = center(n), alt = altSquare(n), base = alt ? pal.tileB : pal.tileA;          // quarter-sawn veneer, grain turning tile to tile
+      grain(g, p.x - S / 2, p.y - S / 2, S, S, tileWood(pal, base), 300 + n * 13, alt, 0, true);
+      const sh = g.createLinearGradient(p.x - S / 2, p.y - S / 2, p.x + S / 2, p.y + S / 2);
+      sh.addColorStop(0, "rgba(255,255,255,.22)"); sh.addColorStop(.5, "rgba(255,255,255,0)"); sh.addColorStop(1, rgba(pal.grain, .08));
+      g.fillStyle = sh; g.fillRect(p.x - S / 2, p.y - S / 2, S, S);
       // a small carved diamond in the corners where four tiles meet (drawn on the tile's back-right corner)
     }
     // brass strips between the tiles (the WebGL board adds them as real metal on top)

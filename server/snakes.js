@@ -20,7 +20,7 @@ const SNAKES = Object.freeze({ 23: 2, 27: 7, 36: 5, 70: 50, 87: 47, 95: 65, 97: 
 /* The golden ladder: landing on 82 climbs to 99 only once in RARE_ODDS landings (a separate draw with every roll),
    the rarest event in the game. */
 const RARE_LADDERS = Object.freeze({ 82: 99 });
-const RARE_ODDS = 1000;
+const RARE_ODDS = 10000;
 const BOARD_VERSION = 6;          // must match web/src/snakes/engine.ts; clients won't start a room game on another board
 const TARGET = 100;
 

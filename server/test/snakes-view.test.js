@@ -18,14 +18,19 @@ const center = (n) => { const row = Math.floor((n - 1) / 10); let col = (n - 1) 
 assert(/if \(row % 2\) col = 9 - col;/.test(src) && /y: PAD \+ \(9 - row\) \* S \+ S \/ 2/.test(src), 'square numbering (zigzag from bottom left) unchanged');
 assert.deepStrictEqual([center(1).x < center(10).x, center(11).x > center(20).x, center(100).y < center(1).y], [true, true, true], 'square order');
 
-// token placement keeps numbers readable
-// a lone token stands in the middle of its square (its stand a little below the middle on the picture board, so the
-// standing figure looks centred), and the number sits in the square's front-left corner
+// token placement and numbers: a lone token stands in the middle of its square, about three quarters of a square wide;
+// each number sits along the top edge of its square and is drawn above the tokens on both boards, so a token never hides it
 const [sy] = num(/export const spot = \(n: number\): Pt => \{ const c = center\(n\); return \{ x: c\.x, y: c\.y \+ (\d+) \}; \};/, 'spot'), sx = 0;
 assert(/export const spot3D = \(n: number\): Pt => center\(n\);/.test(src), 'the 3D board puts a lone token exactly on the centre of its square');
 const [H] = num(/export const PIECE_H = (\d+);/, 'PIECE_H');
-const [nx, ny] = num(/export const numberAt = \(n: number\): Pt => \{ const p = center\(n\); return \{ x: p\.x - S \/ 2 \+ ([\d.]+), y: p\.y \+ S \/ 2 - ([\d.]+) \}; \};/, 'numberAt');
-const [fontPx] = num(/NUM_FONT = "800 (\d+)px/, 'NUM_FONT');
+const tokenW = H * 100 / 120;
+assert(tokenW >= S * .7 && tokenW <= S * .8, `a lone token is about three quarters of a square wide (${(tokenW / S).toFixed(2)})`);
+assert(/y: p\.y - S \/ 2 \+ size \* \.8 \+ 3/.test(src), 'square numbers sit along the top edge of their square');
+const css = fs.readFileSync(path.join(__dirname, '../../web/src/snakes/snakes.css'), 'utf8');
+const z = (sel) => +((css.match(new RegExp(sel.replace(/\./g, '\\.') + '\\{z-index:(\\d+)\\}')) || [])[1] ?? NaN);
+assert(z('.sl-plane.nums') > z('.sl-pieces'), 'lighter board: the numbers layer is above the tokens');
+const scene = fs.readFileSync(path.join(__dirname, '../../web/src/snakes/scene3d.ts'), 'utf8');
+assert(scene.indexOf('cam.layers.set(L_TOKENS); r.render') < scene.indexOf('cam.layers.set(L_NUMBERS); r.render'), '3D board: the numbers are drawn after the tokens');
 const shared = {};
 const sharedSrc = src.slice(src.indexOf('export const SHARED:'), src.indexOf('};', src.indexOf('export const SHARED:')));      // the flat board's layout (the 3D board has its own)
 for (const m of sharedSrc.matchAll(/(\d): \{ pts: (\[\[[^}]*\]\]), s: ([\d.]+) \}/g)) shared[m[1]] = { pts: JSON.parse(m[2]), s: +m[3] };
@@ -33,22 +38,13 @@ assert.deepStrictEqual(Object.keys(shared), ['2', '3', '4'], 'layouts for 2, 3 a
 // a token's visible art: 68% of its width, from its stand up to 84% of its height (same box the browser checks use)
 const box = (x, y, s) => { const h = H * s, w = h * 100 / 120; return { x0: x - w * .34, x1: x + w * .34, y0: y - h * .84, y1: y }; };
 const hit = (a, b) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
-const digitW = fontPx * .62;                                            // a wide bold digit, on the safe side
-const numberBox = (digits) => ({ x0: -S / 2 + nx, x1: -S / 2 + nx + digits * digitW, y0: S / 2 - ny - fontPx * .75, y1: S / 2 - ny + 1 });
 const cases = [['alone', [[sx, sy]], 1], ...Object.entries(shared).map(([k, v]) => [k + ' sharing', v.pts, v.s])];
 for (const [name, pts, s] of cases) {
   const boxes = pts.map(([x, y]) => box(x, y, s));
-  for (const b of boxes) {
-    assert(!hit(b, numberBox(2)), `${name}: a token covers the square's number`);
-    assert(b.x0 >= -S / 2 - 1 && b.x1 <= S / 2 + 2.5, `${name}: a token leaves its square (${b.x0.toFixed(1)}..${b.x1.toFixed(1)})`);
-    // the next square to the right: its number starts S further on
-    const right = numberBox(2); assert(!hit(b, { ...right, x0: right.x0 + S, x1: right.x1 + S }), `${name}: a token covers the next square's number`);
-    // a standing figure rises toward the square behind it: that square's number (in its front-left corner) stays clear
-    assert(!hit(b, { ...right, y0: right.y0 - S, y1: right.y1 - S }), `${name}: a token covers the number of the square behind`);
-  }
+  for (const b of boxes) assert(b.x0 >= -S / 2 - 1 && b.x1 <= S / 2 + 2.5, `${name}: a token leaves its square (${b.x0.toFixed(1)}..${b.x1.toFixed(1)})`);
   for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) assert(!hit(boxes[i], boxes[j]), `${name}: tokens ${i} and ${j} overlap`);
 }
-console.log('snakes view: ok (board uses engine positions, numbering unchanged, token spots clear of numbers for 1 to 4 tokens)');
+console.log('snakes view: ok (board uses engine positions, numbering unchanged, tokens 3/4 of a square, numbers on top edge and above tokens)');
 
 // The snakes' bodies never touch a ladder: the drawn curve (same algorithm as snakePath in board.ts) against every ladder.
 {

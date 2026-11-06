@@ -19,12 +19,8 @@ const DICE = [
 type DiceId = typeof DICE[number]["id"];
 const readKey = <T extends string>(key: string, ok: readonly string[], dflt: T): T => { try { const v = window.localStorage.getItem(key); return v && ok.includes(v) ? (v as T) : dflt; } catch { return dflt; } };
 const keep = (key: string, v: string) => { try { window.localStorage.setItem(key, v); } catch { /* storage off: still works for this visit */ } };
-/* Final orientation of the die for each value (faces: front 1, right 2, top 3, bottom 4, left 5, back 6). */
-const FACE_ROT: Record<number, [number, number]> = { 1: [0, 0], 2: [0, -90], 3: [-90, 0], 4: [90, 0], 5: [0, 90], 6: [0, 180] };
-/** The die at rest on its pedestal showing `v`, turned a little so three faces catch the light. */
-const VIEW_TILT = "rotateX(-24deg) rotateY(32deg)";
-const restRot = (v: number) => { const [x, y] = FACE_ROT[v] ?? [0, 0]; return `${VIEW_TILT} rotateZ(0deg) rotateX(${x}deg) rotateY(${y}deg)`; };
-const FACES: [string, number][] = [["front", 1], ["right", 2], ["top", 3], ["bottom", 4], ["left", 5], ["back", 6]];
+/** Shows value `v` on a die face drawn with nine pip slots (used while the 2D die tumbles, without re-rendering). */
+const setPips = (face: Element | null, v: number) => { if (face) Array.from(face.children).forEach((p, i) => p.classList.toggle("on", PIPS[v].includes(i))); };
 const COLORS = ["#d23b45", "#2f6fd6", "#e3a21a", "#8a4fd0"];
 const BOTS = ["Maya", "Alex", "Jordan"];
 const PIPS: Record<number, number[]> = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
@@ -521,26 +517,29 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     requestAnimationFrame(step);
   });
 
-  /* Rolls the 3D die on its pedestal: it is tossed up, tumbles, bounces and settles showing `value`.
-     The value always comes from the game (engine or server); this only shows it. */
+  /* Rolls the 2D die on its pedestal: it is tossed up spinning flat, its face flicking through numbers as it tumbles
+     (slowing down), bounces with a little squash and settles showing `value`. The value always comes from the game
+     (engine or server); this only shows it. */
   const throwDie = (value: number) => new Promise<void>((resolve) => {
-    const el = diceRef.current, cube = cubeRef.current, sh = shadowRef.current;
+    const el = diceRef.current, cube = cubeRef.current, sh = shadowRef.current, face = cube?.firstElementChild ?? null;
     if (!el || !cube || !sh) { resolve(); return; }
-    const size = el.clientWidth || 56;
-    const [fx, fy] = FACE_ROT[value] ?? [0, 0];
-    const dir = () => (Math.random() < .5 ? -1 : 1);
-    const sx = fx + 360 * (2 + Math.floor(Math.random() * 2)) * dir(), sy = fy + 360 * (1 + Math.floor(Math.random() * 2)) * dir(), sz = (200 + Math.random() * 160) * dir();
+    const size = el.clientWidth || 56, dir = Math.random() < .5 ? -1 : 1;
+    const spins = (2 + Math.floor(Math.random() * 2)) * 360 * dir, endTilt = (Math.random() - .5) * 16;
     const jx = (Math.random() - .5) * size * .6, dur = reduced ? 250 : TIMING.die, t0 = performance.now();
+    let nextFlip = 0, shown = value;
     sfx.dice(dur);
     const step = (now: number) => {
       const t = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - t, 3), rot = 1 - Math.pow(1 - t, 2.2);
-      const h = reduced ? 0 : size * 1.5 * Math.pow(1 - t, 1.6) * Math.abs(Math.cos(t * Math.PI * 2.5)), x = jx * (1 - e);
+      const bounce = Math.abs(Math.cos(t * Math.PI * 2.5)), h = reduced ? 0 : size * 1.5 * Math.pow(1 - t, 1.6) * bounce, x = jx * (1 - e);
+      const squash = h < size * .06 && t > .2 && t < .97 ? .9 : 1;
       el.style.transform = `translate(${x}px, ${-h}px)`;
-      cube.style.transform = t < 1 ? `${VIEW_TILT} rotateZ(${sz * (1 - rot)}deg) rotateX(${sx + (fx - sx) * rot}deg) rotateY(${sy + (fy - sy) * rot}deg)` : restRot(value);
+      cube.style.transform = t < 1 ? `rotate(${spins * (1 - rot) + endTilt * rot}deg) scale(${1 + h / size * .12}, ${(1 + h / size * .12) * squash})` : `rotate(${endTilt}deg)`;
+      if (t < .82 && now >= nextFlip) { let v = shown; while (v === shown) v = 1 + Math.floor(Math.random() * 6); shown = v; setPips(face, v); nextFlip = now + 45 + t * 140; }
+      else if (t >= .82 && shown !== value) { shown = value; setPips(face, value); }
       sh.style.transform = `translateX(${x}px) scale(${Math.max(.45, 1 - h / size * .4)})`;
       sh.style.opacity = String(Math.max(.2, .6 - h / size * .3));
       if (t < 1) requestAnimationFrame(step);
-      else { el.style.transform = ""; try { navigator.vibrate?.(18); } catch { /* not supported */ } resolve(); }
+      else { el.style.transform = ""; setPips(face, value); try { navigator.vibrate?.(18); } catch { /* not supported */ } resolve(); }
     };
     requestAnimationFrame(step);
   });
@@ -671,9 +670,9 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     <div className="eyebrow">ROYAL CLUB · SNAKES &amp; LADDERS</div>
     <h1>Choose how you want to play</h1>
     <div className="mode-grid">
-      <button className={pick === "practice" ? "mode-card selected" : "mode-card"} onClick={() => setPick("practice")}><span className="mode-ico">⚄</span><strong>Practice</strong><p>Play against computer players.</p></button>
+      <button className={pick === "practice" ? "mode-card selected" : "mode-card"} onClick={() => setPick("practice")}><span className="mode-ico">⚄</span><strong>You vs Comp</strong><p>Play against computer players.</p></button>
       <button className={pick === "online" ? "mode-card selected" : "mode-card"} onClick={() => setPick("online")}><span className="mode-tag">SOON</span><span className="mode-ico">◈</span><strong>Online</strong><p>Quick match with other players.</p></button>
-      <button className={pick === "room" ? "mode-card selected" : "mode-card"} onClick={() => setPick("room")}><span className="mode-ico">♛</span><strong>Room</strong><p>Play with 1 to 3 friends using a code.</p></button>
+      <button className={pick === "room" ? "mode-card selected" : "mode-card"} onClick={() => setPick("room")}><span className="mode-ico mode-door" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 21h17"/><path d="M5.5 21V3.5h9"/><path d="M14.5 3.5v2.2"/><path d="M14.5 21v-2"/><path d="M8.5 4.6 16.5 2.6v18.8l-8-2.2z" fill="currentColor" fillOpacity=".18"/><circle cx="14.2" cy="12.4" r=".9" fill="currentColor"/></svg></span><strong>Room</strong><p>Play with 1 to 3 friends using a code.</p></button>
     </div>
     {pick === "practice" && <div className="sl-bots"><span>Computer players</span>{[1, 2, 3].map(n => <button key={n} className={bots === n ? "on" : ""} aria-pressed={bots === n} onClick={() => setBots(n)}>{n}</button>)}</div>}
     <button className="gold-button" disabled={pick === "online"} onClick={() => (pick === "practice" ? choosePracticeTokens() : pick === "room" ? setSub("room") : undefined)}>
@@ -726,7 +725,7 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
       {view.phase !== "lobby" && <ul className="room-seats">{view.seats.map((p, i) => <li key={i} className={p ? "filled" : ""}><span style={p ? { background: COLORS[i], borderColor: COLORS[i], color: "#fff" } : undefined}>{i + 1}</span>{p ? p.name + (i === view.you ? " (you)" : "") + (!p.connected ? " · offline" : "") : "Open seat"}</li>)}</ul>}
       {view.phase === "lobby" ? (() => {
         const seated = view.seats.filter(Boolean) as NonNullable<SeatInfo>[], ready = seated.length >= 2 && seated.every(p => p.connected);
-        if (view.board !== BOARD_VERSION) return <p className="room-note sl-warn" role="alert">This room server still runs the previous board layout, so online games are paused until it is updated. Practice games use the new board now.</p>;
+        if (view.board !== BOARD_VERSION) return <p className="room-note sl-warn" role="alert">This room server still runs the previous board layout, so online games are paused until it is updated. You vs Comp games use the new board now.</p>;
         return <button className="gold-button" disabled={!view.host || !ready} onClick={() => send({ t: "start" })}>
           {!view.host ? "Waiting for the host to start" : ready ? `Start game with ${seated.length} players →` : seated.length < 2 ? "Waiting for at least 1 more player" : "Waiting for everyone to come online"}
         </button>;
@@ -743,7 +742,7 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
   const rankOf = (s: number) => { const i = table.finished.indexOf(s); return i < 0 ? 0 : i + 1; };
   const playing = table.phase === "playing";
   const rollLabel = table.phase === "gameEnd" ? "Game over" : myTurn ? (table.streak > 0 ? "Roll again" : "Roll dice") : animating ? "Rolling…" : rankOf(table.you) ? "You've finished" : `${turnName}'s turn`;
-  const where = online && view ? `Room ${view.code}` : "Practice";
+  const where = online && view ? `Room ${view.code}` : "You vs Comp";
   return <section className={`sl-screen ${view3d === "flat" ? "flat" : ""}`}>
     <header className="sl-head">
       <button className="sl-icon-btn" onClick={() => setSub(online ? "room" : "lobby")} aria-label={online ? "Back to the room" : "Back to the lobby"}>←</button>
@@ -803,8 +802,8 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
         <div className="sl-pedestal" aria-hidden="true" />
         <div className="sl-dice-shadow" ref={shadowRef} />
         <div className={`sl-dice d-${dice}`} ref={diceRef} aria-hidden="true">
-          <div className="sl-cube" ref={cubeRef} style={{ transform: restRot(dieValue) }}>
-            {FACES.map(([f, v]) => <div key={f} className={`sl-face ${f}`}><Face v={v} /></div>)}
+          <div className="sl-cube flat" ref={cubeRef}>
+            <div className="sl-face flat"><Face v={dieValue} /></div>
           </div>
         </div>
       </div>

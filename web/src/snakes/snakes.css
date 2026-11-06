@@ -65,11 +65,11 @@
 .sl-base,.sl-pieces{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
 .sl-plane{position:absolute;transform-origin:50% 50%;pointer-events:none;backface-visibility:hidden}
 .sl-plane canvas{display:block;width:100%;height:100%}
-.sl-base{z-index:1}.sl-plane{z-index:2}.sl-plane.snakes{z-index:2}.sl-plane.nums{z-index:2}.sl-pieces{z-index:3}   /* board, then snakes, then numbers (always readable), then tokens */
+.sl-base{z-index:1}.sl-plane{z-index:2}.sl-plane.snakes{z-index:2}.sl-pieces{z-index:3}.sl-plane.nums{z-index:4}   /* board, then snakes, then tokens, then numbers (a token never hides one) */
 .sl-gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:manipulation}
 .sl-gl-wait{position:absolute;inset:0;display:grid;place-items:center;margin:0;color:var(--sl-gold);font-weight:700;font-size:14px;letter-spacing:.04em}
 
-/* ===== the 3D die on its gold-rimmed pedestal, and its five finishes ===== */
+/* ===== the 2D die on its gold-rimmed pedestal, and its five finishes ===== */
 .sl-right{grid-area:right;display:grid;grid-template-columns:64px minmax(0,1fr) 64px;grid-template-areas:"rules tray chat" "rules roll chat" "last last last";align-items:center;justify-items:center;gap:4px 8px;position:relative}
 .sl-tray{grid-area:tray;position:relative;width:calc(var(--ds) * 2.3);height:calc(var(--ds) * 1.42)}
 .sl-pedestal{position:absolute;left:0;right:0;bottom:2px;height:calc(var(--ds) * .74)}
@@ -77,9 +77,11 @@
 .sl-pedestal::before{top:18%;bottom:-12%;background:linear-gradient(180deg,#f6dc8e,#b8862e 40%,#6e4810);box-shadow:0 10px 18px rgba(0,0,0,.6)}
 .sl-pedestal::after{top:0;bottom:12%;background:radial-gradient(ellipse at 50% 35%,#23a06c,#0e5c3c 60%,#073822);box-shadow:inset 0 0 0 3px #e9c46a,inset 0 0 0 4.5px #7a5214,inset 0 -6px 12px rgba(0,0,0,.45)}
 .sl-dice,.sl-dice-shadow{position:absolute;left:50%;pointer-events:none}
-.sl-dice{bottom:calc(var(--ds) * .3);width:var(--ds);height:var(--ds);margin-left:calc(var(--ds) / -2);z-index:2;perspective:520px}
+.sl-dice{bottom:calc(var(--ds) * .3);width:var(--ds);height:var(--ds);margin-left:calc(var(--ds) / -2);z-index:2}
 .sl-dice-shadow{bottom:calc(var(--ds) * .2);width:calc(var(--ds) * 1.1);height:calc(var(--ds) * .34);margin-left:calc(var(--ds) * -.55);border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.7),rgba(0,0,0,0));opacity:.6;z-index:1}
-.sl-cube{position:absolute;inset:0;transform-style:preserve-3d}
+.sl-cube{position:absolute;inset:0}
+/* the flat die: a painted face with a darker lower edge for its thickness */
+.sl-face.flat{transform:none;backface-visibility:visible;filter:drop-shadow(0 calc(var(--ds) * .07) 0 rgba(0,0,0,.28)) drop-shadow(0 calc(var(--ds) * .1) calc(var(--ds) * .08) rgba(0,0,0,.35))}
 .sl-face{position:absolute;inset:0;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:15%;border-radius:19%;backface-visibility:hidden;
   background:radial-gradient(circle at 32% 26%,#ffffff 0%,#f4efe2 55%,#d9cdb2 100%);
   box-shadow:inset 0 0 0 1px rgba(130,110,70,.3),inset -3px -4px 8px rgba(120,95,50,.32),inset 3px 3px 6px rgba(255,255,255,.95)}
@@ -189,7 +191,7 @@
 }
 /* tablets held upright: more room, larger pieces of interface */
 @media (orientation:portrait) and (min-width:600px){
-  .sl-screen{--ds:92px;gap:14px;padding-left:max(22px,env(safe-area-inset-left,0px));padding-right:max(22px,env(safe-area-inset-right,0px))}
+  .sl-screen{--ds:84px;gap:10px;padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px))}
   .sl-head .sl-icon-btn{width:54px;height:54px}
   .sl-crown{width:52px;height:27px}
   .sl-players{max-width:720px;width:100%;margin:0 auto;gap:12px}
@@ -205,8 +207,12 @@
 
 /* landscape, phones and tablets: players | board | dice and actions */
 @media (orientation:landscape) and (min-width:600px){
-  .sl-screen{--ds:clamp(48px,6vw,78px);grid-template-columns:clamp(150px,19vw,270px) minmax(0,1fr) clamp(150px,19vw,270px);grid-template-rows:auto minmax(0,1fr);
-    grid-template-areas:"head head head" "left stage right";gap:8px 14px;padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px))}
+  /* the crest moves into the left column, so the board gets the full height of the screen */
+  .sl-screen{--ds:clamp(48px,5.5vw,76px);grid-template-columns:clamp(132px,14.5vw,226px) minmax(0,1fr) clamp(132px,14.5vw,226px);grid-template-rows:auto minmax(0,1fr);
+    grid-template-areas:"head stage right" "left stage right";gap:8px 12px;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
+  .sl-head{align-self:start;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"crest crest crest" "back . end";gap:6px}
+  .sl-head>.sl-icon-btn{grid-area:back}.sl-crest{grid-area:crest}.sl-head-end{grid-area:end}
+  .sl-crest b{font-size:clamp(16px,1.7vw,24px)}.sl-crest span{font-size:clamp(8px,.85vw,11px);padding:2px 8px;letter-spacing:.1em}
   .sl-left{align-self:center;padding:12px 10px;border:1.5px solid var(--sl-gold2);border-radius:18px;background:linear-gradient(180deg,rgba(10,54,37,.88),rgba(3,26,17,.88));box-shadow:0 12px 30px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,236,180,.15)}
   .sl-side-title{display:grid;justify-items:center;gap:1px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--sl-line)}
   .sl-side-title b{font:600 clamp(15px,1.6vw,20px) 'Playfair Display',serif;color:#ffe9a8}

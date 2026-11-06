@@ -28,7 +28,7 @@ const TILE_TOP = .14, RIM = .62, HALF = 5 + RIM, RIM_TOP = .26, BASE = -.5;
 const L_BOARD = 0, L_NUMBERS = 1, L_TOKENS = 2;
 /** Token figures are modelled about 0.85 squares tall on a base 0.27 across; on the board they stand this much larger
     (big enough that their faces and details read at board size). */
-const FIG = 1.8;
+const FIG = 2.3;                                       // a token stands about three quarters of a square wide
 /** Extra shift for token positions, in board units (positions already come laid out for the 3D board). */
 const SHIFT = { x: 0, y: 0 };
 
@@ -111,7 +111,7 @@ export class BoardScene {
     // the table only catches shadows; the page shows the green felt behind
     const table = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.ShadowMaterial({ opacity: .5 }));
     table.rotation.x = -Math.PI / 2; table.position.y = BASE - .01; table.receiveShadow = true; scene.add(table);
-    this.camera = new THREE.PerspectiveCamera(30, 1, .5, 120);
+    this.camera = new THREE.PerspectiveCamera(22, 1, .5, 160);          // a longer lens: less perspective, so the board fills more of the screen
     this.camera.layers.enableAll();
     // gold sparkles (a small pool, reused) and the ring that flashes when a token lands at the top of a ladder
     const sc2 = document.createElement("canvas"); sc2.width = sc2.height = 64;
@@ -281,11 +281,13 @@ export class BoardScene {
     this.size = { w, h };
     this.dpr = dpr; this.renderer.setPixelRatio(Math.min(dpr, this.ratioCap)); this.renderer.setSize(w, h, false);
     const cam = this.camera, aspect = w / h;
-    this.elevation = aspect > 1.15 ? 58 : aspect < .9 ? 71 : 63;
+    this.elevation = aspect > 1.15 ? 58 : aspect < .9 ? 74 : 64;
     cam.aspect = aspect; cam.clearViewOffset();
     const el = (this.elevation * Math.PI) / 180, dirv = new THREE.Vector3(0, Math.sin(el), Math.cos(el));
-    const pts: Obj[] = [];
-    for (const x of [-HALF, HALF]) for (const z of [-HALF, HALF]) { pts.push(new THREE.Vector3(x, RIM_TOP, z), new THREE.Vector3(x, BASE, z)); }
+    // frame the camera on the squares: on narrow (upright) screens the frame may run a little past the screen's edges,
+    // so the squares, snakes and tokens get all the width; on wider screens the whole frame shows
+    const pts: Obj[] = [], narrow = aspect < .9, ex = narrow ? 5 + RIM * .3 : HALF;
+    for (const x of [-ex, ex]) for (const z of [-ex, ex]) { pts.push(new THREE.Vector3(x, RIM_TOP, z)); if (!narrow) pts.push(new THREE.Vector3(x, BASE, z)); }
     for (const x of [-4.5, 4.5]) pts.push(new THREE.Vector3(x, FIG * .8, -4.5));             // tokens standing on the back row
     const extent = (d: number) => {
       cam.position.copy(dirv).multiplyScalar(d); cam.lookAt(0, 0, 0); cam.updateMatrixWorld(); cam.updateProjectionMatrix();
@@ -293,8 +295,8 @@ export class BoardScene {
       for (const p of pts) { const q = p.clone().project(cam); x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); }
       return { x0, x1, y0, y1 };
     };
-    let lo = 5, hi = 120;
-    for (let i = 0; i < 30; i++) { const mid = (lo + hi) / 2, e = extent(mid); if (Math.max((e.x1 - e.x0) / 2, (e.y1 - e.y0) / 2) > .985) lo = mid; else hi = mid; }
+    let lo = 5, hi = 160;
+    for (let i = 0; i < 32; i++) { const mid = (lo + hi) / 2, e = extent(mid); if (Math.max((e.x1 - e.x0) / 2, (e.y1 - e.y0) / 2) > .995) lo = mid; else hi = mid; }
     const e = extent(hi), cx = (e.x0 + e.x1) / 2, cy = (e.y0 + e.y1) / 2;
     cam.setViewOffset(w, h, (cx * w) / 2, (-cy * h) / 2, w, h); cam.updateProjectionMatrix();
     this.renderer.shadowMap.needsUpdate = true;
@@ -319,9 +321,9 @@ export class BoardScene {
       if (!f || f.id !== p.piece) {
         if (f) this.scene.remove(f.grp);
         const grp = new THREE.Group(), tilt = new THREE.Group(), fig = buildFigure(p.piece);
-        const ring = new THREE.Mesh(new THREE.TorusGeometry(.19, .024, 10, 48), new THREE.MeshStandardMaterial({ color: p.color, roughness: .4, emissive: p.color, emissiveIntensity: .3 }));
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(.142, .02, 10, 48), new THREE.MeshStandardMaterial({ color: p.color, roughness: .4, emissive: p.color, emissiveIntensity: .3 }));
         ring.rotation.x = Math.PI / 2; ring.position.y = .012;
-        const glow = new THREE.Mesh(new THREE.TorusGeometry(.23, .028, 10, 48), new THREE.MeshBasicMaterial({ color: "#ffd56e", transparent: true, opacity: .9, toneMapped: false }));
+        const glow = new THREE.Mesh(new THREE.TorusGeometry(.172, .022, 10, 48), new THREE.MeshBasicMaterial({ color: "#ffd56e", transparent: true, opacity: .9, toneMapped: false }));
         glow.rotation.x = Math.PI / 2; glow.position.y = .016;
         tilt.add(fig); grp.add(tilt, ring, glow); setLayer(grp, L_TOKENS); grp.traverse((o: Obj) => { if (o.isMesh && o !== glow) o.castShadow = true; });
         this.scene.add(grp); f = { id: p.piece, grp, tilt, fig, ring, glow }; this.figures.set(p.seat, f);
@@ -368,8 +370,8 @@ export class BoardScene {
     r.clear();
     cam.layers.set(L_BOARD); r.render(this.scene, cam);
     r.shadowMap.needsUpdate = false;
-    cam.layers.set(L_NUMBERS); r.render(this.scene, cam);
     cam.layers.set(L_TOKENS); r.render(this.scene, cam);
+    cam.layers.set(L_NUMBERS); r.render(this.scene, cam);          // numbers last: a token never hides one
     cam.layers.enableAll();
   }
 

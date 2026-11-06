@@ -15,7 +15,7 @@ export const SNAKES: Record<number, number> = { 23: 2, 27: 7, 36: 5, 70: 50, 87:
 /** The golden ladder: landing on its foot climbs it only once in RARE_ODDS landings; every other time the square is
     an ordinary square. */
 export const RARE_LADDERS: Record<number, number> = { 82: 99 };
-export const RARE_ODDS = 1000;
+export const RARE_ODDS = 10000;
 /** Bumped when the board layout changes, so a client can tell if a room server still runs an older board. */
 export const BOARD_VERSION = 6;
 export const TARGET = 100;

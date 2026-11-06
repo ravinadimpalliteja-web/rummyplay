@@ -18,16 +18,20 @@ const center = (n) => { const row = Math.floor((n - 1) / 10); let col = (n - 1) 
 assert(/if \(row % 2\) col = 9 - col;/.test(src) && /y: PAD \+ \(9 - row\) \* S \+ S \/ 2/.test(src), 'square numbering (zigzag from bottom left) unchanged');
 assert.deepStrictEqual([center(1).x < center(10).x, center(11).x > center(20).x, center(100).y < center(1).y], [true, true, true], 'square order');
 
-// token placement and numbers: a lone token stands in the middle of its square, about three quarters of a square wide;
-// each number is embossed into the board along the top edge of its square, with no background
+// token placement and numbers: a lone token stands in the middle of its square;
+// each number sits along the top edge of its square, embossed with no background, over the ladders and snakes, under tokens
 const [sy] = num(/export const spot = \(n: number\): Pt => \{ const c = center\(n\); return \{ x: c\.x, y: c\.y \+ (\d+) \}; \};/, 'spot'), sx = 0;
 assert(/export const spot3D = \(n: number\): Pt => center\(n\);/.test(src), 'the 3D board puts a lone token exactly on the centre of its square');
 const [H] = num(/export const PIECE_H = (\d+);/, 'PIECE_H');
 const tokenW = H * 100 / 120;
-assert(tokenW >= S * .7 && tokenW <= S * .8, `a lone token is about three quarters of a square wide (${(tokenW / S).toFixed(2)})`);
+assert(tokenW >= S * .5 && tokenW <= S * .62, `a lone token is a little over half a square wide (${(tokenW / S).toFixed(2)})`);
 assert(/y: p\.y - S \/ 2 \+ size \* \.8 \+ 3/.test(src), 'square numbers sit along the top edge of their square');
 const scene = fs.readFileSync(path.join(__dirname, '../../web/src/snakes/scene3d.ts'), 'utf8');
-assert(/nm\.position\.y = TILE_TOP \+ \.006; nm\.renderOrder = 1;/.test(scene), '3D board: the numbers are embossed in the board surface, under ladders, snakes and tokens');
+const order = ['cam.layers.set(L_BOARD); r.render', 'cam.layers.set(L_NUMBERS); r.render', 'cam.layers.set(L_TOKENS); r.render'].map((k) => scene.indexOf(k));
+assert(order.every((v, i) => v > 0 && (i === 0 || v > order[i - 1])), '3D board: numbers drawn after the board (ladders, snakes) and before the tokens');
+assert(/setLayer\(nm, L_NUMBERS\)/.test(scene), '3D board: the numbers have their own pass');
+const css = fs.readFileSync(path.join(__dirname, '../../web/src/snakes/snakes.css'), 'utf8');
+assert(css.indexOf('.sl-plane.nums{z-index:2}.sl-pieces{z-index:3}') > 0, 'lighter board: the numbers layer is above the snakes and under the tokens');
 assert(!/rr\(g, x - 2\.5, y - size/.test(src), 'numbers have no label background');
 const shared = {};
 const sharedSrc = src.slice(src.indexOf('export const SHARED:'), src.indexOf('};', src.indexOf('export const SHARED:')));      // the flat board's layout (the 3D board has its own)
@@ -42,7 +46,7 @@ for (const [name, pts, s] of cases) {
   for (const b of boxes) assert(b.x0 >= -S / 2 - 1 && b.x1 <= S / 2 + 2.5, `${name}: a token leaves its square (${b.x0.toFixed(1)}..${b.x1.toFixed(1)})`);
   for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) assert(!hit(boxes[i], boxes[j]), `${name}: tokens ${i} and ${j} overlap`);
 }
-console.log('snakes view: ok (board uses engine positions, numbering unchanged, tokens 3/4 of a square, numbers embossed on the top edge)');
+console.log('snakes view: ok (board uses engine positions, numbering unchanged, numbers embossed on the top edge, over snakes and ladders)');
 
 // The snakes' bodies never touch a ladder: the drawn curve (same algorithm as snakePath in board.ts) against every ladder.
 {

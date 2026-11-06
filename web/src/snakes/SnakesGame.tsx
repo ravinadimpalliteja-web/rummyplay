@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { RoomClient, deviceToken, randomPasscode, saveRoom, savedRoom, serverUrl, type NetStatus } from "../domain/online";
 import { BOARD_VERSION, CHAT_EMOJIS, CHAT_PHRASES, RARE_LADDERS, TIMING, newGame, roll, rollDie, rollLucky, rungsOf, snakeSlideMs, turnOf, type LastRoll, type SLGame } from "./engine";
-import { MODELS, MODEL_IDS, NUM_FONT, OFF, PIECE_H, SHARED, SHARED3D, THEMES, THEME_IDS, W, center, layoutIssues, numberAt, paintBase, paintBoard, paintPiece, S, spot, spot3D, type Look, type ModelId, type Pt, type ThemeId } from "./board";
+import { MODELS, MODEL_IDS, NUM_FONT, OFF, PIECE_H, SHARED, SHARED3D, THEMES, THEME_IDS, W, center, layoutIssues, numberAt, paintBase, paintBoard, paintNumberLayer, paintPiece, S, spot, spot3D, type Look, type ModelId, type Pt, type ThemeId } from "./board";
 import { fitView, planeStyle, project, squash, type View } from "./view3d";
 import { SnakeArt, type SnakeOverlay } from "./snake2d";
 import { setSound, sfx, soundOn, unlock } from "./sound";
@@ -11,7 +11,7 @@ import { DEFAULT_PIECES, PIECE_IDS, pieceById, pieceImage, pieceUrl, type PieceI
 import "./snakes.css";
 
 const ROOM_KEY = "rc-snakes-room", PIECE_KEY = "rc-snakes-piece";
-const MODEL_KEY = "rc-snakes-board", THEME_KEY = "rc-snakes-theme", DICE_KEY = "rc-snakes-dice", VIEW_KEY = "rc-snakes-view", GL_SLOW_KEY = "rc-snakes-3d-slow";
+const MODEL_KEY = "rc-snakes-board", THEME_KEY = "rc-snakes-theme", DICE_KEY = "rc-snakes-dice", VIEW_KEY = "rc-snakes-view", GL_SLOW_KEY = "rc-snakes-3d-slow-v2";   // v2: the old flag was set wrongly on phones (see the frame watchdog)
 const DICE = [
   { id: "ivory", name: "Classic ivory" }, { id: "brass", name: "Polished brass" }, { id: "glass", name: "Emerald glass" },
   { id: "rosewood", name: "Carved rosewood" }, { id: "onyx", name: "Black onyx" },
@@ -142,7 +142,7 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
   const disp = useRef<Record<number, Disp | null>>({}), dirty = useRef(true);
   const overlay = useRef<SnakeOverlay>({});
   /** The painted snakes on the lighter board (the WebGL board has its own). */
-  const snakeArt = useRef<SnakeArt | null>(null);
+  const snakeArt = useRef<SnakeArt | null>(null), numRef = useRef<HTMLCanvasElement>(null);
   const animatedN = useRef<number | null>(null), chain = useRef<Promise<void>>(Promise.resolve());
   /** Short-lived effects that outlive a move: gold sparkles from a climb and the ring when a token lands. */
   const effects = useRef<{ sparks: { x: number; y: number; h: number; born: number }[]; burst: { x: number; y: number; born: number } | null }>({ sparks: [], burst: null });
@@ -318,7 +318,8 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
       const dpr = Math.min(2.5, window.devicePixelRatio || 1), pd = Math.min(2, dpr);
       const t0 = performance.now();
       const bdpr = Math.min(2400, Math.round(geo.B * dpr * (geo.A ? 1.3 : 1))) / W;
-      paintBoard(board, bdpr, look);
+      paintBoard(board, bdpr, look, { numbers: false });
+      if (numRef.current) paintNumberLayer(numRef.current, bdpr, look);
       if (DEBUG) (window as unknown as { __slPaints?: number[] }).__slPaints = [...((window as unknown as { __slPaints?: number[] }).__slPaints ?? []), Math.round(performance.now() - t0)];
       for (const c of [base, pieces]) { c.width = Math.round(geo.sw * pd); c.height = Math.round(geo.sh * pd); }
       const bg = base.getContext("2d")!; bg.setTransform(pd, 0, 0, pd, 0, 0);
@@ -348,21 +349,34 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     };
   };
   const boxes = useRef<{ seat: number; x0: number; y0: number; x1: number; y1: number }[]>([]);
-  const glPrev = useRef(0), glGaps = useRef<number[]>([]);
+  const glGaps = useRef<number[]>([]);
   useEffect(() => {
     if (sub !== "table") return;
-    let raf = 0, lastSnakes = 0, snakesBusy = true, paintMs = 6, lastRaf = 0, frameEma = 16, backoff = 0;
+    let raf = 0, lastSnakes = 0, snakesBusy = true, paintMs = 6, lastRaf = 0, frameEma = 16, backoff = 0, drewLast = false;
     const reduce = matchMedia("(prefers-reduced-motion: reduce)");
     // the snakes slither at about 30 fps (20 on slower phones); if painting them is slow on this device, less often, so
     // they never take more than about a quarter of the time and the rest of the page stays smooth
     // and if the page's own frame rate sags while they slither (the cost of turning the layer into pixels, which the
     // paint timer cannot see), back off further until it recovers
-    const baseGap = lowPower() ? 50 : 33, snakeGap = () => Math.max(baseGap, paintMs * 4, backoff);
+    const baseGap = lowPower() ? 66 : 33, snakeGap = () => Math.max(baseGap, paintMs * 4, backoff);
     const frame = () => {
       raf = requestAnimationFrame(frame);
       const sc = sceneRef.current, now = performance.now();
-      if (lastRaf) frameEma = frameEma * .9 + Math.min(250, now - lastRaf) * .1;
+      const tick = lastRaf ? now - lastRaf : 16;
+      if (lastRaf) frameEma = frameEma * .9 + Math.min(250, tick) * .1;
       lastRaf = now;
+      // the 3D board's slow-device watchdog: it measures how long the frame after a draw took to come (the real cost of
+      // drawing), not the time between draws, which the snakes' own redraw throttle sets on purpose
+      const sc0 = sceneRef.current;
+      if (sc0 && drewLast && tick < 1500 && !document.hidden && !(DEBUG && /[?&]keep3d\b/.test(location.search))) {
+        glGaps.current.push(tick);
+        if (glGaps.current.length >= 24) {
+          const med = [...glGaps.current].sort((a, b) => a - b)[12]; glGaps.current = [];
+          if (DEBUG) { const w = window as unknown as { __slGlMeds?: number[] }; w.__slGlMeds = [...(w.__slGlMeds ?? []), Math.round(med)]; }
+          if (med > 42 && !sc0.degrade()) { keep(GL_SLOW_KEY, "1"); setGlState("off"); return; }
+        }
+      }
+      drewLast = false;
       if (frameEma > 26) backoff = Math.min(300, Math.max(baseGap, backoff) * 1.04 + 1); else if (frameEma < 19) backoff = Math.max(0, backoff * .97 - .5);
       // the snakes keep slithering while the page is visible (not with reduced motion); heads keep turning until done
       const motion = !reduce.matches && !document.hidden, swallowing = !!overlay.current.mouth || !!overlay.current.bulge;
@@ -370,21 +384,18 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
       const tokens = () => { const t = tableRef.current; return t ? t.order.map(s => t.pos[s] ?? 0) : []; };
       if (sc) {
         const t = tableRef.current;
+        const sceneChanged = dirty.current;                              // tokens or effects moved (not just the snakes' own redraw)
         if (snakesDue) dirty.current = true;
         if (!dirty.current) return;                                     // draw only when something changed (saves battery)
         dirty.current = false;
-        // watch the frame rate while things move; if this device struggles, step the 3D down, and in the end use the lighter board
-        const now = performance.now(), gap = now - glPrev.current; glPrev.current = now;
-        if (gap < 1500 && !(DEBUG && /[?&]keep3d\b/.test(location.search))) {
-          glGaps.current.push(gap);
-          if (glGaps.current.length >= 24) {
-            const med = [...glGaps.current].sort((a, b) => a - b)[12]; glGaps.current = [];
-            if (med > 42 && !sc.degrade()) { keep(GL_SLOW_KEY, "1"); setGlState("off"); return; }
-          }
-        }
         if (!t) return;
+        // the watchdog judges the 3D board by frames where the board itself changed; if the snakes' redraw is what costs
+        // time, they simply redraw less often (the back-off above) rather than the 3D board being switched off
+        drewLast = sceneChanged;
         const turn = rollingRef.current ?? (t.phase === "playing" ? t.turn : -1), fx3 = liveEffects();
-        snakesBusy = sc.frame(t.order.flatMap(s => { const p = disp.current[s]; return p ? [{ seat: s, piece: t.pieces[s], color: COLORS[s], x: p.x, y: p.y, h: p.h ?? 0, s: p.s ?? 1, active: s === turn, lean: p.lean, sway: p.sway, dir: p.dir }] : []; }), { ...overlay.current, ...fx3, tokens: tokens(), motion });
+        const fT0 = performance.now();
+        snakesBusy = sc.frame(t.order.flatMap(s => { const p = disp.current[s]; return p ? [{ seat: s, piece: t.pieces[s], color: COLORS[s], x: p.x, y: p.y, h: p.h ?? 0, s: p.s ?? 1, active: s === turn, lean: p.lean, sway: p.sway, dir: p.dir }] : []; }), { ...overlay.current, ...fx3, tokens: tokens(), motion }, snakesDue);
+        if (DEBUG) { const w = window as unknown as { __slFrameMs?: number[] }; (w.__slFrameMs ??= []).push(Math.round((performance.now() - fT0) * 10) / 10); if (w.__slFrameMs.length > 400) w.__slFrameMs.shift(); }
         if (snakesDue) { lastSnakes = now; if (DEBUG) (window as unknown as { __slSnakeFrames?: number }).__slSnakeFrames = ((window as unknown as { __slSnakeFrames?: number }).__slSnakeFrames ?? 0) + 1; }
         return;
       }
@@ -780,6 +791,7 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
         <canvas key="base" className="sl-base" ref={baseRef} style={geo ? { width: geo.sw + "px", height: geo.sh + "px" } : undefined} />
         <div className="sl-plane" style={geo ? planeStyle(geo) : { visibility: "hidden" }}><canvas className="sl-board" ref={boardRef} /></div>
         <div className="sl-plane snakes" style={geo ? planeStyle(geo) : { visibility: "hidden" }}><canvas ref={fxRef} /></div>
+        <div className="sl-plane nums" style={geo ? planeStyle(geo) : { visibility: "hidden" }}><canvas ref={numRef} /></div>
         <canvas className="sl-pieces" ref={piecesRef} style={geo ? { width: geo.sw + "px", height: geo.sh + "px" } : undefined} />
       </>}
       {banner && <div className={`sl-banner ${banner.big ? "big" : ""}`} role="status">{banner.text}</div>}

@@ -28,7 +28,7 @@ const TILE_TOP = .14, RIM = .62, HALF = 5 + RIM, RIM_TOP = .26, BASE = -.5;
 const L_BOARD = 0, L_NUMBERS = 1, L_TOKENS = 2;
 /** Token figures are modelled about 0.85 squares tall on a base 0.27 across; on the board they stand this much larger
     (big enough that their faces and details read at board size). */
-const FIG = 2.3;                                       // a token stands about three quarters of a square wide
+const FIG = 1.73;                                      // token figures (three quarters of the earlier 2.3)
 /** Extra shift for token positions, in board units (positions already come laid out for the 3D board). */
 const SHIFT = { x: 0, y: 0 };
 
@@ -72,6 +72,7 @@ export class BoardScene {
   private board = new THREE.Group(); private numbersMesh: Obj = null; private texes: Obj[] = [];
   private figures = new Map<number, { id: PieceId; grp: Obj; tilt: Obj; fig: Obj; ring: Obj; glow: Obj }>();
   /** The painted snakes: drawn into a canvas that lies on the playing surface as a transparent texture. */
+  private snakesBusy = true;
   private snakeArt: SnakeArt; private snakeCanvas = document.createElement("canvas"); private snakeTex: Obj = null;
   private size = { w: 1, h: 1 };
   private aniso = 4; private low: boolean; private look: Look;
@@ -214,8 +215,8 @@ export class BoardScene {
     }
     // numbers: their own transparent layer drawn above snakes and ladders, so a number is never hidden
     const nc = document.createElement("canvas"); paintNumbers(nc, px, look);
-    const nm = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshBasicMaterial({ map: T(nc), transparent: true, depthWrite: false, toneMapped: false }));
-    nm.rotation.x = -Math.PI / 2; nm.position.y = TILE_TOP + .006; nm.renderOrder = 1; this.numbersMesh = nm; B.add(nm);      // embossed in the board: under the ladders, snakes and tokens
+    const nm = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshBasicMaterial({ map: T(nc), transparent: true, depthTest: false, depthWrite: false, toneMapped: false }));
+    nm.rotation.x = -Math.PI / 2; nm.position.y = TILE_TOP + .002; nm.renderOrder = 10; setLayer(nm, L_NUMBERS); this.numbersMesh = nm; B.add(nm);      // its own pass: over the ladders and snakes, under the tokens
     // ladders: dark polished rails, light rungs and gold caps, the same on every board so they always stand out
     const lp = document.createElement("canvas"); paintRail(lp, 512, 64, 31);
     const lt = T(lp); lt.wrapS = lt.wrapT = THREE.RepeatWrapping;
@@ -228,7 +229,7 @@ export class BoardScene {
     for (const [s, e] of Object.entries(RARE_LADDERS)) this.ladder(+s, e, goldRail, goldRung, metal);
     // snakes: painted in 2D on a transparent layer just above the squares (and the inlay's brass strips), under the
     // ladders, the numbers and the tokens; it catches the tokens' and ladders' shadows like the board does
-    const spx = this.low ? 1024 : 1536; this.snakeCanvas.width = this.snakeCanvas.height = spx;
+    const spx = this.low ? 768 : 1536; this.snakeCanvas.width = this.snakeCanvas.height = spx;
     const stex = T(this.snakeCanvas); stex.anisotropy = Math.min(4, this.aniso); this.snakeTex = stex;
     const sm = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshStandardMaterial({ map: stex, transparent: true, depthWrite: false, roughness: .55, metalness: 0, alphaTest: .01 }));
     sm.rotation.x = -Math.PI / 2; sm.position.y = TILE_TOP + .026; sm.receiveShadow = true; sm.renderOrder = 2; B.add(sm);
@@ -313,7 +314,9 @@ export class BoardScene {
   toScreen(x: number, y: number, z: number) { const q = new THREE.Vector3(x, y, z).project(this.camera); return { x: (q.x + 1) / 2 * this.size.w, y: (1 - q.y) / 2 * this.size.h }; }
 
   /* ----- per frame: tokens and swallow effects, then draw ----- */
-  frame(pieces: Piece3D[], ov: Overlay3D): boolean {
+  /** Draws a frame. `snakes` false reuses the snake layer as it is (only tokens or effects moved), which saves
+      repainting it and sending it to the graphics chip again. */
+  frame(pieces: Piece3D[], ov: Overlay3D, snakes = true): boolean {
     const seen = new Set<number>();
     for (const p of pieces) {
       seen.add(p.seat);
@@ -350,7 +353,8 @@ export class BoardScene {
     if (ov.burst) { const k = ov.burst.k; this.burst.visible = true; this.burst.position.set(wx(ov.burst.x), TILE_TOP + .03, wz(ov.burst.y)); this.burst.scale.setScalar(.35 + k * 1.1); this.burst.material.opacity = (1 - k) * .9; }
     else this.burst.visible = false;
     // the snakes: slithering, heads turning, the swallow
-    const busy = this.paintSnakes(ov);
+    const busy = snakes ? this.paintSnakes(ov) : this.snakesBusy;
+    this.snakesBusy = busy;
     this.render();
     return busy;
   }

@@ -61,8 +61,9 @@ export const center = (n: number): Pt => {
   if (row % 2) col = 9 - col;
   return { x: PAD + col * S + S / 2, y: PAD + (9 - row) * S + S / 2 };
 };
-/* Tokens stand in the middle of their square, filling about three quarters of it. Each square's number is embossed into
-   the board along the top edge of its square (100 keeps its corner under the MOKSH plaque). */
+/* Tokens stand in the middle of their square. Each square's number sits along the top edge of its square, embossed with
+   no background, on its own layer over the ladders and snakes and under the tokens (100 keeps its corner under the
+   MOKSH plaque). */
 /** Flat or tilted picture board: where a lone token's stand touches the board, so its figure looks centred on the square. */
 export const spot = (n: number): Pt => { const c = center(n); return { x: c.x, y: c.y + 9 }; };
 /** Tokens sharing a square (2 to 4), smaller, laid out around the middle and clear of the number in the front-left corner. */
@@ -186,7 +187,7 @@ const smooth = (a: number, b: number, x: number) => { const t = Math.max(0, Math
     as [r, g, b]. The picture is made at up to `maxScale` pixels per unit (smooth enough for stone and wood) and drawn
     scaled to the context's resolution. */
 function pixels(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, maxScale: number, shade: (u: number, v: number) => [number, number, number]) {
-  const t = g.getTransform(), sc = Math.max(.6, Math.min(maxScale, Math.hypot(t.a, t.b)));
+  const t = g.getTransform(), sc = Math.max(.6, Math.min(maxScale * LOW_TEX, Math.hypot(t.a, t.b)));
   const pw = Math.max(2, Math.ceil(w * sc)), ph = Math.max(2, Math.ceil(h * sc));
   const c = document.createElement("canvas"); c.width = pw; c.height = ph;
   const cx = c.getContext("2d")!, img = cx.createImageData(pw, ph), d = img.data;
@@ -197,6 +198,8 @@ function pixels(g: CanvasRenderingContext2D, x: number, y: number, w: number, h:
   cx.putImageData(img, 0, 0);
   g.save(); g.beginPath(); g.rect(x, y, w, h); g.clip(); g.imageSmoothingQuality = "high"; g.drawImage(c, x, y, w, h); g.restore();
 }
+/** Slower phones paint the natural stone and wood textures at a lower resolution (they still look natural at phone size). */
+const LOW_TEX = typeof navigator !== "undefined" && (((navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8) <= 4 || (navigator.hardwareConcurrency ?? 8) <= 6) ? .62 : 1;
 const lerp3 = (a: number[], b: number[], t: number): [number, number, number] => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 
 /** Natural wood filling a rectangle: growth rings bent by slow waves, darker latewood bands, fine streaks along the
@@ -501,8 +504,9 @@ function varnish(g: CanvasRenderingContext2D) {
 }
 
 /** Paints the static board (frame, squares, ladders, snakes, numbers) for one model and theme into `layer` at the given pixel ratio. */
-/** The board picture (frame, squares, embossed numbers, ladders, varnish). The snakes are painted and animated
-    separately (snake2d.ts) on a layer above this one. `numbers: false` leaves the numbers out. */
+/** The board picture (frame, squares, ladders, varnish, and the numbers unless `numbers: false`). The snakes are painted
+    and animated separately (snake2d.ts) on a layer above this one; the lighter board shows the numbers on their own
+    layer above the snakes (paintNumberLayer). */
 export function paintBoard(layer: HTMLCanvasElement, dpr: number, look: Look = DEFAULT_LOOK, opts: { numbers?: boolean } = {}) {
   const pal = palette(look);
   layer.width = layer.height = Math.round(W * dpr);
@@ -536,7 +540,7 @@ export function ladderSteps(a: number, b: number, rungs: number): Pt[] {
     A contact shadow and a ring in the player's colour sit on the board; the active player's token also gets a gold glow.
     `lift` raises the token off the board (hops), in board units. Until `img` has loaded a plain disc is drawn. */
 /** Height of a standing token, in board units (a square is 60). */
-export const PIECE_H = 54;                       // a lone token is about three quarters of a square wide
+export const PIECE_H = 41;                       // token size (three quarters of the earlier 54)
 export function paintPiece(g: CanvasRenderingContext2D, x: number, y: number, u: number, sq: number, ring: string, img: HTMLImageElement | null, active: boolean, scale = 1, lift = 0, lean = 0) {
   if (scale <= 0.02) return;
   const k = u * scale, h = PIECE_H * k, w = h * (100 / 120), top = y - lift * u;

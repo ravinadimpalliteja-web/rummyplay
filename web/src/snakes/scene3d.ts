@@ -105,6 +105,9 @@ function skinCanvases(spIdx: number, low: boolean) {
     case "Tiger":              // irregular dark stripes that thin out down the sides
       n(7, x => band(x, 24 * k, "#2e1503", null));
       break;
+    case "Cobra":              // faint pale cross-bands on dark olive-brown
+      n(9, x => band(x, 5 * k, "rgba(214,196,150,.6)", null));
+      break;
     default:                   // Jade: double dark bands
       n(6, x => { band(x - 16 * k, 10 * k, "#063a32", null); band(x + 16 * k, 10 * k, "#063a32", null); });
   }
@@ -172,7 +175,10 @@ function headScales() {
 }
 
 /** A snake's body: a tube along its path, thick behind the head and tapering to a fine tail, its belly flat on the board. */
-function snakeBody(head: number, tail: number, R: number) {
+/** `rise`: how high the head and neck are lifted off the board (h) over the first `len` of the body, and whether the
+    neck spreads into a cobra's hood (wide and flat, facing forward). */
+type Rise = { h: number; len: number; hood: boolean };
+function snakeBody(head: number, tail: number, R: number, rise: Rise = { h: 0, len: 1, hood: false }) {
   const pts = snakePath(head, tail).map(p => new THREE.Vector3(wx(p.x), 0, wz(p.y)));
   const len = [0]; for (let i = 1; i < pts.length; i++) len.push(len[i - 1] + pts[i].distanceTo(pts[i - 1]));
   const total = len[len.length - 1];
@@ -181,12 +187,14 @@ function snakeBody(head: number, tail: number, R: number) {
   // along, then a long, even taper to a fine tail tip
   const width = (k: number) => (k < .1 ? .7 + .3 * smooth01(k / .1) : k < .4 ? 1 : Math.max(.05, 1 - Math.pow((k - .4) / .6, 1.35) * .95));
   const radius = (s: number) => R * width(s / total);
+  const lift = (s: number) => rise.h * (1 - smooth01(s / rise.len));
+  const hoodAt = (s: number) => { if (!rise.hood) return 0; const a = rise.len * .06, b = rise.len * .7; return s <= a || s >= b ? 0 : Math.pow(Math.sin(Math.PI * (s - a) / (b - a)), .7); };
   const N = 150, RS = 20, pos: number[] = [], uv: number[] = [], idx: number[] = [];
   for (let i = 0; i <= N; i++) {
     const s = (i / N) * total, c = at(s), a = at(Math.max(0, s - .05)), b = at(Math.min(total, s + .05));
-    const t = b.sub(a).normalize(), side = new THREE.Vector3(-t.z, 0, t.x), r = radius(s), cy = TILE_TOP + r * .5;
+    const t = b.sub(a).normalize(), side = new THREE.Vector3(-t.z, 0, t.x), r = radius(s), cy = TILE_TOP + r * .5 + lift(s), hd = hoodAt(s);
     for (let j = 0; j <= RS; j++) {
-      const ang = (j / RS) * Math.PI * 2, sn = Math.sin(ang), up = sn >= 0 ? Math.pow(sn, .85) * .86 : sn * .5, wide = r * 1.08;   // rounded back, flat belly
+      const ang = (j / RS) * Math.PI * 2, sn = Math.sin(ang), up = (sn >= 0 ? Math.pow(sn, .85) * .86 : sn * .5) * (1 - .55 * hd), wide = r * (1.08 + 1.5 * hd);   // rounded back, flat belly; the hood spreads wide and flat
       pos.push(c.x + side.x * Math.cos(ang) * wide, cy + up * r, c.z + side.z * Math.cos(ang) * wide);
       uv.push(s / SKIN_LEN, j / RS);
     }
@@ -194,9 +202,11 @@ function snakeBody(head: number, tail: number, R: number) {
   for (let i = 0; i < N; i++) for (let j = 0; j < RS; j++) { const a = i * (RS + 1) + j, b = a + RS + 1; idx.push(a, b, a + 1, b, b + 1, a + 1); }
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
-  return { g, at, radius, total, cyAt: (s: number) => TILE_TOP + radius(s) * .5 };
+  return { g, at, radius, total, cyAt: (s: number) => TILE_TOP + radius(s) * .5 + lift(s) };
 }
 
+/** How wide every snake's mouth gapes at rest (the lower jaw's angle, in radians). */
+const GAPE = .62;
 const smooth01 = (t: number) => { const x = Math.max(0, Math.min(1, t)); return x * x * (3 - 2 * x); };
 /** A tube of changing cross-section along z (from z0 to z1): `w(f)` is the half-width, `top(f)` and `bot(f)` the height
     above and below the centre line, f running 0..1 from back to front; the front end closes to a point. Texture u runs
@@ -254,8 +264,53 @@ function snakeHead(sp: (typeof SPECIES)[number], R: number, skin?: { col: Obj; b
   const tp = (p: number[], sc: number[], r: number[]) => { const o = new THREE.Mesh(CY, red); o.position.set(p[0], p[1], p[2]); o.scale.set(sc[0], sc[1], sc[2]); o.rotation.set(r[0], r[1], r[2]); tongue.add(o); };
   tp([0, -R * .1, z1 + R * .25], [R * .035, R * .7, R * .035], [Math.PI / 2, 0, 0]);
   for (const s of [-1, 1]) tp([s * R * .06, -R * .1, z1 + R * .7], [R * .025, R * .28, R * .025], [Math.PI / 2, 0, s * .6]);
+  // the inside of the gaping mouth: a pink palate under the skull and two curved fangs
+  const pal = new THREE.Mesh(SPH, mat("#c4566a", .5)); pal.position.set(0, -R * .2, z0 + L * .55); pal.scale.set(w(.55) * .78, R * .04, L * .38); skull.add(pal);
+  const fangM = gloss("#fbf6ea", .2), CONE = new THREE.ConeGeometry(1, 1, 10);
+  for (const s of [-1, 1]) { const fg = new THREE.Mesh(CONE, fangM); fg.position.set(s * w(.86) * .55, -R * .3, z1 - L * .12); fg.scale.set(R * .05, R * .22, R * .05); fg.rotation.set(Math.PI + .25, 0, 0); skull.add(fg); }
+  jaw.rotation.x = GAPE; skull.rotation.x = -GAPE * .35; tongue.visible = false;
   grp.add(skull, jaw, tongue);
   return { grp, skull, jaw, tongue };
+}
+
+/** A cobra's raised front: the neck rises almost straight up from the ground at `base`, spreading into a broad, flat
+    hood facing `f` (its pale throat to the front, the patterned back behind, with the spectacle mark), then narrowing
+    again under the head at `top`. */
+function cobraNeck(base: Obj, f: Obj, R: number, H: number, skinM: Obj, belly: string) {
+  const up = new THREE.Vector3(0, 1, 0), side = new THREE.Vector3().crossVectors(up, f).normalize();
+  const P = (fw: number, h: number) => base.clone().addScaledVector(f, fw).addScaledVector(up, h);
+  const spine = new THREE.CatmullRomCurve3([P(.05, 0), P(-.05, H * .32), P(-.02, H * .68), P(.06, H)]);
+  const ST = 30, AR = 26, pos: number[] = [], uv: number[] = [], idx: number[] = [];
+  const hoodAt = (u: number) => (u < .3 ? 0 : u > .95 ? 0 : Math.pow(Math.sin(Math.PI * (u - .3) / .65), .6));
+  for (let i = 0; i <= ST; i++) {
+    const u = i / ST, c = spine.getPoint(u), hd = hoodAt(u), w = R * (.95 + .9 * hd), th = R * (.9 - .3 * hd);
+    for (let j = 0; j <= AR; j++) {
+      const a = (j / AR) * Math.PI * 2;
+      const p = c.clone().addScaledVector(side, Math.cos(a) * w).addScaledVector(f, -Math.sin(a) * th);   // v .25 = back (pattern), .75 = throat
+      pos.push(p.x, p.y, p.z); uv.push((u * H) / SKIN_LEN, j / AR);
+    }
+  }
+  for (let i = 0; i < ST; i++) for (let j = 0; j < AR; j++) { const a = i * (AR + 1) + j, b = a + AR + 1; idx.push(a, b, a + 1, b, b + 1, a + 1); }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
+  // the hood: a broad rounded plate spread on the raised neck just under the head, facing f. Its front is the pale
+  // throat crossed by two dark bands; its back carries the skin pattern and the spectacle mark.
+  const marks: Obj[] = [], SPH = new THREE.SphereGeometry(1, 28, 18), hc = spine.getPoint(.56), hw = R * 3.3, hh = H * .5, ht = R * .32;
+  // the hood leans back a little, as a rearing cobra's does, so it faces up toward the viewer as well as forward
+  const n = f.clone().add(new THREE.Vector3(0, .85, 0)).normalize();
+  const orient = (o: Obj, at: Obj) => { o.position.copy(at); o.lookAt(at.clone().add(n)); return o; };
+  const back = orient(new THREE.Mesh(SPH, skinM), hc.clone().addScaledVector(n, -ht * .3)); back.scale.set(hw, hh, ht); back.castShadow = true; marks.push(back);
+  const throatM = new THREE.MeshPhysicalMaterial({ color: belly, roughness: .5, clearcoat: .35 });
+  const front = orient(new THREE.Mesh(SPH, throatM), hc.clone().addScaledVector(n, ht * .25)); front.scale.set(hw * .86, hh * .9, ht * .8); marks.push(front);
+  const bandM = mat("#2c2117", .6);
+  for (const dy of [-.18, -.02]) { const bnd = orient(new THREE.Mesh(SPH, bandM), hc.clone().addScaledVector(n, ht * .62).add(new THREE.Vector3(0, hh * dy, 0))); bnd.scale.set(hw * .62, hh * .07, ht * .3); marks.push(bnd); }
+  const pale = mat("#e9dcb4", .55), dark = mat("#2a2016", .6);
+  for (const sd of [-1, 1]) {                                              // the spectacle on the back
+    const at = hc.clone().addScaledVector(side, sd * hw * .3).addScaledVector(n, -ht * 1.22).add(new THREE.Vector3(0, hh * .12, 0));
+    const ring = orient(new THREE.Mesh(new THREE.TorusGeometry(R * .32, R * .08, 8, 24), pale), at); marks.push(ring);
+    const dot = orient(new THREE.Mesh(SPH, dark), at.clone().addScaledVector(n, -.004)); dot.scale.set(R * .15, R * .15, R * .04); marks.push(dot);
+  }
+  return { g, top: spine.getPoint(1), marks };
 }
 
 /** Several box geometries joined into one (fewer draw calls). */
@@ -442,15 +497,33 @@ export class BoardScene {
     Object.entries(SNAKES).forEach(([h, t]) => {
       const head = +h, sp = speciesOf(head), si = SPECIES.indexOf(sp);
       let sk = skins.get(si); if (!sk) { const c = skinCanvases(si, this.low); sk = { col: T(c.col), bump: T(c.bump, false), rough: T(c.rough, false) }; for (const x of [sk.col, sk.bump, sk.rough]) { x.wrapS = THREE.RepeatWrapping; x.wrapT = THREE.ClampToEdgeWrapping; x.flipY = false; x.needsUpdate = true; } skins.set(si, sk); }
-      const R = .15, body = snakeBody(head, t, R);
-      const m = new THREE.Mesh(body.g, new THREE.MeshPhysicalMaterial({ map: sk.col, bumpMap: sk.bump, bumpScale: 2.6, roughnessMap: sk.rough, roughness: 1, clearcoat: .45, clearcoatRoughness: .32, envMapIntensity: .7, sheen: .3, sheenColor: new THREE.Color(shade(sp.body, .5)), sheenRoughness: .5 }));
+      const cobra = sp.hood, R = cobra ? .2 : .18, rise: Rise = cobra ? { h: 0, len: 1, hood: false } : { h: .12, len: .5, hood: false };
+      const body = snakeBody(head, t, R, rise);
+      const skinM = new THREE.MeshPhysicalMaterial({ map: sk.col, bumpMap: sk.bump, bumpScale: 2.6, roughnessMap: sk.rough, roughness: 1, clearcoat: .45, clearcoatRoughness: .32, envMapIntensity: .7, sheen: .3, sheenColor: new THREE.Color(shade(sp.body, .5)), sheenRoughness: .5 });
+      const m = new THREE.Mesh(body.g, skinM);
       m.castShadow = true; m.receiveShadow = true; B.add(m);
-      const hd = snakeHead(sp, R, sk), p0 = body.at(0), p1 = body.at(.35), dir = p0.clone().sub(p1).normalize();
-      hd.grp.position.set(p0.x, body.cyAt(0) + R * .12, p0.z);
-      // the head carries on from the body but turns (up to about 70 degrees at the neck) toward the players, so its
-      // face and eyes show instead of the back of its head
-      const yaw = Math.atan2(dir.x, dir.z), turn = Math.max(-1.2, Math.min(1.2, Math.atan2(Math.sin(yaw), Math.cos(yaw))));
-      hd.grp.rotation.y = yaw - turn;
+      const hd = snakeHead(sp, R, sk), p0 = body.at(0);
+      // every head faces the square tokens arrive from (the one before it); the neck bends to suit the body's path
+      const sq = center(head), prev = center(head - 1);
+      const dir = new THREE.Vector3(wx(prev.x) - wx(sq.x), 0, wz(prev.y) - wz(sq.y)).normalize();
+      const L = R * 3.3;
+      hd.grp.rotation.order = "YXZ";
+      if (cobra) {
+        // the cobra rears its front third almost straight up from its coil, the hood spread wide, turned toward the
+        // arriving tokens (and a little toward the players, so the hood shows), the head on top looking down at them
+        const f = dir.clone().add(new THREE.Vector3(0, 0, 1.5)).normalize();
+        // the rearing neck stands a little in front of the head's square, so on screen the raised head sits over it
+        const base = new THREE.Vector3(p0.x, TILE_TOP + R * .45, p0.z + .3).addScaledVector(f, -.08);
+        const neck = cobraNeck(base, f, R, .85, skinM, sp.belly);
+        const nm = new THREE.Mesh(neck.g, skinM); nm.castShadow = true; nm.receiveShadow = true; B.add(nm);
+        for (const part of neck.marks) B.add(part);
+        hd.grp.position.copy(neck.top).addScaledVector(f, L * .18).add(new THREE.Vector3(0, R * .45, 0));
+        hd.grp.rotation.y = Math.atan2(f.x, f.z); hd.grp.rotation.x = .38;
+      } else {
+        const centre = new THREE.Vector3(wx(sq.x), 0, wz(sq.y)).addScaledVector(dir, -L * .28);      // the head centred on its square
+        hd.grp.position.set(centre.x, body.cyAt(0) + R * .2, centre.z);
+        hd.grp.rotation.y = Math.atan2(dir.x, dir.z); hd.grp.rotation.x = .1;
+      }
       B.add(hd.grp);
       this.snakes.set(head, { body, head: hd, color: sp.body, headPos: p0, dir });
     });
@@ -572,7 +645,7 @@ export class BoardScene {
     // snake effects
     for (const [head, sn] of this.snakes) {
       const open = ov.mouth && ov.mouth.head === head ? ov.mouth.open : 0;
-      sn.head.jaw.rotation.x = open * .75; sn.head.skull.rotation.x = -open * .28; sn.head.tongue.visible = open < .05;
+      sn.head.jaw.rotation.x = GAPE + open * .4; sn.head.skull.rotation.x = -GAPE * .35 - open * .15; sn.head.tongue.visible = false;   // always gaping, wider to swallow
     }
     const bl = ov.bulge && this.snakes.get(ov.bulge.head);
     if (bl && ov.bulge) {

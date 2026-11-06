@@ -81,18 +81,22 @@ export const OFF: Pt = { x: PAD * .4, y: center(1).y + 6 };
 /** Centre line of a snake from head to tail; also the path a token slides down. */
 /** Each snake's planned route (board units, head first): worked out once so its body goes around every ladder
     (a path search over the board, then checked by layoutIssues() and a server test). The curve below smooths it. */
+/* Each snake's head sits in the middle of its square, facing the square tokens arrive from (one before it); the body
+   leaves from behind the head and slithers to the tail. Routes planned to keep every body clear of every ladder and
+   every other snake (checked by a server test). */
 export const SNAKE_WAYPOINTS: Record<number, [number, number][]> = {
-  19: [[112, 532], [98, 562], [112, 592]],
-  27: [[412, 472], [386, 532], [412, 592]],
-  36: [[292, 412], [346, 472], [258, 532], [292, 592]],
-  58: [[172, 292], [146, 352], [172, 412]],
-  70: [[592, 232], [584, 292], [592, 352]],
-  87: [[412, 112], [388, 192], [436, 272], [412, 352]],
-  95: [[352, 52], [355, 120], [289, 164], [292, 232]],
-  97: [[232, 52], [234, 116], [176, 168], [172, 232]],
+  23: [[172, 472], [162, 444], [161, 498], [114, 537], [112, 592]],
+  27: [[412, 472], [442, 472], [402, 526], [412, 592]],
+  36: [[292, 412], [290, 442], [343, 491], [263, 542], [292, 592]],
+  70: [[592, 232], [594, 262], [583, 307], [592, 352]],
+  87: [[412, 112], [447, 131], [396, 199], [440, 281], [412, 352]],
+  95: [[352, 52], [317, 71], [360, 133], [273, 174], [292, 232]],
+  97: [[232, 52], [192, 52], [223, 153], [136, 229], [183, 333], [112, 412]],
 };
+/** The snake drawn as a cobra: a raised, spread hood facing the arriving tokens. */
+export const COBRA_HEAD = 97;
 /** How far a snake's body swings either side of its route (board units). */
-export const SNAKE_WAVE = 5;
+export const SNAKE_WAVE = 7;
 /** Centre line of a snake from head to tail: a smooth curve through its route with a gentle S-wave (also the path a
     swallowed token slides down). Falls back to a straight route between the two squares. */
 export function snakePath(head: number, tail: number): Pt[] {
@@ -118,8 +122,8 @@ export function snakePath(head: number, tail: number): Pt[] {
   return out;
 }
 /** Checks the layout: no snake body touches a ladder, and every snake stays on the board. Returns the problems found
-    (empty when all is well). Widths are the widest drawn (the 3D board): snake 9, ladder 18 either side of its line. */
-export function layoutIssues(snakeHalf = 9, ladderHalf = 18): string[] {
+    (empty when all is well). Widths are the widest drawn (the 3D board): snake 10.8, ladder 18 either side of its line. */
+export function layoutIssues(snakeHalf = 10.8, ladderHalf = 18): string[] {
   const issues = new Set<string>();
   const segD = (p: Pt, a: Pt, b: Pt) => { const dx = b.x - a.x, dy = b.y - a.y, l = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l)); return Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy); };
   for (const [h, t] of Object.entries(SNAKES)) {
@@ -505,8 +509,14 @@ export const SPECIES: Species[] = [
     mark: (c) => each(c, 14, 11, 10, (s) => band(c, s, 2.3, "rgba(70,36,8,.85)")) },
   { name: "Jade", body: "#1d9c8b", belly: "#d4f7eb", head: "#24a895", eye: "#ffe07a", pupil: "round", hood: false,
     mark: (c) => each(c, 14, 15, 10, (s) => { band(c, s, 1.5, "rgba(10,90,78,.9)"); band(c, s + 3.6 * c.k, 1.5, "rgba(10,90,78,.9)"); }) },
+  // the Indian cobra: dark olive-brown with faint pale cross-bands, a pale throat, round dark-gold eyes, and a hood
+  { name: "Cobra", body: "#4b3a28", belly: "#e8dab2", head: "#3f3021", eye: "#c99a3a", pupil: "round", hood: true,
+    mark: (c) => each(c, 16, 14, 9, (s) => band(c, s, 1.2, "rgba(214,196,150,.55)")) },
 ];
-export const speciesOf = (head: number) => SPECIES[Math.max(0, Object.keys(SNAKES).indexOf(String(head))) % SPECIES.length];
+const PLAIN_SPECIES = SPECIES.filter((s) => !s.hood), COBRA = SPECIES.find((s) => s.hood)!;
+/** Which species each snake is: the cobra on COBRA_HEAD, the others in turn. */
+export const speciesOf = (head: number) => head === COBRA_HEAD ? COBRA
+  : PLAIN_SPECIES[Math.max(0, Object.keys(SNAKES).filter((h) => +h !== COBRA_HEAD).indexOf(String(head))) % PLAIN_SPECIES.length];
 
 /** Shape of one snake: its centre line, cumulative length, width and a lookup by distance from the head. */
 type Geom = { pts: Pt[]; len: number[]; total: number; WD: number[]; L: Pt[]; R: Pt[]; tan: (i: number) => Pt; at: (s: number) => { p: Pt; n: Pt; t: Pt; w: number }; angle: number };
@@ -671,7 +681,7 @@ export function paintBoard(layer: HTMLCanvasElement, dpr: number, look: Look = D
   squares(g, look, pal);
   Object.entries(LADDERS).forEach(([a, b]) => onLayer(g, boxOf([center(+a), center(b)], 36), (c) => ladder(c, +a, b)));
   Object.entries(RARE_LADDERS).forEach(([a, b]) => onLayer(g, boxOf([center(+a), center(b)], 36), (c) => ladder(c, +a, b, true)));
-  Object.entries(SNAKES).forEach(([h, t], i) => onLayer(g, boxOf(snakePath(+h, t), 54), (c) => snake(c, +h, t, SPECIES[i % SPECIES.length], 100 + i)));
+  Object.entries(SNAKES).forEach(([h, t], i) => onLayer(g, boxOf(snakePath(+h, t), 54), (c) => snake(c, +h, t, speciesOf(+h), 100 + i)));
   varnish(g);
   numbers(g, pal);
 }

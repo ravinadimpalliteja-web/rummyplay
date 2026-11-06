@@ -98,7 +98,8 @@ const { newGame, roll, turnOf, animMs, LADDERS, SNAKES, RARE_LADDERS, RARE_ODDS,
 {
   // The golden ladder (82 -> 99): only on a lucky draw; otherwise 82 is an ordinary square.
   assert.deepStrictEqual({ ...RARE_LADDERS }, { 82: 99 }); assert.strictEqual(RARE_ODDS, 1000);
-  assert.strictEqual(Object.keys(LADDERS).length, 9); assert.strictEqual(Object.keys(SNAKES).length, 8);
+  assert.strictEqual(Object.keys(LADDERS).length, 9); assert.strictEqual(Object.keys(SNAKES).length, 7);
+  assert.strictEqual(SNAKES[97], 39); assert.strictEqual(SNAKES[23], 2); assert.strictEqual(SNAKES[58], undefined); assert.strictEqual(SNAKES[19], undefined);
   const a = newGame([0, 1]); a.pos[0] = 78; roll(a, 0, 4);
   assert.strictEqual(a.pos[0], 82); assert.strictEqual(a.last.via, null);
   const b = newGame([0, 1]); b.pos[0] = 78; roll(b, 0, 4, true);

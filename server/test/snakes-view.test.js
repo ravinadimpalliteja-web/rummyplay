@@ -66,7 +66,7 @@ console.log('snakes view: ok (board uses engine positions, numbering unchanged, 
     return dense;
   };
   const segD = (p, a, b) => { const dx = b.x - a.x, dy = b.y - a.y, l = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l)); return Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy); };
-  const SNAKE_HALF = 9, LADDER_HALF = +num(/export const LADDER_HALF = (\d+);/, 'LADDER_HALF')[0] + 5.4;   // widest drawn: 3D snake radius 0.15 square; ladder half-width plus its rail
+  const SNAKE_HALF = 10.8, LADDER_HALF = +num(/export const LADDER_HALF = (\d+);/, 'LADDER_HALF')[0] + 5.4;   // widest drawn: 3D snake radius 0.18 square; ladder half-width plus its rail
   for (const [h, t] of Object.entries(SN)) {
     const pts = curve(WPS[h]), first = pts[0], last = pts[pts.length - 1], hc = ctr(+h), tc = ctr(t);
     assert(Math.abs(first.x - hc.x) < 30 && Math.abs(first.y - hc.y) < 30, `snake ${h}: head is on square ${h}`);

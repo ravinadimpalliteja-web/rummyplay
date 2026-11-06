@@ -19,18 +19,16 @@ assert(/if \(row % 2\) col = 9 - col;/.test(src) && /y: PAD \+ \(9 - row\) \* S 
 assert.deepStrictEqual([center(1).x < center(10).x, center(11).x > center(20).x, center(100).y < center(1).y], [true, true, true], 'square order');
 
 // token placement and numbers: a lone token stands in the middle of its square, about three quarters of a square wide;
-// each number sits along the top edge of its square and is drawn above the tokens on both boards, so a token never hides it
+// each number is embossed into the board along the top edge of its square, with no background
 const [sy] = num(/export const spot = \(n: number\): Pt => \{ const c = center\(n\); return \{ x: c\.x, y: c\.y \+ (\d+) \}; \};/, 'spot'), sx = 0;
 assert(/export const spot3D = \(n: number\): Pt => center\(n\);/.test(src), 'the 3D board puts a lone token exactly on the centre of its square');
 const [H] = num(/export const PIECE_H = (\d+);/, 'PIECE_H');
 const tokenW = H * 100 / 120;
 assert(tokenW >= S * .7 && tokenW <= S * .8, `a lone token is about three quarters of a square wide (${(tokenW / S).toFixed(2)})`);
 assert(/y: p\.y - S \/ 2 \+ size \* \.8 \+ 3/.test(src), 'square numbers sit along the top edge of their square');
-const css = fs.readFileSync(path.join(__dirname, '../../web/src/snakes/snakes.css'), 'utf8');
-const z = (sel) => +((css.match(new RegExp(sel.replace(/\./g, '\\.') + '\\{z-index:(\\d+)\\}')) || [])[1] ?? NaN);
-assert(z('.sl-plane.nums') > z('.sl-pieces'), 'lighter board: the numbers layer is above the tokens');
 const scene = fs.readFileSync(path.join(__dirname, '../../web/src/snakes/scene3d.ts'), 'utf8');
-assert(scene.indexOf('cam.layers.set(L_TOKENS); r.render') < scene.indexOf('cam.layers.set(L_NUMBERS); r.render'), '3D board: the numbers are drawn after the tokens');
+assert(/nm\.position\.y = TILE_TOP \+ \.006; nm\.renderOrder = 1;/.test(scene), '3D board: the numbers are embossed in the board surface, under ladders, snakes and tokens');
+assert(!/rr\(g, x - 2\.5, y - size/.test(src), 'numbers have no label background');
 const shared = {};
 const sharedSrc = src.slice(src.indexOf('export const SHARED:'), src.indexOf('};', src.indexOf('export const SHARED:')));      // the flat board's layout (the 3D board has its own)
 for (const m of sharedSrc.matchAll(/(\d): \{ pts: (\[\[[^}]*\]\]), s: ([\d.]+) \}/g)) shared[m[1]] = { pts: JSON.parse(m[2]), s: +m[3] };
@@ -44,7 +42,7 @@ for (const [name, pts, s] of cases) {
   for (const b of boxes) assert(b.x0 >= -S / 2 - 1 && b.x1 <= S / 2 + 2.5, `${name}: a token leaves its square (${b.x0.toFixed(1)}..${b.x1.toFixed(1)})`);
   for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) assert(!hit(boxes[i], boxes[j]), `${name}: tokens ${i} and ${j} overlap`);
 }
-console.log('snakes view: ok (board uses engine positions, numbering unchanged, tokens 3/4 of a square, numbers on top edge and above tokens)');
+console.log('snakes view: ok (board uses engine positions, numbering unchanged, tokens 3/4 of a square, numbers embossed on the top edge)');
 
 // The snakes' bodies never touch a ladder: the drawn curve (same algorithm as snakePath in board.ts) against every ladder.
 {

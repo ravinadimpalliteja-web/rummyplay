@@ -214,8 +214,8 @@ export class BoardScene {
     }
     // numbers: their own transparent layer drawn above snakes and ladders, so a number is never hidden
     const nc = document.createElement("canvas"); paintNumbers(nc, px, look);
-    const nm = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshBasicMaterial({ map: T(nc), transparent: true, depthTest: false, depthWrite: false, toneMapped: false }));
-    nm.rotation.x = -Math.PI / 2; nm.position.y = TILE_TOP + .002; nm.renderOrder = 10; setLayer(nm, L_NUMBERS); this.numbersMesh = nm; B.add(nm);
+    const nm = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshBasicMaterial({ map: T(nc), transparent: true, depthWrite: false, toneMapped: false }));
+    nm.rotation.x = -Math.PI / 2; nm.position.y = TILE_TOP + .006; nm.renderOrder = 1; this.numbersMesh = nm; B.add(nm);      // embossed in the board: under the ladders, snakes and tokens
     // ladders: dark polished rails, light rungs and gold caps, the same on every board so they always stand out
     const lp = document.createElement("canvas"); paintRail(lp, 512, 64, 31);
     const lt = T(lp); lt.wrapS = lt.wrapT = THREE.RepeatWrapping;
@@ -370,8 +370,8 @@ export class BoardScene {
     r.clear();
     cam.layers.set(L_BOARD); r.render(this.scene, cam);
     r.shadowMap.needsUpdate = false;
+    cam.layers.set(L_NUMBERS); r.render(this.scene, cam);
     cam.layers.set(L_TOKENS); r.render(this.scene, cam);
-    cam.layers.set(L_NUMBERS); r.render(this.scene, cam);          // numbers last: a token never hides one
     cam.layers.enableAll();
   }
 

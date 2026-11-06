@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { RoomClient, deviceToken, randomPasscode, saveRoom, savedRoom, serverUrl, type NetStatus } from "../domain/online";
 import { BOARD_VERSION, CHAT_EMOJIS, CHAT_PHRASES, RARE_LADDERS, TIMING, newGame, roll, rollDie, rollLucky, rungsOf, snakeSlideMs, turnOf, type LastRoll, type SLGame } from "./engine";
-import { MODELS, MODEL_IDS, NUM_FONT, OFF, PIECE_H, SHARED, SHARED3D, THEMES, THEME_IDS, W, center, layoutIssues, numberAt, paintBase, paintBoard, paintNumberLayer, paintPiece, S, spot, spot3D, type Look, type ModelId, type Pt, type ThemeId } from "./board";
+import { MODELS, MODEL_IDS, NUM_FONT, OFF, PIECE_H, SHARED, SHARED3D, THEMES, THEME_IDS, W, center, layoutIssues, numberAt, paintBase, paintBoard, paintPiece, S, spot, spot3D, type Look, type ModelId, type Pt, type ThemeId } from "./board";
 import { fitView, planeStyle, project, squash, type View } from "./view3d";
 import { SnakeArt, type SnakeOverlay } from "./snake2d";
 import { setSound, sfx, soundOn, unlock } from "./sound";
@@ -142,7 +142,7 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
   const disp = useRef<Record<number, Disp | null>>({}), dirty = useRef(true);
   const overlay = useRef<SnakeOverlay>({});
   /** The painted snakes on the lighter board (the WebGL board has its own). */
-  const snakeArt = useRef<SnakeArt | null>(null), numRef = useRef<HTMLCanvasElement>(null);
+  const snakeArt = useRef<SnakeArt | null>(null);
   const animatedN = useRef<number | null>(null), chain = useRef<Promise<void>>(Promise.resolve());
   /** Short-lived effects that outlive a move: gold sparkles from a climb and the ring when a token lands. */
   const effects = useRef<{ sparks: { x: number; y: number; h: number; born: number }[]; burst: { x: number; y: number; born: number } | null }>({ sparks: [], burst: null });
@@ -318,8 +318,7 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
       const dpr = Math.min(2.5, window.devicePixelRatio || 1), pd = Math.min(2, dpr);
       const t0 = performance.now();
       const bdpr = Math.min(2400, Math.round(geo.B * dpr * (geo.A ? 1.3 : 1))) / W;
-      paintBoard(board, bdpr, look, { numbers: false });
-      if (numRef.current) paintNumberLayer(numRef.current, bdpr, look);
+      paintBoard(board, bdpr, look);
       if (DEBUG) (window as unknown as { __slPaints?: number[] }).__slPaints = [...((window as unknown as { __slPaints?: number[] }).__slPaints ?? []), Math.round(performance.now() - t0)];
       for (const c of [base, pieces]) { c.width = Math.round(geo.sw * pd); c.height = Math.round(geo.sh * pd); }
       const bg = base.getContext("2d")!; bg.setTransform(pd, 0, 0, pd, 0, 0);
@@ -781,7 +780,6 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
         <canvas key="base" className="sl-base" ref={baseRef} style={geo ? { width: geo.sw + "px", height: geo.sh + "px" } : undefined} />
         <div className="sl-plane" style={geo ? planeStyle(geo) : { visibility: "hidden" }}><canvas className="sl-board" ref={boardRef} /></div>
         <div className="sl-plane snakes" style={geo ? planeStyle(geo) : { visibility: "hidden" }}><canvas ref={fxRef} /></div>
-        <div className="sl-plane nums" style={geo ? planeStyle(geo) : { visibility: "hidden" }}><canvas ref={numRef} /></div>
         <canvas className="sl-pieces" ref={piecesRef} style={geo ? { width: geo.sw + "px", height: geo.sh + "px" } : undefined} />
       </>}
       {banner && <div className={`sl-banner ${banner.big ? "big" : ""}`} role="status">{banner.text}</div>}

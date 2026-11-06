@@ -82,11 +82,12 @@ export default function Ludo3DBoard({players,turn,die,onMove}:Props) {
     const wedges=[{c:0xd93443,rot:0},{c:0xf0bd35,rot:Math.PI/2},{c:0x267be0,rot:Math.PI},{c:0x16a36a,rot:Math.PI*1.5}];
     wedges.forEach(w=>{const shape=new THREE.Shape();shape.moveTo(0,0);shape.lineTo(0,1.12);shape.lineTo(1.12,0);shape.closePath();const mesh=new THREE.Mesh(new THREE.ExtrudeGeometry(shape,{depth:.13,bevelEnabled:true,bevelSegments:3,steps:1,bevelSize:.035,bevelThickness:.035}),new THREE.MeshPhysicalMaterial({color:w.c,roughness:.2,metalness:.25,clearcoat:1}));mesh.rotation.x=-Math.PI/2;mesh.rotation.z=w.rot;mesh.position.y=.02;mesh.castShadow=true;centerGroup.add(mesh);});
     const pawns: {mesh:THREE.Group;color:Color;id:number}[]=[];
+    let lastSignature="";
     const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),clickTargets:THREE.Object3D[]=[];
     const handleClick=(e:PointerEvent)=>{const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;raycaster.setFromCamera(pointer,camera);const hits=raycaster.intersectObjects(clickTargets,true);if(!hits.length)return;let obj:THREE.Object3D|null=hits[0].object;while(obj&&!obj.userData.token)obj=obj.parent;const token=obj?.userData.token as {color:Color;id:number}|undefined;const s=stateRef.current;if(token&&s.players&&s.players[s.turn]?.color===token.color&&s.die!==null)moveRef.current(token.id);};
     renderer.domElement.addEventListener("pointerdown",handleClick);
     const renderPawns=()=>{
-      pawns.forEach(p=>scene.remove(p.mesh));pawns.length=0;clickTargets.length=0;
+      pawns.forEach(p=>{scene.remove(p.mesh);p.mesh.traverse(o=>{const m=o as THREE.Mesh;if(m.geometry)m.geometry.dispose();if(m.material&&!Array.isArray(m.material))m.material.dispose()})});pawns.length=0;clickTargets.length=0;
       stateRef.current.players?.forEach(p=>p.tokens.forEach(t=>{
         let xy:[number,number];if(t.step===-1)xy=homes[p.color][t.id];else if(t.step>=51)xy=lanes[p.color][t.step-51];else xy=path[pos(p.color,t.step)];
         const same=stateRef.current.players!.flatMap(q=>q.tokens.filter(v=>{if(v.step<0||v.step>=56)return false;let qxy:[number,number];if(v.step>=51)qxy=lanes[q.color][v.step-51];else qxy=path[pos(q.color,v.step)];return qxy[0]===xy[0]&&qxy[1]===xy[1]}));
@@ -94,12 +95,10 @@ export default function Ludo3DBoard({players,turn,die,onMove}:Props) {
         const mesh=makePawn(palette[p.color]);mesh.position.set(xy[1]-7+offset,.24,xy[0]-7+offset);mesh.userData.token={color:p.color,id:t.id};mesh.traverse(o=>{if((o as THREE.Mesh).isMesh){o.userData.token=mesh.userData.token;clickTargets.push(o)}});scene.add(mesh);pawns.push({mesh,color:p.color,id:t.id});
       }));
     };
-    renderPawns();
     const resize=()=>{const w=root.clientWidth,h=Math.max(300,root.clientHeight);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();};
     const observer=new ResizeObserver(resize);observer.observe(root);resize();
-    let frame=0;const animate=()=>{frame=requestAnimationFrame(animate);pawns.forEach(p=>{const active=stateRef.current.players?.[stateRef.current.turn]?.color===p.color&&stateRef.current.die!==null;p.mesh.position.y=.24+(active?.035*Math.sin(performance.now()*.006):0)});renderer.render(scene,camera)};animate();
+    let frame=0;const animate=()=>{frame=requestAnimationFrame(animate);const st=stateRef.current;const signature=JSON.stringify({players:st.players?.map(p=>({color:p.color,tokens:p.tokens.map(t=>t.step)})),turn:st.turn,die:st.die});if(signature!==lastSignature){lastSignature=signature;renderPawns()}pawns.forEach(p=>{const active=stateRef.current.players?.[stateRef.current.turn]?.color===p.color&&stateRef.current.die!==null;p.mesh.position.y=.24+(active?.035*Math.sin(performance.now()*.006):0)});renderer.render(scene,camera)};animate();
     return()=>{cancelAnimationFrame(frame);observer.disconnect();renderer.domElement.removeEventListener("pointerdown",handleClick);pawns.forEach(p=>scene.remove(p.mesh));scene.traverse(o=>{const m=o as THREE.Mesh;if(m.geometry)m.geometry.dispose();if(Array.isArray(m.material))m.material.forEach(v=>v.dispose());else if(m.material)m.material.dispose()});renderer.dispose();renderer.domElement.remove();};
   },[]);
-  useEffect(()=>{const root=host.current;if(!root)return;const canvas=root.querySelector("canvas");if(!canvas)return;const event=new Event("ludo-state-change");canvas.dispatchEvent(event);},[players,turn,die]);
   return <div className="ludo-3d-stage" ref={host} aria-label="Interactive three-dimensional Ludo board"><div className="ludo-3d-hint">3D BOARD · DRAG TO INSPECT</div></div>;
 }

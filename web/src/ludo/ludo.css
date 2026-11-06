@@ -56,3 +56,63 @@
 .ludo-turn h2{color:#f8e8bd}
 .gold-button{box-shadow:inset 0 1px 0 #fff8,0 4px 0 #765522,0 8px 15px #0004}
 @media(max-width:800px){.ludo-board-wrap{padding:9px;border-radius:14px}.ludo-board-wrap:before{inset:4px}.ludo-board:after{font-size:clamp(15px,5vw,27px)}}
+
+
+/* Cohesive Royal Club treatment: emerald first, restrained gold accents.
+   Keep the board visually native to the existing site rather than a separate wooden theme. */
+.ludo-board-wrap{
+  padding:10px;border:1px solid #987b42;border-radius:16px;
+  background:linear-gradient(145deg,#174735,#09281e 72%,#061b14);
+  box-shadow:inset 0 0 0 2px #d9b96f22,0 18px 42px #0005;
+}
+.ludo-board-wrap:before{
+  inset:4px;border:1px solid #d9b96f66;border-radius:11px;
+  box-shadow:inset 0 0 0 1px #ffffff0d;
+}
+.ludo-board{
+  border:1px solid #b8954e;
+  background:#eee8d8;
+  box-shadow:inset 0 0 0 3px #d9b96f33,0 3px 9px #0006;
+}
+.ludo-board:after{
+  left:43%;top:43%;width:14%;height:14%;
+  background:radial-gradient(circle at 35% 28%,#fff2c5,#d9b96f 58%,#80602d);
+  color:#0b3327;font-size:clamp(14px,2.2vw,25px);
+  text-shadow:0 1px 0 #fff9;
+}
+.ludo-cell{
+  border:1px solid #a99b7b55;
+  background:linear-gradient(145deg,#fbf8ef,#e9e1cd);
+  box-shadow:none;
+}
+.ludo-cell.home-red{background:linear-gradient(145deg,#e96c67,#b8323d)}
+.ludo-cell.home-green{background:linear-gradient(145deg,#48b982,#16764f)}
+.ludo-cell.home-yellow{background:linear-gradient(145deg,#f2d36b,#c49a31)}
+.ludo-cell.home-blue{background:linear-gradient(145deg,#70a9e8,#326da9)}
+.ludo-cell.lane-red{background:#f4c7c0}
+.ludo-cell.lane-green{background:#c0e3cf}
+.ludo-cell.lane-yellow{background:#f3e4b5}
+.ludo-cell.lane-blue{background:#c9dcf1}
+.ludo-cell.safe{background:radial-gradient(circle,#f8f0d9 0 29%,#c9a95f 31% 37%,#eee3c6 39% 100%)}
+.ludo-token{
+  border:1px solid #ffffffcc;border-bottom:2px solid #0005;
+  box-shadow:inset 0 2px 3px #ffffff9c,inset 0 -3px 4px #0004,0 2px 4px #0005;
+  background:radial-gradient(circle at 32% 24%,#ffffff 0 4%,#ffffff99 8%,var(--token) 38%,#222 155%);
+  transform:translateY(-1px);
+}
+.ludo-token:after{left:24%;top:14%;width:22%;height:13%;background:#ffffffa6;filter:blur(.7px)}
+.ludo-token.in-home{border:2px solid #f8e9bd;box-shadow:inset 0 2px 4px #fff9,inset 0 -3px 4px #0005,0 2px 4px #0006}
+.ludo-die{
+  border:1px solid #d9b96f;border-bottom:3px solid #987b42;border-radius:13px;
+  background:linear-gradient(145deg,#fff9e9,#e8d9b2);
+  box-shadow:inset 0 1px 0 #fff,0 5px 0 #765b31,0 9px 16px #0004;
+}
+.ludo-controls{
+  border:1px solid #41634f;
+  background:linear-gradient(145deg,#10372a,#09251c);
+  box-shadow:inset 0 1px 0 #ffffff12,0 12px 28px #0003;
+}
+.ludo-turn h2{color:#f6f0df}
+.ludo-score{border-bottom-color:#31534488}
+.ludo-board-wrap,.ludo-board,.ludo-cell,.ludo-token,.ludo-die{transition:box-shadow .2s ease,filter .2s ease}
+@media(max-width:800px){.ludo-board-wrap{padding:8px;border-radius:13px}.ludo-board-wrap:before{inset:3px}}

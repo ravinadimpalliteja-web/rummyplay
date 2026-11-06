@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { RoomClient, deviceToken, randomPasscode, saveRoom, savedRoom, serverUrl, type NetStatus } from "../domain/online";
 import { BOARD_VERSION, CHAT_EMOJIS, CHAT_PHRASES, RARE_LADDERS, TIMING, newGame, roll, rollDie, rollLucky, rungsOf, snakeSlideMs, turnOf, type LastRoll, type SLGame } from "./engine";
-import { MODELS, MODEL_IDS, NUM_FONT, OFF, PIECE_H, SHARED, SHARED3D, THEMES, THEME_IDS, W, center, layoutIssues, numberAt, paintBase, paintBoard, paintPiece, paintSnakeBulge, paintSnakeMouth, snakePath, spot, spot3D, type Look, type ModelId, type Pt, type ThemeId } from "./board";
+import { MODELS, MODEL_IDS, NUM_FONT, OFF, PIECE_H, SHARED, SHARED3D, THEMES, THEME_IDS, W, center, layoutIssues, numberAt, paintBase, paintBoard, paintNumberLayer, paintPiece, S, spot, spot3D, type Look, type ModelId, type Pt, type ThemeId } from "./board";
 import { fitView, planeStyle, project, squash, type View } from "./view3d";
+import { SnakeArt, type SnakeOverlay } from "./snake2d";
 import { setSound, sfx, soundOn, unlock } from "./sound";
 import { celebrate } from "./confetti";
 import TokenPicker from "./TokenPicker";
@@ -143,7 +144,9 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
   const bubbleId = useRef(0);
   const clientRef = useRef<RoomClient | null>(null), skew = useRef(0), lastPhase = useRef<string | null>(null);
   const disp = useRef<Record<number, Disp | null>>({}), dirty = useRef(true);
-  const overlay = useRef<{ mouth?: { head: number; open: number }; bulge?: { head: number; k: number; color: string } }>({});
+  const overlay = useRef<SnakeOverlay>({});
+  /** The painted snakes on the lighter board (the WebGL board has its own). */
+  const snakeArt = useRef<SnakeArt | null>(null), numRef = useRef<HTMLCanvasElement>(null);
   const animatedN = useRef<number | null>(null), chain = useRef<Promise<void>>(Promise.resolve());
   /** Short-lived effects that outlive a move: gold sparkles from a climb and the ring when a token lands. */
   const effects = useRef<{ sparks: { x: number; y: number; h: number; born: number }[]; burst: { x: number; y: number; born: number } | null }>({ sparks: [], burst: null });
@@ -318,12 +321,14 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     const paint = () => {
       const dpr = Math.min(2.5, window.devicePixelRatio || 1), pd = Math.min(2, dpr);
       const t0 = performance.now();
-      paintBoard(board, Math.min(2400, Math.round(geo.B * dpr * (geo.A ? 1.3 : 1))) / W, look);
+      const bdpr = Math.min(2400, Math.round(geo.B * dpr * (geo.A ? 1.3 : 1))) / W;
+      paintBoard(board, bdpr, look, { numbers: false });
+      if (numRef.current) paintNumberLayer(numRef.current, bdpr, look);
       if (DEBUG) (window as unknown as { __slPaints?: number[] }).__slPaints = [...((window as unknown as { __slPaints?: number[] }).__slPaints ?? []), Math.round(performance.now() - t0)];
       for (const c of [base, pieces]) { c.width = Math.round(geo.sw * pd); c.height = Math.round(geo.sh * pd); }
       const bg = base.getContext("2d")!; bg.setTransform(pd, 0, 0, pd, 0, 0);
       paintBase(bg, (x, y, z) => project(geo, x, y, z), look);
-      fx.width = fx.height = Math.round(Math.min(1600, geo.B * pd));
+      fx.width = fx.height = Math.round(Math.min(lowPower() ? 900 : 1600, geo.B * pd));
       dirty.current = true;
     };
     paint();
@@ -351,12 +356,26 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
   const glPrev = useRef(0), glGaps = useRef<number[]>([]);
   useEffect(() => {
     if (sub !== "table") return;
-    let raf = 0, fxUsed = true;
+    let raf = 0, lastSnakes = 0, snakesBusy = true, paintMs = 6, lastRaf = 0, frameEma = 16, backoff = 0;
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)");
+    // the snakes slither at about 30 fps (20 on slower phones); if painting them is slow on this device, less often, so
+    // they never take more than about a quarter of the time and the rest of the page stays smooth
+    // and if the page's own frame rate sags while they slither (the cost of turning the layer into pixels, which the
+    // paint timer cannot see), back off further until it recovers
+    const baseGap = lowPower() ? 50 : 33, snakeGap = () => Math.max(baseGap, paintMs * 4, backoff);
     const frame = () => {
       raf = requestAnimationFrame(frame);
-      const sc = sceneRef.current;
+      const sc = sceneRef.current, now = performance.now();
+      if (lastRaf) frameEma = frameEma * .9 + Math.min(250, now - lastRaf) * .1;
+      lastRaf = now;
+      if (frameEma > 26) backoff = Math.min(300, Math.max(baseGap, backoff) * 1.04 + 1); else if (frameEma < 19) backoff = Math.max(0, backoff * .97 - .5);
+      // the snakes keep slithering while the page is visible (not with reduced motion); heads keep turning until done
+      const motion = !reduce.matches && !document.hidden, swallowing = !!overlay.current.mouth || !!overlay.current.bulge;
+      const snakesDue = (motion || snakesBusy || swallowing) && now - lastSnakes >= (swallowing ? baseGap : snakeGap());
+      const tokens = () => { const t = tableRef.current; return t ? t.order.map(s => t.pos[s] ?? 0) : []; };
       if (sc) {
         const t = tableRef.current;
+        if (snakesDue) dirty.current = true;
         if (!dirty.current) return;                                     // draw only when something changed (saves battery)
         dirty.current = false;
         // watch the frame rate while things move; if this device struggles, step the 3D down, and in the end use the lighter board
@@ -370,20 +389,25 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
         }
         if (!t) return;
         const turn = rollingRef.current ?? (t.phase === "playing" ? t.turn : -1), fx3 = liveEffects();
-        sc.frame(t.order.flatMap(s => { const p = disp.current[s]; return p ? [{ seat: s, piece: t.pieces[s], color: COLORS[s], x: p.x, y: p.y, h: p.h ?? 0, s: p.s ?? 1, active: s === turn, lean: p.lean, sway: p.sway, dir: p.dir }] : []; }), { ...overlay.current, ...fx3 });
+        snakesBusy = sc.frame(t.order.flatMap(s => { const p = disp.current[s]; return p ? [{ seat: s, piece: t.pieces[s], color: COLORS[s], x: p.x, y: p.y, h: p.h ?? 0, s: p.s ?? 1, active: s === turn, lean: p.lean, sway: p.sway, dir: p.dir }] : []; }), { ...overlay.current, ...fx3, tokens: tokens(), motion });
+        if (snakesDue) { lastSnakes = now; if (DEBUG) (window as unknown as { __slSnakeFrames?: number }).__slSnakeFrames = ((window as unknown as { __slSnakeFrames?: number }).__slSnakeFrames ?? 0) + 1; }
         return;
       }
       const v = geoRef.current, pc = piecesRef.current, fx = fxRef.current;
-      if (!dirty.current || !v || !pc || !fx || !pc.width) return;
-      dirty.current = false;
-      const t = tableRef.current, ov = overlay.current, pd = pc.width / v.sw;
-      if (fxUsed || ov.bulge || ov.mouth) {
+      if (!v || !pc || !fx || !pc.width) return;
+      // the lighter board: the snake layer repaints on its own clock, the tokens only when something moved
+      if (snakesDue && fx.width) {
+        const art = snakeArt.current ?? (snakeArt.current = new SnakeArt(lowPower() ? 2 : 2.6));
         const f = fx.getContext("2d")!; f.setTransform(1, 0, 0, 1, 0, 0); f.clearRect(0, 0, fx.width, fx.height);
         const fs = fx.width / W; f.setTransform(fs, 0, 0, fs, 0, 0);
-        if (ov.bulge) paintSnakeBulge(f, ov.bulge.head, ov.bulge.k, ov.bulge.color);
-        if (ov.mouth) paintSnakeMouth(f, ov.mouth.head, ov.mouth.open);
-        fxUsed = !!(ov.bulge || ov.mouth);
+        snakesBusy = art.paint(f, now, overlay.current, tokens(), motion); lastSnakes = now;
+        paintMs = paintMs * .8 + (performance.now() - now) * .2;
+        if (DEBUG) (window as unknown as { __slSnakePaintMs?: number }).__slSnakePaintMs = paintMs;
+        if (DEBUG) (window as unknown as { __slSnakeFrames?: number }).__slSnakeFrames = ((window as unknown as { __slSnakeFrames?: number }).__slSnakeFrames ?? 0) + 1;
       }
+      if (!dirty.current) return;
+      dirty.current = false;
+      const t = tableRef.current, pd = pc.width / v.sw;
       const g = pc.getContext("2d")!; g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, pc.width, pc.height); g.setTransform(pd, 0, 0, pd, 0, 0);
       if (!t) return;
       const turn = rollingRef.current ?? (t.phase === "playing" ? t.turn : -1), out: typeof boxes.current = [];
@@ -420,6 +444,21 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
       disp.current[t.order[0]] = { ...at(k), h: 5, lean: .32, sway: .18, dir };
       frozenFx.current = { sparks: [.08, .16, .24, .32].flatMap((d, i) => [0, 1, 2].map(j => ({ ...at(Math.max(0, k - d)), x: at(Math.max(0, k - d)).x + (j - 1) * 9, h: 4 + j * 5, age: .15 + i * .2 }))), burst: { ...center(b), k: .35 } };
       dirty.current = true;
+    };
+    /* a still of the swallow (the snake on `head` facing `facingDeg` degrees, jaws `open` 0..1, a token at its mouth),
+       for photos; any other overlay call (or __slOverlay({})) ends it */
+    (window as unknown as { __slSwallowStill?: (head: number, facingDeg: number, open?: number) => void }).__slSwallowStill = (head, facingDeg, open = 1) => {
+      const t = tableRef.current; if (!t) return;
+      const facing = (facingDeg * Math.PI) / 180, hc = center(head);
+      overlay.current = { mouth: { head, open, facing, lunge: .55, tongue: .75, still: true } };
+      disp.current[t.order[0]] = { x: hc.x + Math.cos(facing) * S * .78, y: hc.y + Math.sin(facing) * S * .78, s: .8 };   // the token just in front of the open jaws
+      dirty.current = true;
+    };
+    /* tests: the snake heads' angles, and moving the tokens in the practice game itself (one square per seat) */
+    (window as unknown as { __slSnakes?: () => unknown }).__slSnakes = () => sceneRef.current?.snakeState() ?? snakeArt.current?.state() ?? null;
+    (window as unknown as { __slSetPos?: (sq: number[]) => void }).__slSetPos = (sq) => {
+      setLocal(g => (g ? { ...g, pos: Object.fromEntries(g.order.map((s, i) => [s, sq[i] ?? g.pos[s]])), last: null } : g));
+      animatedN.current = null; window.setTimeout(settle, 30);
     };
     /* place the tokens on given squares (one per seat, 0 = waiting), as a test of where they stand */
     (window as unknown as { __slPlace?: (sq: number[]) => void }).__slPlace = (sq) => {
@@ -513,7 +552,9 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     await wait(TIMING.settle);
     const seat = l.seat, here = () => disp.current[seat] ?? OFF;
     if (l.outcome === "enter") { sfx.hop(); await follow(seat, [OFF, spotOf(1)], TIMING.enter, 16); }
-    if (l.outcome === "move") for (let n = l.from + 1; n <= l.landed; n++) { sfx.hop(); await follow(seat, [here(), spotOf(n)], TIMING.step, 12); }
+    // landing on a snake's head: the token stops at the edge of the square, on the side it came from, facing the snake
+    const approach = (n: number) => { const c = center(n), p = center(Math.max(1, n - 1)), d = Math.hypot(p.x - c.x, p.y - c.y) || 1; return { x: c.x + ((p.x - c.x) / d) * S * .42, y: c.y + ((p.y - c.y) / d) * S * .42 }; };
+    if (l.outcome === "move") for (let n = l.from + 1; n <= l.landed; n++) { sfx.hop(); await follow(seat, [here(), n === l.landed && l.via === "snake" && n > 1 ? approach(n) : spotOf(n)], TIMING.step, 12); }
     if (l.via === "ladder") {
       /* The climb (same length as the server's pause): the token steps onto the foot of the ladder and leans in, then
          goes up rung by rung, hand over hand, swaying side to side with a little bounce on each rung and a trail of gold
@@ -540,17 +581,26 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     }
     if (l.via === "snake") {
       // the snake opens its mouth and swallows the pawn, a bulge slides down its body, and the pawn pops out at the tail
-      const head = l.landed, slide = snakeSlideMs(l.landed, l.to), color = COLORS[seat], at = center(head), path = snakePath(l.landed, l.to);
+      /* The strike, in the same time as before (TIMING.mouth, so online rooms stay in step): the head turns toward the
+         side the token came from (within about 150 ms), the tongue flicks out twice, the jaws gape, the snake lunges and
+         the token is drawn into its mouth, shrinking as the jaws close over it. Then a bulge in the player's colour
+         travels down the body to the tail and the head eases back to its resting angle. */
+      const head = l.landed, slide = snakeSlideMs(l.landed, l.to), color = COLORS[seat], at = center(head);
+      const facing = SnakeArt.facingFrom(head, Math.max(1, head - 1)), mouthAt = { x: at.x + Math.cos(facing) * 14, y: at.y + Math.sin(facing) * 14 };
       sfx.snake(TIMING.mouth * pace, slide * pace);
       const start = here();
       await tween(TIMING.mouth, t => {
-        overlay.current.mouth = { head, open: Math.min(1, t * 1.8) };
-        const k = Math.max(0, (t - .35) / .65);
-        disp.current[seat] = { x: start.x + (path[0].x - start.x) * k, y: start.y + (path[0].y - start.y) * k, s: 1 - k };
+        const u = Math.min(1, Math.max(0, (t - .08) / .34));
+        const tongue = t < .42 ? Math.abs(Math.sin(u * Math.PI * 2)) * (1 - u * .3) : 0;
+        const open = t < .15 ? 0 : t < .5 ? (t - .15) / .35 : t < .78 ? 1 : 1 - ((t - .78) / .22) * .7;
+        const lunge = t < .5 ? 0 : t < .68 ? (t - .5) / .18 : 1 - ((t - .68) / .32) * .8;
+        overlay.current.mouth = { head, open, facing, lunge, tongue };
+        const k = Math.max(0, (t - .62) / .38);
+        disp.current[seat] = { x: start.x + (mouthAt.x - start.x) * k, y: start.y + (mouthAt.y - start.y) * k, s: 1 - k };
       });
       disp.current[seat] = { ...at, s: 0 };
       await tween(slide, t => {
-        overlay.current.mouth = t < .25 ? { head, open: 1 - t * 4 } : undefined;
+        overlay.current.mouth = t < .2 ? { head, open: .3 * (1 - t / .2), facing, lunge: .2 * (1 - t / .2) } : undefined;
         overlay.current.bulge = { head, k: .03 + .97 * (t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2), color };
       });
       overlay.current = {};
@@ -731,8 +781,9 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
       </> : <>
         <canvas key="base" className="sl-base" ref={baseRef} style={geo ? { width: geo.sw + "px", height: geo.sh + "px" } : undefined} />
         <div className="sl-plane" style={geo ? planeStyle(geo) : { visibility: "hidden" }}><canvas className="sl-board" ref={boardRef} /></div>
+        <div className="sl-plane snakes" style={geo ? planeStyle(geo) : { visibility: "hidden" }}><canvas ref={fxRef} /></div>
+        <div className="sl-plane nums" style={geo ? planeStyle(geo) : { visibility: "hidden" }}><canvas ref={numRef} /></div>
         <canvas className="sl-pieces" ref={piecesRef} style={geo ? { width: geo.sw + "px", height: geo.sh + "px" } : undefined} />
-        <div className="sl-plane fx" style={geo ? planeStyle(geo) : { visibility: "hidden" }}><canvas ref={fxRef} /></div>
       </>}
       {banner && <div className={`sl-banner ${banner.big ? "big" : ""}`} role="status">{banner.text}</div>}
       {showEnd && <div className="sl-win">

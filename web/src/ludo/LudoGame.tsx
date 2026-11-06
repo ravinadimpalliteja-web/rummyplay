@@ -1,0 +1,43 @@
+import {useState} from "react";
+import "./ludo.css";
+type C="red"|"green"|"yellow"|"blue";type T={id:number;step:number};type P={color:C;name:string;tokens:T[]};
+const colors:C[]=["red","green","yellow","blue"],starts=[0,13,26,39],safe=[0,8,13,21,26,34,39,47];
+const path:[number,number][]=[[6,1],[6,2],[6,3],[6,4],[6,5],[5,6],[4,6],[3,6],[2,6],[1,6],[0,6],[0,7],[0,8],[1,8],[2,8],[3,8],[4,8],[5,8],[6,9],[6,10],[6,11],[6,12],[6,13],[6,14],[7,14],[8,14],[8,13],[8,12],[8,11],[8,10],[8,9],[9,8],[10,8],[11,8],[12,8],[13,8],[14,8],[14,7],[14,6],[13,6],[12,6],[11,6],[10,6],[9,6],[8,5],[8,4],[8,3],[8,2],[8,1],[8,0],[7,0],[6,0]];
+const homes:Record<C,[number,number][] >={red:[[1,1],[1,4],[4,1],[4,4]],green:[[1,10],[1,13],[4,10],[4,13]],yellow:[[10,10],[10,13],[13,10],[13,13]],blue:[[10,1],[10,4],[13,1],[13,4]]};
+const lanes:Record<C,[number,number][] >={red:[[7,1],[7,2],[7,3],[7,4],[7,5],[7,6]],green:[[1,7],[2,7],[3,7],[4,7],[5,7],[6,7]],yellow:[[7,13],[7,12],[7,11],[7,10],[7,9],[7,8]],blue:[[13,7],[12,7],[11,7],[10,7],[9,7],[8,7]]};
+const pos=(c:C,s:number)=>s<51?(starts[colors.indexOf(c)]+s)%52:-1;
+export default function LudoGame({onHome}:{onHome:()=>void}){
+ const [count,setCount]=useState(4),[names,setNames]=useState(["You","Player 2","Player 3","Player 4"]),[players,setPlayers]=useState<P[]|null>(null),[turn,setTurn]=useState(0),[die,setDie]=useState<number|null>(null),[msg,setMsg]=useState("Roll a six to bring a token onto the board."),[winner,setWinner]=useState<C|null>(null),[busy,setBusy]=useState(false);
+ const start=()=>{setPlayers(colors.slice(0,count).map((color,i)=>({color,name:names[i]||("Player "+(i+1)),tokens:Array.from({length:4},(_,id)=>({id,step:-1}))})));setTurn(0);setDie(null);setWinner(null);setBusy(false);setMsg("Roll a six to bring a token onto the board.")};
+ const roll=()=>{if(!players||die!==null||busy||winner)return;const n=1+Math.floor(Math.random()*6);setDie(n);const can=players[turn].tokens.some(t=>t.step===-1?n===6:t.step+n<=56);if(!can){setMsg(n===6?"No legal move. Roll again.":"No legal move. Turn passes.");setBusy(true);window.setTimeout(()=>{setDie(null);setTurn(t=>(t+1)%players.length);setBusy(false)},850)}else setMsg(n===6?"Six! Select a token to move.":"Select a highlighted token.")};
+ const move=(id:number)=>{if(!players||die===null||busy||winner)return;const p=players[turn],old=p.tokens[id];if(old.step===-1&&die!==6)return;if(old.step>=0&&old.step+die>56)return;const next=players.map(x=>({...x,tokens:x.tokens.map(t=>({...t}))}));const step=old.step===-1?0:old.step+die;next[turn].tokens[id].step=step;let captured=0;if(step<51){const square=pos(p.color,step);if(!safe.includes(square))next.forEach((op,i)=>{if(i!==turn)op.tokens.forEach(t=>{if(t.step>=0&&t.step<51&&pos(op.color,t.step)===square){t.step=-1;captured++}})})}setPlayers(next);if(next[turn].tokens.every(t=>t.step===56)){setWinner(p.color);setMsg(p.name+" wins Royal Club Ludo!");setDie(null);return}const bonus=die===6||captured>0||step===56;setMsg(captured?"Captured "+captured+" token(s)! Roll again.":bonus?"Bonus turn! Roll again.":"Token moved. Next player's turn.");if(!bonus)setTurn(t=>(t+1)%players.length);setDie(null)};
+
+ const tokenAt=(r:number,c:number)=>{
+   if(!players)return null;
+   const found=players.flatMap((p,pi)=>p.tokens.filter(t=>{
+     if(t.step===-1)return homes[p.color][t.id][0]===r&&homes[p.color][t.id][1]===c;
+     if(t.step===56)return false;
+     const xy=t.step>=51?lanes[p.color][t.step-51]:path[pos(p.color,t.step)];
+     return xy[0]===r&&xy[1]===c;
+   }).map(t=>({p,t,pi})));
+   return found;
+ };
+ const cell=(r:number,c:number)=>{
+   let cls="";let home:C|null=null;
+   if(r<6&&c<6)home="red";else if(r<6&&c>8)home="green";else if(r>8&&c>8)home="yellow";else if(r>8&&c<6)home="blue";
+   if(home)cls="home-"+home;
+   const lane=colors.find(k=>lanes[k].some(([y,x])=>y===r&&x===c));
+   if(lane)cls="lane-"+lane;
+   const pi=path.findIndex(([y,x])=>y===r&&x===c);
+   const isSafe=pi>=0&&safe.includes(pi);
+   if(isSafe)cls+=" safe";
+   if(r===7&&c===7)cls="center";
+   const tokens=tokenAt(r,c);
+   return <div key={r+"-"+c} className={"ludo-cell "+cls}>
+     {home&&r%3===1&&c%3===1&&<span className="ludo-home-mark"/>}
+     {isSafe&&<span className="safe-star">✦</span>}
+     {tokens?.map(({p,t,pi:playerIndex})=><button key={p.color+"-"+t.id} aria-label={p.name+" token "+(t.id+1)} className={"ludo-token "+p.color+(t.step===-1?" in-home":"")+(playerIndex===turn&&die!==null&&((t.step===-1&&die===6)||(t.step>=0&&t.step+die<=56))?" selectable":"")} onClick={()=>move(t.id)} disabled={playerIndex!==turn||die===null||busy||winner!==null||!((t.step===-1&&die===6)||(t.step>=0&&t.step+die<=56))}>{String(t.id+1)}</button>)}
+   </div>;
+ };
+ return <section className="ludo-page"><header className="ludo-top"><button className="back-link" onClick={onHome}>← All games</button><div className="eyebrow">ROYAL CLUB · BOARD GAMES</div><h1>Royal <em>Ludo</em></h1><p>Four colours. One finish line. Bring every token home.</p></header>{!players?<div className="ludo-setup"><span className="eyebrow">NEW MATCH</span><h2>Choose your table</h2><p>Traditional Indian Ludo · 2 to 4 players</p><label>Players <select value={count} onChange={e=>setCount(Number(e.target.value))}>{[2,3,4].map(n=><option key={n}>{n}</option>)}</select></label><div className="ludo-name-grid">{colors.slice(0,count).map((c,i)=><label key={c}><span className={"ludo-swatch "+c}/>{["Red","Green","Yellow","Blue"][i]}<input value={names[i]} onChange={e=>setNames(v=>v.map((n,j)=>j===i?e.target.value:n))}/></label>)}</div><button className="gold-button" onClick={start}>Start local match →</button><p className="ludo-note">Online private rooms and matchmaking will be connected in the multiplayer integration phase.</p></div>:<><div className="ludo-matchbar"><button className="ghost-button" onClick={()=>setPlayers(null)}>New game</button><span>{players.map((p,i)=><b key={p.color} className={"turn-pill "+p.color+(i===turn?" current":"")}>{p.name}</b>)}</span><button className="ghost-button" onClick={onHome}>Exit</button></div><div className="ludo-layout"><div className="ludo-board-wrap"><div className="ludo-board" role="grid" aria-label="Ludo board">{Array.from({length:15},(_,r)=>Array.from({length:15},(_,c)=>cell(r,c)))}</div></div><aside className="ludo-controls"><div className="ludo-turn"><span className={"ludo-swatch "+players[turn].color}/><small>NOW PLAYING</small><h2>{players[turn].name}</h2><p>{msg}</p></div><button className="ludo-die" disabled={die!==null||busy||!!winner} onClick={roll}>{die??"⚄"}<small>{die===null?"ROLL DICE":"SELECT TOKEN"}</small></button>{players.map(p=><div className="ludo-score" key={p.color}><span className={"ludo-swatch "+p.color}/><b>{p.name}</b><span>{p.tokens.filter(t=>t.step===56).length}/4 home</span></div>)}{winner&&<button className="gold-button" onClick={start}>Play again →</button>}</aside></div></>}</section>
+}

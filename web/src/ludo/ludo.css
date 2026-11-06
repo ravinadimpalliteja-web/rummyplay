@@ -133,3 +133,129 @@
   text-shadow:0 1px 0 #fff9;
   pointer-events:none;z-index:3;
 }
+
+
+/* Layout C — raised tabletop board, with the Royal Club emerald-and-gold finish.
+   Dimensionality is CSS-rendered; gameplay markup and board coordinates stay unchanged. */
+.ludo-board-wrap{
+  position:relative;
+  isolation:isolate;
+  padding:clamp(9px,1.4vw,15px);
+  border:1px solid #d9b96f;
+  border-radius:18px;
+  background:
+    linear-gradient(135deg,#f0d99d 0%,#8c6b36 7%,#174b38 12%,#09271d 50%,#1b503b 88%,#b18b4b 96%,#f0d99d 100%);
+  box-shadow:
+    0 3px 0 #071b16,
+    0 7px 0 #06150f,
+    0 13px 0 #04100c,
+    0 25px 38px #0009,
+    inset 0 1px 0 #fff8,
+    inset 0 -3px 7px #0008;
+  transform:perspective(1100px) rotateX(1.2deg);
+  transform-origin:50% 58%;
+}
+.ludo-board-wrap:before{
+  content:"";
+  position:absolute;
+  inset:5px;
+  border:1px solid #e4c77e99;
+  border-radius:12px;
+  box-shadow:inset 0 1px 0 #fff4,inset 0 -2px 4px #0005;
+  pointer-events:none;
+  z-index:4;
+}
+.ludo-board-wrap:after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  left:5%;right:5%;bottom:-13px;height:20px;
+  border-radius:50%;
+  background:#0009;
+  filter:blur(12px);
+}
+.ludo-board{
+  position:relative;
+  isolation:isolate;
+  border:2px solid #d5b66d;
+  background:#e9e4d5;
+  box-shadow:
+    0 2px 0 #8a6c37,
+    0 5px 0 #4b3b24,
+    0 8px 13px #0008,
+    inset 0 2px 5px #fff9,
+    inset 0 -3px 7px #13291e66;
+  transform:translateZ(0);
+}
+/* The central HOME remains a clean diamond, now with a raised metal-inlay finish. */
+.ludo-board:after{
+  content:"HOME";
+  left:43%;top:43%;width:14%;height:14%;
+  display:grid;place-items:center;
+  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);
+  border:1px solid #fff3;
+  background:linear-gradient(145deg,#fff3c8 0%,#e4c477 38%,#b58b42 72%,#795a2b 100%);
+  color:#0b3327;
+  font-family:'DM Sans',sans-serif;
+  font-size:clamp(6px,1vw,11px);
+  font-weight:900;
+  letter-spacing:.08em;
+  text-shadow:0 1px 0 #fff9;
+  filter:drop-shadow(0 2px 2px #0008);
+  pointer-events:none;
+  z-index:5;
+}
+.ludo-cell{
+  border:1px solid #8b806b66;
+  background:linear-gradient(145deg,#fffdf5 0%,#eee7d5 58%,#d9d0bc 100%);
+  box-shadow:
+    inset 0 1px 0 #fff,
+    inset 0 -1px 0 #a69a8066,
+    0 1px 1px #443b2b33;
+}
+.ludo-cell.home-red{background:linear-gradient(145deg,#f27e75 0%,#d44b4d 55%,#a92e39 100%);box-shadow:inset 0 2px 0 #ffffff66,inset 0 -2px 0 #6e202b66,0 1px 2px #0003}
+.ludo-cell.home-green{background:linear-gradient(145deg,#79d5a0 0%,#36a875 55%,#146b49 100%);box-shadow:inset 0 2px 0 #ffffff66,inset 0 -2px 0 #0b4c34aa,0 1px 2px #0003}
+.ludo-cell.home-yellow{background:linear-gradient(145deg,#ffeb91 0%,#e2bd4d 55%,#b98a24 100%);box-shadow:inset 0 2px 0 #ffffff88,inset 0 -2px 0 #80601d66,0 1px 2px #0003}
+.ludo-cell.home-blue{background:linear-gradient(145deg,#9bc8f5 0%,#5b98d8 55%,#2d639f 100%);box-shadow:inset 0 2px 0 #ffffff88,inset 0 -2px 0 #173f7066,0 1px 2px #0003}
+.ludo-cell.lane-red{background:linear-gradient(145deg,#fff4ef,#efb8b0)}
+.ludo-cell.lane-green{background:linear-gradient(145deg,#f2fff5,#adddc0)}
+.ludo-cell.lane-yellow{background:linear-gradient(145deg,#fffbea,#efdfa8)}
+.ludo-cell.lane-blue{background:linear-gradient(145deg,#f5f9ff,#b6d1ef)}
+.ludo-cell.safe{background:radial-gradient(circle at 40% 35%,#fff8dc 0 24%,#d8bb75 27% 36%,#f0e3c2 39% 70%,#d1c3a2 100%);box-shadow:inset 0 1px 2px #fff,0 1px 2px #0003}
+.ludo-token{
+  border:1px solid #fff;
+  border-bottom:3px solid #0007;
+  box-shadow:
+    inset 0 3px 4px #ffffffb8,
+    inset 0 -5px 6px #0006,
+    0 3px 2px #0005,
+    0 6px 7px #0005;
+  background:radial-gradient(circle at 31% 22%,#fff 0 4%,#ffffffb8 8%,var(--token) 38%,#18251e 155%);
+  transform:translateY(-2px);
+}
+.ludo-token:after{
+  left:22%;top:12%;width:29%;height:16%;
+  background:linear-gradient(90deg,#ffffffb8,#ffffff20);
+  filter:blur(1px);
+}
+.ludo-token.red{--token:#c52f39}
+.ludo-token.green{--token:#168653}
+.ludo-token.yellow{--token:#d4a51d}
+.ludo-token.blue{--token:#2769b9}
+.ludo-token.in-home{
+  border:2px solid #fff0c8;
+  box-shadow:inset 0 3px 5px #fff9,inset 0 -5px 6px #0006,0 3px 2px #0005,0 6px 7px #0005;
+}
+.ludo-token.selectable{outline:2px solid #fff;outline-offset:2px;animation:ludo-pulse 1s infinite alternate}
+.ludo-die{
+  border:1px solid #f0d99d;
+  border-bottom:4px solid #987b42;
+  background:linear-gradient(145deg,#fffdf3 0%,#f1e5c6 55%,#d2bd8b 100%);
+  box-shadow:inset 0 2px 0 #fff,0 4px 0 #765b31,0 9px 16px #0005;
+}
+@media(max-width:800px){
+  .ludo-board-wrap{transform:none;padding:8px;border-radius:13px;box-shadow:0 2px 0 #071b16,0 5px 0 #06150f,0 10px 22px #0008,inset 0 1px 0 #fff8}
+  .ludo-board-wrap:before{inset:3px}
+  .ludo-board:after{font-size:clamp(6px,1.5vw,10px)}
+}
+@media(prefers-reduced-motion:reduce){.ludo-token.selectable{animation:none}}

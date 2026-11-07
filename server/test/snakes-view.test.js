@@ -24,7 +24,7 @@ const [sy] = num(/export const spot = \(n: number\): Pt => \{ const c = center\(
 assert(/export const spot3D = \(n: number\): Pt => center\(n\);/.test(src), 'the 3D board puts a lone token exactly on the centre of its square');
 const [H] = num(/export const PIECE_H = (\d+);/, 'PIECE_H');
 const tokenW = H * 100 / 120 * .68;                                     // the visible figure is 68% of its picture's width
-assert(tokenW >= S * .45 && tokenW <= S * .6, `a lone token is about half a square wide, like the 3D figures (${(tokenW / S).toFixed(2)})`);
+assert(tokenW >= S * .5 && tokenW <= S * .66, `a lone token is a little over half a square wide (${(tokenW / S).toFixed(2)})`);
 assert(/y: p\.y - S \/ 2 \+ size \* \.8 \+ 3/.test(src), 'square numbers sit along the top edge of their square');
 const scene = fs.readFileSync(path.join(__dirname, '../../web/src/snakes/scene3d.ts'), 'utf8');
 const order = ['cam.layers.set(L_BOARD); r.render', 'cam.layers.set(L_NUMBERS); r.render', 'cam.layers.set(L_TOKENS); r.render'].map((k) => scene.indexOf(k));

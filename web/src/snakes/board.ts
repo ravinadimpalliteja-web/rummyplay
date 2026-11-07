@@ -68,7 +68,7 @@ export const center = (n: number): Pt => {
 export const spot = (n: number): Pt => { const c = center(n); return { x: c.x, y: c.y + 9 }; };
 /** Tokens sharing a square (2 to 4), smaller, laid out around the middle and clear of the number in the front-left corner. */
 export const SHARED: Record<number, { pts: [number, number][]; s: number }> = {
-  2: { pts: [[-13, 4], [13, 4]], s: .58 }, 3: { pts: [[-12, -4], [12, -4], [12, 18]], s: .46 }, 4: { pts: [[-12, -4], [12, -4], [5, 16], [21, 16]], s: .4 },
+  2: { pts: [[-13, 4], [13, 4]], s: .51 }, 3: { pts: [[-12, -4], [12, -4], [12, 18]], s: .4 }, 4: { pts: [[-12, -4], [12, -4], [5, 16], [21, 16]], s: .35 },
 };
 /** WebGL 3D board: a lone token stands exactly on the centre of its square. */
 export const spot3D = (n: number): Pt => center(n);
@@ -540,7 +540,7 @@ export function ladderSteps(a: number, b: number, rungs: number): Pt[] {
     A contact shadow and a ring in the player's colour sit on the board; the active player's token also gets a gold glow.
     `lift` raises the token off the board (hops), in board units. Until `img` has loaded a plain disc is drawn. */
 /** Height of a standing token, in board units (a square is 60). */
-export const PIECE_H = 55;                       // token size: as wide on screen as the 3D board's figures (about half a square)
+export const PIECE_H = 63;                       // token size on the flat (top-down) and tilted boards: about 0.6 of a square wide
 export function paintPiece(g: CanvasRenderingContext2D, x: number, y: number, u: number, sq: number, ring: string, img: HTMLImageElement | null, active: boolean, scale = 1, lift = 0, lean = 0) {
   if (scale <= 0.02) return;
   const k = u * scale, h = PIECE_H * k, w = h * (100 / 120), top = y - lift * u;

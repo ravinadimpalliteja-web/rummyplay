@@ -61,18 +61,19 @@ export const center = (n: number): Pt => {
   if (row % 2) col = 9 - col;
   return { x: PAD + col * S + S / 2, y: PAD + (9 - row) * S + S / 2 };
 };
-/* Tokens stand in the middle of their square; each square's number sits in its front-left corner (nearest the players),
-   which a token in the middle never covers. */
+/* Tokens stand in the middle of their square. Each square's number sits along the top edge of its square, embossed with
+   no background, on its own layer over the ladders and snakes and under the tokens (100 keeps its corner under the
+   MOKSH plaque). */
 /** Flat or tilted picture board: where a lone token's stand touches the board, so its figure looks centred on the square. */
 export const spot = (n: number): Pt => { const c = center(n); return { x: c.x, y: c.y + 9 }; };
 /** Tokens sharing a square (2 to 4), smaller, laid out around the middle and clear of the number in the front-left corner. */
 export const SHARED: Record<number, { pts: [number, number][]; s: number }> = {
-  2: { pts: [[-12, 4], [13, 4]], s: .66 }, 3: { pts: [[-12, -4], [12, -4], [12, 18]], s: .56 }, 4: { pts: [[-12, -4], [12, -4], [5, 16], [21, 16]], s: .48 },
+  2: { pts: [[-13, 4], [13, 4]], s: .51 }, 3: { pts: [[-12, -4], [12, -4], [12, 18]], s: .4 }, 4: { pts: [[-12, -4], [12, -4], [5, 16], [21, 16]], s: .35 },
 };
 /** WebGL 3D board: a lone token stands exactly on the centre of its square. */
 export const spot3D = (n: number): Pt => center(n);
 export const SHARED3D: Record<number, { pts: [number, number][]; s: number }> = {
-  2: { pts: [[-15, -3], [15, -3]], s: .64 }, 3: { pts: [[-15, -10], [15, -10], [12, 12]], s: .54 }, 4: { pts: [[-15, -12], [15, -12], [4, 12], [22, 12]], s: .48 },
+  2: { pts: [[-15, -3], [15, -3]], s: .54 }, 3: { pts: [[-15, -10], [15, -10], [12, 12]], s: .45 }, 4: { pts: [[-15, -12], [15, -12], [4, 12], [22, 12]], s: .4 },
 };
 /** Where a token waits before entering (on the rim, just left of square 1). */
 export const OFF: Pt = { x: PAD * .4, y: center(1).y + 6 };
@@ -84,13 +85,13 @@ export const OFF: Pt = { x: PAD * .4, y: center(1).y + 6 };
    leaves from behind the head and slithers to the tail. Routes planned to keep every body clear of every ladder and
    every other snake (checked by a server test). */
 export const SNAKE_WAYPOINTS: Record<number, [number, number][]> = {
-  23: [[172, 472], [162, 444], [161, 498], [114, 537], [112, 592]],
-  27: [[412, 472], [442, 472], [402, 526], [412, 592]],
+  23: [[172, 472], [150, 500], [154, 538], [122, 566], [112, 592]],
+  27: [[412, 472], [436, 506], [430, 540], [396, 562], [412, 592]],
   36: [[292, 412], [290, 442], [343, 491], [263, 542], [292, 592]],
-  70: [[592, 232], [594, 262], [583, 307], [592, 352]],
+  70: [[592, 232], [600, 262], [578, 288], [598, 316], [574, 342], [548, 372]],
   87: [[412, 112], [447, 131], [396, 199], [440, 281], [412, 352]],
   95: [[352, 52], [317, 71], [360, 133], [273, 174], [292, 232]],
-  97: [[232, 52], [192, 52], [223, 153], [136, 229], [183, 333], [112, 412]],
+  97: [[232, 52], [231, 100], [214, 152], [146, 229], [183, 333], [112, 412]],
 };
 /** The snake drawn as a cobra: a raised, spread hood facing the arriving tokens. */
 export const COBRA_HEAD = 97;
@@ -186,7 +187,7 @@ const smooth = (a: number, b: number, x: number) => { const t = Math.max(0, Math
     as [r, g, b]. The picture is made at up to `maxScale` pixels per unit (smooth enough for stone and wood) and drawn
     scaled to the context's resolution. */
 function pixels(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, maxScale: number, shade: (u: number, v: number) => [number, number, number]) {
-  const t = g.getTransform(), sc = Math.max(.6, Math.min(maxScale, Math.hypot(t.a, t.b)));
+  const t = g.getTransform(), sc = Math.max(.6, Math.min(maxScale * LOW_TEX, Math.hypot(t.a, t.b)));
   const pw = Math.max(2, Math.ceil(w * sc)), ph = Math.max(2, Math.ceil(h * sc));
   const c = document.createElement("canvas"); c.width = pw; c.height = ph;
   const cx = c.getContext("2d")!, img = cx.createImageData(pw, ph), d = img.data;
@@ -197,6 +198,8 @@ function pixels(g: CanvasRenderingContext2D, x: number, y: number, w: number, h:
   cx.putImageData(img, 0, 0);
   g.save(); g.beginPath(); g.rect(x, y, w, h); g.clip(); g.imageSmoothingQuality = "high"; g.drawImage(c, x, y, w, h); g.restore();
 }
+/** Slower phones paint the natural stone and wood textures at a lower resolution (they still look natural at phone size). */
+const LOW_TEX = typeof navigator !== "undefined" && (((navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8) <= 4 || (navigator.hardwareConcurrency ?? 8) <= 6) ? .62 : 1;
 const lerp3 = (a: number[], b: number[], t: number): [number, number, number] => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 
 /** Natural wood filling a rectangle: growth rings bent by slow waves, darker latewood bands, fine streaks along the
@@ -416,11 +419,13 @@ function start(g: CanvasRenderingContext2D, p: Pt) {
 
 /** Square numbers, drawn last so snakes and ladders never hide them: bold figures in the front-left corner of each square
     (nearest the players, where a token standing in the middle never covers them), dark with a light outline. */
-export const NUM_FONT = "800 19px 'DM Sans', system-ui, sans-serif";
-export const numberAt = (n: number): Pt => { const p = center(n); return { x: p.x - S / 2 + 4.5, y: p.y + S / 2 - 5.5 }; };
+export const NUM_FONT = "800 15px 'DM Sans', system-ui, sans-serif";
+/** Where square n's number sits (text baseline, left end) for a font of `size` px: along the top edge of the square;
+    100 keeps its front-left corner, under the MOKSH plaque. */
+export const numberAt = (n: number, size = 19): Pt => { const p = center(n); return n === 100 ? { x: p.x - S / 2 + 4.5, y: p.y + S / 2 - 5.5 } : { x: p.x - S / 2 + 4.5, y: p.y - S / 2 + size * .8 + 3 }; };
 /** The 3D board's numbers are larger: its tokens stand in the middle of their squares, clear of the corner. */
-export const NUM_FONT_3D = "800 24px 'DM Sans', system-ui, sans-serif";
-export const numberAt3D = numberAt;
+export const NUM_FONT_3D = "800 18px 'DM Sans', system-ui, sans-serif";
+export const numberAt3D = (n: number) => numberAt(n, 18);
 /** The square numbers, made to read at a glance: each sits on a soft light label (so marble veins, wood grain or a
     snake passing underneath never muddle it), with a crisp light outline around dark, heavy digits. */
 function numbers(g: CanvasRenderingContext2D, pal: Pal, font = NUM_FONT) {
@@ -428,11 +433,18 @@ function numbers(g: CanvasRenderingContext2D, pal: Pal, font = NUM_FONT) {
   g.textAlign = "left"; g.textBaseline = "alphabetic"; g.lineJoin = "round"; g.font = font;
   const size = +(font.match(/(\d+)px/)?.[1] ?? 19);
   for (let n = 1; n <= 100; n++) {
-    const { x, y } = numberAt(n), t = String(n), tw = g.measureText(t).width;
-    if (n !== 100) { rr(g, x - 2.5, y - size * .8, tw + 5, size * .96, 4); g.fillStyle = rgba("#fffdf6", .62); g.fill(); }
-    g.lineWidth = size * .28; g.strokeStyle = pal.inkEdge; g.strokeText(t, x, y);
-    if (n === 100) { g.strokeStyle = "rgba(4,40,24,.95)"; g.strokeText(t, x, y); }
-    g.fillStyle = n === 100 ? "#ffe39a" : pal.ink; g.fillText(t, x, y);
+    const { x, y } = numberAt(n, size), t = String(n), tw = g.measureText(t).width;
+    if (n === 100) {                                     // 100: gold on the emerald MOKSH plaque
+      g.lineWidth = size * .28; g.strokeStyle = "rgba(4,40,24,.95)"; g.strokeText(t, x, y);
+      g.fillStyle = "#ffe39a"; g.fillText(t, x, y); continue;
+    }
+    // embossed into the board, with no background: a soft shadow below-right, a light edge above-left (light comes from
+    // the top left), then the digits themselves in the board's ink, slightly see-through so the surface shows
+    void tw;
+    const o = Math.max(.6, size * .05);
+    g.fillStyle = "rgba(0,0,0,.32)"; g.fillText(t, x + o, y + o);
+    g.fillStyle = "rgba(255,255,255,.85)"; g.fillText(t, x - o * .8, y - o * .8);
+    g.fillStyle = rgba(pal.ink.startsWith("#") ? pal.ink : "#2a1d10", .8); g.fillText(t, x, y);
   }
   g.restore();
 }
@@ -492,9 +504,9 @@ function varnish(g: CanvasRenderingContext2D) {
 }
 
 /** Paints the static board (frame, squares, ladders, snakes, numbers) for one model and theme into `layer` at the given pixel ratio. */
-/** The board picture (frame, squares, ladders, varnish). The snakes are painted and animated separately (snake2d.ts)
-    on a layer above this one; `numbers: false` leaves the square numbers out, for boards that show them on their own
-    layer above the snakes (paintNumberLayer), so a snake never hides a number. */
+/** The board picture (frame, squares, ladders, varnish, and the numbers unless `numbers: false`). The snakes are painted
+    and animated separately (snake2d.ts) on a layer above this one; the lighter board shows the numbers on their own
+    layer above the snakes (paintNumberLayer). */
 export function paintBoard(layer: HTMLCanvasElement, dpr: number, look: Look = DEFAULT_LOOK, opts: { numbers?: boolean } = {}) {
   const pal = palette(look);
   layer.width = layer.height = Math.round(W * dpr);
@@ -528,7 +540,7 @@ export function ladderSteps(a: number, b: number, rungs: number): Pt[] {
     A contact shadow and a ring in the player's colour sit on the board; the active player's token also gets a gold glow.
     `lift` raises the token off the board (hops), in board units. Until `img` has loaded a plain disc is drawn. */
 /** Height of a standing token, in board units (a square is 60). */
-export const PIECE_H = 46;
+export const PIECE_H = 63;                       // token size on the flat (top-down) and tilted boards: about 0.6 of a square wide
 export function paintPiece(g: CanvasRenderingContext2D, x: number, y: number, u: number, sq: number, ring: string, img: HTMLImageElement | null, active: boolean, scale = 1, lift = 0, lean = 0) {
   if (scale <= 0.02) return;
   const k = u * scale, h = PIECE_H * k, w = h * (100 / 120), top = y - lift * u;
@@ -597,6 +609,18 @@ function leaves(g: CanvasRenderingContext2D, x: number, y: number, out: number, 
 /* ---------- textures for the WebGL 3D board (scene3d.ts) ---------- */
 /** The playing surface (10 x 10 squares, no rim) as a texture for one model and theme, with the START plaque and the
     MOKSH engraving. `px` is the canvas size in pixels. Numbers are painted separately. */
+/* The 3D board's textures take a moment to paint (natural stone and wood are painted pixel by pixel), so each is
+   painted once per look and size and kept: the game paints them ahead, while the player is choosing tokens, and the
+   board then appears at once. */
+const texCache = new Map<string, HTMLCanvasElement>();
+function cached(key: string, paint: (c: HTMLCanvasElement) => void) {
+  let c = texCache.get(key);
+  if (!c) { c = document.createElement("canvas"); paint(c); texCache.set(key, c); if (texCache.size > 12) texCache.delete(texCache.keys().next().value!); }
+  return c;
+}
+export const surfaceCanvas = (px: number, look: Look) => cached(`s-${lookKey(look)}-${px}`, (c) => paintSurface(c, px, look));
+export const numbersCanvas = (px: number, look: Look) => cached(`n-${lookKey(look)}-${px}`, (c) => paintNumbers(c, px, look));
+export const plankCanvas = (look: Look) => cached(`p-${lookKey(look)}`, (c) => paintPlank(c, 1024, 96, look, 11));
 export function paintSurface(c: HTMLCanvasElement, px: number, look: Look = DEFAULT_LOOK) {
   const k = px / (S * 10);
   c.width = c.height = px;

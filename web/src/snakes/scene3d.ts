@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { LADDERS, RARE_LADDERS, SNAKES } from "./engine";
-import { NUM_FONT_3D, PAD, S, W, center, lookKey, numberAt3D, paintNumbers, paintPlank, paintRail, paintSurface, palette, type Look } from "./board";
+import { NUM_FONT_3D, PAD, S, W, center, lookKey, numberAt3D, numbersCanvas, paintRail, plankCanvas, palette, surfaceCanvas, type Look } from "./board";
 import { SnakeArt, type SnakeOverlay } from "./snake2d";
 import { buildFigure, gloss, gold, mat } from "./models3d";
 import type { PieceId } from "./tokens";
@@ -66,6 +66,15 @@ function rosette(metal: Obj, x: number, y: number, z: number) {
   return g;
 }
 
+/** Paints the board's textures for `look` ahead of time (one at a time, between other work), so the 3D board appears
+    quickly when the game starts. Safe to call more than once. */
+export function warmBoard(look: Look, low: boolean) {
+  const px = low ? 1536 : 2048, jobs = [() => surfaceCanvas(px, look), () => plankCanvas(look), () => numbersCanvas(px, look)];
+  const idle = (f: () => void) => { const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }; if (w.requestIdleCallback) w.requestIdleCallback(f, { timeout: 600 }); else window.setTimeout(f, 30); };
+  const next = () => { const j = jobs.shift(); if (j) idle(() => { j(); next(); }); };
+  next();
+}
+
 /* ---------- the scene ---------- */
 export class BoardScene {
   renderer: Obj; scene: Obj; camera: Obj; light: Obj;
@@ -82,7 +91,7 @@ export class BoardScene {
   private ratioCap = 2; private dpr = 1; private level = 0;
   constructor(canvas: HTMLCanvasElement, look: Look, low: boolean, opts: { testLite?: boolean } = {}) {
     this.snakeArt = new SnakeArt(low ? 2.2 : 3);
-    this.low = low; this.look = look; this.ratioCap = opts.testLite ? .75 : low ? 1.5 : 2;
+    this.low = low; this.look = look; this.ratioCap = opts.testLite ? .75 : 2;                     // sharp on phones too
     const r = new THREE.WebGLRenderer({ canvas, antialias: !opts.testLite, alpha: true, powerPreference: "high-performance" });
     r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.NeutralToneMapping; r.toneMappingExposure = 1;
     r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFShadowMap; r.shadowMap.autoUpdate = false;
@@ -138,9 +147,9 @@ export class BoardScene {
     B.traverse((o: Obj) => { o.geometry?.dispose?.(); });
     B.clear();
     const T = (c: HTMLCanvasElement, srgb = true) => { const t = canvasTex(c, this.aniso, srgb); this.texes.push(t); return t; };
-    const surf = document.createElement("canvas"); paintSurface(surf, px, look);
+    const surf = surfaceCanvas(px, look);
     const surfTex = T(surf), hgt = RIM_TOP - BASE;
-    const plank = document.createElement("canvas"); paintPlank(plank, 1024, 96, look, 11);
+    const plank = plankCanvas(look);
     const rimTex = T(plank); rimTex.wrapS = rimTex.wrapT = THREE.RepeatWrapping;
     const metal = new THREE.MeshStandardMaterial({ color: pal.metal[1], roughness: .26, metalness: 1, envMapIntensity: 1.2 });
     if (look.model === "tray") {
@@ -214,7 +223,7 @@ export class BoardScene {
       }
     }
     // numbers: their own transparent layer drawn above snakes and ladders, so a number is never hidden
-    const nc = document.createElement("canvas"); paintNumbers(nc, px, look);
+    const nc = numbersCanvas(px, look);
     const nm = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshBasicMaterial({ map: T(nc), transparent: true, depthTest: false, depthWrite: false, toneMapped: false }));
     nm.rotation.x = -Math.PI / 2; nm.position.y = TILE_TOP + .002; nm.renderOrder = 10; setLayer(nm, L_NUMBERS); this.numbersMesh = nm; B.add(nm);      // its own pass: over the ladders and snakes, under the tokens
     // ladders: dark polished rails, light rungs and gold caps, the same on every board so they always stand out
@@ -303,11 +312,11 @@ export class BoardScene {
     this.renderer.shadowMap.needsUpdate = true;
   }
 
-  /** One step lighter when frames are slow: lower resolution, then no shadows. Returns false when there is nothing left to drop. */
+  /** One step lighter when frames are slow: shadows off. The resolution is never lowered (that made the board blurry on
+      phones). Returns false when there is nothing left to drop. */
   degrade() {
     this.level++;
-    if (this.level === 1 && this.ratioCap > 1) { this.ratioCap = 1; this.resize(this.size.w, this.size.h, this.dpr); return true; }
-    if (this.level <= 2 && this.renderer.shadowMap.enabled) { this.renderer.shadowMap.enabled = false; this.scene.traverse((o: Obj) => { if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach((m: Obj) => { m.needsUpdate = true; }); }); return true; }
+    if (this.renderer.shadowMap.enabled) { this.renderer.shadowMap.enabled = false; this.scene.traverse((o: Obj) => { if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach((m: Obj) => { m.needsUpdate = true; }); }); return true; }
     return false;
   }
   /** Screen position (CSS px within the canvas) of a world point. */

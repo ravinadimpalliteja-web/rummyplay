@@ -11,7 +11,7 @@ import { DEFAULT_PIECES, PIECE_IDS, pieceById, pieceImage, pieceUrl, type PieceI
 import "./snakes.css";
 
 const ROOM_KEY = "rc-snakes-room", PIECE_KEY = "rc-snakes-piece";
-const MODEL_KEY = "rc-snakes-board", THEME_KEY = "rc-snakes-theme", DICE_KEY = "rc-snakes-dice", VIEW_KEY = "rc-snakes-view", GL_SLOW_KEY = "rc-snakes-3d-slow-v2";   // v2: the old flag was set wrongly on phones (see the frame watchdog)
+const MODEL_KEY = "rc-snakes-board", THEME_KEY = "rc-snakes-theme", DICE_KEY = "rc-snakes-dice", VIEW_KEY = "rc-snakes-view";
 const DICE = [
   { id: "ivory", name: "Classic ivory" }, { id: "brass", name: "Polished brass" }, { id: "glass", name: "Emerald glass" },
   { id: "rosewood", name: "Carved rosewood" }, { id: "onyx", name: "Black onyx" },
@@ -87,7 +87,6 @@ function describe(l: LastRoll, t: Table): string {
   }
 }
 
-const DiceIcon = () => <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>;
 const ChatIcon = () => <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>;
 const InfoIcon = () => <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>;
 const GearIcon = () => <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8l1.6 2.4 2.8-.7.7 2.8 2.4 1.6-1.2 2.6 1.2 2.6-2.4 1.6-.7 2.8-2.8-.7L12 21.2l-1.6-2.4-2.8.7-.7-2.8-2.4-1.6L5.7 12 4.5 9.4l2.4-1.6.7-2.8 2.8.7z"/></svg>;
@@ -133,7 +132,9 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
   const stageRef = useRef<HTMLDivElement | null>(null), diceRef = useRef<HTMLDivElement | null>(null), cubeRef = useRef<HTMLDivElement | null>(null), shadowRef = useRef<HTMLDivElement | null>(null);
   const baseRef = useRef<HTMLCanvasElement | null>(null), boardRef = useRef<HTMLCanvasElement | null>(null), piecesRef = useRef<HTMLCanvasElement | null>(null), fxRef = useRef<HTMLCanvasElement | null>(null);
   const geoRef = useRef<View | null>(null); geoRef.current = geo;
-  const useGL = view3d === "3d" && glState !== "off" && canWebGL() && readKey<string>(GL_SLOW_KEY, ["1"], "") !== "1";
+  /* the 3D board whenever the player chose it and the device can draw it; it is never swapped out for being slow
+     (only if WebGL fails, for that visit) */
+  const useGL = view3d === "3d" && glState !== "off" && canWebGL();
   const glMode = useRef(false); glMode.current = useGL;
   /** Where a token stands on square n: the 3D board and the flat/tilted board lay squares out differently. */
   const spotOf = (n: number) => (glMode.current ? spot3D(n) : spot(n));
@@ -288,6 +289,14 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     return () => { ro.disconnect(); window.clearTimeout(timer); };
   }, [sub, !!table, view3d, useGL]);
 
+  /* While the player is in the lobby or choosing tokens, fetch the 3D code and paint the board's textures in the
+     background, so the 3D board is ready almost as soon as the game starts. */
+  useEffect(() => {
+    if ((sub !== "lobby" && sub !== "tokens") || view3d !== "3d" || !canWebGL()) return;
+    let live = true;
+    import("./scene3d").then(m => { if (live) m.warmBoard(look, lowPower()); }).catch(() => undefined);
+    return () => { live = false; };
+  }, [sub, view3d, look]);
   /* The WebGL 3D board: load the 3D code only when the board opens, then size it to the stage. */
   useEffect(() => {
     if (sub !== "table" || !table || !useGL) return;
@@ -373,14 +382,16 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
         if (glGaps.current.length >= 24) {
           const med = [...glGaps.current].sort((a, b) => a - b)[12]; glGaps.current = [];
           if (DEBUG) { const w = window as unknown as { __slGlMeds?: number[] }; w.__slGlMeds = [...(w.__slGlMeds ?? []), Math.round(med)]; }
-          if (med > 42 && !sc0.degrade()) { keep(GL_SLOW_KEY, "1"); setGlState("off"); return; }
+          // a slow device loses its shadows; the 3D board (and its 3D tokens) is never swapped for the flat one
+          if (med > 42) sc0.degrade();
         }
       }
       drewLast = false;
       if (frameEma > 26) backoff = Math.min(300, Math.max(baseGap, backoff) * 1.04 + 1); else if (frameEma < 19) backoff = Math.max(0, backoff * .97 - .5);
       // the snakes keep slithering while the page is visible (not with reduced motion); heads keep turning until done
       const motion = !reduce.matches && !document.hidden, swallowing = !!overlay.current.mouth || !!overlay.current.bulge;
-      const snakesDue = (motion || snakesBusy || swallowing) && now - lastSnakes >= (swallowing ? baseGap : snakeGap());
+      // during a swallow the snake redraws every frame (it is brief, and its head must turn and strike smoothly)
+      const snakesDue = swallowing || ((motion || snakesBusy) && now - lastSnakes >= snakeGap());
       const tokens = () => { const t = tableRef.current; return t ? t.order.map(s => t.pos[s] ?? 0) : []; };
       if (sc) {
         const t = tableRef.current;
@@ -667,7 +678,7 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
   const chooseTheme = (t: ThemeId) => { setTheme(t); keep(THEME_KEY, t); };
   const chooseDice = (d: DiceId) => { setDice(d); keep(DICE_KEY, d); };
   const togglePanel = (p: "settings" | "rules" | "chat") => setPanel(x => (x === p ? "none" : p));
-  const chooseView = (v: "3d" | "flat") => { setView3d(v); keep(VIEW_KEY, v); if (v === "3d") { keep(GL_SLOW_KEY, ""); setGlState(s => (s === "off" ? "idle" : s)); } };
+  const chooseView = (v: "3d" | "flat") => { setView3d(v); keep(VIEW_KEY, v); if (v === "3d") setGlState(s => (s === "off" ? "idle" : s)); };
   useEffect(() => {
     if (panel === "none") return;
     const k = (e: KeyboardEvent) => { if (e.key === "Escape") setPanel("none"); };
@@ -808,7 +819,9 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
     </div>
 
     <aside className="sl-right" aria-label="Dice and actions">
-      <div className="sl-tray">
+      {/* the die is the roll button: tap it (or press Space / Enter) to roll */}
+      <button type="button" className={`sl-tray ${myTurn ? "ready" : ""}`} disabled={!myTurn} onClick={doRoll}
+        aria-label={myTurn ? (table.streak > 0 ? "Roll the dice again" : "Roll the dice") : rollLabel}>
         <div className="sl-pedestal" aria-hidden="true" />
         <div className="sl-dice-shadow" ref={shadowRef} />
         <div className={`sl-dice d-${dice}`} ref={diceRef} aria-hidden="true">
@@ -816,10 +829,8 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
             <div className="sl-face flat"><Face v={dieValue} /></div>
           </div>
         </div>
-      </div>
-      <button className={`sl-roll ${myTurn ? "ready" : ""}`} disabled={!myTurn} onClick={doRoll} aria-label={myTurn ? "Roll dice" : undefined}>
-        <DiceIcon />{rollLabel}
       </button>
+      <span className={`sl-roll-hint ${myTurn ? "ready" : ""}`} aria-hidden="true">{myTurn ? (table.streak > 0 ? "Tap the dice to roll again" : "Tap the dice to roll") : rollLabel}</span>
       {secsLeft !== null && myTurn && <span className={`timer-chip ${secsLeft <= 5 ? "urgent" : ""}`}>⏱ {secsLeft}s</span>}
       <div className="sl-last">
         <b className="sl-last-title">{table.last ? "Last turn" : "Ready"}</b>

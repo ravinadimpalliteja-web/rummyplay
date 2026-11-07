@@ -609,6 +609,18 @@ function leaves(g: CanvasRenderingContext2D, x: number, y: number, out: number, 
 /* ---------- textures for the WebGL 3D board (scene3d.ts) ---------- */
 /** The playing surface (10 x 10 squares, no rim) as a texture for one model and theme, with the START plaque and the
     MOKSH engraving. `px` is the canvas size in pixels. Numbers are painted separately. */
+/* The 3D board's textures take a moment to paint (natural stone and wood are painted pixel by pixel), so each is
+   painted once per look and size and kept: the game paints them ahead, while the player is choosing tokens, and the
+   board then appears at once. */
+const texCache = new Map<string, HTMLCanvasElement>();
+function cached(key: string, paint: (c: HTMLCanvasElement) => void) {
+  let c = texCache.get(key);
+  if (!c) { c = document.createElement("canvas"); paint(c); texCache.set(key, c); if (texCache.size > 12) texCache.delete(texCache.keys().next().value!); }
+  return c;
+}
+export const surfaceCanvas = (px: number, look: Look) => cached(`s-${lookKey(look)}-${px}`, (c) => paintSurface(c, px, look));
+export const numbersCanvas = (px: number, look: Look) => cached(`n-${lookKey(look)}-${px}`, (c) => paintNumbers(c, px, look));
+export const plankCanvas = (look: Look) => cached(`p-${lookKey(look)}`, (c) => paintPlank(c, 1024, 96, look, 11));
 export function paintSurface(c: HTMLCanvasElement, px: number, look: Look = DEFAULT_LOOK) {
   const k = px / (S * 10);
   c.width = c.height = px;

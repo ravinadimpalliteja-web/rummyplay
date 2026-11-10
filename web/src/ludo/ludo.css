@@ -285,3 +285,31 @@
 @keyframes ldMarch{0%,100%{translate:0 0;rotate:-3deg}50%{translate:0 -7%;rotate:3deg}}
 @keyframes ldTopple{0%{rotate:0deg}100%{rotate:85deg;translate:12% 8%}}
 @media (prefers-reduced-motion:reduce){.ld-set-sentry .ld-token.moving .ld-piece,.ld-set-sentry .ld-token.hit .ld-piece{animation:none}}
+
+/* ---------- move preview: a marker where each movable token would land ---------- */
+.ld-target{position:absolute;width:calc(100% / 15 * .8);aspect-ratio:1;padding:0;transform:translate(-50%,-50%);border-radius:50%;z-index:4;cursor:pointer;
+  border:2.5px dashed var(--sa,#EE8A1C);background:rgba(255,246,228,.75);display:grid;place-items:center;-webkit-tap-highlight-color:transparent;animation:ldTarget 1.2s ease-in-out infinite}
+.ld-target span{font:800 clamp(9px,2.2cqh,15px)/1 'DM Sans',sans-serif;color:var(--sa-text,#A9560C);transform:rotate(calc(-1 * var(--rot,0deg)))}
+.ld-target.cut{border:2.5px solid #1f9a5c;background:rgba(226,247,234,.92)}.ld-target.cut span{color:#0f6b3d}
+.ld-target.danger{border:2.5px solid #c8323f;background:rgba(253,232,234,.92)}.ld-target.danger span{color:#a31f2b}
+.ld-target.safe{border-color:#b8892e;background:rgba(255,248,226,.92)}.ld-target.safe span{color:#7A5A1C}
+.ld-target.home{border:2.5px solid #d9b45a;background:rgba(255,244,214,.95)}.ld-target.home span{color:#7A5A1C}
+@keyframes ldTarget{0%,100%{scale:1}50%{scale:1.1}}
+
+/* ---------- celebrations ---------- */
+.ld-homeburst{position:absolute;left:50%;top:50%;width:22%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;z-index:6;
+  border:4px solid #f6d36b;box-shadow:0 0 24px 8px rgba(246,211,107,.6);animation:ldBurst .8s ease-out forwards}
+@keyframes ldBurst{0%{scale:.2;opacity:1}100%{scale:2.2;opacity:0}}
+.ld-banner{position:absolute;left:50%;top:44%;z-index:9;transform:translate(-50%,-50%);padding:10px 20px;border-radius:14px;white-space:nowrap;
+  background:var(--iv-emerald,#0F4D3A);color:#FBF7EE;border:1.5px solid var(--iv-gold,#D9B45A);font:700 clamp(15px,3.4vw,22px)/1.2 'Cinzel','Playfair Display',serif;
+  box-shadow:0 12px 30px rgba(15,77,58,.35);animation:ldBanner 1.8s ease-out forwards;pointer-events:none}
+.ld-banner.big{font-size:clamp(20px,5vw,32px);padding:14px 28px;animation-duration:2.6s}
+@keyframes ldBanner{0%{opacity:0;scale:.7}12%{opacity:1;scale:1.06}20%{scale:1}82%{opacity:1}100%{opacity:0}}
+.ld-unlocked{margin:0;max-width:300px;padding:8px 12px;border-radius:10px;background:#FFF4D6;border:1px solid #E3C680;color:#5A4410;font-size:13px;line-height:1.35}
+.ld-unlocked b{color:#0F4D3A}
+
+/* ---------- locked token sets ---------- */
+.ld-token-grid button.locked{cursor:not-allowed}
+.ld-token-grid button.locked .ld-token-row{filter:grayscale(1) opacity(.45)}
+.ld-screen .ld-token-grid button.locked strong{color:var(--iv-muted,#5C6862)}
+@media (prefers-reduced-motion:reduce){.ld-target{animation:none}.ld-homeburst{animation-duration:.4s}.ld-banner{animation-duration:.01s;animation-delay:1.6s;animation-fill-mode:forwards}}

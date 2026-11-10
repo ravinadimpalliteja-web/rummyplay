@@ -167,3 +167,26 @@ export function pointOf(c: Color, t: Tok, i: number): [number, number] {
 export function cellKey(c: Color, t: Tok, i: number) {
   return t.s === "base" ? c + "b" + i : t.s === "track" ? "t" + absOf(c, t.r) : t.s === "lane" ? c + "l" + t.l : c + "h";
 }
+
+/** What a move would do, for the move preview: where the token lands, whether it cuts someone, whether an
+    opponent could reach it next turn, and whether it is safe or home. */
+export type Preview = { dest: Tok; cut: boolean; danger: number; safe: boolean; home: boolean };
+export function previewMove(order: number[], colors: Record<number, Color>, tokens: Record<number, Tok[]>, ranks: number[], seat: number, i: number, v: number): Preview | null {
+  const steps = pathOf(tokens[seat][i], v);
+  if (!steps) return null;
+  const dest = steps[steps.length - 1];
+  if (dest.s !== "track") return { dest, cut: false, danger: 0, safe: true, home: dest.s === "home" };
+  const a = absOf(colors[seat], dest.r), safe = SAFE.has(a);
+  let cut = false, danger = 0;
+  for (const o of order) {
+    if (o === seat) continue;
+    for (const t of tokens[o]) {
+      if (t.s !== "track") continue;
+      const oa = absOf(colors[o], t.r);
+      if (oa === a && !safe) cut = true;
+      const d = (a - oa + 52) % 52;
+      if (!safe && !ranks.includes(o) && d >= 1 && d <= 6) danger++;
+    }
+  }
+  return { dest, cut, danger: cut ? 0 : danger, safe, home: false };
+}

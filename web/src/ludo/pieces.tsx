@@ -12,6 +12,18 @@ export const TOKEN_SETS = [
 ] as const;
 export type TokenSet = typeof TOKEN_SETS[number]["id"];
 
+/* Token sets unlock as you play (counted on this device; no money involved). Indian sentries and the classic disc are free. */
+export type Stats = { played: number; wins: number };
+export const UNLOCK: Record<TokenSet, { played?: number; wins?: number } | null> = {
+  sentry: null, disc: null, pawn: { played: 1 }, crown: { wins: 1 }, gem: { played: 5 }, lotus: { wins: 3 }, chakra: { played: 10 },
+};
+export const isUnlocked = (set: TokenSet, st: Stats) => { const u = UNLOCK[set]; return !u || ((u.played ?? 0) <= st.played && (u.wins ?? 0) <= st.wins); };
+export const unlockText = (set: TokenSet, st: Stats) => {
+  const u = UNLOCK[set]; if (!u) return "";
+  if (u.wins) return `Win ${u.wins} game${u.wins > 1 ? "s" : ""} to unlock · ${Math.min(st.wins, u.wins)} of ${u.wins}`;
+  return `Play ${u.played} game${(u.played ?? 0) > 1 ? "s" : ""} to unlock · ${Math.min(st.played, u.played ?? 0)} of ${u.played}`;
+};
+
 /* Same finishes as the Snakes & Ladders die. */
 export const DICE = [
   { id: "ivory", name: "Classic ivory" }, { id: "brass", name: "Polished brass" }, { id: "glass", name: "Emerald glass" },

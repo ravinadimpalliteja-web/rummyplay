@@ -1,43 +1,469 @@
-import {useState} from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { RoomClient, deviceToken, randomPasscode, saveRoom, savedRoom, serverUrl, type NetStatus } from "../domain/online";
+import {
+  ANIM, COLORS, LANE, SAFE, SPOTS, TRACK, YARD, bestMove, cellKey, move, newGame, pointOf, roll, rollDie, turnOf,
+  type Color, type LudoEvent, type LudoGame as Game, type Tok,
+} from "./engine";
 import "./ludo.css";
-type C="red"|"green"|"yellow"|"blue";type T={id:number;step:number};type P={color:C;name:string;tokens:T[]};
-const colors:C[]=["red","green","yellow","blue"],starts=[0,13,26,39],safe=[0,8,13,21,26,34,39,47];
-const path:[number,number][]=[[6,1],[6,2],[6,3],[6,4],[6,5],[5,6],[4,6],[3,6],[2,6],[1,6],[0,6],[0,7],[0,8],[1,8],[2,8],[3,8],[4,8],[5,8],[6,9],[6,10],[6,11],[6,12],[6,13],[6,14],[7,14],[8,14],[8,13],[8,12],[8,11],[8,10],[8,9],[9,8],[10,8],[11,8],[12,8],[13,8],[14,8],[14,7],[14,6],[13,6],[12,6],[11,6],[10,6],[9,6],[8,5],[8,4],[8,3],[8,2],[8,1],[8,0],[7,0],[6,0]];
-const homes:Record<C,[number,number][] >={red:[[1,1],[1,4],[4,1],[4,4]],green:[[1,10],[1,13],[4,10],[4,13]],yellow:[[10,10],[10,13],[13,10],[13,13]],blue:[[10,1],[10,4],[13,1],[13,4]]};
-const lanes:Record<C,[number,number][] >={red:[[7,1],[7,2],[7,3],[7,4],[7,5],[7,6]],green:[[1,7],[2,7],[3,7],[4,7],[5,7],[6,7]],yellow:[[7,13],[7,12],[7,11],[7,10],[7,9],[7,8]],blue:[[13,7],[12,7],[11,7],[10,7],[9,7],[8,7]]};
-const pos=(c:C,s:number)=>s<51?(starts[colors.indexOf(c)]+s)%52:-1;
-export default function LudoGame({onHome}:{onHome:()=>void}){
- const [count,setCount]=useState(4),[names,setNames]=useState(["You","Player 2","Player 3","Player 4"]),[players,setPlayers]=useState<P[]|null>(null),[turn,setTurn]=useState(0),[die,setDie]=useState<number|null>(null),[msg,setMsg]=useState("Roll a six to bring a token onto the board."),[winner,setWinner]=useState<C|null>(null),[busy,setBusy]=useState(false);
- const start=()=>{setPlayers(colors.slice(0,count).map((color,i)=>({color,name:names[i]||("Player "+(i+1)),tokens:Array.from({length:4},(_,id)=>({id,step:-1}))})));setTurn(0);setDie(null);setWinner(null);setBusy(false);setMsg("Roll a six to bring a token onto the board.")};
- const roll=()=>{if(!players||die!==null||busy||winner)return;const n=1+Math.floor(Math.random()*6);setDie(n);const can=players[turn].tokens.some(t=>t.step===-1?n===6:t.step+n<=56);if(!can){setMsg(n===6?"No legal move. Roll again.":"No legal move. Turn passes.");setBusy(true);window.setTimeout(()=>{setDie(null);setTurn(t=>(t+1)%players.length);setBusy(false)},850)}else setMsg(n===6?"Six! Select a token to move.":"Select a highlighted token.")};
- const move=(id:number)=>{if(!players||die===null||busy||winner)return;const p=players[turn],old=p.tokens[id];if(old.step===-1&&die!==6)return;if(old.step>=0&&old.step+die>56)return;const next=players.map(x=>({...x,tokens:x.tokens.map(t=>({...t}))}));const step=old.step===-1?0:old.step+die;next[turn].tokens[id].step=step;let captured=0;if(step<51){const square=pos(p.color,step);if(!safe.includes(square))next.forEach((op,i)=>{if(i!==turn)op.tokens.forEach(t=>{if(t.step>=0&&t.step<51&&pos(op.color,t.step)===square){t.step=-1;captured++}})})}setPlayers(next);if(next[turn].tokens.every(t=>t.step===56)){setWinner(p.color);setMsg(p.name+" wins Royal Club Ludo!");setDie(null);return}const bonus=die===6||captured>0||step===56;setMsg(captured?"Captured "+captured+" token(s)! Roll again.":bonus?"Bonus turn! Roll again.":"Token moved. Next player's turn.");if(!bonus)setTurn(t=>(t+1)%players.length);setDie(null)};
 
- const tokenAt=(r:number,c:number)=>{
-   if(!players)return null;
-   const found=players.flatMap((p,pi)=>p.tokens.filter(t=>{
-     if(t.step===-1)return homes[p.color][t.id][0]===r&&homes[p.color][t.id][1]===c;
-     if(t.step===56)return false;
-     const xy=t.step>=51?lanes[p.color][t.step-51]:path[pos(p.color,t.step)];
-     return xy[0]===r&&xy[1]===c;
-   }).map(t=>({p,t,pi})));
-   return found;
- };
- const cell=(r:number,c:number)=>{
-   let cls="";let home:C|null=null;
-   if(r<6&&c<6)home="red";else if(r<6&&c>8)home="green";else if(r>8&&c>8)home="yellow";else if(r>8&&c<6)home="blue";
-   if(home)cls="home-"+home;
-   const lane=colors.find(k=>lanes[k].some(([y,x])=>y===r&&x===c));
-   if(lane)cls="lane-"+lane;
-   const pi=path.findIndex(([y,x])=>y===r&&x===c);
-   const isSafe=pi>=0&&safe.includes(pi);
-   if(isSafe)cls+=" safe";
-   if(r===7&&c===7)cls="center";
-   const tokens=tokenAt(r,c);
-   return <div key={r+"-"+c} className={"ludo-cell "+cls}>
-     {home&&r%3===1&&c%3===1&&<span className="ludo-home-mark"/>}
-     {isSafe&&<span className="safe-star">✦</span>}
-     {tokens?.map(({p,t,pi:playerIndex})=><button key={p.color+"-"+t.id} aria-label={p.name+" token "+(t.id+1)} className={"ludo-token "+p.color+(t.step===-1?" in-home":"")+(playerIndex===turn&&die!==null&&((t.step===-1&&die===6)||(t.step>=0&&t.step+die<=56))?" selectable":"")} onClick={()=>move(t.id)} disabled={playerIndex!==turn||die===null||busy||winner!==null||!((t.step===-1&&die===6)||(t.step>=0&&t.step+die<=56))}>{String(t.id+1)}</button>)}
-   </div>;
- };
- return <section className="ludo-page"><header className="ludo-top"><button className="back-link" onClick={onHome}>← All games</button><div className="eyebrow">ROYAL CLUB · BOARD GAMES</div><h1>Royal <em>Ludo</em></h1><p>Four colours. One finish line. Bring every token home.</p></header>{!players?<div className="ludo-setup"><span className="eyebrow">NEW MATCH</span><h2>Choose your table</h2><p>Traditional Indian Ludo · 2 to 4 players</p><label>Players <select value={count} onChange={e=>setCount(Number(e.target.value))}>{[2,3,4].map(n=><option key={n}>{n}</option>)}</select></label><div className="ludo-name-grid">{colors.slice(0,count).map((c,i)=><label key={c}><span className={"ludo-swatch "+c}/>{["Red","Green","Yellow","Blue"][i]}<input value={names[i]} onChange={e=>setNames(v=>v.map((n,j)=>j===i?e.target.value:n))}/></label>)}</div><button className="gold-button" onClick={start}>Start local match →</button><p className="ludo-note">Online private rooms and matchmaking will be connected in the multiplayer integration phase.</p></div>:<><div className="ludo-matchbar"><button className="ghost-button" onClick={()=>setPlayers(null)}>New game</button><span>{players.map((p,i)=><b key={p.color} className={"turn-pill "+p.color+(i===turn?" current":"")}>{p.name}</b>)}</span><button className="ghost-button" onClick={onHome}>Exit</button></div><div className="ludo-layout"><div className="ludo-board-wrap"><div className="ludo-board" role="grid" aria-label="Ludo board">{Array.from({length:15},(_,r)=>Array.from({length:15},(_,c)=>cell(r,c)))}</div></div><aside className="ludo-controls"><div className="ludo-turn"><span className={"ludo-swatch "+players[turn].color}/><small>NOW PLAYING</small><h2>{players[turn].name}</h2><p>{msg}</p></div><button className="ludo-die" disabled={die!==null||busy||!!winner} onClick={roll}>{die??"⚄"}<small>{die===null?"ROLL DICE":"SELECT TOKEN"}</small></button>{players.map(p=><div className="ludo-score" key={p.color}><span className={"ludo-swatch "+p.color}/><b>{p.name}</b><span>{p.tokens.filter(t=>t.step===56).length}/4 home</span></div>)}{winner&&<button className="gold-button" onClick={start}>Play again →</button>}</aside></div></>}</section>
+const ROOM_KEY = "rc-ludo-room";
+const BOTS = ["Maya", "Alex", "Jordan"];
+const COLOR_NAME: Record<Color, string> = { red: "Ruby", green: "Jade", yellow: "Saffron", blue: "Sapphire" };
+const PHRASES = ["Arey yaar 😭", "Bhai seedha ghar 🏠", "Ek aur six! 🎲", "Kya baat 👑", "Bach gaya 😅", "Revenge loading 😤", "Well played 👏", "Jaldi karo ⏳"];
+const VICTIM = [0, 5], HUNTER = [3];
+const ORD = ["1st", "2nd", "3rd", "4th"];
+const PIPS: Record<number, number[]> = { 0: [], 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+/* Rotate the board so the viewer's yard sits bottom-left (red is top-left in board coordinates). */
+const ROT: Record<Color, number> = { blue: 0, red: -90, green: 180, yellow: 90 };
+const CORNERS: [number, number][] = [[18, 15], [82, 15], [82, 85], [18, 85]];
+const reduced = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+const pace = reduced ? 0.3 : 1;
+const wait = (ms: number) => new Promise<void>(r => window.setTimeout(r, ms * pace));
+const copyTokens = (t: Record<number, Tok[]>) => JSON.parse(JSON.stringify(t)) as Record<number, Tok[]>;
+
+type SeatInfo = { seat: number; name: string; connected: boolean; away: boolean } | null;
+type LView = {
+  t: "state"; game: "ludo"; code: string; passcode: string; now: number; you: number; host: boolean;
+  phase: "lobby" | "playing" | "gameEnd"; seats: SeatInfo[];
+  order?: number[]; colors?: Record<number, Color>; tokens?: Record<number, Tok[]>; turn?: number; stage?: "roll" | "move" | "gameEnd";
+  dice?: number; sixes?: number; moves?: number[]; ranks?: number[]; last?: LudoEvent | null; deadline?: number | null; moving?: boolean;
+};
+type Mode = "practice" | "pass" | "online";
+/** One shape for the table, whether the game runs here (Practice, Pass & play) or on the room server (Room). */
+type Table = {
+  mode: Mode; you: number | null; order: number[]; colors: Record<number, Color>; names: Record<number, string>; away: Record<number, boolean>;
+  bots: Record<number, boolean>; tokens: Record<number, Tok[]>; turn: number; stage: "roll" | "move" | "gameEnd"; dice: number; sixes: number;
+  moves: number[]; ranks: number[]; last: LudoEvent | null;
+};
+
+const fromView = (v: LView): Table | null => v.phase === "lobby" || !v.order || !v.tokens || !v.colors ? null : {
+  mode: "online", you: v.you, order: v.order, colors: v.colors,
+  names: Object.fromEntries(v.order.map(s => [s, s === v.you ? "You" : v.seats[s]?.name ?? "Player"])),
+  away: Object.fromEntries(v.order.map(s => [s, !!v.seats[s]?.away])), bots: {},
+  tokens: v.tokens, turn: v.turn ?? 0, stage: v.stage ?? "roll", dice: v.dice ?? 0, sixes: v.sixes ?? 0,
+  moves: v.moves ?? [], ranks: v.ranks ?? [], last: v.last ?? null,
+};
+const fromLocal = (g: Game, names: string[], mode: "practice" | "pass"): Table => ({
+  mode, you: mode === "practice" ? 0 : null, order: g.order, colors: g.colors,
+  names: Object.fromEntries(g.order.map(s => [s, names[s]])), away: {},
+  bots: Object.fromEntries(g.order.map(s => [s, mode === "practice" && s !== 0])),
+  tokens: g.tokens, turn: turnOf(g), stage: g.phase, dice: g.dice, sixes: g.sixes, moves: g.moves, ranks: g.ranks, last: g.last,
+});
+
+function describe(l: LudoEvent, t: Table): string {
+  const who = t.names[l.seat], you = who === "You";
+  if (l.kind === "roll") {
+    if (l.outcome === "three-sixes") return `Three sixes in a row! ${you ? "Your" : who + "'s"} turn ends.`;
+    if (l.outcome === "none") {
+      const allIn = t.tokens[l.seat].every(x => x.s === "base" || x.s === "home");
+      return `${who} rolled ${l.value}. ${allIn ? (you ? "You need" : "Needs") + " a 6 to bring a token out." : "No token can move."}`;
+    }
+    if (l.forced != null) return `${who} rolled ${l.value}.`;
+    return you || t.mode === "pass" ? `${who} rolled ${l.value}. Tap a glowing token.` : `${who} rolled ${l.value} and is choosing…`;
+  }
+  const cut = l.cuts.map(c => t.names[c.seat]).filter((n, i, a) => a.indexOf(n) === i);
+  const again = l.bonus ? (you ? " Roll again." : " Rolls again.") : "";
+  if (l.finished) { const p = t.ranks.indexOf(l.seat); return `${who} ${you ? "finish" : "finishes"} ${ORD[p] ?? ""}! All four tokens home.`; }
+  if (cut.length) return `${who} cut ${cut.map(n => (n === "You" ? "you" : n)).join(" & ")}!${again}`;
+  if (l.home) return `${who} brought a token home!${again}`;
+  if (l.from.s === "base") return `${who} brought a token out.${again}`;
+  return again ? `${who} moved ${l.value}.${again}` : "";
+}
+
+/* ---------- small sounds (Web Audio, starts after the first tap) ---------- */
+let ac: AudioContext | null = null;
+const audioOn = () => { try { return window.localStorage.getItem("rc-ludo-sound") !== "off"; } catch { return true; } };
+function tone(f: number, dur: number, type: OscillatorType = "triangle", vol = .07, when = 0, f2?: number) {
+  if (!audioOn()) return;
+  try {
+    ac = ac ?? new AudioContext(); if (ac.state === "suspended") void ac.resume();
+    const t0 = ac.currentTime + when, o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t0); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t0 + dur);
+    g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
+    o.connect(g).connect(ac.destination); o.start(t0); o.stop(t0 + dur + .02);
+  } catch { /* no audio */ }
+}
+const sDice = () => { for (let i = 0; i < 6; i++) tone(180 + Math.random() * 260, .04, "square", .03, i * .075); };
+const sStep = () => tone(620, .05, "triangle", .045);
+const sCut = () => tone(520, .35, "sawtooth", .055, 0, 90);
+const sHome = () => [523, 659, 784, 1047].forEach((f, i) => tone(f, .18, "triangle", .06, i * .08));
+const sWin = () => [392, 523, 659, 784, 659, 1047].forEach((f, i) => tone(f, .26, "triangle", .07, i * .13));
+
+function star(cx: number, cy: number, R: number, r: number) {
+  return Array.from({ length: 10 }, (_, i) => { const a = -Math.PI / 2 + i * Math.PI / 5, d = i % 2 ? r : R; return `${(cx + Math.cos(a) * d).toFixed(3)},${(cy + Math.sin(a) * d).toFixed(3)}`; }).join(" ");
+}
+/** The static board, drawn once: yards, the track with start and starred squares, home lanes and the centre. */
+function BoardArt() {
+  const startOf = (i: number) => COLORS.find(c => ({ red: 0, green: 13, yellow: 26, blue: 39 })[c] === i);
+  return <svg className="ld-svg" viewBox="0 0 15 15" aria-hidden="true">
+    <rect x="0" y="0" width="15" height="15" className="ld-cell" />
+    {COLORS.map(c => {
+      const [bx, by] = YARD[c];
+      return <g key={c}>
+        <rect x={bx} y={by} width="6" height="6" className={`ld-f-${c}`} />
+        <rect x={bx + .7} y={by + .7} width="4.6" height="4.6" rx=".45" className="ld-yard" />
+        {SPOTS.map(([sx, sy], i) => <circle key={i} cx={bx + sx} cy={by + sy} r=".6" className={`ld-spot ld-s-${c}`} />)}
+      </g>;
+    })}
+    {TRACK.map(([x, y], i) => {
+      const owner = startOf(i);
+      return <g key={i}>
+        <rect x={x} y={y} width="1" height="1" className={`${owner ? "ld-f-" + owner : "ld-cell"} ld-grid`} />
+        {SAFE.has(i) && !owner && <polygon points={star(x + .5, y + .5, .34, .15)} className="ld-star" />}
+      </g>;
+    })}
+    {COLORS.map(c => {
+      const [ex, ey] = TRACK[(({ red: 0, green: 13, yellow: 26, blue: 39 })[c] + 50) % 52], [lx, ly] = LANE[c][0];
+      const dx = lx - ex, dy = ly - ey, cx = ex + .5, cy = ey + .5, px = -dy, py = dx;
+      return <g key={c}>
+        {LANE[c].map(([x, y], i) => <rect key={i} x={x} y={y} width="1" height="1" className={`ld-f-${c} ld-grid`} />)}
+        <polygon className={`ld-f-${c}`} points={`${cx + dx * .3},${cy + dy * .3} ${cx - dx * .18 + px * .22},${cy - dy * .18 + py * .22} ${cx - dx * .18 - px * .22},${cy - dy * .18 - py * .22}`} />
+      </g>;
+    })}
+    <polygon points="6,6 7.5,7.5 6,9" className="ld-f-red ld-grid" />
+    <polygon points="6,6 9,6 7.5,7.5" className="ld-f-green ld-grid" />
+    <polygon points="9,6 9,9 7.5,7.5" className="ld-f-yellow ld-grid" />
+    <polygon points="6,9 9,9 7.5,7.5" className="ld-f-blue ld-grid" />
+    <circle cx="7.5" cy="7.5" r=".42" className="ld-crest" />
+    <path d="M7.5 7.18 L7.68 7.5 L7.5 7.82 L7.32 7.5 Z" className="ld-crest-mark" />
+  </svg>;
+}
+
+function Die({ value, spinning }: { value: number; spinning: boolean }) {
+  return <div className={`ld-die ${spinning ? "spin" : ""}`} aria-label={value ? `Die showing ${value}` : "Die"}>
+    {Array.from({ length: 9 }, (_, i) => <i key={i} className={PIPS[value]?.includes(i) ? "on" : ""} />)}
+  </div>;
+}
+
+export default function LudoGame({ onHome }: { onHome: () => void }) {
+  type Sub = "lobby" | "room" | "table";
+  const [sub, setSub] = useState<Sub>("lobby");
+  const [pick, setPick] = useState<"practice" | "pass" | "room">("practice");
+  const [bots, setBots] = useState(3);
+  const [passCount, setPassCount] = useState(2);
+  const [passNames, setPassNames] = useState(["Player 1", "Player 2", "Player 3", "Player 4"]);
+  const [local, setLocal] = useState<Game | null>(null);
+  const [localMode, setLocalMode] = useState<"practice" | "pass">("practice");
+  const [localNames, setLocalNames] = useState<string[]>(["You", ...BOTS]);
+  const [view, setView] = useState<LView | null>(null);
+  const [net, setNet] = useState<NetStatus>("idle");
+  const [roomTab, setRoomTab] = useState<"create" | "join">("create");
+  const [roomName, setRoomName] = useState(""), [roomCode, setRoomCode] = useState(""), [roomPass, setRoomPass] = useState("");
+  const [roomMsg, setRoomMsg] = useState("");
+  const [disp, setDisp] = useState<Record<number, Tok[]> | null>(null);
+  const [animating, setAnimating] = useState(false);
+  const [moving, setMoving] = useState<string | null>(null);
+  const [hits, setHits] = useState<string[]>([]);
+  const [dieValue, setDieValue] = useState(0), [spinning, setSpinning] = useState(false);
+  const [msg, setMsg] = useState(""), [showRules, setShowRules] = useState(false), [sound, setSound] = useState(audioOn());
+  const [bubbles, setBubbles] = useState<{ id: number; seat: number; text: string }[]>([]);
+  const [, setTick] = useState(0);
+
+  const clientRef = useRef<RoomClient | null>(null), skew = useRef(0), lastPhase = useRef<string | null>(null);
+  const animatedN = useRef<number | null>(null), chain = useRef<Promise<void>>(Promise.resolve()), dispRef = useRef(disp);
+  dispRef.current = disp;
+
+  const online = !!view && view.phase !== "lobby";
+  const table = useMemo<Table | null>(() => (online && view ? fromView(view) : local ? fromLocal(local, localNames, localMode) : null), [online, view, local, localNames, localMode]);
+  const tableRef = useRef<Table | null>(table); tableRef.current = table;
+
+  /* ---------- reactions ---------- */
+  const bubbleId = useRef(0);
+  const showBubble = (seat: number, text: string) => {
+    const id = ++bubbleId.current;
+    setBubbles(b => [...b.slice(-3), { id, seat, text }]);
+    window.setTimeout(() => setBubbles(b => b.filter(x => x.id !== id)), 2300);
+  };
+
+  /* ---------- room connection (same server as Spades and Snakes & Ladders; its own saved room on this device) ---------- */
+  const send = (o: object) => clientRef.current?.send(o);
+  const openRoom = (first: object) => {
+    const url = serverUrl();
+    if (!url) { setRoomMsg("The room server address is not set up yet, so rooms are not available."); return; }
+    clientRef.current?.close();
+    clientRef.current = new RoomClient(url, first, m => {
+      if (m.t === "state") {
+        const v = m as unknown as LView;
+        if (v.game !== "ludo") return;
+        skew.current = v.now - Date.now(); saveRoom(v.code, ROOM_KEY); setRoomMsg(""); setView(v);
+        const was = lastPhase.current; lastPhase.current = v.phase;
+        if (v.phase !== "lobby" && (was === null || was === "lobby")) { setLocal(null); animatedN.current = null; setSub("table"); }
+        else if (v.phase === "lobby" && was !== "lobby") setSub("room");
+      } else if (m.t === "react" && m.game === "ludo") {
+        const p = PHRASES[Number(m.i)]; if (p) showBubble(Number(m.seat), p);
+      } else if (m.t === "err") setRoomMsg(String(m.msg ?? "Something went wrong."));
+      else if (m.t === "none" || m.t === "left") {
+        saveRoom(null, ROOM_KEY); lastPhase.current = null; setView(null); clientRef.current?.close(); clientRef.current = null;
+        if (m.t === "left") setSub("room");
+      }
+    }, setNet, { roomKey: ROOM_KEY, game: "ludo" });
+  };
+  useEffect(() => {
+    const code = savedRoom(ROOM_KEY);
+    if (code && serverUrl()) openRoom({ t: "hello", game: "ludo", code, token: deviceToken() });
+    return () => clientRef.current?.close();
+  }, []);
+  useEffect(() => { if (!view) return; const id = window.setInterval(() => setTick(t => t + 1), 500); return () => window.clearInterval(id); }, [!!view]);
+  const leaveRoom = () => {
+    send({ t: "leave" });
+    window.setTimeout(() => { saveRoom(null, ROOM_KEY); lastPhase.current = null; setView(null); clientRef.current?.close(); clientRef.current = null; setSub("room"); }, 300);
+  };
+  const roomSubmit = () => {
+    if (!roomName.trim()) { setRoomMsg("Enter your name first."); return; }
+    if (roomTab === "join" && (roomCode.length !== 4 || roomPass.length !== 4)) { setRoomMsg("Enter the 4-letter room code and the 4-digit passcode."); return; }
+    setRoomMsg("");
+    if (roomTab === "create") openRoom({ t: "create", game: "ludo", token: deviceToken(), name: roomName.trim(), passcode: randomPasscode() });
+    else openRoom({ t: "join", game: "ludo", token: deviceToken(), name: roomName.trim(), code: roomCode, passcode: roomPass });
+  };
+
+  /* ---------- games on this device ---------- */
+  const startLocal = (mode: "practice" | "pass") => {
+    const names = mode === "practice" ? ["You", ...BOTS.slice(0, bots)] : passNames.slice(0, passCount).map((n, i) => n.trim() || `Player ${i + 1}`);
+    setLocalMode(mode); setLocalNames(names); animatedN.current = null; setDisp(null); setDieValue(0);
+    setLocal(newGame(names.map((_, i) => i), mode === "practice" ? 0 : Math.floor(Math.random() * names.length)));
+    setSub("table");
+  };
+  useEffect(() => {
+    if (online || !local || local.phase === "gameEnd" || animating) return;
+    if (local.last && local.last.n !== animatedN.current) return;            // wait until the last event has been shown
+    const seat = turnOf(local), bot = localMode === "practice" && seat !== 0;
+    let id = 0;
+    if (local.phase === "roll" && bot) id = window.setTimeout(() => setLocal(g => (g ? roll(g, turnOf(g), rollDie()) : g)), 650 * pace);
+    else if (local.phase === "move") {
+      const forced = local.last?.kind === "roll" ? local.last.forced : null;
+      if (bot) id = window.setTimeout(() => setLocal(g => (g ? move(g, turnOf(g), bestMove(g, turnOf(g))) : g)), 450 * pace);
+      else if (forced != null) id = window.setTimeout(() => setLocal(g => (g ? move(g, turnOf(g), forced) : g)), 300 * pace);
+    }
+    return () => window.clearTimeout(id);
+  }, [online, local, animating, localMode]);
+
+  /* ---------- animation: each new event (from this device or the server) is shown once, in order ---------- */
+  const settle = () => { const t = tableRef.current; if (t) setDisp(copyTokens(t.tokens)); };
+  const play = async (l: LudoEvent) => {
+    const t = tableRef.current!;
+    if (l.kind === "roll") {
+      setSpinning(true); sDice();
+      const end = performance.now() + ANIM.die * pace;
+      while (performance.now() < end - 60) { setDieValue(1 + Math.floor(Math.random() * 6)); await wait(70); }
+      setDieValue(l.value); setSpinning(false);
+      if (l.value === 6) tone(988, .12, "triangle", .05);
+      setMsg(describe(l, t));
+      if (l.outcome !== "choose") await wait(ANIM.pass - 60);
+      return;
+    }
+    const base = copyTokens(dispRef.current ?? t.tokens);
+    if (base[l.seat]) base[l.seat][l.token] = { ...l.from };
+    setMoving(`${l.seat}-${l.token}`);
+    for (const st of l.steps) { base[l.seat][l.token] = st; setDisp(copyTokens(base)); sStep(); await wait(ANIM.step); }
+    setMoving(null);
+    if (l.cuts.length) {
+      for (const c of l.cuts) base[c.seat][c.token] = { s: "base", r: 0, l: 0 };
+      setDisp(copyTokens(base)); setHits(l.cuts.map(c => `${c.seat}-${c.token}`)); sCut();
+      await wait(ANIM.cut); setHits([]);
+    }
+    if (l.home) { sHome(); await wait(ANIM.home); }
+    if (l.finished) sWin();
+  };
+  useEffect(() => {
+    if (!table || sub !== "table") return;
+    const l = table.last;
+    if (animatedN.current === null || !l || l.n < animatedN.current || l.n > animatedN.current + 1) {   // fresh table, resumed game, new game
+      animatedN.current = l?.n ?? 0; settle();
+      if (l?.kind === "roll") setDieValue(l.value);
+      setMsg(l ? describe(l, table) : `${table.names[table.turn]}${table.names[table.turn] === "You" ? " go" : " goes"} first. Roll a 6 to bring a token out.`);
+      return;
+    }
+    if (l.n === animatedN.current) { if (!animating) settle(); return; }
+    animatedN.current = l.n;
+    setAnimating(true);
+    chain.current = chain.current.then(() => play(l)).catch(() => undefined).then(() => {
+      settle(); setAnimating(false);
+      const t = tableRef.current; if (!t) return;
+      const text = describe(l, t); if (text) setMsg(text);
+      if (l.kind === "move" && l.cuts.length && t.mode === "practice") {
+        const victim = l.cuts.find(c => t.bots[c.seat]);
+        if (victim && Math.random() < .6) showBubble(victim.seat, PHRASES[VICTIM[Math.floor(Math.random() * VICTIM.length)]]);
+        else if (t.bots[l.seat] && Math.random() < .4) showBubble(l.seat, PHRASES[HUNTER[0]]);
+      }
+    });
+  }, [table, sub]);
+
+  /* ---------- actions ---------- */
+  const t = table;
+  const holdsTurn = !!t && t.stage !== "gameEnd" && (t.mode === "online" ? t.turn === t.you : t.mode === "pass" ? true : t.turn === 0);
+  const ready = holdsTurn && !animating && !(online && view?.moving);
+  const canRoll = ready && t!.stage === "roll";
+  const forced = t?.last?.kind === "roll" ? t.last.forced : null;
+  const canMove = (seat: number, i: number) => ready && t!.stage === "move" && seat === t!.turn && forced == null && t!.moves.includes(i);
+  const doRoll = () => { if (!canRoll) return; if (online) send({ t: "roll" }); else setLocal(g => (g ? roll(g, turnOf(g), rollDie()) : g)); };
+  const doMove = (seat: number, i: number) => { if (!canMove(seat, i)) return; if (online) send({ t: "move", token: i }); else setLocal(g => (g ? move(g, turnOf(g), i) : g)); };
+  const react = (i: number) => {
+    if (!t) return;
+    if (online) { send({ t: "react", i }); return; }
+    showBubble(t.mode === "practice" ? 0 : t.turn, PHRASES[i]);
+  };
+  useEffect(() => {
+    if (sub !== "table") return;
+    const k = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement) return;
+      if ((e.code === "Space" || e.key === "Enter") && !(e.target instanceof HTMLButtonElement)) { e.preventDefault(); doRoll(); }
+      else if (/^[1-4]$/.test(e.key) && t) doMove(t.turn, Number(e.key) - 1);
+    };
+    window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k);
+  });
+  const secsLeft = online && view?.deadline != null && holdsTurn ? Math.max(0, Math.ceil((view.deadline - (Date.now() + skew.current)) / 1000)) : null;
+  const showEnd = !!t && t.stage === "gameEnd" && !animating;
+
+  /* ---------- screens ---------- */
+  if (sub === "lobby") return <section className="mode-page ld-mode">
+    <button className="back-link" onClick={onHome}>← Back</button>
+    <div className="eyebrow">ROYAL CLUB · LUDO</div>
+    <h1>Choose how you want to play</h1>
+    <div className="mode-grid">
+      <button className={pick === "practice" ? "mode-card selected" : "mode-card"} onClick={() => setPick("practice")}><span className="mode-ico">⚄</span><strong>Practice</strong><p>Play against computer players.</p></button>
+      <button className={pick === "pass" ? "mode-card selected" : "mode-card"} onClick={() => setPick("pass")}><span className="mode-ico">◈</span><strong>Pass &amp; play</strong><p>2 to 4 friends on one phone.</p></button>
+      <button className={pick === "room" ? "mode-card selected" : "mode-card"} onClick={() => setPick("room")}><span className="mode-ico">♛</span><strong>Room</strong><p>Play with 1 to 3 friends using a code.</p></button>
+    </div>
+    {pick === "practice" && <div className="ld-choice"><span>Computer players</span>{[1, 2, 3].map(n => <button key={n} className={bots === n ? "on" : ""} aria-pressed={bots === n} onClick={() => setBots(n)}>{n}</button>)}</div>}
+    {pick === "pass" && <div className="ld-pass">
+      <div className="ld-choice"><span>Players</span>{[2, 3, 4].map(n => <button key={n} className={passCount === n ? "on" : ""} aria-pressed={passCount === n} onClick={() => setPassCount(n)}>{n}</button>)}</div>
+      <div className="ld-names">{passNames.slice(0, passCount).map((n, i) => {
+        const c = (passCount === 2 ? ["red", "yellow"] : passCount === 3 ? ["red", "green", "yellow"] : COLORS)[i] as Color;
+        return <label key={i}><span className={`ld-dot ld-bg-${c}`} />{COLOR_NAME[c]}<input id={`ld-name-${i}`} value={n} maxLength={14} onChange={e => setPassNames(v => v.map((x, j) => (j === i ? e.target.value : x)))} /></label>;
+      })}</div>
+    </div>}
+    <button className="gold-button" onClick={() => (pick === "room" ? setSub("room") : startLocal(pick))}>
+      {pick === "practice" ? "Start practice →" : pick === "pass" ? "Start pass & play →" : "Create or join a room →"}
+    </button>
+    <p className="room-note">Rules: a 6 brings a token out · a 6, a cut or reaching home rolls again · three 6s in a row end the turn · starred and start squares are safe · exact roll to finish.</p>
+  </section>;
+
+  if (sub === "room") return <section className="mode-page room-page ld-mode">
+    <button className="back-link" onClick={() => { setSub("lobby"); setRoomMsg(""); }}>← Back</button>
+    <div className="eyebrow">ROYAL CLUB · LUDO</div>
+    <h1>{!view ? "Play with friends" : view.phase === "lobby" ? "Waiting room" : "Game in progress"}</h1>
+    {!view ? <>
+      <div className="room-tabs">
+        <button className={roomTab === "create" ? "on" : ""} onClick={() => { setRoomTab("create"); setRoomMsg(""); }}>Create a room</button>
+        <button className={roomTab === "join" ? "on" : ""} onClick={() => { setRoomTab("join"); setRoomMsg(""); }}>Join a room</button>
+      </div>
+      <div className="room-form">
+        <label>Your name<input id="ld-room-name" value={roomName} maxLength={16} onChange={e => setRoomName(e.target.value)} placeholder="Enter your name" /></label>
+        {roomTab === "join" && <div className="room-row">
+          <label>Room code<input id="ld-room-code" value={roomCode} maxLength={4} onChange={e => setRoomCode(e.target.value.toUpperCase())} placeholder="K7QM" /></label>
+          <label>Passcode<input id="ld-room-pass" value={roomPass} maxLength={4} inputMode="numeric" onChange={e => setRoomPass(e.target.value.replace(/\D/g, ""))} placeholder="4821" /></label>
+        </div>}
+        <button className="gold-button" disabled={net === "connecting"} onClick={roomSubmit}>{net === "connecting" ? "Connecting…" : roomTab === "create" ? "Create room →" : "Join room →"}</button>
+      </div>
+      {roomMsg && <p className="room-msg">{roomMsg}</p>}
+      <p className="room-note">2 to 4 real players per room. The host can start once at least two have joined.</p>
+    </> : <div className="room-wait">
+      <div className="room-share">
+        <div><small>ROOM CODE</small><b>{view.code}</b></div>
+        <div><small>PASSCODE</small><b>{view.passcode}</b></div>
+        <button className="ghost-button" onClick={() => {
+          const txt = `Ludo? Join my Royal Club room — code ${view.code}, passcode ${view.passcode} — at ${window.location.origin}`;
+          try { navigator.clipboard.writeText(txt).then(() => setRoomMsg("Invite copied."), () => setRoomMsg(txt)); } catch { setRoomMsg(txt); }
+        }}>Copy invite</button>
+      </div>
+      <ul className="room-seats">{view.seats.map((p, i) => <li key={i} className={p ? "filled" : ""}><span>{i + 1}</span>{p ? p.name + (i === view.you ? " (you)" : "") + (!p.connected ? " · offline" : "") : "Open seat"}</li>)}</ul>
+      {view.phase === "lobby" ? (() => {
+        const seated = view.seats.filter(Boolean) as NonNullable<SeatInfo>[], ok = seated.length >= 2 && seated.every(p => p.connected);
+        return <button className="gold-button" disabled={!view.host || !ok} onClick={() => send({ t: "start" })}>
+          {!view.host ? "Waiting for the host to start" : ok ? `Start game with ${seated.length} players →` : seated.length < 2 ? "Waiting for at least 1 more player" : "Waiting for everyone to come online"}
+        </button>;
+      })() : <button className="gold-button" onClick={() => setSub("table")}>Return to the board →</button>}
+      {roomMsg && <p className="room-msg">{roomMsg}</p>}
+      <button className="text-button" onClick={leaveRoom}>Leave room</button>
+      <p className="room-note">{view.phase === "lobby" ? "Colours are given when the game starts: two players sit on opposite corners. Empty seats stay empty — no computer players." : "If you leave, the game plays for you. You can rejoin from this device with the same code and passcode."}</p>
+    </div>}
+  </section>;
+
+  /* ---------- table ---------- */
+  if (!t) return <section className="mode-page ld-mode"><button className="back-link" onClick={() => setSub("lobby")}>← Back</button><p className="room-note">Loading the board…</p></section>;
+  const viewSeat = t.you ?? t.order[0], rot = ROT[t.colors[viewSeat]], k = ((rot / 90) % 4 + 4) % 4;
+  const corner = (seat: number) => CORNERS[(COLORS.indexOf(t.colors[seat]) + k) % 4];
+  const shown = disp ?? t.tokens;
+  const groups: Record<string, [number, number][]> = {};
+  for (const s of t.order) shown[s]?.forEach((tok, i) => { const key = cellKey(t.colors[s], tok, i); (groups[key] = groups[key] || []).push([s, i]); });
+  const place: Record<string, { x: number; y: number; sc: number }> = {};
+  for (const key in groups) {
+    const list = groups[key], n = list.length;
+    const offs = n === 1 ? [[0, 0]] : n === 2 ? [[-.2, 0], [.2, 0]] : n === 3 ? [[-.2, .13], [.2, .13], [0, -.2]] : n === 4 ? [[-.2, -.2], [.2, -.2], [-.2, .2], [.2, .2]]
+      : list.map((_, j) => [Math.cos(j / n * 6.283) * .27, Math.sin(j / n * 6.283) * .27]);
+    list.forEach(([s, i], j) => { const [x, y] = pointOf(t.colors[s], shown[s][i], i); place[`${s}-${i}`] = { x: x + offs[j][0], y: y + offs[j][1], sc: n === 1 ? 1 : n === 2 ? .78 : .64 }; });
+  }
+  const homeCount = (s: number) => t.tokens[s].filter(x => x.s === "home").length;
+  const turnName = t.names[t.turn];
+  const rollLabel = t.stage === "gameEnd" ? "Game over" : canRoll ? (t.mode === "pass" ? `${turnName}: roll` : t.sixes > 0 ? "Roll again" : "Roll")
+    : holdsTurn && t.stage === "move" && !animating ? "Pick a token" : animating ? "Moving…" : `${turnName}'s turn`;
+  return <section className="ld-screen">
+    <div className="ld-toolbar">
+      <button className="back-link" onClick={() => setSub(online ? "room" : "lobby")}>{online ? "← Room" : "← Lobby"}</button>
+      <strong>LUDO<span>{online && view ? `ROOM ${view.code}` : t.mode === "pass" ? "PASS & PLAY" : "PRACTICE"}</span></strong>
+      <span className="ld-tools">
+        <button className="ld-icon" aria-pressed={sound} onClick={() => { const v = !sound; setSound(v); try { window.localStorage.setItem("rc-ludo-sound", v ? "on" : "off"); } catch { /* ignore */ } }}>{sound ? "Sound on" : "Sound off"}</button>
+        <button className="score-chip" onClick={() => setShowRules(v => !v)}>Rules</button>
+      </span>
+    </div>
+    <div className="ld-main">
+      <div className="ld-board-wrap">
+        <div className="ld-board" style={{ "--rot": `${rot}deg` } as CSSProperties}>
+          <BoardArt />
+          <div className="ld-tokens">
+            {t.order.flatMap(s => [0, 1, 2, 3].map(i => {
+              const p = place[`${s}-${i}`]; if (!p) return null;
+              const id = `${s}-${i}`, mv = canMove(s, i);
+              return <button key={id} type="button" className={`ld-token ld-bg-${t.colors[s]}${mv ? " movable" : ""}${moving === id ? " moving" : ""}${hits.includes(id) ? " hit" : ""}`}
+                style={{ left: `${p.x / 15 * 100}%`, top: `${p.y / 15 * 100}%`, "--s": p.sc } as CSSProperties}
+                tabIndex={mv ? 0 : -1} aria-label={`${t.names[s]} token ${i + 1}${mv ? ", can move" : ""}`} onClick={() => doMove(s, i)}>
+                <span>{i + 1}</span>
+              </button>;
+            }))}
+          </div>
+        </div>
+        <div className="ld-fx">{bubbles.map(b => { const [x, y] = corner(b.seat); return <div key={b.id} className={`ld-bubble ld-bd-${t.colors[b.seat]}`} style={{ left: `${x}%`, top: `${y}%` }}><small>{t.names[b.seat]}</small>{b.text}</div>; })}</div>
+        {showEnd && <div className="ld-win">
+          <span className="eyebrow">ROYAL CLUB · LUDO</span>
+          <h2>{t.ranks[0] === t.you ? "You take the crown!" : `${t.names[t.ranks[0]]} wins`}</h2>
+          <ol className="ld-podium">{t.ranks.map((s, i) => <li key={s}><b>{ORD[i]}</b><span className={`ld-dot ld-bg-${t.colors[s]}`} />{t.names[s]}</li>)}</ol>
+          <div className="ld-win-actions">
+            {online ? (view?.host ? <button className="gold-button" onClick={() => send({ t: "again" })}>Play again</button> : <p className="ld-small">Waiting for the host to start a new game.</p>)
+              : <button className="gold-button" onClick={() => startLocal(t.mode === "pass" ? "pass" : "practice")}>Play again</button>}
+            <button className="ghost-button" onClick={() => (online ? leaveRoom() : setSub("lobby"))}>{online ? "Leave room" : "Back to lobby"}</button>
+          </div>
+        </div>}
+        {showRules && <div className="ld-rules" role="dialog" aria-label="Rules">
+          <b>How to play</b>
+          <ul>
+            <li>Roll a <b>6</b> to bring a token out onto your start square.</li>
+            <li>Tokens go clockwise round the board, then up your coloured lane to the centre. You need the <b>exact</b> number to finish.</li>
+            <li>Land on an opponent to <b>cut</b> them back to their yard. Start squares and <b>starred</b> squares are safe.</li>
+            <li>A 6, a cut, or bringing a token home gives <b>another roll</b>. Three 6s in a row end your turn.</li>
+            <li>Play goes on after the first finish, for 2nd and 3rd place.</li>
+            {online && <li>You have 15 seconds to roll and 15 to pick a token, then the game plays for you.</li>}
+          </ul>
+          <button className="ghost-button" onClick={() => setShowRules(false)}>Close</button>
+        </div>}
+      </div>
+      <div className="ld-panel">
+        <ul className="ld-players">
+          {t.order.map(s => <li key={s} className={t.stage !== "gameEnd" && t.turn === s ? "turn" : ""}>
+            <span className={`ld-dot ld-bg-${t.colors[s]}`} />
+            <span className="ld-name">{t.names[s]}{t.away[s] && <em> · away</em>}{t.bots[s] && <em className="bot"> · computer</em>}</span>
+            <span className="ld-home">{t.ranks.includes(s) ? ORD[t.ranks.indexOf(s)] : `${homeCount(s)}/4`}</span>
+          </li>)}
+        </ul>
+        <div className="ld-dock">
+          <button className={`ld-die-btn${canRoll ? " ready" : ""}`} disabled={!canRoll} onClick={doRoll} aria-label="Roll the die"><Die value={dieValue} spinning={spinning} /></button>
+          <div className="ld-dock-main">
+            <button className="gold-button ld-roll" disabled={!canRoll} onClick={doRoll}>{rollLabel}</button>
+            {secsLeft !== null && ready && <span className={`timer-chip ${secsLeft <= 5 ? "urgent" : ""}`}>⏱ {secsLeft}s</span>}
+          </div>
+        </div>
+        <p className="ld-msg" aria-live="polite">{msg}</p>
+        <div className="ld-reacts" aria-label="Quick phrases">{PHRASES.map((p, i) => <button key={i} onClick={() => react(i)}>{p}</button>)}</div>
+      </div>
+    </div>
+  </section>;
 }

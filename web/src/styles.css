@@ -673,3 +673,62 @@ main>.hero .hero-ornament{font-size:90px;top:50%;right:34%;opacity:.12}
 .theme-ivory:not(:has(.sl-screen, .ld-screen)) main>.hero h1{white-space:normal;text-wrap:balance}
 @media (max-width:760px){.theme-ivory:not(:has(.sl-screen, .ld-screen)) main>.hero h1{font-size:21px;line-height:1.2}}
 .theme-ivory:not(:has(.sl-screen, .ld-screen)) .tp-preview figcaption b{font-family:'Cinzel',serif}
+
+/* ===== Home 9/10 pass: crown mark, saffron call-to-actions, featured EKAH, no lopsided columns ===== */
+.theme-ivory:not(:has(.sl-screen, .ld-screen)){--iv-saffron:#F28C28;--iv-saffron-dark:#DB7614;--iv-saffron-ink:#2A1605}
+.crown-mark{width:58%;height:58%;display:block}
+.brand-mark{display:grid;place-items:center}
+footer .footer-brand{display:inline-flex;align-items:center;gap:6px}
+footer .footer-brand .crown-mark{width:12px;height:12px}
+.theme-ivory:not(:has(.sl-screen, .ld-screen)) footer span.footer-brand{color:var(--iv-muted);font-family:inherit}
+.theme-ivory:not(:has(.sl-screen, .ld-screen)) footer>span:last-child{color:var(--iv-gold-text);font-family:'Cinzel',serif}
+/* Saffron is kept for things to tap */
+.saffron-button{padding:12px 20px;border:0;border-radius:10px;font-weight:800;white-space:nowrap;background:var(--iv-saffron,#F28C28);color:var(--iv-saffron-ink,#2A1605);box-shadow:0 6px 16px rgba(242,140,40,.32)}
+.saffron-button:hover{background:var(--iv-saffron-dark,#DB7614)}
+.saffron-button:focus-visible,.theme-ivory .game-info .text-button:focus-visible{outline:2px solid #0F4D3A;outline-offset:2px}
+main>.hero .hero-actions .saffron-button{padding:10px 18px;font-size:14px}
+.theme-ivory:not(:has(.sl-screen, .ld-screen)) .game-info .text-button{display:inline-block;padding:7px 14px;border-radius:999px;background:var(--iv-saffron);color:var(--iv-saffron-ink);font-weight:800;font-size:13px;box-shadow:0 3px 10px rgba(242,140,40,.28)}
+/* Whole card is tappable */
+.theme-ivory:not(:has(.sl-screen, .ld-screen)) .game-section .game-card{position:relative;transition:transform .18s ease,box-shadow .18s ease}
+.theme-ivory:not(:has(.sl-screen, .ld-screen)) .game-section .game-info .text-button::after{content:"";position:absolute;inset:0;border-radius:inherit}
+@media (hover:hover){.theme-ivory:not(:has(.sl-screen, .ld-screen)) .game-section .game-card:hover{transform:translateY(-3px);box-shadow:0 2px 4px rgba(60,40,10,.06),0 14px 30px rgba(60,40,10,.14)}}
+/* Small labels: readable size and contrast */
+.theme-ivory:not(:has(.sl-screen, .ld-screen)) .game-section-head small{color:#5E4512;font-weight:600}
+
+/* Desktop and tablet: sections stack — EKAH as a wide featured tile, board games in a row of three */
+@media (min-width:761px) and (min-height:521px){
+  .game-sections{grid-template-columns:1fr;gap:30px}
+  .game-section-card .game-grid{grid-template-columns:1fr}
+  .game-section-card .game-card{grid-template-columns:minmax(220px,32%) 1fr;grid-template-rows:auto;min-height:190px}
+  .game-section-card .game-art{border-bottom:0}
+  .game-section-card .game-art .spade-emblem{width:auto;height:130px}
+  .game-section-card .game-info{display:flex;flex-direction:column;justify-content:center;padding:26px 32px}
+  .game-section-card .game-info h3{font-size:30px}
+  .game-section-card .game-info p{font-size:15px;max-width:46ch}
+  .game-section-board .game-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .game-section-board .game-card{grid-template-columns:1fr;grid-template-rows:130px auto}
+  .game-section-board .game-art{border-right:0}
+  .game-section-board .game-art .spade-emblem{width:auto;height:96px}
+  .game-section .game-info .text-button{align-self:flex-start}
+}
+/* Phone portrait: one column, compact rows with the icon on the left — no empty half-screen */
+@media (max-width:760px) and (orientation:portrait){
+  .game-sections{grid-template-columns:1fr;gap:14px}
+  .game-section{gap:8px}
+  .game-section-head{flex-direction:row;align-items:baseline;justify-content:space-between}
+  .game-section-head h2{font-size:18px}
+  .game-section-head small{font-size:10px;letter-spacing:.08em}
+  .game-section .game-card{grid-template-columns:84px 1fr;grid-template-rows:auto}
+  .game-section .game-art{border-bottom:0}
+  .game-section .game-art .spade-emblem{width:62px;height:62px}
+  .game-section-card .game-card{grid-template-columns:104px 1fr}
+  .game-section-card .game-art .spade-emblem{width:80px;height:80px}
+  .game-section .game-info{padding:11px 13px 12px}
+  .game-section .game-info h3{font-size:15px;margin:0 0 3px}
+  .game-section-card .game-info h3{font-size:18px}
+  .game-section .game-info p{font-size:12px;line-height:1.4;margin:0 0 8px}
+  .theme-ivory:not(:has(.sl-screen, .ld-screen)) .game-section .game-info .text-button{font-size:12px;padding:6px 12px}
+  main>.hero .hero-actions .saffron-button{padding:9px 14px;font-size:13px}
+  main>.hero .eyebrow{font-size:10px}
+  main>.hero,main>.game-sections{flex-shrink:0}
+}

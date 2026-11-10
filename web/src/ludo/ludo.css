@@ -275,3 +275,13 @@
 .ld-screen .ld-token-grid strong{color:var(--iv-emerald)}
 .ld-screen .ld-token-grid small,.ld-screen .ld-dice-grid small{color:var(--iv-muted)}
 .ld-screen button:focus-visible,.ld-screen .ld-sheet button:focus-visible{outline-color:var(--iv-emerald)}
+
+/* Indian sentries: taller figure, a little march bob while moving, and they topple over when cut */
+.ld-set-sentry .ld-token{--lift:-24%;width:calc(100% / 15 * 1.22)}
+.ld-token-row .ld-piece{overflow:visible}
+.ld-set-sentry .ld-token.moving .ld-piece{animation:ldMarch .32s ease-in-out infinite}
+.ld-set-sentry .ld-token.hit{animation:none}
+.ld-set-sentry .ld-token.hit .ld-piece{animation:ldTopple .34s ease-in forwards}
+@keyframes ldMarch{0%,100%{translate:0 0;rotate:-3deg}50%{translate:0 -7%;rotate:3deg}}
+@keyframes ldTopple{0%{rotate:0deg}100%{rotate:85deg;translate:12% 8%}}
+@media (prefers-reduced-motion:reduce){.ld-set-sentry .ld-token.moving .ld-piece,.ld-set-sentry .ld-token.hit .ld-piece{animation:none}}

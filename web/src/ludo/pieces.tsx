@@ -2,6 +2,7 @@
 import type { Color } from "./engine";
 
 export const TOKEN_SETS = [
+  { id: "sentry", name: "Indian sentries", note: "Palace guards in turbans, with spear and shield" },
   { id: "pawn", name: "Royal pawn", note: "The classic Ludo piece, lacquered with a gold collar" },
   { id: "crown", name: "Crowns", note: "Jewelled crowns for a royal table" },
   { id: "gem", name: "Gemstones", note: "Cut ruby, emerald, topaz and sapphire" },
@@ -47,6 +48,31 @@ const shadow = <ellipse cx="20" cy="35.2" rx="11" ry="2.8" fill="rgba(0,0,0,.38)
 /** One token drawn in the chosen set. viewBox 0 0 40 40; the piece's footprint sits on the square's centre. */
 export function Piece({ set, color }: { set: TokenSet; color: Color }) {
   const ball = `url(#ldp-${color}-ball)`, body = `url(#ldp-${color}-body)`, v = `url(#ldp-${color}-v)`, t = TONES[color];
+  if (set === "sentry") {
+    /* A Rajput-style palace guard: turban and angarkha in the player's colour, gold sash and shield, a spear.
+       Drawn tall (viewBox 52 x 60) with a bold silhouette so the colour still reads on small phones. */
+    return <svg className="ld-piece" viewBox="2 -0.5 36 59" aria-hidden="true" focusable="false">
+      <ellipse cx="20" cy="57.6" rx="12" ry="2.4" fill="rgba(0,0,0,.3)" />
+      <ellipse cx="20" cy="55" rx="12" ry="3.6" fill="#a87a24" /><ellipse cx="20" cy="54" rx="11" ry="2.7" fill="url(#ldp-gold-h)" />
+      <line x1="32" y1="4" x2="32" y2="54" stroke="#6e4518" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M32 0.4 L34.3 6.2 L29.7 6.2 Z" fill="#dfe3ea" stroke="#8e96a3" strokeWidth=".4" />
+      <rect x="15.4" y="40.5" width="4.2" height="13" rx="1.6" fill="#f6eedb" /><rect x="20.4" y="40.5" width="4.2" height="13" rx="1.6" fill="#f6eedb" />
+      <rect x="15" y="52" width="4.8" height="2.2" rx="1.1" fill="#5a3412" /><rect x="20.2" y="52" width="4.8" height="2.2" rx="1.1" fill="#5a3412" />
+      <rect x="27.4" y="23" width="4" height="13.5" rx="2" fill={t.lo} /><circle cx="31.4" cy="36" r="2.1" fill="#d6a379" />
+      <path d="M12.4 21.6 L27.6 21.6 L31 43.6 L9 43.6 Z" fill={body} stroke={t.lo} strokeWidth=".6" strokeLinejoin="round" />
+      <path d="M12.6 23 L27.4 33.4 L27.6 36.4 L12.6 26 Z" fill="url(#ldp-gold)" />
+      <rect x="9" y="41.8" width="22" height="2" rx=".6" fill="url(#ldp-gold-h)" />
+      <circle cx="9.6" cy="31.4" r="5.6" fill="url(#ldp-gold)" stroke="#7a5214" strokeWidth=".7" />
+      <circle cx="9.6" cy="31.4" r="3.4" fill={t.base} stroke="#7a5214" strokeWidth=".5" /><circle cx="9.6" cy="31.4" r="1.2" fill="#f6dc8e" />
+      <circle cx="20" cy="17.4" r="4.1" fill="#d6a379" />
+      <path d="M17.6 19.3 q2.4 1.3 4.8 0" stroke="#3b2414" strokeWidth="1" fill="none" strokeLinecap="round" />
+      <ellipse cx="20" cy="12.4" rx="7" ry="5" fill={ball} stroke={t.lo} strokeWidth=".6" />
+      <path d="M13.6 12 Q20 8.2 26.4 12" stroke={t.hi} strokeWidth="1.2" fill="none" opacity=".8" />
+      <path d="M13.8 14.4 Q20 10.8 26.2 14.4" stroke={t.lo} strokeWidth="1" fill="none" />
+      <circle cx="20" cy="8.6" r="1.6" fill="url(#ldp-gold)" />
+      <path d="M20 7.6 q-1.2 -5.4 2.8 -7.4 q-.6 3.8 -2.1 7.4 z" fill="#fff6dc" stroke="#d9b45a" strokeWidth=".3" />
+    </svg>;
+  }
   let art;
   switch (set) {
     case "pawn":

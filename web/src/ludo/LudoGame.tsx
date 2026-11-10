@@ -173,7 +173,7 @@ export default function LudoGame({ onHome }: { onHome: () => void }) {
   const [moving, setMoving] = useState<string | null>(null);
   const [hits, setHits] = useState<string[]>([]);
   const [dieValue, setDieValue] = useState(6);
-  const [tokenSet, setTokenSet] = useState<TokenSet>(() => readKey(TOKEN_KEY, TOKEN_SETS.map(x => x.id), "pawn"));
+  const [tokenSet, setTokenSet] = useState<TokenSet>(() => readKey(TOKEN_KEY, TOKEN_SETS.map(x => x.id), "sentry"));
   const [dice, setDice] = useState<DiceId>(() => readKey(DICE_KEY, DICE.map(x => x.id), "ivory"));
   const chooseTokens = (v: TokenSet) => { setTokenSet(v); keep(TOKEN_KEY, v); };
   const chooseDice = (v: DiceId) => { setDice(v); keep(DICE_KEY, v); };
@@ -303,9 +303,12 @@ export default function LudoGame({ onHome }: { onHome: () => void }) {
     for (const st of l.steps) { base[l.seat][l.token] = st; setDisp(copyTokens(base)); sStep(); await wait(ANIM.step); }
     setMoving(null);
     if (l.cuts.length) {
+      /* the cut token reacts where it stood (sentries topple over), then goes back to its yard */
+      setHits(l.cuts.map(c => `${c.seat}-${c.token}`)); sCut();
+      await wait(ANIM.cut * .6);
       for (const c of l.cuts) base[c.seat][c.token] = { s: "base", r: 0, l: 0 };
-      setDisp(copyTokens(base)); setHits(l.cuts.map(c => `${c.seat}-${c.token}`)); sCut();
-      await wait(ANIM.cut); setHits([]);
+      setDisp(copyTokens(base)); setHits([]);
+      await wait(ANIM.cut * .4);
     }
     if (l.home) { sHome(); await wait(ANIM.home); }
     if (l.finished) sWin();

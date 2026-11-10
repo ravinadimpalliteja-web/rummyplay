@@ -21,7 +21,7 @@ export const COLORS: Color[] = ["red", "green", "yellow", "blue"];
 export const START: Record<Color, number> = { red: 0, green: 13, yellow: 26, blue: 39 };
 export const SAFE = new Set([0, 8, 13, 21, 26, 34, 39, 47]);
 /* Animation timings (ms). The room server waits the same lengths between events (server/ludo.js ANIM). */
-export const ANIM = { die: 650, step: 160, cut: 550, home: 350, pass: 450 };
+export const ANIM = { die: 1000, step: 160, cut: 550, home: 350, pass: 450 };
 
 const clone = <T,>(x: T): T => JSON.parse(JSON.stringify(x));
 export const colorsFor = (n: number): Color[] => (n === 2 ? ["red", "yellow"] : n === 3 ? ["red", "green", "yellow"] : COLORS.slice());

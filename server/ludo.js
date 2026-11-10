@@ -148,7 +148,7 @@ function bestMove(g, seat) {
 }
 
 /** How long clients spend animating an event. The server waits this long before the next one. */
-const ANIM = { die: 650, step: 160, cut: 550, home: 350, pass: 450 };
+const ANIM = { die: 1000, step: 160, cut: 550, home: 350, pass: 450 };
 function animMs(last) {
   if (!last) return 0;
   if (last.kind === 'roll') return ANIM.die + (last.outcome === 'choose' ? 100 : ANIM.pass);

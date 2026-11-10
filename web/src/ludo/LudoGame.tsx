@@ -4,15 +4,18 @@ import {
   ANIM, COLORS, LANE, SAFE, SPOTS, TRACK, YARD, bestMove, cellKey, move, newGame, pointOf, roll, rollDie, turnOf,
   type Color, type LudoEvent, type LudoGame as Game, type Tok,
 } from "./engine";
+import { DICE, Face, Piece, PieceDefs, TOKEN_SETS, setPips, type DiceId, type TokenSet } from "./pieces";
 import "./ludo.css";
 
 const ROOM_KEY = "rc-ludo-room";
 const BOTS = ["Maya", "Alex", "Jordan"];
 const COLOR_NAME: Record<Color, string> = { red: "Ruby", green: "Jade", yellow: "Saffron", blue: "Sapphire" };
-const PHRASES = ["Arey yaar 😭", "Bhai seedha ghar 🏠", "Ek aur six! 🎲", "Kya baat 👑", "Bach gaya 😅", "Revenge loading 😤", "Well played 👏", "Jaldi karo ⏳"];
-const VICTIM = [0, 5], HUNTER = [3];
+const PHRASES = ["Nice move! 👍", "Good luck 🍀", "Well played 👏", "Oops! 😅", "Hurry up ⏳", "So close! 😮", "Revenge is coming 😤", "Great roll! 🎲"];
+const VICTIM = [3, 6], HUNTER = [0];
+const TOKEN_KEY = "rc-ludo-tokens", DICE_KEY = "rc-ludo-dice";
+const readKey = <T extends string>(key: string, ok: readonly string[], dflt: T): T => { try { const v = window.localStorage.getItem(key); return v && ok.includes(v) ? (v as T) : dflt; } catch { return dflt; } };
+const keep = (key: string, v: string) => { try { window.localStorage.setItem(key, v); } catch { /* storage off: still works for this visit */ } };
 const ORD = ["1st", "2nd", "3rd", "4th"];
-const PIPS: Record<number, number[]> = { 0: [], 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
 /* Rotate the board so the viewer's yard sits bottom-left (red is top-left in board coordinates). */
 const ROT: Record<Color, number> = { blue: 0, red: -90, green: 180, yellow: 90 };
 const CORNERS: [number, number][] = [[18, 15], [82, 15], [82, 85], [18, 85]];
@@ -129,9 +132,18 @@ function BoardArt() {
   </svg>;
 }
 
-function Die({ value, spinning }: { value: number; spinning: boolean }) {
-  return <div className={`ld-die ${spinning ? "spin" : ""}`} aria-label={value ? `Die showing ${value}` : "Die"}>
-    {Array.from({ length: 9 }, (_, i) => <i key={i} className={PIPS[value]?.includes(i) ? "on" : ""} />)}
+/** Previews of every token set (all four colours) and every dice finish, for the lobby and the in-game Style sheet. */
+function StylePicker({ tokens, dice, onTokens, onDice }: { tokens: TokenSet; dice: DiceId; onTokens: (t: TokenSet) => void; onDice: (d: DiceId) => void }) {
+  return <div className="ld-style">
+    <b className="ld-style-title">Tokens</b>
+    <div className="ld-token-grid">{TOKEN_SETS.map(s => <button key={s.id} className={tokens === s.id ? "on" : ""} aria-pressed={tokens === s.id} onClick={() => onTokens(s.id)}>
+      <span className="ld-token-row">{COLORS.map(c => <Piece key={c} set={s.id} color={c} />)}</span>
+      <strong>{s.name}</strong><small>{s.note}</small>
+    </button>)}</div>
+    <b className="ld-style-title">Dice</b>
+    <div className="ld-dice-grid">{DICE.map(d => <button key={d.id} className={dice === d.id ? "on" : ""} aria-pressed={dice === d.id} onClick={() => onDice(d.id)}>
+      <span className={`ld-mini d-${d.id}`}><span className="ld-face"><Face v={5} /></span></span><small>{d.name}</small>
+    </button>)}</div>
   </div>;
 }
 
@@ -154,8 +166,13 @@ export default function LudoGame({ onHome }: { onHome: () => void }) {
   const [animating, setAnimating] = useState(false);
   const [moving, setMoving] = useState<string | null>(null);
   const [hits, setHits] = useState<string[]>([]);
-  const [dieValue, setDieValue] = useState(0), [spinning, setSpinning] = useState(false);
-  const [msg, setMsg] = useState(""), [showRules, setShowRules] = useState(false), [sound, setSound] = useState(audioOn());
+  const [dieValue, setDieValue] = useState(6);
+  const [tokenSet, setTokenSet] = useState<TokenSet>(() => readKey(TOKEN_KEY, TOKEN_SETS.map(x => x.id), "pawn"));
+  const [dice, setDice] = useState<DiceId>(() => readKey(DICE_KEY, DICE.map(x => x.id), "ivory"));
+  const chooseTokens = (v: TokenSet) => { setTokenSet(v); keep(TOKEN_KEY, v); };
+  const chooseDice = (v: DiceId) => { setDice(v); keep(DICE_KEY, v); };
+  const diceRef = useRef<HTMLDivElement | null>(null), faceRef = useRef<HTMLDivElement | null>(null), shadowRef = useRef<HTMLDivElement | null>(null);
+  const [msg, setMsg] = useState(""), [sheet, setSheet] = useState<"none" | "rules" | "style">("none"), [sound, setSound] = useState(audioOn());
   const [bubbles, setBubbles] = useState<{ id: number; seat: number; text: string }[]>([]);
   const [, setTick] = useState(0);
 
@@ -219,7 +236,7 @@ export default function LudoGame({ onHome }: { onHome: () => void }) {
   /* ---------- games on this device ---------- */
   const startLocal = (mode: "practice" | "pass") => {
     const names = mode === "practice" ? ["You", ...BOTS.slice(0, bots)] : passNames.slice(0, passCount).map((n, i) => n.trim() || `Player ${i + 1}`);
-    setLocalMode(mode); setLocalNames(names); animatedN.current = null; setDisp(null); setDieValue(0);
+    setLocalMode(mode); setLocalNames(names); animatedN.current = null; setDisp(null);
     setLocal(newGame(names.map((_, i) => i), mode === "practice" ? 0 : Math.floor(Math.random() * names.length)));
     setSub("table");
   };
@@ -239,13 +256,36 @@ export default function LudoGame({ onHome }: { onHome: () => void }) {
 
   /* ---------- animation: each new event (from this device or the server) is shown once, in order ---------- */
   const settle = () => { const t = tableRef.current; if (t) setDisp(copyTokens(t.tokens)); };
+  /* The Snakes & Ladders die: tossed up off its pedestal spinning flat, the face flicking through numbers as it
+     tumbles, then it bounces with a little squash and settles on the value the game rolled. */
+  const throwDie = (value: number) => new Promise<void>(resolve => {
+    const el = diceRef.current, face = faceRef.current, sh = shadowRef.current;
+    if (!el || !face || !sh) { resolve(); return; }
+    const size = el.clientWidth || 56, dir = Math.random() < .5 ? -1 : 1;
+    const spins = (2 + Math.floor(Math.random() * 2)) * 360 * dir, endTilt = (Math.random() - .5) * 16;
+    const jx = (Math.random() - .5) * size * .6, dur = reduced ? 250 : ANIM.die - 60, t0 = performance.now();
+    let nextFlip = 0, shown = value;
+    sDice();
+    const step = (now: number) => {
+      const t = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - t, 3), rot = 1 - Math.pow(1 - t, 2.2);
+      const bounce = Math.abs(Math.cos(t * Math.PI * 2.5)), h = reduced ? 0 : size * 1.5 * Math.pow(1 - t, 1.6) * bounce, x = jx * (1 - e);
+      const squash = h < size * .06 && t > .2 && t < .97 ? .9 : 1;
+      el.style.transform = `translate(${x}px, ${-h}px)`;
+      face.style.transform = t < 1 ? `rotate(${spins * (1 - rot) + endTilt * rot}deg) scale(${1 + h / size * .12}, ${(1 + h / size * .12) * squash})` : `rotate(${endTilt}deg)`;
+      if (t < .82 && now >= nextFlip) { let n = shown; while (n === shown) n = 1 + Math.floor(Math.random() * 6); shown = n; setPips(face, n); nextFlip = now + 45 + t * 140; }
+      else if (t >= .82 && shown !== value) { shown = value; setPips(face, value); }
+      sh.style.transform = `translateX(${x}px) scale(${Math.max(.45, 1 - h / size * .4)})`;
+      sh.style.opacity = String(Math.max(.2, .6 - h / size * .3));
+      if (t < 1) requestAnimationFrame(step);
+      else { el.style.transform = ""; setPips(face, value); try { navigator.vibrate?.(18); } catch { /* not supported */ } resolve(); }
+    };
+    requestAnimationFrame(step);
+  });
   const play = async (l: LudoEvent) => {
     const t = tableRef.current!;
     if (l.kind === "roll") {
-      setSpinning(true); sDice();
-      const end = performance.now() + ANIM.die * pace;
-      while (performance.now() < end - 60) { setDieValue(1 + Math.floor(Math.random() * 6)); await wait(70); }
-      setDieValue(l.value); setSpinning(false);
+      await throwDie(l.value);
+      setDieValue(l.value);
       if (l.value === 6) tone(988, .12, "triangle", .05);
       setMsg(describe(l, t));
       if (l.outcome !== "choose") await wait(ANIM.pass - 60);
@@ -335,6 +375,7 @@ export default function LudoGame({ onHome }: { onHome: () => void }) {
     <button className="gold-button" onClick={() => (pick === "room" ? setSub("room") : startLocal(pick))}>
       {pick === "practice" ? "Start practice →" : pick === "pass" ? "Start pass & play →" : "Create or join a room →"}
     </button>
+    <details className="ld-style-box"><summary>Token and dice style</summary><StylePicker tokens={tokenSet} dice={dice} onTokens={chooseTokens} onDice={chooseDice} /></details>
     <p className="room-note">Rules: a 6 brings a token out · a 6, a cut or reaching home rolls again · three 6s in a row end the turn · starred and start squares are safe · exact roll to finish.</p>
   </section>;
 
@@ -391,79 +432,97 @@ export default function LudoGame({ onHome }: { onHome: () => void }) {
     const list = groups[key], n = list.length;
     const offs = n === 1 ? [[0, 0]] : n === 2 ? [[-.2, 0], [.2, 0]] : n === 3 ? [[-.2, .13], [.2, .13], [0, -.2]] : n === 4 ? [[-.2, -.2], [.2, -.2], [-.2, .2], [.2, .2]]
       : list.map((_, j) => [Math.cos(j / n * 6.283) * .27, Math.sin(j / n * 6.283) * .27]);
-    list.forEach(([s, i], j) => { const [x, y] = pointOf(t.colors[s], shown[s][i], i); place[`${s}-${i}`] = { x: x + offs[j][0], y: y + offs[j][1], sc: n === 1 ? 1 : n === 2 ? .78 : .64 }; });
+    list.forEach(([s, i], j) => { const [x, y] = pointOf(t.colors[s], shown[s][i], i); place[`${s}-${i}`] = { x: x + offs[j][0], y: y + offs[j][1], sc: n === 1 ? 1 : n === 2 ? .74 : .6 }; });
   }
   const homeCount = (s: number) => t.tokens[s].filter(x => x.s === "home").length;
   const turnName = t.names[t.turn];
-  const rollLabel = t.stage === "gameEnd" ? "Game over" : canRoll ? (t.mode === "pass" ? `${turnName}: roll` : t.sixes > 0 ? "Roll again" : "Roll")
-    : holdsTurn && t.stage === "move" && !animating ? "Pick a token" : animating ? "Moving…" : `${turnName}'s turn`;
+  const hint = t.stage === "gameEnd" ? "Game over"
+    : canRoll ? (t.mode === "pass" ? `${turnName}: tap the dice` : t.sixes > 0 ? "Tap the dice to roll again" : "Tap the dice to roll")
+    : holdsTurn && t.stage === "move" && !animating ? "Tap a glowing token" : animating ? "Moving…" : `${turnName}'s turn`;
   return <section className="ld-screen">
+    <PieceDefs />
     <div className="ld-toolbar">
       <button className="back-link" onClick={() => setSub(online ? "room" : "lobby")}>{online ? "← Room" : "← Lobby"}</button>
       <strong>LUDO<span>{online && view ? `ROOM ${view.code}` : t.mode === "pass" ? "PASS & PLAY" : "PRACTICE"}</span></strong>
       <span className="ld-tools">
-        <button className="ld-icon" aria-pressed={sound} onClick={() => { const v = !sound; setSound(v); try { window.localStorage.setItem("rc-ludo-sound", v ? "on" : "off"); } catch { /* ignore */ } }}>{sound ? "Sound on" : "Sound off"}</button>
-        <button className="score-chip" onClick={() => setShowRules(v => !v)}>Rules</button>
+        <button className="ld-icon" aria-pressed={sound} aria-label={sound ? "Sound on" : "Sound off"} onClick={() => { const v = !sound; setSound(v); try { window.localStorage.setItem("rc-ludo-sound", v ? "on" : "off"); } catch { /* ignore */ } }}>{sound ? "🔊" : "🔇"}</button>
+        <button className="ld-icon" onClick={() => setSheet(sheet === "style" ? "none" : "style")} aria-expanded={sheet === "style"}>Style</button>
+        <button className="ld-icon" onClick={() => setSheet(sheet === "rules" ? "none" : "rules")} aria-expanded={sheet === "rules"}>Rules</button>
       </span>
     </div>
     <div className="ld-main">
-      <div className="ld-board-wrap">
-        <div className="ld-board" style={{ "--rot": `${rot}deg` } as CSSProperties}>
-          <BoardArt />
-          <div className="ld-tokens">
-            {t.order.flatMap(s => [0, 1, 2, 3].map(i => {
-              const p = place[`${s}-${i}`]; if (!p) return null;
-              const id = `${s}-${i}`, mv = canMove(s, i);
-              return <button key={id} type="button" className={`ld-token ld-bg-${t.colors[s]}${mv ? " movable" : ""}${moving === id ? " moving" : ""}${hits.includes(id) ? " hit" : ""}`}
-                style={{ left: `${p.x / 15 * 100}%`, top: `${p.y / 15 * 100}%`, "--s": p.sc } as CSSProperties}
-                tabIndex={mv ? 0 : -1} aria-label={`${t.names[s]} token ${i + 1}${mv ? ", can move" : ""}`} onClick={() => doMove(s, i)}>
-                <span>{i + 1}</span>
-              </button>;
-            }))}
+      <div className="ld-stage">
+        <div className="ld-board-wrap">
+          <div className={`ld-board ld-set-${tokenSet}`} style={{ "--rot": `${rot}deg` } as CSSProperties}>
+            <BoardArt />
+            <div className="ld-tokens">
+              {t.order.flatMap(s => [0, 1, 2, 3].map(i => {
+                const p = place[`${s}-${i}`]; if (!p) return null;
+                const id = `${s}-${i}`, mv = canMove(s, i);
+                return <button key={id} type="button" className={`ld-token${mv ? " movable" : ""}${moving === id ? " moving" : ""}${hits.includes(id) ? " hit" : ""}`}
+                  style={{ left: `${p.x / 15 * 100}%`, top: `${p.y / 15 * 100}%`, "--s": p.sc } as CSSProperties}
+                  tabIndex={mv ? 0 : -1} aria-label={`${t.names[s]} token ${i + 1}${mv ? ", can move" : ""}`} onClick={() => doMove(s, i)}>
+                  <Piece set={tokenSet} color={t.colors[s]} />
+                  {mv && <span className="ld-badge">{i + 1}</span>}
+                </button>;
+              }))}
+            </div>
           </div>
+          <div className="ld-fx">{bubbles.map(b => { const [x, y] = corner(b.seat); return <div key={b.id} className={`ld-bubble ld-bd-${t.colors[b.seat]}`} style={{ left: `${x}%`, top: `${y}%` }}><small>{t.names[b.seat]}</small>{b.text}</div>; })}</div>
+          {showEnd && <div className="ld-win">
+            <span className="eyebrow">ROYAL CLUB · LUDO</span>
+            <h2>{t.ranks[0] === t.you ? "You take the crown!" : `${t.names[t.ranks[0]]} wins`}</h2>
+            <ol className="ld-podium">{t.ranks.map((s, i) => <li key={s}><b>{ORD[i]}</b><span className={`ld-dot ld-bg-${t.colors[s]}`} />{t.names[s]}</li>)}</ol>
+            <div className="ld-win-actions">
+              {online ? (view?.host ? <button className="gold-button" onClick={() => send({ t: "again" })}>Play again</button> : <p className="ld-small">Waiting for the host to start a new game.</p>)
+                : <button className="gold-button" onClick={() => startLocal(t.mode === "pass" ? "pass" : "practice")}>Play again</button>}
+              <button className="ghost-button" onClick={() => (online ? leaveRoom() : setSub("lobby"))}>{online ? "Leave room" : "Back to lobby"}</button>
+            </div>
+          </div>}
         </div>
-        <div className="ld-fx">{bubbles.map(b => { const [x, y] = corner(b.seat); return <div key={b.id} className={`ld-bubble ld-bd-${t.colors[b.seat]}`} style={{ left: `${x}%`, top: `${y}%` }}><small>{t.names[b.seat]}</small>{b.text}</div>; })}</div>
-        {showEnd && <div className="ld-win">
-          <span className="eyebrow">ROYAL CLUB · LUDO</span>
-          <h2>{t.ranks[0] === t.you ? "You take the crown!" : `${t.names[t.ranks[0]]} wins`}</h2>
-          <ol className="ld-podium">{t.ranks.map((s, i) => <li key={s}><b>{ORD[i]}</b><span className={`ld-dot ld-bg-${t.colors[s]}`} />{t.names[s]}</li>)}</ol>
-          <div className="ld-win-actions">
-            {online ? (view?.host ? <button className="gold-button" onClick={() => send({ t: "again" })}>Play again</button> : <p className="ld-small">Waiting for the host to start a new game.</p>)
-              : <button className="gold-button" onClick={() => startLocal(t.mode === "pass" ? "pass" : "practice")}>Play again</button>}
-            <button className="ghost-button" onClick={() => (online ? leaveRoom() : setSub("lobby"))}>{online ? "Leave room" : "Back to lobby"}</button>
-          </div>
-        </div>}
-        {showRules && <div className="ld-rules" role="dialog" aria-label="Rules">
-          <b>How to play</b>
-          <ul>
-            <li>Roll a <b>6</b> to bring a token out onto your start square.</li>
-            <li>Tokens go clockwise round the board, then up your coloured lane to the centre. You need the <b>exact</b> number to finish.</li>
-            <li>Land on an opponent to <b>cut</b> them back to their yard. Start squares and <b>starred</b> squares are safe.</li>
-            <li>A 6, a cut, or bringing a token home gives <b>another roll</b>. Three 6s in a row end your turn.</li>
-            <li>Play goes on after the first finish, for 2nd and 3rd place.</li>
-            {online && <li>You have 15 seconds to roll and 15 to pick a token, then the game plays for you.</li>}
-          </ul>
-          <button className="ghost-button" onClick={() => setShowRules(false)}>Close</button>
-        </div>}
       </div>
-      <div className="ld-panel">
+      <aside className="ld-panel" aria-label="Players and dice">
         <ul className="ld-players">
           {t.order.map(s => <li key={s} className={t.stage !== "gameEnd" && t.turn === s ? "turn" : ""}>
             <span className={`ld-dot ld-bg-${t.colors[s]}`} />
-            <span className="ld-name">{t.names[s]}{t.away[s] && <em> · away</em>}{t.bots[s] && <em className="bot"> · computer</em>}</span>
+            <span className="ld-name">{t.names[s]}{t.away[s] && <em> · away</em>}{t.bots[s] && <em className="bot"> · CPU</em>}</span>
             <span className="ld-home">{t.ranks.includes(s) ? ORD[t.ranks.indexOf(s)] : `${homeCount(s)}/4`}</span>
           </li>)}
         </ul>
         <div className="ld-dock">
-          <button className={`ld-die-btn${canRoll ? " ready" : ""}`} disabled={!canRoll} onClick={doRoll} aria-label="Roll the die"><Die value={dieValue} spinning={spinning} /></button>
-          <div className="ld-dock-main">
-            <button className="gold-button ld-roll" disabled={!canRoll} onClick={doRoll}>{rollLabel}</button>
-            {secsLeft !== null && ready && <span className={`timer-chip ${secsLeft <= 5 ? "urgent" : ""}`}>⏱ {secsLeft}s</span>}
+          {/* the die is the roll button, as in Snakes & Ladders: tap it (or press Space / Enter) to roll */}
+          <button type="button" className={`ld-tray${canRoll ? " ready" : ""}`} disabled={!canRoll} onClick={doRoll} aria-label={canRoll ? "Roll the dice" : hint}>
+            <div className="ld-pedestal" aria-hidden="true" />
+            <div className="ld-dice-shadow" ref={shadowRef} />
+            <div className={`ld-dice d-${dice}`} ref={diceRef} aria-hidden="true">
+              <div className="ld-face flat" ref={faceRef}><Face v={dieValue} /></div>
+            </div>
+          </button>
+          <div className="ld-dock-text">
+            <span className={`ld-hint${canRoll ? " ready" : ""}`}>{hint}{secsLeft !== null && ready && <span className={`timer-chip ${secsLeft <= 5 ? "urgent" : ""}`}>⏱ {secsLeft}s</span>}</span>
+            <p className="ld-msg" aria-live="polite">{msg}</p>
           </div>
         </div>
-        <p className="ld-msg" aria-live="polite">{msg}</p>
-        <div className="ld-reacts" aria-label="Quick phrases">{PHRASES.map((p, i) => <button key={i} onClick={() => react(i)}>{p}</button>)}</div>
-      </div>
+        <div className="ld-reacts" aria-label="Quick messages">{PHRASES.map((p, i) => <button key={i} onClick={() => react(i)}>{p}</button>)}</div>
+      </aside>
     </div>
+    {sheet !== "none" && <div className="ld-backdrop" onClick={() => setSheet("none")} />}
+    {sheet === "rules" && <div className="ld-sheet" role="dialog" aria-label="Rules">
+      <b className="ld-style-title">How to play</b>
+      <ul className="ld-rules-list">
+        <li>Roll a <b>6</b> to bring a token out onto your start square.</li>
+        <li>Tokens go clockwise round the board, then up your coloured lane to the centre. You need the <b>exact</b> number to finish.</li>
+        <li>Land on an opponent to <b>cut</b> them back to their yard. Start squares and <b>starred</b> squares are safe.</li>
+        <li>A 6, a cut, or bringing a token home gives <b>another roll</b>. Three 6s in a row end your turn.</li>
+        <li>Play goes on after the first finish, for 2nd and 3rd place.</li>
+        {online && <li>You have 15 seconds to roll and 15 to pick a token, then the game plays for you.</li>}
+      </ul>
+      <button className="gold-button" onClick={() => setSheet("none")}>Close</button>
+    </div>}
+    {sheet === "style" && <div className="ld-sheet" role="dialog" aria-label="Token and dice style">
+      <StylePicker tokens={tokenSet} dice={dice} onTokens={chooseTokens} onDice={chooseDice} />
+      <p className="ld-small">Your choice is saved on this device. In a room, everyone sees their own style.</p>
+      <button className="gold-button" onClick={() => setSheet("none")}>Done</button>
+    </div>}
   </section>;
 }

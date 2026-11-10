@@ -26,6 +26,18 @@ Zero dependencies (Node 18+). Rooms live in memory, so a restart ends any game i
   exact roll to 100. The server rolls the die. 15 seconds to roll, then the server rolls for you; a player who left or is offline
   is rolled for after 1.5 seconds. The server waits for each move's animation before the next roll.
 
+## Ludo rooms
+- Same server, same code + passcode flow, with `game: "ludo"` on `create`, `join` and `hello`. Codes are not shared between games.
+- 2 to 4 real players; the host can start once at least two have joined. No computer players in rooms.
+  Two players sit on opposite corners (red and yellow); three play red, green, yellow; four play all colours.
+- Rules (`ludo.js`): a six brings a token out; a six, a cut or a token reaching home rolls again; three sixes in a row end
+  the turn; start squares and starred squares are safe; an exact roll is needed to finish. Play continues after the first
+  finish until one player is left (rankings 1st to 4th).
+- The server rolls the die. 15 seconds to roll and 15 to choose a token, then the server plays for you (it picks cuts,
+  finishing moves and safe squares first). When every legal choice is the same token move, it is played automatically.
+  A player who left or is offline is played for after 1.5 seconds. The server waits for each animation before the next step.
+- Quick phrases: clients send `{t:"react", i}`; everyone in the room receives `{t:"react", game:"ludo", seat, i}`.
+
 ## Connect the website
 Set the Netlify build variable `VITE_ROOM_SERVER_URL` to the server's WebSocket address (for example
 `wss://royal-club-rooms.onrender.com`) and redeploy. For testing a preview, `?server=wss://...` can be added to the URL.

@@ -13,6 +13,7 @@ const { WebSocketServer } = require('./wslite');
 const { Game, CONFIG, timeoutCard } = require('./engine');
 const { SnakesRoom } = require('./snakes');
 const { LudoRoom } = require('./ludo');
+const { EkahRoom } = require('./ekah');
 
 const PORT = Number(process.env.PORT) || 3000;
 const SPEED = Number(process.env.SPEED) || 1;
@@ -178,8 +179,8 @@ class Room {
 }
 
 const send = (ws, o) => ws.open && ws.send(JSON.stringify(o));
-const gameKind = (m) => (m && (m.game === 'snakes' || m.game === 'ludo') ? m.game : 'spades');
-const GAME_NAME = { spades: 'Spades', snakes: 'Snakes & Ladders', ludo: 'Ludo' };
+const gameKind = (m) => (m && (m.game === 'snakes' || m.game === 'ludo' || m.game === 'ekah') ? m.game : 'spades');
+const GAME_NAME = { spades: 'Spades', snakes: 'Snakes & Ladders', ludo: 'Ludo', ekah: 'EKAH' };
 const cleanName = (n) => String(n || '').replace(/[^\p{L}\p{N} _.'-]/gu, '').trim().slice(0, 16) || 'Player';
 
 function attach(ws, room, seat) {
@@ -227,7 +228,8 @@ function handle(ws, m) {
       do { code = Array.from({ length: 4 }, () => CODE_ALPHABET[crypto.randomInt(CODE_ALPHABET.length)]).join(''); } while (rooms.has(code));
       const kind = gameKind(m);
       const room = kind === 'snakes' ? new SnakesRoom(code, String(m.passcode), SPEED)
-        : kind === 'ludo' ? new LudoRoom(code, String(m.passcode), SPEED) : new Room(code, String(m.passcode));
+        : kind === 'ludo' ? new LudoRoom(code, String(m.passcode), SPEED)
+        : kind === 'ekah' ? new EkahRoom(code, String(m.passcode), SPEED) : new Room(code, String(m.passcode));
       rooms.set(code, room);
       room.seats[0] = { token: m.token, name: cleanName(m.name), connected: false, ws: null, missed: 0 };
       room.hostToken = m.token;

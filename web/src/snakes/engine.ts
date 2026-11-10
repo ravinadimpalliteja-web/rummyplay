@@ -1,31 +1,45 @@
 /* Royal Club Snakes & Ladders rules. Mirrors server/snakes.js (the online game runs on the server; practice runs here).
+   A server test checks that LADDERS, SNAKES and TIMING below match the server exactly.
    - A six is needed to enter the board (you enter on square 1).
    - A six gives another roll; three sixes in a row cancel the whole turn (back to where the turn began).
-   - Exact roll to land on 100; a roll that would pass 100 does not move. */
+   - Exact roll to land on 100; a roll that would pass 100 does not move.
+   - Rankings: play goes on after someone reaches 100; each finisher takes the next place, and the game ends
+     when one player is left (last place). */
 
-export const LADDERS: Record<number, number> = { 4: 25, 13: 46, 33: 49, 42: 63, 50: 69, 62: 81, 74: 92 };
-export const SNAKES: Record<number, number> = { 27: 5, 40: 3, 43: 18, 54: 31, 66: 45, 76: 58, 89: 53, 99: 41 };
+/* The board layout: nine ladders and seven snakes spread over the whole board (catch-up ladders low and mid-board,
+   long snakes in the upper half for a tense finish), designed with game simulations so races stay close: about 35
+   rolls a player, frequent lead changes. No ladder overlaps another, and each snake's body is routed clear of every
+   ladder and every other snake (board.ts, SNAKE_WAYPOINTS; checked by a server test). */
+export const LADDERS: Record<number, number> = { 3: 24, 8: 30, 20: 41, 33: 52, 37: 64, 45: 66, 59: 80, 68: 89, 71: 91 };
+export const SNAKES: Record<number, number> = { 23: 2, 27: 7, 36: 5, 70: 50, 87: 47, 95: 65, 97: 39 };
+/** The golden ladder: landing on its foot climbs it only once in RARE_ODDS landings; every other time the square is
+    an ordinary square. */
+export const RARE_LADDERS: Record<number, number> = { 82: 99 };
+export const RARE_ODDS = 1000;
+/** Bumped when the board layout changes, so a client can tell if a room server still runs an older board. */
+export const BOARD_VERSION = 6;
 export const TARGET = 100;
 
 export type Outcome = "need-six" | "enter" | "move" | "overshoot" | "three-sixes";
 export type LastRoll = {
   n: number; seat: number; value: number; from: number; landed: number; to: number;
-  via: "ladder" | "snake" | null; outcome: Outcome; extra: boolean; win: boolean; streak: number;
+  via: "ladder" | "snake" | null; outcome: Outcome; extra: boolean; win: boolean; rank: number | null; ended: boolean; streak: number;
 };
 export type SLGame = {
   order: number[]; pos: Record<number, number>; turnIdx: number; streak: number; turnStart: number;
-  phase: "playing" | "gameEnd"; winner: number | null; last: LastRoll | null; rolls: number;
+  phase: "playing" | "gameEnd"; winner: number | null; last: LastRoll | null; rolls: number; finished: number[];
 };
 
 export const newGame = (order: number[]): SLGame => ({
   order: [...order], pos: Object.fromEntries(order.map(s => [s, 0])), turnIdx: 0, streak: 0, turnStart: 0,
-  phase: "playing", winner: null, last: null, rolls: 0,
+  phase: "playing", winner: null, last: null, rolls: 0, finished: [],
 });
 export const turnOf = (g: SLGame) => g.order[g.turnIdx];
 
-export function roll(prev: SLGame, seat: number, value: number): SLGame {
+/** `lucky` is a separate 1-in-RARE_ODDS draw made with every roll (rollLucky); it only matters on a golden ladder's foot. */
+export function roll(prev: SLGame, seat: number, value: number, lucky = false): SLGame {
   if (prev.phase !== "playing" || seat !== turnOf(prev)) return prev;
-  const g: SLGame = { ...prev, pos: { ...prev.pos } };
+  const g: SLGame = { ...prev, pos: { ...prev.pos }, finished: [...prev.finished] };
   const from = g.pos[seat];
   if (g.streak === 0) g.turnStart = from;
   if (value === 6) g.streak++;
@@ -37,17 +51,37 @@ export function roll(prev: SLGame, seat: number, value: number): SLGame {
   else { outcome = "move"; to = landed = from + value; }
   if (outcome === "move" || outcome === "enter") {
     if (LADDERS[landed]) { via = "ladder"; to = LADDERS[landed]; }
+    else if (RARE_LADDERS[landed] && lucky) { via = "ladder"; to = RARE_LADDERS[landed]; }
     else if (SNAKES[landed]) { via = "snake"; to = SNAKES[landed]; }
   }
   g.pos[seat] = to;
   const win = to === TARGET, extra = value === 6 && outcome !== "three-sixes" && !win;
-  g.last = { n: ++g.rolls, seat, value, from, landed, to, via, outcome, extra, win, streak: g.streak };
-  if (win) { g.phase = "gameEnd"; g.winner = seat; }
-  else if (!extra) { g.streak = 0; g.turnIdx = (g.turnIdx + 1) % g.order.length; }
+  let rank: number | null = null, ended = false;
+  if (win) {
+    g.finished.push(seat); rank = g.finished.length;
+    const left = g.order.filter(s => !g.finished.includes(s));
+    if (left.length <= 1) { g.finished.push(...left); g.phase = "gameEnd"; g.winner = g.finished[0]; ended = true; }
+  }
+  g.last = { n: ++g.rolls, seat, value, from, landed, to, via, outcome, extra, win, rank, ended, streak: g.streak };
+  if (!ended && !extra) {
+    g.streak = 0;
+    for (let i = 0; i < g.order.length; i++) { g.turnIdx = (g.turnIdx + 1) % g.order.length; if (!g.finished.includes(g.order[g.turnIdx])) break; }
+  }
   return g;
 }
 
 export const rollDie = () => { const b = new Uint32Array(1); crypto.getRandomValues(b); return 1 + (b[0] % 6); };
+/** True once in RARE_ODDS: whether a golden ladder works on this roll. */
+export const rollLucky = () => { const b = new Uint32Array(1); crypto.getRandomValues(b); return b[0] % RARE_ODDS === 0; };
 
-/** Same timing as the server's pause (server/snakes.js animMs). */
-export const STEP_MS = 230, LADDER_MS = 850, SNAKE_MS = 1250, RETURN_MS = 800, ENTER_MS = 300, DIE_MS = 650;
+/* Animation timing, shared with the server, which waits this long before the next roll. */
+export const TIMING = { die: 1100, settle: 120, step: 230, enter: 300, ret: 800, rung: 120, ladderBase: 150, mouth: 380, slideBase: 500, slidePerSquare: 230, pop: 320, finish1: 3200, finishN: 1700, gap: 250 };
+const sqXY = (n: number) => { const row = Math.floor((n - 1) / 10); let col = (n - 1) % 10; if (row % 2) col = 9 - col; return [col, row]; };
+const dist = (a: number, b: number) => { const [x1, y1] = sqXY(a), [x2, y2] = sqXY(b); return Math.hypot(x2 - x1, y2 - y1); };
+export const rungsOf = (a: number, b: number) => Math.max(3, Math.floor((dist(a, b) * 60) / 19));
+export const ladderMs = (a: number, b: number) => TIMING.ladderBase + rungsOf(a, b) * TIMING.rung;
+export const snakeSlideMs = (h: number, t: number) => Math.round(TIMING.slideBase + dist(h, t) * TIMING.slidePerSquare);
+
+/* Quick chat (no free text yet). The server only relays the index. */
+export const CHAT_PHRASES = ["Nice move!", "Good luck", "Well played", "Oops!", "Hurry up", "So close!", "Haha", "Thank you"];
+export const CHAT_EMOJIS = ["😀", "😂", "😮", "😢", "😤", "👍", "👏", "🎉", "🙏", "🔥", "🐍", "🪜"];

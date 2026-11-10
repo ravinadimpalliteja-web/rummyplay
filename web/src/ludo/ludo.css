@@ -206,3 +206,72 @@
   .ld-reacts button{font-size:14px;padding:8px 14px}
 }
 @media (prefers-reduced-motion:reduce){.ld-tray.ready .ld-pedestal::after,.ld-tray.ready .ld-dice,.ld-token.movable .ld-piece{animation:none}.ld-token.movable .ld-piece{filter:drop-shadow(0 0 4px #ffdc78) drop-shadow(0 0 1px #fff)}}
+
+/* ===================================================================================================================
+   Design D for the Ludo table: ivory room with the faint gold jaali, the board set in a deep emerald frame,
+   white cards with emerald type and gold labels. Saffron is used only for what to tap right now.
+   =================================================================================================================== */
+.app-shell:has(.ld-screen){
+  --iv-bg:#FBF7EE;--iv-card:#FFFFFF;--iv-emerald:#0F4D3A;--iv-emerald-dark:#0A3528;--iv-gold:#D9B45A;--iv-gold-text:#7A5A1C;
+  --iv-ink:#1F2A24;--iv-muted:#5C6862;--iv-edge:#D8C9A6;--iv-soft:#F3EEE2;--iv-shadow:0 1px 2px rgba(60,40,10,.06),0 8px 24px rgba(60,40,10,.09);
+  --sa:#EE8A1C;--sa-text:#A9560C;--sa-glow:rgba(238,138,28,.55);
+  color:var(--iv-ink);background-color:var(--iv-bg);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Cg fill='none' stroke='%23B8892E' stroke-opacity='.13' stroke-width='1'%3E%3Crect x='12' y='12' width='20' height='20'/%3E%3Crect x='12' y='12' width='20' height='20' transform='rotate(45 22 22)'/%3E%3Ccircle cx='22' cy='22' r='5'/%3E%3Cpath d='M0 22H6M38 22H44M22 0V6M22 38V44'/%3E%3C/g%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 50% 40%,#FFFDF7 0%,#FBF7EE 55%,#F3EBDA 100%);
+  background-size:44px 44px,100% 100%}
+.ld-screen .back-link{color:var(--iv-muted)}
+.ld-toolbar strong{font-family:'Cinzel','Playfair Display',serif;font-size:13px;color:var(--iv-emerald)}
+.ld-toolbar strong span{font-family:'DM Sans',sans-serif;color:var(--iv-gold-text)}
+.ld-icon{background:var(--iv-card);border:1.5px solid var(--iv-edge);color:var(--iv-emerald);box-shadow:0 1px 2px rgba(60,40,10,.08)}
+.ld-icon[aria-expanded="true"]{background:var(--iv-emerald);border-color:var(--iv-emerald);color:#FBF7EE}
+
+/* the board: emerald frame, gold edge */
+.ld-board-wrap{border:1px solid #C9A65A;background:linear-gradient(145deg,#145C45,var(--iv-emerald) 45%,var(--iv-emerald-dark));
+  box-shadow:inset 0 0 0 3px #0B3F2F,inset 0 0 0 4px rgba(217,180,90,.45),0 2px 4px rgba(60,40,10,.12),0 18px 40px rgba(15,77,58,.28)}
+
+/* players */
+.ld-players li{background:var(--iv-card);border:1.5px solid transparent;color:var(--iv-ink);box-shadow:var(--iv-shadow)}
+.ld-players li.turn{border-color:var(--iv-emerald);background:#F1F7F3;box-shadow:0 0 0 1px var(--iv-emerald),var(--iv-shadow)}
+.ld-players .ld-dot{box-shadow:0 0 0 2px #fff,0 0 0 3px rgba(0,0,0,.12)}
+.ld-players em{color:#B23A3A}
+.ld-players em.bot{color:var(--iv-muted)}
+.ld-home{color:var(--iv-gold-text)}
+
+/* die dock */
+.ld-dock{background:var(--iv-card);border:0;box-shadow:var(--iv-shadow)}
+.ld-hint{color:var(--iv-emerald)}
+.ld-hint.ready{color:var(--sa-text)}
+.ld-msg{color:var(--iv-muted)}
+.ld-pedestal::after{background:radial-gradient(ellipse at 50% 35%,#1d7a58,var(--iv-emerald) 60%,var(--iv-emerald-dark))}
+.ld-dice-shadow{background:radial-gradient(closest-side,rgba(60,40,10,.55),rgba(60,40,10,0))}
+@keyframes ldTrayGlow{0%,100%{box-shadow:inset 0 0 0 3px #e9c46a,inset 0 0 0 4.5px #7a5214,inset 0 -6px 12px rgba(0,0,0,.45)}50%{box-shadow:inset 0 0 0 3px #ffd08a,inset 0 0 0 4.5px #7a5214,inset 0 -6px 12px rgba(0,0,0,.45),0 0 22px 7px var(--sa-glow)}}
+
+/* tokens you can move: saffron glow and number */
+@keyframes ldGlow{0%,100%{filter:drop-shadow(0 1px 1px rgba(0,0,0,.35)) drop-shadow(0 0 0 rgba(238,138,28,0))}50%{filter:drop-shadow(0 1px 1px rgba(0,0,0,.35)) drop-shadow(0 0 5px rgba(238,138,28,1)) drop-shadow(0 0 2px #fff)}}
+.ld-badge{background:var(--sa);color:#fff;border-color:#fff}
+
+/* quick messages */
+.ld-reacts button{background:var(--iv-card);border:1.5px solid var(--iv-edge);color:var(--iv-ink);box-shadow:0 1px 2px rgba(60,40,10,.06)}
+.ld-reacts button:hover{border-color:var(--iv-emerald);color:var(--iv-emerald)}
+
+/* finish screen */
+.ld-win{background:rgba(251,247,238,.97);border:1.5px solid var(--iv-gold);color:var(--iv-ink)}
+.ld-win .eyebrow{color:var(--iv-gold-text)}
+.ld-win h2{font-family:'Cinzel','Playfair Display',serif;color:var(--iv-emerald)}
+.ld-podium li{background:var(--iv-card);border:1px solid var(--iv-edge);color:var(--iv-ink)}
+.ld-podium li:first-child{border-color:var(--iv-gold);background:#FFF8E6}
+.ld-podium b{color:var(--iv-gold-text)}
+.ld-small{color:var(--iv-muted)}
+.ld-screen .gold-button{background:var(--iv-emerald);color:#FBF7EE;box-shadow:0 6px 16px rgba(15,77,58,.28)}
+.ld-screen .ghost-button{background:var(--iv-card);border:1.5px solid var(--iv-emerald);color:var(--iv-emerald)}
+
+/* sheets (Rules, Style) */
+.ld-screen .ld-backdrop{background:rgba(31,42,36,.35)}
+.ld-screen .ld-sheet{background:var(--iv-bg);border-color:var(--iv-edge);color:var(--iv-ink);box-shadow:0 -12px 36px rgba(60,40,10,.18)}
+.ld-screen .ld-style-title{font-family:'Cinzel','Playfair Display',serif;color:var(--iv-gold-text)}
+.ld-screen .ld-rules-list b{color:var(--iv-emerald)}
+.ld-screen .ld-token-grid button,.ld-screen .ld-dice-grid button{background:var(--iv-card);border:1.5px solid transparent;color:var(--iv-ink);box-shadow:var(--iv-shadow)}
+.ld-screen .ld-token-grid button.on,.ld-screen .ld-dice-grid button.on{border-color:var(--iv-emerald);background:#F1F7F3;box-shadow:0 0 0 1px var(--iv-emerald),var(--iv-shadow)}
+.ld-screen .ld-token-grid strong{color:var(--iv-emerald)}
+.ld-screen .ld-token-grid small,.ld-screen .ld-dice-grid small{color:var(--iv-muted)}
+.ld-screen button:focus-visible,.ld-screen .ld-sheet button:focus-visible{outline-color:var(--iv-emerald)}

@@ -7,6 +7,12 @@ import {
 import { DICE, Face, Piece, PieceDefs, TOKEN_SETS, setPips, type DiceId, type TokenSet } from "./pieces";
 import "./ludo.css";
 
+/* Cinzel (design D headings) for the table; the rest of the site loads its own fonts. */
+if (typeof document !== "undefined" && !document.getElementById("rc-cinzel")) {
+  const l = document.createElement("link"); l.id = "rc-cinzel"; l.rel = "stylesheet";
+  l.href = "https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&display=swap"; document.head.appendChild(l);
+}
+
 const ROOM_KEY = "rc-ludo-room";
 const BOTS = ["Maya", "Alex", "Jordan"];
 const COLOR_NAME: Record<Color, string> = { red: "Ruby", green: "Jade", yellow: "Saffron", blue: "Sapphire" };

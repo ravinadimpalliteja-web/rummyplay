@@ -730,4 +730,5 @@ main>.hero .hero-actions .saffron-button{padding:10px 18px;font-size:14px}
   .theme-ivory:not(:has(.sl-screen, .ld-screen)) .game-section .game-info .text-button{font-size:12px;padding:6px 12px}
   main>.hero .hero-actions .saffron-button{padding:9px 14px;font-size:13px}
   main>.hero .eyebrow{font-size:10px}
+  main>.hero,main>.game-sections{flex-shrink:0}
 }

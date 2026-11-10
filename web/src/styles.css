@@ -591,58 +591,85 @@ main>.hero .hero-ornament{font-size:90px;top:50%;right:34%;opacity:.12}
   .game-soon{min-height:0;font-size:9.5px;border-radius:12px}
 }
 
-/* ===== Ivory theme (design D): home, lobby and room screens only. Games keep their own dark tables. ===== */
-.theme-ivory{--iv-bg:#FBF7EE;--iv-card:#FFFFFF;--iv-emerald:#0F4D3A;--iv-emerald-dark:#0A3528;--iv-gold:#D9B45A;--iv-gold-text:#7A5A1C;--iv-ink:#1F2A24;--iv-muted:#5C6862;--iv-edge:#B39A63;--iv-soft:#F3EEE2;--iv-shadow:0 1px 2px rgba(60,40,10,.06),0 8px 24px rgba(60,40,10,.09);
+/* ===== Ivory theme (design D): every screen except the game tables (Spades table, Snakes & Ladders board screen), which keep their emerald felt. ===== */
+.theme-ivory:not(:has(.sl-screen)){--iv-bg:#FBF7EE;--iv-card:#FFFFFF;--iv-emerald:#0F4D3A;--iv-emerald-dark:#0A3528;--iv-gold:#D9B45A;--iv-gold-text:#7A5A1C;--iv-ink:#1F2A24;--iv-muted:#5C6862;--iv-edge:#B39A63;--iv-soft:#F3EEE2;--iv-shadow:0 1px 2px rgba(60,40,10,.06),0 8px 24px rgba(60,40,10,.09);
   color:var(--iv-ink);background-color:var(--iv-bg);
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Cg fill='none' stroke='%23B8892E' stroke-opacity='.13' stroke-width='1'%3E%3Crect x='12' y='12' width='20' height='20'/%3E%3Crect x='12' y='12' width='20' height='20' transform='rotate(45 22 22)'/%3E%3Ccircle cx='22' cy='22' r='5'/%3E%3Cpath d='M0 22H6M38 22H44M22 0V6M22 38V44'/%3E%3C/g%3E%3C/svg%3E");
   background-size:44px 44px}
-.theme-ivory .topbar{background:rgba(251,247,238,.92);border-bottom:1px solid #E6DAC0}
-.theme-ivory .brand{color:var(--iv-emerald)}
-.theme-ivory .brand-mark{background:var(--iv-emerald);border-color:var(--iv-emerald);color:var(--iv-gold)}
-.theme-ivory .brand strong{font-family:'Cinzel',serif;color:var(--iv-emerald)}
-.theme-ivory .brand small{color:var(--iv-gold-text)}
-.theme-ivory .topbar nav button,.theme-ivory .guest-label{color:var(--iv-muted)}
-.theme-ivory .topbar nav button:hover,.theme-ivory .topbar nav .nav-active{color:var(--iv-emerald)}
-.theme-ivory .eyebrow{color:var(--iv-gold-text)}
-.theme-ivory .hero{background:var(--iv-card);border:0;box-shadow:var(--iv-shadow)}
-.theme-ivory .hero-ornament{display:none}
-.theme-ivory .hero h1,.theme-ivory .mode-page h1{font-family:'Cinzel',serif;letter-spacing:0;color:var(--iv-emerald)}
-.theme-ivory .hero h1 em,.theme-ivory .mode-page h1 em{color:var(--iv-gold-text)}
-.theme-ivory .hero p,.theme-ivory main>.hero p{color:var(--iv-muted)}
-.theme-ivory .gold-button{background:var(--iv-emerald);color:#FBF7EE;box-shadow:0 6px 16px rgba(15,77,58,.28)}
-.theme-ivory .gold-button:hover{background:var(--iv-emerald-dark)}
-.theme-ivory .ghost-button{background:var(--iv-card);border:1.5px solid var(--iv-emerald);color:var(--iv-emerald)}
-.theme-ivory .text-button{color:var(--iv-emerald)}
-.theme-ivory .back-link{color:var(--iv-muted)}
-.theme-ivory .game-section-head{border-bottom-color:#D8C9A6}
-.theme-ivory .game-section-head h2{font-family:'Cinzel',serif;color:var(--iv-emerald)}
-.theme-ivory .game-section-head small{color:var(--iv-gold-text)}
-.theme-ivory .game-card,.theme-ivory .game-section .game-card{background:var(--iv-card);border:0;box-shadow:var(--iv-shadow)}
-.theme-ivory .game-art,.theme-ivory .game-section .game-art{background:var(--iv-emerald);border-color:transparent}
-.theme-ivory .game-info h3,.theme-ivory .game-section .game-info h3{font-family:'Cinzel',serif;color:var(--iv-emerald)}
-.theme-ivory .game-info h3.game-title-spades{background:none;-webkit-text-fill-color:var(--iv-emerald);color:var(--iv-emerald)}
-.theme-ivory .game-info p{color:var(--iv-muted)}
-.theme-ivory .game-soon{border-color:#D8C9A6;color:var(--iv-muted)}
-.theme-ivory .mode-card{background:var(--iv-card);border:1.5px solid transparent;color:var(--iv-ink);box-shadow:var(--iv-shadow)}
-.theme-ivory .mode-card.selected{border-color:var(--iv-emerald);box-shadow:0 0 0 1px var(--iv-emerald),var(--iv-shadow)}
-.theme-ivory .mode-card strong{font-family:'Cinzel',serif;color:var(--iv-emerald)}
-.theme-ivory .mode-card .mode-ico{color:var(--iv-gold-text)}
-.theme-ivory .mode-card p{color:var(--iv-muted)}
-.theme-ivory .mode-card .mode-tag{color:var(--iv-gold-text);border-color:#D8C9A6}
-.theme-ivory .room-tabs{background:var(--iv-soft);border-color:transparent}
-.theme-ivory .room-tabs button{color:var(--iv-muted)}
-.theme-ivory .room-tabs button.on{background:var(--iv-card);color:var(--iv-emerald);box-shadow:0 1px 2px rgba(60,40,10,.1),0 3px 8px rgba(60,40,10,.08)}
-.theme-ivory .room-form label{color:var(--iv-gold-text)}
-.theme-ivory .room-form input{background:var(--iv-card);border:1.5px solid var(--iv-edge);color:var(--iv-ink)}
-.theme-ivory .room-form input:focus{outline:2px solid var(--iv-emerald);border-color:var(--iv-emerald)}
-.theme-ivory .room-msg{background:#FFF4D6;border-color:#E3C680;color:#5A4410}
-.theme-ivory .room-note{color:var(--iv-muted)}
-.theme-ivory .room-share{background:var(--iv-card);border:0;box-shadow:var(--iv-shadow)}
-.theme-ivory .room-share small{color:var(--iv-gold-text)}
-.theme-ivory .room-share b{font-family:'Cinzel',serif;color:var(--iv-emerald)}
-.theme-ivory .room-seats li{background:var(--iv-card);border-color:#D8C9A6;color:var(--iv-muted)}
-.theme-ivory .room-seats li span{border-color:#D8C9A6}
-.theme-ivory .room-seats li.filled{background:var(--iv-card);border:1.5px solid var(--iv-emerald);color:var(--iv-ink)}
-.theme-ivory .room-seats li.filled span{background:var(--iv-emerald);border-color:var(--iv-emerald);color:#FBF7EE}
-.theme-ivory footer{border-top-color:#E6DAC0;color:var(--iv-muted)}
-.theme-ivory footer span:first-child{color:var(--iv-gold-text);font-family:'Cinzel',serif}
+.theme-ivory:not(:has(.sl-screen)) .topbar{background:rgba(251,247,238,.92);border-bottom:1px solid #E6DAC0}
+.theme-ivory:not(:has(.sl-screen)) .brand{color:var(--iv-emerald)}
+.theme-ivory:not(:has(.sl-screen)) .brand-mark{background:var(--iv-emerald);border-color:var(--iv-emerald);color:var(--iv-gold)}
+.theme-ivory:not(:has(.sl-screen)) .brand strong{font-family:'Cinzel',serif;color:var(--iv-emerald)}
+.theme-ivory:not(:has(.sl-screen)) .brand small{color:var(--iv-gold-text)}
+.theme-ivory:not(:has(.sl-screen)) .topbar nav button,.theme-ivory:not(:has(.sl-screen)) .guest-label{color:var(--iv-muted)}
+.theme-ivory:not(:has(.sl-screen)) .topbar nav button:hover,.theme-ivory:not(:has(.sl-screen)) .topbar nav .nav-active{color:var(--iv-emerald)}
+.theme-ivory:not(:has(.sl-screen)) .eyebrow{color:var(--iv-gold-text)}
+.theme-ivory:not(:has(.sl-screen)) .hero{background:var(--iv-card);border:0;box-shadow:var(--iv-shadow)}
+.theme-ivory:not(:has(.sl-screen)) .hero-ornament{display:none}
+.theme-ivory:not(:has(.sl-screen)) .hero h1,.theme-ivory:not(:has(.sl-screen)) .mode-page h1{font-family:'Cinzel',serif;letter-spacing:0;color:var(--iv-emerald)}
+.theme-ivory:not(:has(.sl-screen)) .hero h1 em,.theme-ivory:not(:has(.sl-screen)) .mode-page h1 em{color:var(--iv-gold-text)}
+.theme-ivory:not(:has(.sl-screen)) .hero p,.theme-ivory:not(:has(.sl-screen)) main>.hero p{color:var(--iv-muted)}
+.theme-ivory:not(:has(.sl-screen)) .gold-button{background:var(--iv-emerald);color:#FBF7EE;box-shadow:0 6px 16px rgba(15,77,58,.28)}
+.theme-ivory:not(:has(.sl-screen)) .gold-button:hover{background:var(--iv-emerald-dark)}
+.theme-ivory:not(:has(.sl-screen)) .ghost-button{background:var(--iv-card);border:1.5px solid var(--iv-emerald);color:var(--iv-emerald)}
+.theme-ivory:not(:has(.sl-screen)) .text-button{color:var(--iv-emerald)}
+.theme-ivory:not(:has(.sl-screen)) .back-link{color:var(--iv-muted)}
+.theme-ivory:not(:has(.sl-screen)) .game-section-head{border-bottom-color:#D8C9A6}
+.theme-ivory:not(:has(.sl-screen)) .game-section-head h2{font-family:'Cinzel',serif;color:var(--iv-emerald)}
+.theme-ivory:not(:has(.sl-screen)) .game-section-head small{color:var(--iv-gold-text)}
+.theme-ivory:not(:has(.sl-screen)) .game-card,.theme-ivory:not(:has(.sl-screen)) .game-section .game-card{background:var(--iv-card);border:0;box-shadow:var(--iv-shadow)}
+.theme-ivory:not(:has(.sl-screen)) .game-art,.theme-ivory:not(:has(.sl-screen)) .game-section .game-art{background:var(--iv-emerald);border-color:transparent}
+.theme-ivory:not(:has(.sl-screen)) .game-info h3,.theme-ivory:not(:has(.sl-screen)) .game-section .game-info h3{font-family:'Cinzel',serif;color:var(--iv-emerald)}
+.theme-ivory:not(:has(.sl-screen)) .game-info h3.game-title-spades{background:none;-webkit-text-fill-color:var(--iv-emerald);color:var(--iv-emerald)}
+.theme-ivory:not(:has(.sl-screen)) .game-info p{color:var(--iv-muted)}
+.theme-ivory:not(:has(.sl-screen)) .game-soon{border-color:#D8C9A6;color:var(--iv-muted)}
+.theme-ivory:not(:has(.sl-screen)) .mode-card{background:var(--iv-card);border:1.5px solid transparent;color:var(--iv-ink);box-shadow:var(--iv-shadow)}
+.theme-ivory:not(:has(.sl-screen)) .mode-card.selected{border-color:var(--iv-emerald);box-shadow:0 0 0 1px var(--iv-emerald),var(--iv-shadow)}
+.theme-ivory:not(:has(.sl-screen)) .mode-card strong{font-family:'Cinzel',serif;color:var(--iv-emerald)}
+.theme-ivory:not(:has(.sl-screen)) .mode-card .mode-ico{color:var(--iv-gold-text)}
+.theme-ivory:not(:has(.sl-screen)) .mode-card p{color:var(--iv-muted)}
+.theme-ivory:not(:has(.sl-screen)) .mode-card .mode-tag{color:var(--iv-gold-text);border-color:#D8C9A6}
+.theme-ivory:not(:has(.sl-screen)) .room-tabs{background:var(--iv-soft);border-color:transparent}
+.theme-ivory:not(:has(.sl-screen)) .room-tabs button{color:var(--iv-muted)}
+.theme-ivory:not(:has(.sl-screen)) .room-tabs button.on{background:var(--iv-card);color:var(--iv-emerald);box-shadow:0 1px 2px rgba(60,40,10,.1),0 3px 8px rgba(60,40,10,.08)}
+.theme-ivory:not(:has(.sl-screen)) .room-form label{color:var(--iv-gold-text)}
+.theme-ivory:not(:has(.sl-screen)) .room-form input{background:var(--iv-card);border:1.5px solid var(--iv-edge);color:var(--iv-ink)}
+.theme-ivory:not(:has(.sl-screen)) .room-form input:focus{outline:2px solid var(--iv-emerald);border-color:var(--iv-emerald)}
+.theme-ivory:not(:has(.sl-screen)) .room-msg{background:#FFF4D6;border-color:#E3C680;color:#5A4410}
+.theme-ivory:not(:has(.sl-screen)) .room-note{color:var(--iv-muted)}
+.theme-ivory:not(:has(.sl-screen)) .room-share{background:var(--iv-card);border:0;box-shadow:var(--iv-shadow)}
+.theme-ivory:not(:has(.sl-screen)) .room-share small{color:var(--iv-gold-text)}
+.theme-ivory:not(:has(.sl-screen)) .room-share b{font-family:'Cinzel',serif;color:var(--iv-emerald)}
+.theme-ivory:not(:has(.sl-screen)) .room-seats li{background:var(--iv-card);border-color:#D8C9A6;color:var(--iv-muted)}
+.theme-ivory:not(:has(.sl-screen)) .room-seats li span{border-color:#D8C9A6}
+.theme-ivory:not(:has(.sl-screen)) .room-seats li.filled{background:var(--iv-card);border:1.5px solid var(--iv-emerald);color:var(--iv-ink)}
+.theme-ivory:not(:has(.sl-screen)) .room-seats li.filled span{background:var(--iv-emerald);border-color:var(--iv-emerald);color:#FBF7EE}
+.theme-ivory:not(:has(.sl-screen)) footer{border-top-color:#E6DAC0;color:var(--iv-muted)}
+.theme-ivory:not(:has(.sl-screen)) footer span:first-child{color:var(--iv-gold-text);font-family:'Cinzel',serif}
+/* Snakes & Ladders setup screens (players, tokens) in the ivory theme */
+.theme-ivory:not(:has(.sl-screen)) .sl-bots{color:var(--iv-gold-text)}
+.theme-ivory:not(:has(.sl-screen)) .sl-bots button{background:var(--iv-card);border:1.5px solid #D8C9A6;color:var(--iv-ink)}
+.theme-ivory:not(:has(.sl-screen)) .sl-bots button.on{background:var(--iv-emerald);border-color:var(--iv-emerald);color:#FBF7EE}
+.theme-ivory:not(:has(.sl-screen)) .sl-mode button:focus-visible,.theme-ivory:not(:has(.sl-screen)) .tp button:focus-visible{outline-color:var(--iv-emerald)}
+.theme-ivory:not(:has(.sl-screen)) .tp{color:var(--iv-ink)}
+.theme-ivory:not(:has(.sl-screen)) .tp-player{background:var(--iv-card);border:1.5px solid transparent;box-shadow:var(--iv-shadow)}
+.theme-ivory:not(:has(.sl-screen)) .tp-player.on{border-color:var(--iv-emerald);box-shadow:0 0 0 1px var(--iv-emerald),var(--iv-shadow)}
+.theme-ivory:not(:has(.sl-screen)) .tp-player-img{background:radial-gradient(circle at 50% 35%,#1d6b51,#0F4D3A)}
+.theme-ivory:not(:has(.sl-screen)) .tp-player-text small{color:var(--iv-muted)}
+.theme-ivory:not(:has(.sl-screen)) .tp-choosing{background:var(--iv-gold);color:var(--iv-ink)}
+.theme-ivory:not(:has(.sl-screen)) .tp-preview{border:0;background:radial-gradient(ellipse at 30% 50%,#17775a 0%,#0F4D3A 60%,#0A3528 100%);box-shadow:var(--iv-shadow)}
+.theme-ivory:not(:has(.sl-screen)) .tp-tabs{background:var(--iv-soft);border-color:transparent}
+.theme-ivory:not(:has(.sl-screen)) .tp-tabs button{color:var(--iv-muted)}
+.theme-ivory:not(:has(.sl-screen)) .tp-tabs button small{color:var(--iv-muted)}
+.theme-ivory:not(:has(.sl-screen)) .tp-tabs button.on{background:var(--iv-card);color:var(--iv-emerald);box-shadow:0 1px 2px rgba(60,40,10,.1),0 3px 8px rgba(60,40,10,.08)}
+.theme-ivory:not(:has(.sl-screen)) .tp-tabs button.on small{color:var(--iv-gold-text)}
+.theme-ivory:not(:has(.sl-screen)) .tp-token{background:var(--iv-card);border:1.5px solid transparent;color:var(--iv-ink);box-shadow:var(--iv-shadow)}
+.theme-ivory:not(:has(.sl-screen)) .tp-token.on{background:var(--iv-card);border-color:var(--iv-emerald);box-shadow:0 0 0 1px var(--iv-emerald),var(--iv-shadow)}
+.theme-ivory:not(:has(.sl-screen)) .tp-token em{background:var(--iv-soft);border-color:#D8C9A6;color:var(--iv-muted)}
+.theme-ivory:not(:has(.sl-screen)) .tp-check{background:var(--iv-emerald);color:#FBF7EE}
+.theme-ivory:not(:has(.sl-screen)) .tp-note{color:var(--iv-muted)}
+.theme-ivory:not(:has(.sl-screen)) .sl-warn{background:#FFF4D6;border-color:#E3C680;color:#5A4410}
+/* Cinzel is wider than Playfair: let the hero headline wrap instead of clipping */
+.theme-ivory:not(:has(.sl-screen)) main>.hero h1{white-space:normal;text-wrap:balance}
+@media (max-width:760px){.theme-ivory:not(:has(.sl-screen)) main>.hero h1{font-size:21px;line-height:1.2}}
+.theme-ivory:not(:has(.sl-screen)) .tp-preview figcaption b{font-family:'Cinzel',serif}

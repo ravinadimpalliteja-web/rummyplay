@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Royal Club EKAH</title>
+<meta name="description" content="EKAH, the Indian matching card game on Royal Club. Free to play against the computer or with friends.">
+<meta name="theme-color" content="#1C103A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Inter:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<section id="home" class="screen">
+  <div class="home-wrap">
+    <div class="home-top">
+      <a class="club-back" href="/" aria-label="Back to Royal Club">← Royal Club</a>
+      <span class="tag">FREE TO PLAY</span>
+    </div>
+    <div class="logo">
+      <div class="fan" id="homeFan" aria-hidden="true"></div>
+      <h1 class="display">EKAH</h1>
+      <p>Match the suit or number. Call EKAH! First to empty your hand wins.</p>
+    </div>
+    <div class="panel">
+      <div class="field">
+        <label for="name">Your name</label>
+        <input id="name" maxlength="16" autocomplete="nickname" placeholder="Enter your name">
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Play vs computer</h2>
+      <div class="field">
+        <label for="bots">Computer players</label>
+        <select id="bots">
+          <option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option>
+        </select>
+      </div>
+      <button class="btn primary" id="playLocal">Play now</button>
+    </div>
+    <div class="panel" id="onlinePanel">
+      <h2>Play with friends</h2>
+      <button class="btn primary" id="createRoom">Create a room</button>
+      <p class="note">Friends join with the room code and passcode.</p>
+      <div class="row">
+        <input id="joinCode" maxlength="4" placeholder="Code" autocapitalize="characters" autocomplete="off" aria-label="Room code">
+        <input id="joinPass" maxlength="4" placeholder="Passcode" inputmode="numeric" autocomplete="off" aria-label="Passcode">
+      </div>
+      <button class="btn" id="joinRoom">Join room</button>
+      <p class="err" id="homeErr" role="alert"></p>
+    </div>
+    <div class="panel" id="offlineNote" hidden>
+      <h2>Play with friends</h2>
+      <p class="note">Online rooms are not switched on for this version of the site yet. You can play against the computer.</p>
+    </div>
+    <details class="rules">
+      <summary>How to play</summary>
+      <ul>
+        <li>Everyone gets 7 cards. Play one card that matches the top card's suit or number.</li>
+        <li><b>Maya</b> skips the next player. <b>Chakra</b> reverses direction. <b>Rin</b> makes the next player draw 2.</li>
+        <li><b>Brahma</b> is wild: choose the suit. <b>Mahakal</b> is wild and the next player draws 4.</li>
+        <li>Can't play? Draw 1. If it fits, you may play it.</li>
+        <li>Tap <b>EKAH!</b> before playing your second-to-last card. Forget, and anyone can catch you for 2 cards.</li>
+        <li>Round winner scores the cards left in other hands. First to 300 wins.</li>
+      </ul>
+    </details>
+  </div>
+</section>
+
+<section id="lobby" class="screen hidden">
+  <div class="home-wrap">
+    <div class="panel" style="text-align:center">
+      <h2>Room code</h2>
+      <div class="code display" id="roomCode">----</div>
+      <p class="passline">Passcode <b id="roomPass">----</b></p>
+      <p class="note">Share the code and passcode with friends.</p>
+      <button class="btn small" id="copyLink">Copy invite</button>
+    </div>
+    <div class="panel">
+      <h2>Players</h2>
+      <ul class="seats" id="seats"></ul>
+      <div class="row" id="hostTools">
+        <button class="btn small" id="addBot">Add computer</button>
+        <button class="btn small ghost" id="removeBot">Remove computer</button>
+      </div>
+      <button class="btn primary" id="startGame">Start game</button>
+      <p class="note" id="waitNote">Waiting for the host to start the game.</p>
+      <p class="err" id="lobbyErr" role="alert"></p>
+    </div>
+    <button class="btn ghost" id="leaveLobby">Leave room</button>
+  </div>
+</section>
+
+<section id="game" class="screen hidden">
+  <div class="topbar">
+    <span class="title display">EKAH</span>
+    <span class="meta" id="meta"></span>
+    <span class="spacer"></span>
+    <button class="btn small ghost" id="leaveGame">Leave</button>
+  </div>
+  <div class="opps" id="opps"></div>
+  <div class="table">
+    <div class="felt">
+      <div class="direction" id="direction" aria-hidden="true">
+        <svg viewBox="0 0 100 56" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 14 A40 22 0 0 1 82 14"/><path d="M77 9 L82 14 L76 17"/><path d="M82 42 A40 22 0 0 1 18 42"/><path d="M23 47 L18 42 L24 39"/></svg>
+      </div>
+      <div class="lastmove" id="lastMove" aria-live="polite"></div>
+      <button class="deckbtn" id="deck" aria-label="Draw a card"></button>
+      <div class="pile" id="pile"></div>
+    </div>
+  </div>
+  <div class="me">
+    <div class="status">
+      <span class="msg" id="statusMsg"></span>
+      <button class="ekahbtn hidden" id="ekahBtn">EKAH!</button>
+      <button class="btn small hidden" id="passBtn">Keep card &amp; pass</button>
+    </div>
+    <div class="hand" id="hand" aria-label="Your cards"></div>
+  </div>
+</section>
+
+<div class="overlay hidden" id="pickerOverlay" role="dialog" aria-modal="true" aria-labelledby="pickTitle">
+  <div class="sheet">
+    <h2 class="display" id="pickTitle">Choose a suit</h2>
+    <div class="picker" id="picker"></div>
+    <button class="btn ghost" id="pickCancel">Cancel</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="resultOverlay" role="dialog" aria-modal="true" aria-labelledby="resTitle">
+  <div class="sheet">
+    <h2 class="display" id="resTitle"></h2>
+    <p class="note" id="resSub"></p>
+    <table class="scores" id="resScores"></table>
+    <button class="btn primary" id="nextRound">Next round</button>
+    <button class="btn ghost" id="resHome">Back to EKAH home</button>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<!-- config.js is written by the site build (vite.config.ts) and carries the room server address. -->
+<script src="config.js"></script>
+<script src="engine.js"></script>
+<script src="client.js"></script>
+</body>
+</html>

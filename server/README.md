@@ -1,6 +1,6 @@
 # Royal Club room server
 
-Live rooms for Royal Club Spades: **four real players per room, no computer players**.
+Live rooms for Royal Club Spades (**four real players per room, no computer players**), Snakes & Ladders and EKAH.
 Zero dependencies (Node 18+). Rooms live in memory, so a restart ends any game in progress.
 
     cd server
@@ -25,6 +25,15 @@ Zero dependencies (Node 18+). Rooms live in memory, so a restart ends any game i
 - Rules (`snakes.js`): a six to enter; a six rolls again; three sixes in a row cancel that whole turn (back to where it began);
   exact roll to 100. The server rolls the die. 15 seconds to roll, then the server rolls for you; a player who left or is offline
   is rolled for after 1.5 seconds. The server waits for each move's animation before the next roll.
+
+## EKAH rooms
+- Same server, same code + passcode flow, with `game: "ekah"` on `create`, `join` and `hello`. Codes are not shared between games.
+- 2 to 10 seats. Unlike Spades and Snakes & Ladders, the host may fill open seats with computer players (`addBot` / `removeBot`).
+  The host can start once two or more seats are filled and every human is online.
+- Rules are in `ekah-engine.js`, which is the same file the website serves at `/ekah/engine.js` (a test fails if they differ).
+  Clients send `act` with an engine action: `play` (card, suit for wilds, EKAH call), `draw`, `pass`, `catch`, `nextRound`.
+- 30 seconds per turn, then the computer plays for you. A player who left, is offline or missed two turns is played for after 2 seconds.
+  The next round starts when anyone presses Next round, or after 25 seconds. Computer players may catch a missed EKAH call.
 
 ## Connect the website
 Set the Netlify build variable `VITE_ROOM_SERVER_URL` to the server's WebSocket address (for example

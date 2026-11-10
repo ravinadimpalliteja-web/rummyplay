@@ -12,6 +12,7 @@ const crypto = require('crypto');
 const { WebSocketServer } = require('./wslite');
 const { Game, CONFIG, timeoutCard } = require('./engine');
 const { SnakesRoom } = require('./snakes');
+const { EkahRoom } = require('./ekah');
 
 const PORT = Number(process.env.PORT) || 3000;
 const SPEED = Number(process.env.SPEED) || 1;
@@ -177,7 +178,8 @@ class Room {
 }
 
 const send = (ws, o) => ws.open && ws.send(JSON.stringify(o));
-const gameKind = (m) => (m && m.game === 'snakes' ? 'snakes' : 'spades');
+const gameKind = (m) => (m && (m.game === 'snakes' || m.game === 'ekah') ? m.game : 'spades');
+const KIND_NAME = { spades: 'Spades', snakes: 'Snakes & Ladders', ekah: 'EKAH' };
 const cleanName = (n) => String(n || '').replace(/[^\p{L}\p{N} _.'-]/gu, '').trim().slice(0, 16) || 'Player';
 
 function attach(ws, room, seat) {
@@ -197,7 +199,7 @@ function detach(ws) {
   if (!s || s.ws !== ws) return;
   s.ws = null; s.connected = false;
   room.lastActive = Date.now();
-  if (room.kind === 'snakes') return room.onDetach(seat);
+  if (room.kind !== 'spades') return room.onDetach(seat);
   const g = room.game;
   if (!g) { room.broadcast(); return; }
   if (g.phase === 'bidding' || g.phase === 'playing') {
@@ -223,7 +225,10 @@ function handle(ws, m) {
       if (rooms.size >= 500) throw new Error('The server is busy - try again soon');
       let code;
       do { code = Array.from({ length: 4 }, () => CODE_ALPHABET[crypto.randomInt(CODE_ALPHABET.length)]).join(''); } while (rooms.has(code));
-      const room = gameKind(m) === 'snakes' ? new SnakesRoom(code, String(m.passcode), SPEED) : new Room(code, String(m.passcode));
+      const kind = gameKind(m);
+      const room = kind === 'snakes' ? new SnakesRoom(code, String(m.passcode), SPEED)
+        : kind === 'ekah' ? new EkahRoom(code, String(m.passcode), SPEED)
+        : new Room(code, String(m.passcode));
       rooms.set(code, room);
       room.seats[0] = { token: m.token, name: cleanName(m.name), connected: false, ws: null, missed: 0 };
       room.hostToken = m.token;
@@ -234,7 +239,7 @@ function handle(ws, m) {
       if (!tokenOk(m.token)) throw new Error('Bad session');
       const room = rooms.get(String(m.code || '').toUpperCase().trim());
       if (!room || !sameSecret(room.passcode, m.passcode)) return failJoin('Room not found, or the passcode is wrong');
-      if (room.kind !== gameKind(m)) throw new Error(room.kind === 'snakes' ? 'That room code is for a Snakes & Ladders game' : 'That room code is for a Spades game');
+      if (room.kind !== gameKind(m)) throw new Error('That room code is for a ' + KIND_NAME[room.kind] + ' game');
       let seat = room.seatOf(m.token);
       if (seat < 0) {
         if (room.game) throw new Error('That game has already started');
@@ -249,7 +254,7 @@ function handle(ws, m) {
   if (!c) throw new Error('Join a room first');
   const { room, seat } = c;
   room.lastActive = Date.now();
-  if (room.kind === 'snakes') {
+  if (room.kind !== 'spades') {
     const left = room.handle(seat, m);
     if (left) { ws.ctx = null; if (room.dead) rooms.delete(room.code); send(ws, { t: 'left' }); }
     return;

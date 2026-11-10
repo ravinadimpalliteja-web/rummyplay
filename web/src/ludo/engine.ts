@@ -38,7 +38,7 @@ export function newGame(order: number[], first = 0): LudoGame {
 export function pathOf(t: Tok, v: number): Tok[] | null {
   if (t.s === "home") return null;
   if (t.s === "base") return v === 6 ? [{ s: "track", r: 0, l: 0 }] : null;
-  let s = t.s, r = t.r, l = t.l; const out: Tok[] = [];
+  let s: Tok["s"] = t.s, r = t.r, l = t.l; const out: Tok[] = [];
   for (let k = 0; k < v; k++) {
     if (s === "track") { if (r === 50) { s = "lane"; l = 0; } else r++; }
     else if (s === "lane") { if (l === 4) s = "home"; else l++; }

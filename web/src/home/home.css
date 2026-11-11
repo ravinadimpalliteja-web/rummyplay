@@ -105,7 +105,7 @@ footer .rc-foot-brand{display:inline-flex;align-items:center;gap:6px}
 /* Phone */
 @media (max-width:760px){
   .rc-home{padding:14px 0 calc(92px + env(safe-area-inset-bottom))}
-  .rc-moods{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -14px 16px;padding:2px 14px 4px;scrollbar-width:none}
+  .rc-moods{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -14px 16px;padding:2px 14px 4px;scroll-padding-inline:14px;scrollbar-width:none}
   .rc-moods::-webkit-scrollbar{display:none}
   .rc-mood{flex:0 0 122px;min-height:96px;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:8px;padding:12px;scroll-snap-align:start}
   .rc-mood strong{font-size:14px;line-height:1.15}
@@ -149,5 +149,11 @@ footer .rc-foot-brand{display:inline-flex;align-items:center;gap:6px}
   .rc-home{padding-bottom:24px}
   .rc-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
   .rc-tile-ekah{grid-column:span 2}
+  .rc-moods{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+  .rc-mood{min-height:60px;padding:10px 12px;gap:10px}
+  .rc-mood small{display:none}
+  .rc-mood strong{font-size:14px}
+  .rc-mood svg{width:24px;height:24px}
+  .app-shell:has(.rc-home) .topbar{height:52px}
 }
 @media (prefers-reduced-motion:reduce){.rc-tile,.rc-mood{transition:none}}

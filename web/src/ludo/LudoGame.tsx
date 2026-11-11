@@ -159,10 +159,10 @@ function StylePicker({ tokens, dice, stats, onTokens, onDice }: { tokens: TokenS
   </div>;
 }
 
-export default function LudoGame({ onHome }: { onHome: () => void }) {
+export default function LudoGame({ onHome, joinCode }: { onHome: () => void; joinCode?: string }) {
   type Sub = "lobby" | "room" | "table";
-  const [sub, setSub] = useState<Sub>("lobby");
-  const [pick, setPick] = useState<"practice" | "pass" | "room">("practice");
+  const [sub, setSub] = useState<Sub>(joinCode ? "room" : "lobby");
+  const [pick, setPick] = useState<"practice" | "pass" | "room">(joinCode ? "room" : "practice");
   const [bots, setBots] = useState(3);
   const [passCount, setPassCount] = useState(2);
   const [passNames, setPassNames] = useState(["Player 1", "Player 2", "Player 3", "Player 4"]);
@@ -171,8 +171,8 @@ export default function LudoGame({ onHome }: { onHome: () => void }) {
   const [localNames, setLocalNames] = useState<string[]>(["You", ...BOTS]);
   const [view, setView] = useState<LView | null>(null);
   const [net, setNet] = useState<NetStatus>("idle");
-  const [roomTab, setRoomTab] = useState<"create" | "join">("create");
-  const [roomName, setRoomName] = useState(""), [roomCode, setRoomCode] = useState(""), [roomPass, setRoomPass] = useState("");
+  const [roomTab, setRoomTab] = useState<"create" | "join">(joinCode ? "join" : "create");
+  const [roomName, setRoomName] = useState(""), [roomCode, setRoomCode] = useState(joinCode ?? ""), [roomPass, setRoomPass] = useState("");
   const [roomMsg, setRoomMsg] = useState("");
   const [disp, setDisp] = useState<Record<number, Tok[]> | null>(null);
   const [animating, setAnimating] = useState(false);

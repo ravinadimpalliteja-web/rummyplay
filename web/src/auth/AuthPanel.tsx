@@ -24,6 +24,7 @@ async function saveProfile(user: User) {
 }
 
 export default function AuthPanel() {
+  const client = supabase;
   const [session, setSession] = useState<Session | null>(null);
   const [open, setOpen] = useState(false);
   const [emailMode, setEmailMode] = useState<EmailMode>("signin");
@@ -36,7 +37,7 @@ export default function AuthPanel() {
   useEffect(() => {
     if (!supabase) return;
     let active = true;
-    supabase.auth.getSession().then(({ data, error: sessionError }) => {
+    client.auth.getSession().then(({ data, error: sessionError }) => {
       if (!active) return;
       if (sessionError) setError(sessionError.message);
       setSession(data.session);

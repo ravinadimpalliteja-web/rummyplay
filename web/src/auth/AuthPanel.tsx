@@ -35,7 +35,7 @@ export default function AuthPanel() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!supabase) return;
+    if (!client) return;
     let active = true;
     client.auth.getSession().then(({ data, error: sessionError }) => {
       if (!active) return;
@@ -43,7 +43,7 @@ export default function AuthPanel() {
       setSession(data.session);
       if (data.session?.user) void saveProfile(data.session.user);
     });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: listener } = client.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
       if (nextSession?.user) window.setTimeout(() => void saveProfile(nextSession.user), 0);
     });

@@ -99,10 +99,10 @@ const Crown = () => <svg className="sl-crown" viewBox="0 0 64 34" aria-hidden="t
 const SoundIcon = ({ on }: { on: boolean }) => <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10z"/>{on ? <path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/> : <path d="M17 9l5 6M22 9l-5 6"/>}</svg>;
 const Face = ({ v }: { v: number }) => <>{Array.from({ length: 9 }, (_, i) => <i key={i} className={PIPS[v].includes(i) ? "on" : ""} />)}</>;
 
-export default function SnakesGame({ onHome }: { onHome: () => void }) {
+export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; joinCode?: string }) {
   type Sub = "lobby" | "tokens" | "room" | "table";
-  const [sub, setSub] = useState<Sub>("lobby");
-  const [pick, setPick] = useState<"practice" | "online" | "room">("practice");
+  const [sub, setSub] = useState<Sub>(joinCode ? "room" : "lobby");
+  const [pick, setPick] = useState<"practice" | "online" | "room">(joinCode ? "room" : "practice");
   const [bots, setBots] = useState(1);
   const [local, setLocal] = useState<SLGame | null>(null);
   const [localNames, setLocalNames] = useState<string[]>(["You", ...BOTS]);
@@ -110,8 +110,8 @@ export default function SnakesGame({ onHome }: { onHome: () => void }) {
   const [picking, setPicking] = useState(0);
   const [view, setView] = useState<SLView | null>(null);
   const [net, setNet] = useState<NetStatus>("idle");
-  const [roomTab, setRoomTab] = useState<"create" | "join">("create");
-  const [roomName, setRoomName] = useState(""), [roomCode, setRoomCode] = useState(""), [roomPass, setRoomPass] = useState("");
+  const [roomTab, setRoomTab] = useState<"create" | "join">(joinCode ? "join" : "create");
+  const [roomName, setRoomName] = useState(""), [roomCode, setRoomCode] = useState(joinCode ?? ""), [roomPass, setRoomPass] = useState("");
   const [roomMsg, setRoomMsg] = useState("");
   const [animating, setAnimating] = useState(false);
   /** While a roll is being shown, the player who rolled stays highlighted (the game has already moved the turn on). */

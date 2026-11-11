@@ -101,7 +101,6 @@ export default function AuthPanel() {
       {open && <div className="account-popover">
         <strong>{session.user.is_anonymous ? "Playing as guest" : "Player account"}</strong>
         <p>{session.user.email || "Guest sessions are currently tied to this browser. Account linking will be added in the next stage."}</p>
-        {session.user.is_anonymous && <button className="account-secondary" onClick={() => { setOpen(false); setEmailMode("signup"); setMessage("Create an account to keep your profile across devices."); }}>Create a permanent account</button>}
         <button className="account-secondary" disabled={busy !== null} onClick={signOut}>Sign out</button>
       </div>}
     </div> : <button className="account-trigger" onClick={() => { setOpen(true); setError(""); setMessage(""); }}>Sign in</button>}

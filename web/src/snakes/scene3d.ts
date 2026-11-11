@@ -24,7 +24,7 @@ const TILE_TOP = .14, RIM = .62, HALF = 5 + RIM, RIM_TOP = .26, BASE = -.5;
 const L_BOARD = 0, L_NUMBERS = 1, L_TOKENS = 2;
 /** Token figures are modelled about 0.85 squares tall on a base 0.27 across; on the board they stand this much larger
     (big enough that their faces and details read at board size). */
-const FIG = 1.8;
+const FIG = 1.3;
 /** Extra shift for token positions, in board units (positions already come laid out for the 3D board). */
 const SHIFT = { x: 0, y: 0 };
 
@@ -458,7 +458,7 @@ export class BoardScene {
     this.size = { w, h };
     this.dpr = dpr; this.renderer.setPixelRatio(Math.min(dpr, this.ratioCap)); this.renderer.setSize(w, h, false);
     const cam = this.camera, aspect = w / h;
-    this.elevation = aspect > 1.15 ? 58 : aspect < .9 ? 71 : 63;
+    this.elevation = aspect > 1.15 ? 62 : aspect < .9 ? 71 : 64;
     cam.aspect = aspect; cam.clearViewOffset();
     const el = (this.elevation * Math.PI) / 180, dirv = new THREE.Vector3(0, Math.sin(el), Math.cos(el));
     const pts: Obj[] = [];
@@ -496,9 +496,9 @@ export class BoardScene {
       if (!f || f.id !== p.piece) {
         if (f) this.scene.remove(f.grp);
         const grp = new THREE.Group(), tilt = new THREE.Group(), fig = buildFigure(p.piece);
-        const ring = new THREE.Mesh(new THREE.TorusGeometry(.19, .024, 10, 48), new THREE.MeshStandardMaterial({ color: p.color, roughness: .4, emissive: p.color, emissiveIntensity: .3 }));
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(.145, .019, 10, 48), new THREE.MeshStandardMaterial({ color: p.color, roughness: .4, emissive: p.color, emissiveIntensity: .3 }));
         ring.rotation.x = Math.PI / 2; ring.position.y = .012;
-        const glow = new THREE.Mesh(new THREE.TorusGeometry(.23, .028, 10, 48), new THREE.MeshBasicMaterial({ color: "#ffd56e", transparent: true, opacity: .9, toneMapped: false }));
+        const glow = new THREE.Mesh(new THREE.TorusGeometry(.175, .022, 10, 48), new THREE.MeshBasicMaterial({ color: "#ffd56e", transparent: true, opacity: .9, toneMapped: false }));
         glow.rotation.x = Math.PI / 2; glow.position.y = .016;
         tilt.add(fig); grp.add(tilt, ring, glow); setLayer(grp, L_TOKENS); grp.traverse((o: Obj) => { if (o.isMesh && o !== glow) o.castShadow = true; });
         this.scene.add(grp); f = { id: p.piece, grp, tilt, fig, ring, glow }; this.figures.set(p.seat, f);
@@ -512,7 +512,7 @@ export class BoardScene {
       const qLean = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(dz, 0, -dx).normalize(), p.lean ?? 0);
       const qSway = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(dx, 0, dz).normalize(), p.sway ?? 0);
       f.tilt.quaternion.copy(qLean).multiply(qSway);
-      f.fig.rotation.x = -((this.elevation - 24) * Math.PI) / 180;          // lean back toward the camera so faces show under hats, as board-game standees do
+      f.fig.rotation.x = -((this.elevation - 36) * Math.PI) / 180;          // lean back toward the camera so faces show under hats, as board-game standees do
     }
     for (const [seat, f] of this.figures) if (!seen.has(seat)) f.grp.visible = false;
     // gold sparkles and the landing ring

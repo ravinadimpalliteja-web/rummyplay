@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
 
@@ -73,7 +73,7 @@ export default function AuthPanel() {
     provider: "google",
     options: { redirectTo: window.location.origin }
   }));
-  const submitEmail = (event: React.FormEvent) => {
+  const submitEmail = (event: FormEvent) => {
     event.preventDefault();
     if (!supabase) return;
     if (emailMode === "signup") {
@@ -100,7 +100,7 @@ export default function AuthPanel() {
       </button>
       {open && <div className="account-popover">
         <strong>{session.user.is_anonymous ? "Playing as guest" : "Player account"}</strong>
-        <p>{session.user.email || "Your progress is linked to this guest session on this device."}</p>
+        <p>{session.user.email || "Guest sessions are currently tied to this browser. Account linking will be added in the next stage."}</p>
         {session.user.is_anonymous && <button className="account-secondary" onClick={() => { setOpen(false); setEmailMode("signup"); setMessage("Create an account to keep your profile across devices."); }}>Create a permanent account</button>}
         <button className="account-secondary" disabled={busy !== null} onClick={signOut}>Sign out</button>
       </div>}

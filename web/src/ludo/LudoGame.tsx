@@ -52,7 +52,7 @@ type Table = {
 const fromView = (v: LView): Table | null => v.phase === "lobby" || !v.order || !v.tokens || !v.colors ? null : {
   mode: "online", you: v.you, order: v.order, colors: v.colors,
   names: Object.fromEntries(v.order.map(s => [s, s === v.you ? "You" : v.seats[s]?.name ?? "Player"])),
-  away: Object.fromEntries(v.order.map(s => [s, !!v.seats[s]?.away])), bots: {},
+  away: Object.fromEntries(v.order.map(s => [s, !!v.seats[s]?.away && !v.seats[s]?.bot])), bots: Object.fromEntries(v.order.map(s => [s, !!v.seats[s]?.bot])),
   tokens: v.tokens, turn: v.turn ?? 0, stage: v.stage ?? "roll", dice: v.dice ?? 0, sixes: v.sixes ?? 0,
   moves: v.moves ?? [], ranks: v.ranks ?? [], last: v.last ?? null,
 };
@@ -481,7 +481,7 @@ export default function LudoGame({ onHome, joinCode }: { onHome: () => void; joi
       <span className="ld-seat-chip" />
       <div className="ld-seat-txt">
         <strong>{t.names[seat]}</strong>
-        <small><span className="ld-cn">{COLOR_NAME[color]} · </span>{who}</small>
+        <small>{who === "You" ? COLOR_NAME[color] : <><span className="ld-cn">{COLOR_NAME[color]} · </span>{who}</>}</small>
         <span className="ld-seat-home" aria-label={`${homeN} of 4 tokens home`}>
           {[0, 1, 2, 3].map(i => <b key={i} className={i < homeN ? "on" : ""} />)}
           <em>{rank >= 0 ? ORD[rank] : `${homeN}/4`}</em>

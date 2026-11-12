@@ -208,6 +208,20 @@ body[data-board-theme="emerald"] { --light-sq:#e1eee2; --dark-sq:#327b5a; --boar
 .confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; }
 @media (max-width: 600px) { #topAction { display: none !important; } .top-tools { gap: 6px; } .theme-trigger { padding: 6px 10px; } }
 @media (prefers-reduced-motion: reduce) { .pc.anim { transition: none; } .thinking i { animation: none; } .clock.low.run, .sq.hint::after { animation: none; } }
+/* 3D board view: the 3D canvas fills the board frame; the flat board stays on top (invisible) for overlays. */
+.b3d { position:absolute; inset:0; z-index:0; border-radius:12px; overflow:hidden; background:radial-gradient(circle at 50% 38%,#3b2a1a,#0b0705 75%); }
+.b3d-canvas { width:100% !important; height:100% !important; display:block; cursor:pointer; }
+body.view3d .board-wrap { background:#0b0705 !important; padding:0 !important; border-color:#8d6d33; }
+body.view3d #board { position:absolute; inset:0; z-index:1; pointer-events:none; box-shadow:none; background:none; }
+body.view3d #board .sq { visibility:hidden; }
+body.view3d #board .overlay { pointer-events:auto; }
+.b3d-loading { position:absolute; left:50%; bottom:10px; translate:-50% 0; z-index:2; padding:5px 12px; border-radius:999px; background:#0009; color:#f3dfa6; font-size:12px; }
+.view-copy { margin:18px 0 10px !important; font-weight:700; }
+.view-cards { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+.view-preview { display:block; aspect-ratio:1.5; border-radius:7px; border:1px solid #d5d8d2; }
+.view-preview.v3d { background:linear-gradient(160deg,transparent 30%,#0b0705 31%),repeating-conic-gradient(#efe4cc 0 25%,#173628 0 50%) 0 0/24% 24%; transform:perspective(120px) rotateX(28deg); }
+.view-preview.vflat { background:repeating-conic-gradient(#e1eee2 0 25%,#327b5a 0 50%) 0 0/25% 25%; }
+.view-note { margin:10px 0 0 !important; font-size:11.5px !important; }
 /* Compact theme shortcut and on-demand theme picker. */
 .theme-trigger{display:inline-flex;align-items:center;gap:7px;min-height:36px}
 .theme-trigger span{font-size:16px;line-height:1}
@@ -347,6 +361,12 @@ html body .theme-card small{color:#7A5A1C}
         <button class="theme-card" type="button" data-theme="sandstone" aria-pressed="false"><span class="theme-preview sandstone-preview"></span><b>Sandstone Light</b></button>
         <button class="theme-card" type="button" data-theme="ocean" aria-pressed="false"><span class="theme-preview ocean-preview"></span><b>Ocean Classic</b></button>
       </div>
+      <p class="theme-dialog-copy view-copy">Board view</p>
+      <div class="theme-cards view-cards">
+        <button class="theme-card view-card" type="button" data-view="3d" aria-pressed="false"><span class="view-preview v3d"></span><b>3D board</b><small>Marble, gold, real shadows</small></button>
+        <button class="theme-card view-card" type="button" data-view="flat" aria-pressed="false"><span class="view-preview vflat"></span><b>Flat board</b><small>Classic, lightest for older phones</small></button>
+      </div>
+      <p class="theme-dialog-copy view-note">In 3D, drag to turn and tilt the board; double-tap to reset. The board colours above apply to the flat board.</p>
     </section>
   </div>
 
@@ -491,6 +511,40 @@ html body .theme-card small{color:#7A5A1C}
   const setup = { mode: 'ai', level: 'medium', color: 'w', time: 'none' };
   let g = new Chess(), game = null, selected = null, orient = 'w', thinking = false, lastAnimated = 0, resignArmed = 0, overInfo = null, promoPending = null, overlayHidden = false;
   let hint = null, hintBusy = false;
+
+  /* ---------- 3D board (loaded only when chosen; the flat board stays as the fallback) ---------- */
+  const VIEW_KEY = 'rc-chess-view';
+  let b3d = null, b3dLoading = false;
+  const webgl = (() => { try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); } catch { return false; } })();
+  const lowEnd = (navigator.deviceMemory && navigator.deviceMemory <= 2) || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2);
+  function viewWanted() { const v = store.get(VIEW_KEY); if (v === '3d' || v === 'flat') return webgl ? v : 'flat'; return webgl && !lowEnd ? '3d' : 'flat'; }
+  function showViewCards() { document.querySelectorAll('.view-card').forEach((b) => { b.setAttribute('aria-pressed', String(b.dataset.view === viewWanted())); b.disabled = b.dataset.view === '3d' && !webgl; }); }
+  function applyView() {
+    showViewCards();
+    if (viewWanted() === '3d') {
+      if (b3d || b3dLoading) return;
+      b3dLoading = true;
+      const host = document.createElement('div'); host.className = 'b3d';
+      const note = document.createElement('div'); note.className = 'b3d-loading'; note.textContent = 'Setting up the 3D board…';
+      $('boardWrap').prepend(host); $('boardWrap').appendChild(note);
+      import('./board3d.js').then(() => {
+        b3dLoading = false; note.remove();
+        if (viewWanted() !== '3d') { host.remove(); return; }
+        b3d = window.RoyalChess3D.mount(host, { onTap: tapSquare }); b3d.host = host;
+        document.body.classList.add('view3d'); selected = null; render();
+      }).catch(() => { b3dLoading = false; note.remove(); host.remove(); store.set(VIEW_KEY, 'flat'); showViewCards(); });
+    } else if (b3d) {
+      b3d.destroy(); b3d.host.remove(); b3d = null; document.body.classList.remove('view3d'); render();
+    }
+  }
+  document.querySelectorAll('.view-card').forEach((b) => b.addEventListener('click', () => { store.set(VIEW_KEY, b.dataset.view); applyView(); }));
+  /** A tap on a square of the 3D board: the same as tapping the flat board (select a piece, then its target). */
+  function tapSquare(sq) {
+    if (!canMove()) return;
+    if (selected && sq !== selected && tryTarget(sq)) return;
+    if (ownPiece(sq)) { selected = selected === sq ? null : sq; render(); }
+    else if (selected) { selected = null; render(); }
+  }
 
   /* ---------- clocks: none, 2+1 blitz, 5 or 10 minutes; a player's clock runs on their turn from White's first move ---------- */
   const TIME = { '2+1': [120, 1], '5+0': [300, 0], '10+0': [600, 0] };
@@ -727,8 +781,9 @@ html body .theme-card small{color:#7A5A1C}
     if (r && !game.ended) { game.ended = true; save(); gameOverEffects(r); }
     if (promoPending) board.querySelectorAll('.promo button').forEach((b) => b.onclick = () => { const m = promoPending; promoPending = null; play(m.from, m.to, b.dataset.p); });
 
+    if (b3d) b3d.update({ board: g.board(), orient, selected, targets: moves.map((m) => ({ sq: m.to, capture: !!m.captured })), last: last || null, check: checkSq, hint, animate: !!last && hist.length !== lastAnimated });
     // slide the last moved piece into place (once per move)
-    if (last && hist.length !== lastAnimated && !reduced) {
+    if (!b3d && last && hist.length !== lastAnimated && !reduced) {
       const fromEl = board.querySelector(`[data-sq="${last.from}"]`), toEl = board.querySelector(`[data-sq="${last.to}"] .pc`);
       if (fromEl && toEl) {
         const a = fromEl.getBoundingClientRect(), b = toEl.parentElement.getBoundingClientRect();
@@ -876,6 +931,7 @@ html body .theme-card small{color:#7A5A1C}
 
   window.addEventListener('resize', () => render());
   showSetup();
+  applyView();
 })();
 </script>
 </body>

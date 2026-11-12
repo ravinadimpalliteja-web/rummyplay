@@ -29,5 +29,13 @@ function ekahConfig(): Plugin {
 export default defineConfig({
   plugins: [react(), ekahConfig()],
   server: { host: "0.0.0.0" },
-  build: { outDir: "dist", sourcemap: true }
+  build: {
+    outDir: "dist", sourcemap: true,
+    rollupOptions: {
+      /* The 3D chess board is its own small entry with a fixed address (chess/board3d.js), loaded by the plain chess
+         page only when the 3D view is chosen. */
+      input: { main: "index.html", chess3d: "src/chess3d/main.ts" },
+      output: { entryFileNames: (c) => (c.name === "chess3d" ? "chess/board3d.js" : "assets/[name]-[hash].js") },
+    },
+  }
 });

@@ -8,7 +8,7 @@ import { setSound, sfx, soundOn, unlock } from "./sound";
 import { celebrate } from "./confetti";
 import TokenPicker from "./TokenPicker";
 import { PlayStart, WaitingRoom } from "../room/RoomScreens";
-import { ROOM_SIGNIN_MSG, markPlayed, onRoomAuthError, roomAccount } from "../auth/account";
+import { ROOM_SIGNIN_MSG, markPlayed, onRoomAuthError, roomAccount, useSeatLabel } from "../auth/account";
 import { DEFAULT_PIECES, PIECE_IDS, pieceById, pieceImage, pieceUrl, type PieceId } from "./tokens";
 import "./snakes.css";
 
@@ -109,6 +109,7 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
   const [picking, setPicking] = useState(0);
   const [view, setView] = useState<SLView | null>(null);
   const [net, setNet] = useState<NetStatus>("idle");
+  const label = useSeatLabel();
   const [roomCode, setRoomCode] = useState(joinCode ?? ""), [roomPass, setRoomPass] = useState("");
   const [roomMsg, setRoomMsg] = useState("");
   const [animating, setAnimating] = useState(false);
@@ -711,7 +712,7 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
     <button className="back-link" onClick={() => setSub("lobby")}>← Back</button>
     <div className="eyebrow">ROYAL CLUB · SNAKES &amp; LADDERS</div>
     <h1>Choose your tokens</h1>
-    <TokenPicker players={localNames.map((n, i) => ({ key: i, name: n, piece: localPieces[i], color: COLORS[i], editable: true }))}
+    <TokenPicker players={localNames.map((n, i) => ({ key: i, name: label(n), piece: localPieces[i], color: COLORS[i], editable: true }))}
       active={picking} onActive={setPicking} onPick={pickLocal} note="Tap a player, then a token. Mix any collections; each player's token is different." />
     <button className="gold-button" onClick={startPractice}>Start match →</button>
   </section>;
@@ -729,7 +730,7 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
       msg={roomMsg} onMsg={setRoomMsg} onLeave={leaveRoom}
       note={inLobby ? "Up to four players. The host can fill empty seats with computer players." : "If you leave, the server rolls for you. You can rejoin from this device with the same code and passcode."}>
       {inLobby ? <TokenPicker
-        players={seatsWith.map(p => ({ key: p.seat, name: p.seat === view.you ? "You" : p.name + (!p.connected ? " · offline" : ""), piece: p.piece ?? DEFAULT_PIECES[p.seat], color: COLORS[p.seat], editable: p.seat === view.you }))}
+        players={seatsWith.map(p => ({ key: p.seat, name: p.seat === view.you ? label("You") : p.name + (!p.connected ? " · offline" : ""), piece: p.piece ?? DEFAULT_PIECES[p.seat], color: COLORS[p.seat], editable: p.seat === view.you }))}
         active={view.you} onActive={() => undefined} onPick={(_, id) => { keep(PIECE_KEY, id); send({ t: "piece", id }); }}
         note="Pick your token — each player's is different." /> : undefined}
     </WaitingRoom>;
@@ -762,7 +763,7 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
           return <li key={s} className={(now ? "turn " : "") + (r ? "done" : "")} aria-current={now ? "true" : undefined}>
             <span className="sl-avatar" style={{ borderColor: COLORS[s] }}><img src={pieceUrl(table.pieces[s])} alt={pieceById(table.pieces[s]).name} /></span>
             <span className="sl-info">
-              <span className="sl-name">{table.names[s]}{table.away[s] && <em> · away</em>}</span>
+              <span className="sl-name">{label(table.names[s])}{table.away[s] && <em> · away</em>}</span>
               <span className="sl-sq"><i className="sl-dot" style={{ background: COLORS[s] }} />{r ? `${MEDAL[r - 1]} ${PLACE[r - 1]}` : table.pos[s] ? table.pos[s] : "Start"}</span>
             </span>
             {now && <span className="sl-turn-tag">{s === table.you ? "Your turn" : "Turn"}</span>}
@@ -787,7 +788,7 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
       {showEnd && <div className="sl-win">
         <Crown />
         <span className="eyebrow">FINAL STANDINGS</span>
-        <ol className="sl-standings">{table.finished.map((s, i) => <li key={s} className={i === 0 ? "first" : ""}><span className="medal">{MEDAL[i]}</span><span className="sl-avatar" style={{ borderColor: COLORS[s] }}><img src={pieceUrl(table.pieces[s])} alt="" /></span><b>{table.names[s]}</b><span>{PLACE[i]}</span></li>)}</ol>
+        <ol className="sl-standings">{table.finished.map((s, i) => <li key={s} className={i === 0 ? "first" : ""}><span className="medal">{MEDAL[i]}</span><span className="sl-avatar" style={{ borderColor: COLORS[s] }}><img src={pieceUrl(table.pieces[s])} alt="" /></span><b>{label(table.names[s])}</b><span>{PLACE[i]}</span></li>)}</ol>
         <div className="sl-win-actions">
           {online ? (view?.host ? <button className="gold-button" onClick={() => send({ t: "again" })}>Play again</button> : <p className="sl-small">Waiting for the host to start a new game.</p>)
             : <button className="gold-button" onClick={() => setSub("tokens")}>Play again</button>}

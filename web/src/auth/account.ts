@@ -123,6 +123,13 @@ export function onRoomAuthError(m: Record<string, unknown>) {
   if (m.t === "err" && m.auth) openAuth(state.session && !state.guest && !state.username ? "username" : "rooms");
 }
 
+/** How your own seat is labelled in games: "RaviKing (you)", or "You" for guests. Other names pass through. */
+export function useSeatLabel() {
+  const { session, guest, username } = useAccount();
+  const me = session && !guest && username ? `${username} (you)` : "You";
+  return (name: string) => (name === "You" ? me : name);
+}
+
 export const doneRecovering = () => set({ recovering: false });
 
 /**

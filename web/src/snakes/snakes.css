@@ -326,3 +326,9 @@
 
 
 .sl-warn{padding:10px 12px;border:1px solid #e9a03b;border-radius:12px;background:rgba(233,160,59,.12);color:#ffe2b3}
+
+/* room waiting room: give the token picker its full width (the room panel is otherwise capped at 420px, which squeezed the
+   picker's side-by-side desktop layout into a sliver) */
+.room-wait:has(.tp){max-width:960px}
+.room-wait:has(.tp)>.room-share,.room-wait:has(.tp)>.gold-button,.room-wait:has(.tp)>.room-note,.room-wait:has(.tp)>.room-msg{max-width:420px}
+@media (orientation:landscape) and (max-height:520px){.room-wait>.tp{grid-column:1/3}}

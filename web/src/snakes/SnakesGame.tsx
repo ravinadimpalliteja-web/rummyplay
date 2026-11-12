@@ -7,6 +7,7 @@ import { SnakeArt, type SnakeOverlay } from "./snake2d";
 import { setSound, sfx, soundOn, unlock } from "./sound";
 import { celebrate } from "./confetti";
 import TokenPicker from "./TokenPicker";
+import { PlayStart, WaitingRoom, saveName, savedName } from "../room/RoomScreens";
 import { DEFAULT_PIECES, PIECE_IDS, pieceById, pieceImage, pieceUrl, type PieceId } from "./tokens";
 import "./snakes.css";
 
@@ -39,9 +40,9 @@ const wait = (ms: number) => new Promise<void>(r => window.setTimeout(r, ms * pa
 /** How long a climb's gold sparkle and the landing ring last (ms; they fade while the game goes on). */
 const SPARK_MS = 650, BURST_MS = 520;
 
-type SeatInfo = { seat: number; name: string; connected: boolean; away: boolean; piece?: PieceId } | null;
+type SeatInfo = { seat: number; name: string; bot?: boolean; connected: boolean; away: boolean; piece?: PieceId } | null;
 type SLView = {
-  t: "state"; game: "snakes"; board?: number; code: string; passcode: string; now: number; you: number; host: boolean;
+  t: "state"; game: "snakes"; board?: number; code: string; passcode: string; now: number; you: number; host: boolean; hostSeat?: number;
   phase: "lobby" | "playing" | "gameEnd"; seats: SeatInfo[];
   order?: number[]; players?: { seat: number; sq: number }[]; turn?: number; streak?: number;
   last?: LastRoll | null; winner?: number | null; deadline?: number | null; moving?: boolean; finished?: number[];
@@ -97,7 +98,6 @@ const Face = ({ v }: { v: number }) => <>{Array.from({ length: 9 }, (_, i) => <i
 export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; joinCode?: string }) {
   type Sub = "lobby" | "tokens" | "room" | "table";
   const [sub, setSub] = useState<Sub>(joinCode ? "room" : "lobby");
-  const [pick, setPick] = useState<"practice" | "online" | "room">(joinCode ? "room" : "practice");
   const [bots, setBots] = useState(1);
   const [local, setLocal] = useState<SLGame | null>(null);
   const [localNames, setLocalNames] = useState<string[]>(["You", ...BOTS]);
@@ -105,8 +105,7 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
   const [picking, setPicking] = useState(0);
   const [view, setView] = useState<SLView | null>(null);
   const [net, setNet] = useState<NetStatus>("idle");
-  const [roomTab, setRoomTab] = useState<"create" | "join">(joinCode ? "join" : "create");
-  const [roomName, setRoomName] = useState(""), [roomCode, setRoomCode] = useState(joinCode ?? ""), [roomPass, setRoomPass] = useState("");
+  const [roomName, setRoomName] = useState(savedName), [roomCode, setRoomCode] = useState(joinCode ?? ""), [roomPass, setRoomPass] = useState("");
   const [roomMsg, setRoomMsg] = useState("");
   const [animating, setAnimating] = useState(false);
   /** While a roll is being shown, the player who rolled stays highlighted (the game has already moved the turn on). */
@@ -225,12 +224,16 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
     send({ t: "leave" });
     window.setTimeout(() => { saveRoom(null, ROOM_KEY); lastPhase.current = null; setView(null); clientRef.current?.close(); clientRef.current = null; setSub("room"); }, 300);
   };
-  const roomSubmit = () => {
+  const createRoom = () => {
     if (!roomName.trim()) { setRoomMsg("Enter your name first."); return; }
-    if (roomTab === "join" && (roomCode.length !== 4 || roomPass.length !== 4)) { setRoomMsg("Enter the 4-letter room code and the 4-digit passcode."); return; }
-    setRoomMsg("");
-    if (roomTab === "create") openRoom({ t: "create", game: "snakes", token: deviceToken(), name: roomName.trim(), passcode: randomPasscode() });
-    else openRoom({ t: "join", game: "snakes", token: deviceToken(), name: roomName.trim(), code: roomCode, passcode: roomPass });
+    setRoomMsg(""); saveName(roomName);
+    openRoom({ t: "create", game: "snakes", token: deviceToken(), name: roomName.trim(), passcode: randomPasscode() });
+  };
+  const joinRoom = () => {
+    if (!roomName.trim()) { setRoomMsg("Enter your name first."); return; }
+    if (roomCode.length !== 4 || roomPass.length !== 4) { setRoomMsg("Enter the 4-letter room code and the 4-digit passcode."); return; }
+    setRoomMsg(""); saveName(roomName);
+    openRoom({ t: "join", game: "snakes", token: deviceToken(), name: roomName.trim(), code: roomCode, passcode: roomPass });
   };
 
   /* ---------- practice ---------- */
@@ -686,21 +689,14 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
   }, [panel]);
 
   /* ---------- screens ---------- */
-  if (sub === "lobby") return <section className="mode-page sl-mode">
-    <button className="back-link" onClick={onHome}>← Back</button>
-    <div className="eyebrow">ROYAL CLUB · SNAKES &amp; LADDERS</div>
-    <h1>Choose how you want to play</h1>
-    <div className="mode-grid">
-      <button className={pick === "practice" ? "mode-card selected" : "mode-card"} onClick={() => setPick("practice")}><span className="mode-ico">⚄</span><strong>You vs Comp</strong><p>Play against computer players.</p></button>
-      <button className={pick === "online" ? "mode-card selected" : "mode-card"} onClick={() => setPick("online")}><span className="mode-tag">SOON</span><span className="mode-ico">◈</span><strong>Online</strong><p>Quick match with other players.</p></button>
-      <button className={pick === "room" ? "mode-card selected" : "mode-card"} onClick={() => setPick("room")}><span className="mode-ico mode-door" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 21h17"/><path d="M5.5 21V3.5h9"/><path d="M14.5 3.5v2.2"/><path d="M14.5 21v-2"/><path d="M8.5 4.6 16.5 2.6v18.8l-8-2.2z" fill="currentColor" fillOpacity=".18"/><circle cx="14.2" cy="12.4" r=".9" fill="currentColor"/></svg></span><strong>Room</strong><p>Play with 1 to 3 friends using a code.</p></button>
-    </div>
-    {pick === "practice" && <div className="sl-bots"><span>Computer players</span>{[1, 2, 3].map(n => <button key={n} className={bots === n ? "on" : ""} aria-pressed={bots === n} onClick={() => setBots(n)}>{n}</button>)}</div>}
-    <button className="gold-button" disabled={pick === "online"} onClick={() => (pick === "practice" ? choosePracticeTokens() : pick === "room" ? setSub("room") : undefined)}>
-      {pick === "practice" ? "Choose tokens →" : pick === "room" ? "Create or join a room →" : "Coming soon"}
-    </button>
-    <p className="room-note">Rules: roll a 6 to enter · a 6 rolls again · three 6s in a row cancel the turn · land exactly on 100 · play on for 1st, 2nd and 3rd.</p>
-  </section>;
+  const startScreen = <PlayStart className="sl-mode" game="Snakes & Ladders" tagline="Climb the ladders, dodge the snakes, first to 100 wins."
+    onBack={onHome} name={roomName} onName={n => { setRoomName(n); saveName(n); }}
+    vsComputer={{ count: bots, options: [1, 2, 3], onCount: setBots, onPlay: choosePracticeTokens, playLabel: "Choose tokens →" }}
+    friends={{ onCreate: createRoom, code: roomCode, onCode: setRoomCode, pass: roomPass, onPass: setRoomPass, onJoin: joinRoom, busy: net === "connecting" }}
+    msg={roomMsg}
+    extra={view ? <div className="rs-panel"><h2>Your room</h2><p className="rs-note">You are in room {view.code}.</p><button className="gold-button rs-wide" onClick={() => setSub("room")}>Return to the room →</button></div> : undefined}
+    rules={<ul><li>Roll a 6 to enter the board; a 6 rolls again.</li><li>Three 6s in a row cancel the turn.</li><li>Land exactly on 100. Play goes on for 1st, 2nd and 3rd.</li></ul>} />;
+  if (sub === "lobby" || (sub === "room" && !view)) return startScreen;
 
   if (sub === "tokens") return <section className="mode-page sl-mode sl-tokens-page">
     <button className="back-link" onClick={() => setSub("lobby")}>← Back</button>
@@ -711,51 +707,24 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
     <button className="gold-button" onClick={startPractice}>Start match →</button>
   </section>;
 
-  if (sub === "room") return <section className="mode-page room-page sl-mode">
-    <button className="back-link" onClick={() => { setSub("lobby"); setRoomMsg(""); }}>← Back</button>
-    <div className="eyebrow">ROYAL CLUB · SNAKES &amp; LADDERS</div>
-    <h1>{!view ? "Play with friends" : view.phase === "lobby" ? "Waiting room" : "Game in progress"}</h1>
-    {!view ? <>
-      <div className="room-tabs">
-        <button className={roomTab === "create" ? "on" : ""} onClick={() => { setRoomTab("create"); setRoomMsg(""); }}>Create a room</button>
-        <button className={roomTab === "join" ? "on" : ""} onClick={() => { setRoomTab("join"); setRoomMsg(""); }}>Join a room</button>
-      </div>
-      <div className="room-form">
-        <label>Your name<input id="sl-name" value={roomName} maxLength={16} onChange={e => setRoomName(e.target.value)} placeholder="Enter your name" /></label>
-        {roomTab === "join" && <div className="room-row">
-          <label>Room code<input id="sl-code" value={roomCode} maxLength={4} onChange={e => setRoomCode(e.target.value.toUpperCase())} placeholder="K7QM" /></label>
-          <label>Passcode<input id="sl-pass" value={roomPass} maxLength={4} inputMode="numeric" onChange={e => setRoomPass(e.target.value.replace(/\D/g, ""))} placeholder="4821" /></label>
-        </div>}
-        <button className="gold-button" disabled={net === "connecting"} onClick={roomSubmit}>{net === "connecting" ? "Connecting…" : roomTab === "create" ? "Create room →" : "Join room →"}</button>
-      </div>
-      {roomMsg && <p className="room-msg">{roomMsg}</p>}
-      <p className="room-note">2 to 4 real players per room. The host can start once at least two have joined.</p>
-    </> : <div className="room-wait">
-      <div className="room-share">
-        <div><small>ROOM CODE</small><b>{view.code}</b></div>
-        <div><small>PASSCODE</small><b>{view.passcode}</b></div>
-        <button className="ghost-button" onClick={() => {
-          const t = `Join my Royal Club Snakes & Ladders room — code ${view.code}, passcode ${view.passcode} — at ${window.location.origin}`;
-          try { navigator.clipboard.writeText(t).then(() => setRoomMsg("Invite copied."), () => setRoomMsg(t)); } catch { setRoomMsg(t); }
-        }}>Copy invite</button>
-      </div>
-      {view.phase === "lobby" && <TokenPicker
-        players={(view.seats.filter(Boolean) as NonNullable<SeatInfo>[]).map(p => ({ key: p.seat, name: p.seat === view.you ? "You" : p.name + (!p.connected ? " · offline" : ""), piece: p.piece ?? DEFAULT_PIECES[p.seat], color: COLORS[p.seat], editable: p.seat === view.you }))}
+  if (sub === "room" && view) {
+    const inLobby = view.phase === "lobby", seatsWith = view.seats.filter(Boolean) as NonNullable<SeatInfo>[];
+    return <WaitingRoom className="sl-mode" game="Snakes & Ladders" onBack={() => setSub("lobby")}
+      code={view.code} passcode={view.passcode}
+      invite={`Join my Royal Club Snakes & Ladders room — code ${view.code}, passcode ${view.passcode} — at ${window.location.origin}`}
+      seats={view.seats} you={view.you} hostSeat={view.hostSeat} isHost={view.host} colors={COLORS}
+      avatar={s => <img src={pieceUrl(seatsWith.find(p => p.seat === s.seat)?.piece ?? DEFAULT_PIECES[s.seat])} alt="" />}
+      onAddBot={() => send({ t: "addBot" })} onRemoveBot={() => send({ t: "removeBot" })} onStart={() => send({ t: "start" })}
+      blocked={!inLobby ? <button className="gold-button rs-wide" onClick={() => setSub("table")}>Return to the board →</button>
+        : view.board !== BOARD_VERSION ? <p className="room-note sl-warn" role="alert">This room server still runs the previous board layout, so online games are paused until it is updated. You vs Comp games use the new board now.</p> : undefined}
+      msg={roomMsg} onMsg={setRoomMsg} onLeave={leaveRoom}
+      note={inLobby ? "Up to four players. The host can fill empty seats with computer players." : "If you leave, the server rolls for you. You can rejoin from this device with the same code and passcode."}>
+      {inLobby ? <TokenPicker
+        players={seatsWith.map(p => ({ key: p.seat, name: p.seat === view.you ? "You" : p.name + (!p.connected ? " · offline" : ""), piece: p.piece ?? DEFAULT_PIECES[p.seat], color: COLORS[p.seat], editable: p.seat === view.you }))}
         active={view.you} onActive={() => undefined} onPick={(_, id) => { keep(PIECE_KEY, id); send({ t: "piece", id }); }}
-        note={`${view.seats.filter(Boolean).length} of 4 seats filled. Pick your token — each player's is different.`} />}
-      {view.phase !== "lobby" && <ul className="room-seats">{view.seats.map((p, i) => <li key={i} className={p ? "filled" : ""}><span style={p ? { background: COLORS[i], borderColor: COLORS[i], color: "#fff" } : undefined}>{i + 1}</span>{p ? p.name + (i === view.you ? " (you)" : "") + (!p.connected ? " · offline" : "") : "Open seat"}</li>)}</ul>}
-      {view.phase === "lobby" ? (() => {
-        const seated = view.seats.filter(Boolean) as NonNullable<SeatInfo>[], ready = seated.length >= 2 && seated.every(p => p.connected);
-        if (view.board !== BOARD_VERSION) return <p className="room-note sl-warn" role="alert">This room server still runs the previous board layout, so online games are paused until it is updated. You vs Comp games use the new board now.</p>;
-        return <button className="gold-button" disabled={!view.host || !ready} onClick={() => send({ t: "start" })}>
-          {!view.host ? "Waiting for the host to start" : ready ? `Start game with ${seated.length} players →` : seated.length < 2 ? "Waiting for at least 1 more player" : "Waiting for everyone to come online"}
-        </button>;
-      })() : <button className="gold-button" onClick={() => setSub("table")}>Return to the board →</button>}
-      {roomMsg && <p className="room-msg">{roomMsg}</p>}
-      <button className="text-button" onClick={leaveRoom}>Leave room</button>
-      <p className="room-note">{view.phase === "lobby" ? "Up to four players. Empty seats stay empty — no computer players." : "If you leave, the game rolls for you. You can rejoin from this device with the same code and passcode."}</p>
-    </div>}
-  </section>;
+        note="Pick your token — each player's is different." /> : undefined}
+    </WaitingRoom>;
+  }
 
   /* table */
   if (!table) return <section className="mode-page sl-mode"><button className="back-link" onClick={() => setSub("lobby")}>← Back</button><p className="room-note">Loading the board…</p></section>;

@@ -313,3 +313,82 @@
 .ld-token-grid button.locked .ld-token-row{filter:grayscale(1) opacity(.45)}
 .ld-screen .ld-token-grid button.locked strong{color:var(--iv-muted,#5C6862)}
 @media (prefers-reduced-motion:reduce){.ld-target{animation:none}.ld-homeburst{animation-duration:.4s}.ld-banner{animation-duration:.01s;animation-delay:1.6s;animation-fill-mode:forwards}}
+
+/* ===================================================================================================================
+   Seat cards around the board (as in the first Royal Club Ludo design): the two top corners' players above the
+   board, the two bottom corners' below it, each card holding that player's own die. Your die glows when it's your
+   turn and you tap it to roll. Landscape: board on the left, seats and messages in a column on the right.
+   =================================================================================================================== */
+.ld-main{gap:8px}
+.ld-seats{flex:none;width:100%;max-width:760px;margin:0 auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.ld-seat{position:relative;min-width:0;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;
+  padding:8px 8px 8px 10px;border-radius:12px;background:var(--iv-card,#fff);border:1.5px solid transparent;box-shadow:var(--iv-shadow);transition:border-color .2s,box-shadow .2s}
+.ld-seat.turn{border-color:var(--c);box-shadow:0 0 0 1px var(--c),0 8px 22px -10px var(--c)}
+.ld-seat.off{background:transparent;border:1.5px dashed var(--iv-edge,#D8C9A6);box-shadow:none;opacity:.55}
+.ld-seat-chip{width:14px;height:14px;border-radius:50%;flex:none;background:var(--c);box-shadow:0 0 0 2px #fff,0 0 0 3.5px var(--iv-gold,#D9B45A)}
+.ld-seat-txt{min-width:0;display:grid;gap:1px}
+.ld-seat-txt strong{font-size:15px;font-weight:700;color:var(--iv-ink,#1F2A24);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ld-seat-txt small{font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--iv-muted,#5C6862);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ld-seat.away .ld-seat-txt small{color:#B23A3A}
+.ld-seat-home{display:flex;align-items:center;gap:3px;margin-top:3px}
+.ld-seat-home b{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--c);opacity:.5}
+.ld-seat-home b.on{background:var(--c);opacity:1}
+.ld-seat-home em{margin-left:4px;font-style:normal;font-size:11.5px;font-weight:800;color:var(--iv-gold-text,#7A5A1C);font-variant-numeric:tabular-nums}
+.ld-seat-timer{position:absolute;top:-9px;right:12px;padding:2px 8px;border-radius:999px;background:var(--sa,#EE8A1C);color:#fff;font-size:11.5px;font-weight:800;font-variant-numeric:tabular-nums}
+.ld-seat-timer.urgent{background:#c8323f}
+
+/* each player's die: the Snakes & Ladders die finishes, sitting in the card */
+.ld-sdie{--sd:54px;position:relative;width:var(--sd);height:var(--sd);flex:none;margin:0;padding:0;border:0;border-radius:20%;background:none;
+  opacity:.55;cursor:default;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:opacity .2s}
+.ld-sdie .ld-face{filter:drop-shadow(0 2px 0 rgba(60,40,10,.22)) drop-shadow(0 4px 6px rgba(60,40,10,.25))}
+.ld-sdie.live{opacity:1}
+.ld-sdie.ready{opacity:1;cursor:pointer;animation:ldSdie 1.3s ease-in-out infinite}
+.ld-sdie.ready::after{content:"";position:absolute;inset:-12px;border-radius:24%}          /* bigger tap area */
+.ld-sdie:enabled:active .ld-face{scale:.93}
+@keyframes ldSdie{0%,100%{box-shadow:0 0 0 0 var(--sa-glow,rgba(238,138,28,.55))}50%{box-shadow:0 0 0 10px rgba(238,138,28,0)}}
+
+.ld-status{flex:none;width:100%;max-width:760px;margin:0 auto;display:grid;gap:2px;text-align:center}
+.ld-status .ld-hint{justify-content:center;font-size:15px}
+.ld-status .ld-msg{min-height:2.6em;font-size:13px}
+
+/* portrait: seats hug the board, the whole group sits in the middle of the screen */
+@media (orientation:portrait){
+  .ld-main{justify-content:center}
+  .ld-seats,.ld-status{width:100%}
+}
+@media (orientation:portrait) and (max-height:700px){
+  .ld-sdie{--sd:46px}
+  .ld-seat{padding:6px 6px 6px 8px;gap:6px}
+  .ld-seat-txt strong{font-size:14px}
+  .ld-status .ld-msg{min-height:1.3em}
+}
+@media (min-width:700px) and (min-height:700px){
+  .ld-sdie{--sd:64px}
+  .ld-seat{padding:10px 10px 10px 14px}
+  .ld-seat-txt strong{font-size:17px}
+  .ld-seat-txt small{font-size:11.5px}
+  .ld-status .ld-hint{font-size:17px}
+  .ld-status .ld-msg{font-size:14.5px}
+}
+
+/* landscape: board on the left at full height; seats, messages and quick phrases in a column on the right */
+@media (orientation:landscape){
+  .ld-main{display:grid;grid-template-columns:minmax(0,1fr) clamp(290px,36vw,440px);
+    grid-template-rows:1fr auto auto auto auto 1fr;grid-template-areas:"board ." "board top" "board bottom" "board status" "board reacts" "board .";gap:8px 16px}
+  .ld-stage{grid-area:board;min-height:0}
+  .ld-seats.top{grid-area:top}.ld-seats.bottom{grid-area:bottom}
+  .ld-status{grid-area:status}
+  .ld-main > .ld-reacts{grid-area:reacts;flex-wrap:wrap;overflow:visible;justify-content:center}
+}
+@media (orientation:landscape) and (max-height:520px){
+  .ld-main{gap:5px 12px}
+  .ld-sdie{--sd:40px}
+  .ld-seat{padding:5px 6px 5px 8px;gap:6px}
+  .ld-seat-txt strong{font-size:13px}
+  .ld-seat-txt small{display:none}
+  .ld-status .ld-hint{font-size:13.5px}
+  .ld-status .ld-msg{min-height:0;font-size:12px}
+  .ld-main > .ld-reacts button{padding:4px 9px;font-size:11.5px}
+}
+@media (prefers-reduced-motion:reduce){.ld-sdie.ready{animation:none;box-shadow:0 0 0 4px var(--sa-glow,rgba(238,138,28,.55))}}
+@media (max-width:440px){.ld-cn{display:none}}

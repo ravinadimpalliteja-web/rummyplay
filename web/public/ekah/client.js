@@ -419,7 +419,8 @@
       : 'Sign in with your Royal Club username to play with friends. <a href="' + SIGNIN_URL + '">Sign in</a>';
   }
   function needSignIn() {
-    $('homeErr').innerHTML = 'Sign in with your Royal Club username to play with friends. <a href="' + SIGNIN_URL + '">Sign in</a>';
+    $('homeErr').textContent = 'Please sign in first (link above).';
+    showRoomWho();
   }
 
   // ---------- home ----------

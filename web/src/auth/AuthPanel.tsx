@@ -69,25 +69,26 @@ export default function AuthPanel() {
     } finally { setBusy(null); }
   };
 
-  const guest = () => supabase && void run("guest", () => supabase.auth.signInAnonymously());
-  const google = () => supabase && void run("google", () => supabase.auth.signInWithOAuth({
+  const guest = () => { const c = supabase; if (c) void run("guest", () => c.auth.signInAnonymously()); };
+  const google = () => { const c = supabase; if (c) void run("google", () => c.auth.signInWithOAuth({
     provider: "google",
     options: { redirectTo: window.location.origin }
-  }));
+  })); };
   const submitEmail = (event: FormEvent) => {
     event.preventDefault();
-    if (!supabase) return;
+    const c = supabase;
+    if (!c) return;
     if (emailMode === "signup") {
-      void run("email", () => supabase.auth.signUp({
+      void run("email", () => c.auth.signUp({
         email: email.trim(),
         password,
         options: { emailRedirectTo: window.location.origin, data: { display_name: email.split("@")[0] } }
       }));
     } else {
-      void run("email", () => supabase.auth.signInWithPassword({ email: email.trim(), password }));
+      void run("email", () => c.auth.signInWithPassword({ email: email.trim(), password }));
     }
   };
-  const signOut = () => supabase && void run("signout", () => supabase.auth.signOut());
+  const signOut = () => { const c = supabase; if (c) void run("signout", () => c.auth.signOut()); };
 
   if (!isSupabaseConfigured || !supabase) {
     return <button className="account-trigger" onClick={() => { setOpen(true); setError("Account sign-in is not configured in this deployment yet."); }}>Player account</button>;

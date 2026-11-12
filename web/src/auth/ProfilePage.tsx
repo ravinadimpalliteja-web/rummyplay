@@ -1,7 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import "../room/room.css";
 import { supabase } from "../lib/supabase";
-import { isUsernameAccount, openAuth, useAccount } from "./account";
+import { isUsernameAccount, openAuth, pendingEmail, recoveryEmail, setRecoveryEmail, useAccount } from "./account";
 
 /** The player's own account page: who you are, change password, sign out, delete account. */
 export default function ProfilePage({ onBack }: { onBack: () => void }) {
@@ -38,12 +38,9 @@ export default function ProfilePage({ onBack }: { onBack: () => void }) {
       {!username && <button className="gold-button" onClick={() => openAuth("username")}>Pick username</button>}
     </div>
     {isUsernameAccount(session) && <PasswordPanel />}
-    <div className="rs-panel">
-      <h2>Recovery email</h2>
-      <p className="rs-note">{google
-        ? "Your account is protected by Google. If you lose access, sign in with Google again."
-        : "Coming soon: add an email so you can reset your password if you forget it. You'll still sign in with your username."}</p>
-    </div>
+    {google
+      ? <div className="rs-panel"><h2>Recovery email</h2><p className="rs-note">Your account is protected by Google. If you lose access, sign in with Google again.</p></div>
+      : <RecoveryPanel />}
     <div className="rs-panel">
       <button className="ghost-button rs-wide" onClick={() => void c.auth.signOut()}>Sign out</button>
     </div>
@@ -103,5 +100,37 @@ function DeletePanel({ username, onDone }: { username: string | null; onDone: ()
       </div>
       {err && <p className="room-msg rs-msg" role="alert">{err}</p>}
     </>}
+  </div>;
+}
+
+function RecoveryPanel() {
+  const { session } = useAccount();
+  const current = recoveryEmail(session), pending = pendingEmail(session);
+  const [editing, setEditing] = useState(false), [email, setEmail] = useState("");
+  const [busy, setBusy] = useState(false), [err, setErr] = useState(""), [sent, setSent] = useState("");
+  const save = async (e: FormEvent) => {
+    e.preventDefault();
+    setBusy(true); setErr("");
+    const error = await setRecoveryEmail(email);
+    setBusy(false);
+    if (error) { setErr(error); return; }
+    setSent(email.trim().toLowerCase()); setEditing(false); setEmail("");
+  };
+  const waiting = sent || pending;
+  return <div className="rs-panel">
+    <h2>Recovery email {current && !waiting ? <span className="pf-badge">✓ Protected</span> : null}</h2>
+    {current && <p className="rs-note">Password resets go to <b>{current}</b>. You still sign in with your username.</p>}
+    {!current && !waiting && <p className="rs-note">Add an email so you can reset your password if you ever forget it. You'll still sign in with your username — the email stays private.</p>}
+    {waiting && <p className="rs-note pf-ok">We sent a confirmation link to <b>{waiting}</b>. Open it to finish. (Check spam if you don't see it.)</p>}
+    {editing
+      ? <form onSubmit={e => void save(e)} className="rs-stack">
+          <label className="rs-field">Email address<input type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" /></label>
+          <div className="rs-row pf-row">
+            <button type="button" className="ghost-button" onClick={() => { setEditing(false); setErr(""); }}>Cancel</button>
+            <button type="submit" className="gold-button" disabled={busy}>{busy ? "Sending…" : "Send confirmation"}</button>
+          </div>
+        </form>
+      : <button className="ghost-button rs-wide" onClick={() => { setEditing(true); setSent(""); }}>{current || waiting ? "Change email" : "Add recovery email"}</button>}
+    {err && <p className="room-msg rs-msg" role="alert">{err}</p>}
   </div>;
 }

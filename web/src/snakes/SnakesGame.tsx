@@ -8,7 +8,7 @@ import { setSound, sfx, soundOn, unlock } from "./sound";
 import { celebrate } from "./confetti";
 import TokenPicker from "./TokenPicker";
 import { PlayStart, WaitingRoom } from "../room/RoomScreens";
-import { ROOM_SIGNIN_MSG, onRoomAuthError, roomAccount } from "../auth/account";
+import { ROOM_SIGNIN_MSG, markPlayed, onRoomAuthError, roomAccount } from "../auth/account";
 import { DEFAULT_PIECES, PIECE_IDS, pieceById, pieceImage, pieceUrl, type PieceId } from "./tokens";
 import "./snakes.css";
 
@@ -225,6 +225,7 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
     return () => clientRef.current?.close();
   }, []);
   useEffect(() => { if (!view) return; const id = window.setInterval(() => setTick(t => t + 1), 500); return () => window.clearInterval(id); }, [!!view]);
+  useEffect(() => { if (sub === "table") markPlayed(); }, [sub]);
   const leaveRoom = () => {
     send({ t: "leave" });
     window.setTimeout(() => { saveRoom(null, ROOM_KEY); lastPhase.current = null; setView(null); clientRef.current?.close(); clientRef.current = null; setSub("room"); }, 300);

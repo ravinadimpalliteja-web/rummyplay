@@ -2,12 +2,12 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
 import {
-  USERNAME_HINT, USERNAME_RE, claimUsername, startAccount, useAccount, usernameAvailable, usernameEmail,
-  type AuthReason
+  USERNAME_HINT, USERNAME_RE, claimUsername, doneRecovering, sendPasswordReset, signInWithUsername, startAccount,
+  useAccount, usernameAvailable, usernameEmail, type AuthReason
 } from "./account";
 
-type Tab = "signin" | "signup";
-type Busy = "guest" | "google" | "form" | "signout" | "username" | null;
+type Tab = "signin" | "signup" | "forgot";
+type Busy = "guest" | "google" | "form" | "signout" | "username" | "reset" | null;
 type Avail = "idle" | "checking" | "free" | "taken" | "bad";
 
 const INTRO: Record<AuthReason, string> = {
@@ -50,7 +50,7 @@ function AvailLine({ avail }: { avail: Avail }) {
 
 export default function AuthPanel({ onProfile }: { onProfile?: () => void } = {}) {
   const account = useAccount();
-  const { session, guest, username, ready } = account;
+  const { session, guest, username, ready, recovering } = account;
   const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState(false);
   const [reason, setReason] = useState<AuthReason>("signin");
@@ -62,6 +62,9 @@ export default function AuthPanel({ onProfile }: { onProfile?: () => void } = {}
   const [busy, setBusy] = useState<Busy>(null);
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetSent, setResetSent] = useState(false);
+  const [newPw, setNewPw] = useState(""), [newPw2, setNewPw2] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
 
   const needsUsername = !!session && !guest && ready && !username;
@@ -83,6 +86,9 @@ export default function AuthPanel({ onProfile }: { onProfile?: () => void } = {}
       show("signin");
       setError(/expired|invalid.*(link|otp)/i.test(detail) ? "That sign-in link has expired. Please try again." : "Sign-in didn't work this time. Please try again.");
       window.history.replaceState(null, "", window.location.pathname);
+    } else if (q.get("email") === "confirmed") {
+      setToast("Recovery email confirmed. Your account is protected.");
+      window.history.replaceState(null, "", window.location.pathname);
     } else if (q.get("signin")) {
       show(q.get("signin") === "rooms" ? "rooms" : "signin");
       window.history.replaceState(null, "", window.location.pathname);
@@ -93,7 +99,8 @@ export default function AuthPanel({ onProfile }: { onProfile?: () => void } = {}
   // A signed-in account without a username (new Google players) is asked to pick one.
   useEffect(() => { if (needsUsername) { setReason("username"); setOpen(true); } }, [needsUsername]);
   // Close the dialog once the player is fully signed in.
-  useEffect(() => { if (open && session && !guest && username) setOpen(false); }, [session, guest, username]);
+  useEffect(() => { if (open && session && !guest && username && !recovering && tab !== "forgot") setOpen(false); }, [session, guest, username, recovering]);
+  useEffect(() => { if (recovering) { setError(""); setOpen(true); } }, [recovering]);
   useEffect(() => {
     if (!menu) return;
     const close = (e: MouseEvent) => { if (!menuRef.current?.contains(e.target as Node)) setMenu(false); };
@@ -116,8 +123,8 @@ export default function AuthPanel({ onProfile }: { onProfile?: () => void } = {}
     try {
       if (guest) await c.auth.signOut();               // a guest creating an account starts a fresh one
       if (tab === "signin") {
-        const { error: err } = await c.auth.signInWithPassword({ email: usernameEmail(u), password });
-        if (err) throw err;
+        const err = await signInWithUsername(u, password);
+        if (err) throw new Error(err);
         setToast("Welcome back!");
       } else {
         const { data, error: err } = await c.auth.signUp({ email: usernameEmail(u), password, options: { data: { username: u } } });
@@ -142,6 +149,25 @@ export default function AuthPanel({ onProfile }: { onProfile?: () => void } = {}
     const err = await claimUsername(u);
     setBusy(null);
     if (err) setError(err); else setToast(`You're ${u} now.`);
+  };
+
+  const sendReset = async (e: FormEvent) => {
+    e.preventDefault();
+    setBusy("reset"); setError("");
+    const err = await sendPasswordReset(resetEmail);
+    setBusy(null);
+    if (err) setError(err); else setResetSent(true);
+  };
+  const saveNewPassword = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!c) return;
+    if (newPw.length < 6) { setError("Use a password with at least 6 characters."); return; }
+    if (newPw !== newPw2) { setError("The two passwords don't match."); return; }
+    setBusy("form"); setError("");
+    const { error: err } = await c.auth.updateUser({ password: newPw });
+    setBusy(null);
+    if (err) { setError(/different from the old/i.test(err.message) ? "That's your current password. Choose a new one." : "Could not save the new password. Please try again."); return; }
+    setNewPw(""); setNewPw2(""); doneRecovering(); setToast("New password saved. You're signed in.");
   };
 
   const google = async () => {
@@ -192,7 +218,37 @@ export default function AuthPanel({ onProfile }: { onProfile?: () => void } = {}
       </div>
     : <button className="account-trigger" onClick={() => show("signin")}>Sign in</button>;
 
-  const dialog = needsUsername
+  const recoveryDialog = <section className="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+    <div className="auth-kicker">ROYAL CLUB GAMES</div>
+    <h2 id="auth-title">Set a new password</h2>
+    <p className="auth-intro">{username ? `For ${username}. ` : ""}Choose a new password to finish resetting it.</p>
+    <form onSubmit={e => void saveNewPassword(e)} className="auth-form">
+      <label>New password<input type="password" autoFocus autoComplete="new-password" minLength={6} required value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="At least 6 characters" /></label>
+      <label>Confirm new password<input type="password" autoComplete="new-password" minLength={6} required value={newPw2} onChange={e => setNewPw2(e.target.value)} placeholder="Type it again" /></label>
+      <button className="auth-option auth-primary" type="submit" disabled={busy !== null}>{busy === "form" ? "Saving…" : "Save new password"}</button>
+    </form>
+    {error && <p className="auth-error" role="alert">{error}</p>}
+  </section>;
+
+  const forgotDialog = <section className="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+    <button className="auth-close" aria-label="Close" onClick={() => setOpen(false)}>×</button>
+    <div className="auth-kicker">ROYAL CLUB GAMES</div>
+    <h2 id="auth-title">Forgot your password?</h2>
+    {resetSent
+      ? <p className="auth-message" role="status">If that email is on a Royal Club account, a reset link is on its way. Open it on this device to choose a new password.</p>
+      : <>
+        <p className="auth-intro">Enter the recovery email you added to your account. We'll email you a link to choose a new password.</p>
+        <form onSubmit={e => void sendReset(e)} className="auth-form">
+          <label>Recovery email<input type="email" autoFocus autoComplete="email" required value={resetEmail} onChange={e => setResetEmail(e.target.value)} placeholder="you@example.com" /></label>
+          <button className="auth-option auth-primary" type="submit" disabled={busy !== null}>{busy === "reset" ? "Sending…" : "Email me a reset link"}</button>
+        </form>
+        <small className="auth-footnote">No recovery email on your account? Then the password can't be reset — you can create a new account with a new username.</small>
+      </>}
+    {error && <p className="auth-error" role="alert">{error}</p>}
+    <button className="auth-link" onClick={() => { setTab("signin"); setError(""); setResetSent(false); }}>← Back to sign in</button>
+  </section>;
+
+  const dialog = recovering && session ? recoveryDialog : tab === "forgot" ? forgotDialog : needsUsername
     ? <section className="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="auth-title">
         <button className="auth-close" aria-label="Close" onClick={() => setOpen(false)}>×</button>
         <div className="auth-kicker">ROYAL CLUB GAMES</div>
@@ -222,7 +278,8 @@ export default function AuthPanel({ onProfile }: { onProfile?: () => void } = {}
           {tab === "signup" && <label>Confirm password<input type="password" autoComplete="new-password" minLength={6} required value={password2} onChange={e => setPassword2(e.target.value)} placeholder="Type it again" /></label>}
           <button className="auth-option auth-primary" type="submit" disabled={busy !== null || (tab === "signup" && signupAvail === "taken")}>{busy === "form" ? "Please wait…" : tab === "signin" ? "Sign in" : "Create account"}</button>
         </form>
-        {tab === "signup" && <small className="auth-footnote">Keep your password safe — there's no email to reset it yet. You can add a recovery email later.</small>}
+        {tab === "signin" && <button className="auth-link" onClick={() => { setTab("forgot"); setError(""); setResetSent(false); }}>Forgot password?</button>}
+        {tab === "signup" && <small className="auth-footnote">No email needed. You can add a recovery email later from your profile, so you can reset a forgotten password.</small>}
         <div className="auth-divider"><span>or</span></div>
         <button className="auth-option" disabled={busy !== null} onClick={() => void google()}>{busy === "google" ? "Connecting to Google…" : "Continue with Google"}</button>
         {error && <p className="auth-error" role="alert">{error}</p>}
@@ -231,7 +288,7 @@ export default function AuthPanel({ onProfile }: { onProfile?: () => void } = {}
 
   return <>
     {header}
-    {open && createPortal(<div className="auth-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setOpen(false); }}>{dialog}</div>, document.body)}
+    {open && createPortal(<div className="auth-backdrop" onMouseDown={e => { if (e.target === e.currentTarget && !recovering) setOpen(false); }}>{dialog}</div>, document.body)}
     {toast && createPortal(<span className="auth-toast" role="status">{toast}</span>, document.body)}
   </>;
 }

@@ -82,3 +82,5 @@
 .pf-danger h2{color:#9a3025}
 .pf-danger-btn{color:#9a3025;border-color:#e7b5ad}
 .pf-danger .rs-row{display:flex;gap:10px}.pf-danger .rs-row>*{flex:1}
+.pf-badge{font-size:11px;letter-spacing:.04em;text-transform:none;color:#1f7a45;background:#edf8f0;border:1px solid #b8d6c3;border-radius:999px;padding:3px 9px}
+.pf-row{display:flex;gap:10px}.pf-row>*{flex:1}

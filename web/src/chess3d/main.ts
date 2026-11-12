@@ -35,6 +35,7 @@ const sqX = (sq: string) => FILES.indexOf(sq[0]) - 3.5;
 const sqZ = (sq: string) => 3.5 - (Number(sq[1]) - 1);            // rank 1 nearest white (+z)
 const at = (sq: string) => new THREE.Vector3(sqX(sq), BOARD_TOP, sqZ(sq));
 const BOARD_TOP = 0.16;
+const HY = 1.32;                 // pieces are turned a little taller than they are wide, like a tournament set
 
 /* ---------- textures drawn in code ---------- */
 function rnd(seed: number) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
@@ -123,21 +124,21 @@ function knightHead(): Obj {
   s.lineTo(.1, .52); s.lineTo(.05, .45); s.lineTo(.0, .5); s.lineTo(-.04, .42);
   s.quadraticCurveTo(-.13, .36, -.16, .26); s.quadraticCurveTo(-.19, .14, -.15, 0);
   const g = new THREE.ExtrudeGeometry(s, { depth: .15, bevelEnabled: true, bevelThickness: .035, bevelSize: .03, bevelSegments: 4, curveSegments: 10 });
-  g.translate(0, 0, -.075); g.computeVertexNormals(); return g;
+  g.translate(0, 0, -.075); g.scale(1.1, HY, 1.1); g.computeVertexNormals(); return g;
 }
 function mane(): Obj {
   const s = new THREE.Shape();
   s.moveTo(-.05, .44); s.quadraticCurveTo(-.17, .36, -.2, .2); s.lineTo(-.17, .05); s.quadraticCurveTo(-.13, .3, -.02, .41); s.lineTo(-.05, .44);
   const g = new THREE.ExtrudeGeometry(s, { depth: .07, bevelEnabled: true, bevelThickness: .015, bevelSize: .012, bevelSegments: 2, curveSegments: 8 });
-  g.translate(0, 0, -.035); return g;
+  g.translate(0, 0, -.035); g.scale(1.1, HY, 1.1); return g;
 }
 
 function buildPiece(letter: Letter, mats: { w: Mats; b: Mats }): Obj {
   const white = letter === letter.toUpperCase(), T = letter.toUpperCase(), m = white ? mats.w : mats.b;
   const grp = new THREE.Group(); grp.userData.letter = letter;
   const body = new THREE.Group(); grp.add(body); grp.userData.body = body;
-  const add = (g: Obj, mat: Obj, y = 0, x = 0, z = 0) => { const me = new THREE.Mesh(g, mat); me.position.set(x, y, z); me.castShadow = true; me.receiveShadow = true; body.add(me); return me; };
-  add(geo("lathe" + T, () => new THREE.LatheGeometry(v2(PROFILE[T]), 40)), m.body);
+  const add = (g: Obj, mat: Obj, y = 0, x = 0, z = 0) => { const me = new THREE.Mesh(g, mat); me.position.set(x, y * HY, z); me.castShadow = true; me.receiveShadow = true; body.add(me); return me; };
+  add(geo("lathe" + T, () => new THREE.LatheGeometry(v2(PROFILE[T]), 40).scale(1, HY, 1)), m.body);
   add(geo("baseRim", () => new THREE.TorusGeometry(.372, .016, 10, 48).rotateX(Math.PI / 2)), m.gold, .04);
   for (const [r, y] of COLLARS[T]) add(geo(`band${r}`, () => new THREE.TorusGeometry(r, .013, 8, 40).rotateX(Math.PI / 2)), m.gold, y);
   for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2 + Math.PI / 4; add(geo("gem", () => new THREE.SphereGeometry(.022, 12, 10)), m.jewel, .036, Math.cos(a) * .376, Math.sin(a) * .376); }
@@ -148,7 +149,7 @@ function buildPiece(letter: Letter, mats: { w: Mats; b: Mats }): Obj {
       add(geo("rookGold", () => new THREE.CylinderGeometry(.17, .17, .012, 32)), m.gold, .492);
       break;
     case "B": {
-      add(geo("mitre", () => new THREE.LatheGeometry(v2([[0, .43], [.1, .47], [.125, .55], [.105, .63], [.055, .7], [0, .725]]), 32)), m.body);
+      add(geo("mitre", () => new THREE.LatheGeometry(v2([[0, .43], [.1, .47], [.125, .55], [.105, .63], [.055, .7], [0, .725]]), 32).scale(1, HY, 1)), m.body);
       add(geo("bishopTop", () => new THREE.SphereGeometry(.035, 16, 12)), m.gold, .755);
       const slit = add(geo("slit", () => new THREE.BoxGeometry(.012, .13, .2)), m.gold, .585, .03); slit.rotation.z = -.55;
       break;
@@ -159,7 +160,7 @@ function buildPiece(letter: Letter, mats: { w: Mats; b: Mats }): Obj {
       add(geo("queenGem", () => new THREE.SphereGeometry(.025, 12, 10)), m.jewel, .79);
       break;
     case "K":
-      add(geo("crossV", () => new THREE.BoxGeometry(.05, .2, .05)), m.gold, .85);
+      add(geo("crossV", () => new THREE.BoxGeometry(.055, .24, .055)), m.gold, .85);
       add(geo("crossH", () => new THREE.BoxGeometry(.15, .05, .05)), m.gold, .875);
       add(geo("kingGem", () => new THREE.SphereGeometry(.022, 12, 10)), m.jewel, .875, 0, .03);
       break;
@@ -169,7 +170,7 @@ function buildPiece(letter: Letter, mats: { w: Mats; b: Mats }): Obj {
       const mn = add(geo("mane", mane), m.gold, .2); mn.rotation.y = head.rotation.y;
       for (const side of [-1, 1]) {
         const eye = add(geo("eye", () => new THREE.SphereGeometry(.018, 10, 8)), m.jewel, .2 + .37, 0, 0);
-        const fx = .19, fz = side * .105;          // eye on each side of the head, in head space -> rotate into place
+        const fx = .19 * 1.1, fz = side * .115;          // eye on each side of the head, in head space -> rotate into place
         const c = Math.cos(head.rotation.y), s2 = Math.sin(head.rotation.y);
         eye.position.x = fx * c + fz * s2; eye.position.z = -fx * s2 + fz * c;
       }
@@ -183,7 +184,7 @@ function buildPiece(letter: Letter, mats: { w: Mats; b: Mats }): Obj {
 class Board3D {
   private renderer: Obj; private scene: Obj; private camera: Obj; private el: HTMLElement; private ro: ResizeObserver;
   private mats = makeMats(); private pieces = new Map<string, Obj>(); private marks: Obj; private markGeo: Record<string, Obj> = {};
-  private az = 0; private el0 = 52; private elev = 52; private azBase = 0; private orient: "w" | "b" = "w";
+  private az = 0; private el0 = 40; private elev = 40; private azBase = 0; private orient: "w" | "b" = "w";
   private tweens: { t0: number; dur: number; f: (k: number) => void; done?: () => void }[] = [];
   private raf = 0; private dirty = true; private lastKey = ""; private selected: string | null = null; private onTap: (sq: string) => void;
   private alive = true; private pending: State | null = null; private after: (() => void) | null = null;
@@ -235,7 +236,7 @@ class Board3D {
       if (!down) return;
       const dx = e.clientX - down.x, dy = e.clientY - down.y;
       if (!down.drag && Math.hypot(dx, dy) > 8) down.drag = true;
-      if (down.drag) { this.az = Math.max(-1, Math.min(1, down.az - dx * .006)); this.elev = Math.max(30, Math.min(82, down.el + dy * .25)); this.place(); }
+      if (down.drag) { this.az = Math.max(-1, Math.min(1, down.az - dx * .006)); this.elev = Math.max(24, Math.min(80, down.el + dy * .25)); this.place(); }
     });
     const up = (e: PointerEvent) => { if (!down) return; const d = down; down = null; if (!d.drag) { const sq = this.pick(e); if (sq) this.onTap(sq); } };
     cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", () => { down = null; });
@@ -252,9 +253,9 @@ class Board3D {
   private place() {
     const a = this.azBase + this.az, e = this.elev * Math.PI / 180;
     const fit = 9.6 / (2 * Math.tan((this.camera.fov * Math.PI / 180) / 2)) / Math.min(1, this.camera.aspect);
-    const d = fit * (.92 + .18 * Math.cos(e));
+    const d = fit * (.74 + .1 * Math.cos(e) + .12 * Math.sin(e));
     this.camera.position.set(Math.sin(a) * Math.cos(e) * d, Math.sin(e) * d, Math.cos(a) * Math.cos(e) * d);
-    this.camera.lookAt(0, 0, .25 * Math.cos(e) * (this.orient === "w" ? 1 : -1));
+    this.camera.lookAt(-Math.sin(a) * .35 * Math.cos(e), 0, -Math.cos(a) * .35 * Math.cos(e));   // aim a little past the centre so the near rank isn't cut off
     this.dirty = true;
   }
   private pick(e: PointerEvent): string | null {

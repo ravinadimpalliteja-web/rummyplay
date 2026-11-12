@@ -73,3 +73,12 @@
 .rs-page .ld-style-box summary{cursor:pointer;font-weight:700;color:var(--rs-emerald)}
 .rs-page .ld-style-box.rs-panel{width:auto;max-width:none;margin:0;background:var(--rs-card);border:1px solid var(--rs-line);color:var(--rs-ink)}
 .rs-page .ld-style-title{color:var(--rs-gold-text)}
+.pf-card{flex-direction:row;align-items:center;gap:14px;flex-wrap:wrap}
+.pf-card>div{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.pf-avatar{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:var(--rs-gold);color:var(--rs-emerald);font:800 22px/1 inherit}
+.pf-name{font-size:20px;color:var(--rs-ink);overflow-wrap:anywhere}
+.pf-ok{color:#1f7a45;font-weight:700}
+.pf-danger{border-color:#e7b5ad}
+.pf-danger h2{color:#9a3025}
+.pf-danger-btn{color:#9a3025;border-color:#e7b5ad}
+.pf-danger .rs-row{display:flex;gap:10px}.pf-danger .rs-row>*{flex:1}

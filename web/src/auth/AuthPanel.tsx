@@ -48,7 +48,7 @@ function AvailLine({ avail }: { avail: Avail }) {
   return <small className="auth-hint bad">{USERNAME_HINT}</small>;
 }
 
-export default function AuthPanel() {
+export default function AuthPanel({ onProfile }: { onProfile?: () => void } = {}) {
   const account = useAccount();
   const { session, guest, username, ready } = account;
   const [open, setOpen] = useState(false);
@@ -185,6 +185,7 @@ export default function AuthPanel() {
           </> : <>
             <strong>{username}</strong>
             <p>{isGoogle(session) ? "Signed in with Google" : "Royal Club account"}</p>
+            {onProfile && <button className="account-secondary auth-strong" onClick={() => { setMenu(false); onProfile(); }}>My profile</button>}
           </>}
           <button className="account-secondary" disabled={busy !== null} onClick={() => void signOut()}>Sign out</button>
         </div>}

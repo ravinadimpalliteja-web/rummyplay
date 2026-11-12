@@ -9,7 +9,15 @@
   const ACTIONS = ['maya', 'chakra', 'rin'];
   const WILDS = ['brahma', 'mahakal'];
   const HAND_SIZE = 7;
-  const TARGET = 300;
+  const TARGET = 250;
+  const TARGET_MIN = 50, TARGET_MAX = 1000, TARGET_STEP = 50;
+  /* Jodi: play both copies of a number card together to use its suit's power. */
+  const POWERS = {
+    AGNI: 'The next player draws 1 card',
+    JAL: 'See one card in an opponent\'s hand',
+    PRITHVI: 'Discard one extra number card',
+    VAYU: 'Give one card to the next player'
+  };
   const NAMES = {
     maya: 'Maya', chakra: 'Chakra', rin: 'Rin', brahma: 'Brahma', mahakal: 'Mahakal',
     AGNI: 'Agni', JAL: 'Jal', PRITHVI: 'Prithvi', VAYU: 'Vayu'
@@ -53,12 +61,17 @@
       players: players.map(p => ({ name: p.name, isBot: !!p.isBot, hand: [], score: 0 })),
       deck: [], discard: [], color: null, direction: 1, turn: 0, dealer: -1,
       phase: 'idle', pendingDrawn: null, vulnerable: null,
-      events: [], seq: 0, round: 0, target: opts.target || TARGET,
+      events: [], seq: 0, round: 0, target: cleanTarget(opts.target), peek: null,
       winner: null, roundPoints: 0, matchWinner: null
     };
     state.rnd = opts.rnd || Math.random;
     startRound(state);
     return state;
+  }
+
+  function cleanTarget(t) {
+    t = Math.round(Number(t) / TARGET_STEP) * TARGET_STEP;
+    return Number.isFinite(t) && t >= TARGET_MIN && t <= TARGET_MAX ? t : TARGET;
   }
 
   function emit(state, ev) {
@@ -100,6 +113,7 @@
     state.vulnerable = null;
     state.winner = null;
     state.roundPoints = 0;
+    state.peek = null;
     for (const p of state.players) p.hand = [];
     for (let r = 0; r < HAND_SIZE; r++) for (let i = 0; i < n; i++) state.players[i].hand.push(state.deck.pop());
     let top = state.deck.pop();
@@ -136,6 +150,26 @@
     if (card.type === 'num' && t.type === 'num' && card.value === t.value) return true;
     if (card.type !== 'num' && card.type === t.type) return true;
     return false;
+  }
+
+  function partnerOf(hand, card) {
+    if (!card || card.type !== 'num') return null;
+    return hand.find(c => c.id !== card.id && c.type === 'num' && c.suit === card.suit && c.value === card.value) || null;
+  }
+
+  /** Cards the player may play as a Jodi right now (each card of a playable pair is listed). */
+  function jodiCards(state, pi) {
+    if (state.phase !== 'play' || state.turn !== pi || state.pendingDrawn !== null) return [];
+    const hand = state.players[pi].hand;
+    return hand.filter(c => c.type === 'num' && isLegal(state, c) && partnerOf(hand, c)).map(c => c.id);
+  }
+
+  /** What a Jodi power needs the player to choose, given their hand without the pair. */
+  function powerNeeds(suit, rest) {
+    if (suit === 'JAL') return 'player';
+    if (suit === 'PRITHVI') return rest.some(c => c.type === 'num') ? 'number' : null;
+    if (suit === 'VAYU') return rest.length ? 'card' : null;
+    return null;
   }
 
   function legalCards(state, pi) {
@@ -222,6 +256,8 @@
       const wild = WILDS.includes(card.type);
       if (wild && !SUITS.includes(a.color)) return { ok: false, error: 'Choose a suit' };
 
+      if (a.jodi) return playJodi(state, pi, card, a);
+
       state.vulnerable = null;
       state.pendingDrawn = null;
       me.hand.splice(idx, 1);
@@ -255,6 +291,87 @@
     return { ok: false, error: 'Unknown action' };
   }
 
+  function playJodi(state, pi, card, a) {
+    const me = state.players[pi];
+    if (state.pendingDrawn !== null) return { ok: false, error: 'You can only play the card you just drew' };
+    const partner = partnerOf(me.hand, card);
+    if (!partner) return { ok: false, error: 'You need both matching cards for a Jodi' };
+    const rest = me.hand.filter(c => c.id !== card.id && c.id !== partner.id);
+    const need = powerNeeds(card.suit, rest);
+    const p = a.power || {};
+    let chosen = null, target = null;
+    if (need === 'player') {
+      target = Number(p.target);
+      if (!Number.isInteger(target) || target === pi || !state.players[target]) return { ok: false, error: 'Choose a player to look at' };
+    } else if (need) {
+      chosen = rest.find(c => c.id === Number(p.cardId)) || null;
+      if (!chosen || (need === 'number' && chosen.type !== 'num'))
+        return { ok: false, error: need === 'number' ? 'Choose a number card to discard' : 'Choose a card to give' };
+    }
+
+    state.vulnerable = null;
+    state.pendingDrawn = null;
+    me.hand = rest;
+    state.discard.push(partner, card);
+    state.color = card.suit;
+    emit(state, { type: 'play', pi, card, color: state.color, jodi: true });
+    emit(state, { type: 'jodi', pi, suit: card.suit });
+    if (me.hand.length === 0) { endRound(state, pi); return { ok: true }; }
+
+    const next = nextIndex(state, pi);
+    if (card.suit === 'AGNI') {
+      drawCards(state, next, 1);
+      emit(state, { type: 'draws', pi: next, n: 1 });
+    } else if (card.suit === 'JAL') {
+      const th = state.players[target].hand;
+      if (th.length) {
+        state.peek = { by: pi, target, card: th[Math.floor(state.rnd() * th.length)] };
+        emit(state, { type: 'peek', pi, target });
+        state.peek.seq = state.seq;
+      }
+    } else if (card.suit === 'PRITHVI' && chosen) {
+      me.hand = me.hand.filter(c => c.id !== chosen.id);
+      state.discard.splice(state.discard.length - 1, 0, chosen);   // goes under the Jodi; the top card stays
+      emit(state, { type: 'jodiDiscard', pi, card: chosen });
+    } else if (card.suit === 'VAYU' && chosen) {
+      me.hand = me.hand.filter(c => c.id !== chosen.id);
+      state.players[next].hand.push(chosen);
+      emit(state, { type: 'give', pi, to: next });
+    }
+
+    if (me.hand.length === 0) { endRound(state, pi); return { ok: true }; }
+    if (me.hand.length === 1) {
+      if (a.ekah) emit(state, { type: 'ekah', pi });
+      else state.vulnerable = pi;
+    }
+    state.turn = next;
+    return { ok: true };
+  }
+
+  /** The choice a computer player makes for a Jodi power. */
+  function botPower(state, pi, card) {
+    const hand = state.players[pi].hand;
+    const partner = partnerOf(hand, card);
+    const rest = hand.filter(c => c.id !== card.id && c.id !== partner.id);
+    const need = powerNeeds(card.suit, rest);
+    if (need === 'player') {
+      let best = null;
+      state.players.forEach((p, i) => { if (i !== pi && (best === null || p.hand.length < state.players[best].hand.length)) best = i; });
+      return { power: { target: best }, left: rest.length };
+    }
+    if (need === 'number') {
+      const c = rest.filter(x => x.type === 'num').sort((x, y) => y.value - x.value)[0];
+      return { power: { cardId: c.id }, left: rest.length - 1 };
+    }
+    if (need === 'card') {
+      const nums = rest.filter(x => x.type === 'num').sort((x, y) => y.value - x.value);
+      const plain = rest.filter(x => !WILDS.includes(x.type));
+      const c = nums[0] || plain[0] || rest[0];
+      return { power: { cardId: c.id }, left: rest.length - 1 };
+    }
+    return { power: undefined, left: rest.length };
+  }
+
   function bestColor(hand, rnd) {
     const count = { AGNI: 0, JAL: 0, PRITHVI: 0, VAYU: 0 };
     for (const c of hand) if (c.suit) count[c.suit]++;
@@ -279,16 +396,22 @@
     const nextCount = state.players[nextIndex(state, pi)].hand.length;
     const suitCount = {};
     for (const c of hand) if (c.suit) suitCount[c.suit] = (suitCount[c.suit] || 0) + 1;
+    const jodi = new Set(jodiCards(state, pi));
     let best = null, bs = -1e9;
     for (const id of legal) {
       const c = hand.find(x => x.id === id);
       let s = rnd() * 2;
+      if (jodi.has(id)) s += 22;
       if (c.type === 'num') s += 10 + c.value * 0.3;
       if (ACTIONS.includes(c.type)) s += nextCount <= 2 ? 30 : 12;
       if (c.type === 'brahma') s += 2;
       if (c.type === 'mahakal') s += nextCount <= 2 ? 40 : -5;
       if (c.suit) s += (suitCount[c.suit] || 0) * 1.5;
       if (s > bs) { bs = s; best = c; }
+    }
+    if (jodi.has(best.id)) {
+      const bp = botPower(state, pi, best);
+      return { type: 'play', cardId: best.id, jodi: true, power: bp.power, ekah: bp.left === 1 && rnd() < 0.9 };
     }
     const rest = hand.filter(x => x.id !== best.id);
     return {
@@ -306,7 +429,8 @@
       top: top(state), color: state.color, direction: state.direction, turn: state.turn,
       phase: state.phase, deckCount: state.deck.length,
       pendingDrawn: state.turn === pi ? state.pendingDrawn : null,
-      vulnerable: state.vulnerable, legal: legalCards(state, pi),
+      vulnerable: state.vulnerable, legal: legalCards(state, pi), jodi: jodiCards(state, pi),
+      peek: state.peek && state.peek.by === pi ? state.peek : null,
       events: state.events.slice(), seq: state.seq, round: state.round, target: state.target,
       winner: state.winner, roundPoints: state.roundPoints, matchWinner: state.matchWinner
     };
@@ -316,5 +440,5 @@
     return state.deck.length + state.discard.length + state.players.reduce((s, p) => s + p.hand.length, 0);
   }
 
-  return { SUITS, ACTIONS, WILDS, buildDeck, createGame, startRound, applyAction, legalCards, isLegal, botAction, viewFor, cardName, cardPoints, nextIndex, totalCards };
+  return { SUITS, ACTIONS, WILDS, POWERS, TARGET, TARGET_MIN, TARGET_MAX, TARGET_STEP, cleanTarget, partnerOf, jodiCards, powerNeeds, buildDeck, createGame, startRound, applyAction, legalCards, isLegal, botAction, viewFor, cardName, cardPoints, nextIndex, totalCards };
 });

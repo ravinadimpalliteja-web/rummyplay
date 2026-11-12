@@ -11,13 +11,13 @@
    rolls a player, frequent lead changes. No ladder overlaps another, and each snake's body is routed clear of every
    ladder and every other snake (board.ts, SNAKE_WAYPOINTS; checked by a server test). */
 export const LADDERS: Record<number, number> = { 3: 24, 8: 30, 20: 41, 33: 52, 37: 64, 45: 66, 59: 80, 68: 89, 71: 91 };
-export const SNAKES: Record<number, number> = { 23: 2, 27: 7, 36: 5, 70: 50, 87: 47, 95: 65, 97: 39 };
+export const SNAKES: Record<number, number> = { 23: 2, 27: 7, 36: 5, 70: 49, 87: 47, 95: 65, 97: 39 };
 /** The golden ladder: landing on its foot climbs it only once in RARE_ODDS landings; every other time the square is
     an ordinary square. */
 export const RARE_LADDERS: Record<number, number> = { 82: 99 };
-export const RARE_ODDS = 1000;
+export const RARE_ODDS = 10000;
 /** Bumped when the board layout changes, so a client can tell if a room server still runs an older board. */
-export const BOARD_VERSION = 6;
+export const BOARD_VERSION = 7;
 export const TARGET = 100;
 
 export type Outcome = "need-six" | "enter" | "move" | "overshoot" | "three-sixes";

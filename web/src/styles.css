@@ -704,3 +704,6 @@ main>.hero .hero-ornament{font-size:90px;top:50%;right:34%;opacity:.12}
 .auth-footnote{display:block;margin-top:16px;color:#827a69;font-size:10px;line-height:1.5}
 .auth-toast{position:fixed;z-index:40;right:18px;bottom:18px;padding:10px 14px;border-radius:10px;font-size:12px;box-shadow:0 5px 20px #0002}
 @media(max-width:760px){.account-trigger{padding:8px 11px;font-size:11px}.auth-dialog{padding:25px 20px}.auth-dialog h2{font-size:22px}}
+/* playable game cards open from anywhere on them (logo, title, text) */
+.game-card.playable{cursor:pointer;transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease}.game-card.playable:hover{border-color:#d9b96f;box-shadow:0 10px 26px #0005}.game-card.playable:active{transform:scale(.99)}.game-card.playable:focus-visible{outline:2px solid #f0d99d;outline-offset:3px}
+.mode-card .mode-door{display:inline-grid;width:22px;height:22px}.mode-card .mode-door svg{width:100%;height:100%}

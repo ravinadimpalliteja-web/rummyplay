@@ -384,10 +384,10 @@
   // ---------- home ----------
   function playerName() {
     const n = $('name').value.trim().slice(0, 16) || 'Player';
-    store.set('ekahName', n);
+    store.set('ekahName', n); store.set('rc-player-name', n);
     return n;
   }
-  $('name').value = store.get('ekahName') || '';
+  $('name').value = store.get('rc-player-name') || store.get('ekahName') || '';
   $('homeFan').innerHTML = [{ type: 'num', suit: 'AGNI', value: 7 }, { type: 'maya', suit: 'JAL' }, { type: 'num', suit: 'PRITHVI', value: 9 }, { type: 'mahakal', suit: null }].map((c) => cardHTML(c)).join('');
   $('playLocal').addEventListener('click', () => {
     ctrl = LocalGame(playerName(), Number($('bots').value));

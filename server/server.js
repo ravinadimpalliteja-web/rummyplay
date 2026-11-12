@@ -178,6 +178,7 @@ class Room {
   destroy() { this.clearTimer(); for (const s of this.seats) if (s && s.ws) s.ws.terminate(); }
 }
 
+const { botSeatForJoin } = require('./room-bots');
 const send = (ws, o) => ws.open && ws.send(JSON.stringify(o));
 const gameKind = (m) => (m && (m.game === 'snakes' || m.game === 'ludo' || m.game === 'ekah') ? m.game : 'spades');
 const GAME_NAME = { spades: 'Spades', snakes: 'Snakes & Ladders', ludo: 'Ludo', ekah: 'EKAH' };
@@ -245,6 +246,7 @@ function handle(ws, m) {
       if (seat < 0) {
         if (room.game) throw new Error('That game has already started');
         seat = room.seats.findIndex((s) => !s);
+        if (seat < 0 && room.kind !== 'spades') seat = botSeatForJoin(room);   // a friend takes a computer player's seat
         if (seat < 0) throw new Error('That room is full');
         room.seats[seat] = { token: m.token, name: cleanName(m.name), connected: false, ws: null, missed: 0 };
       }

@@ -7,6 +7,7 @@ import {
 import { DICE, Face, Piece, PieceDefs, TOKEN_SETS, isUnlocked, setPips, unlockText, type DiceId, type Stats, type TokenSet } from "./pieces";
 import { celebrate } from "../snakes/confetti";
 import "./ludo.css";
+import { PlayStart, WaitingRoom, saveName, savedName } from "../room/RoomScreens";
 
 /* Cinzel (design D headings) for the table; the rest of the site loads its own fonts. */
 if (typeof document !== "undefined" && !document.getElementById("rc-cinzel")) {
@@ -33,9 +34,9 @@ const pace = reduced ? 0.3 : 1;
 const wait = (ms: number) => new Promise<void>(r => window.setTimeout(r, ms * pace));
 const copyTokens = (t: Record<number, Tok[]>) => JSON.parse(JSON.stringify(t)) as Record<number, Tok[]>;
 
-type SeatInfo = { seat: number; name: string; connected: boolean; away: boolean } | null;
+type SeatInfo = { seat: number; name: string; bot?: boolean; connected: boolean; away: boolean } | null;
 type LView = {
-  t: "state"; game: "ludo"; code: string; passcode: string; now: number; you: number; host: boolean;
+  t: "state"; game: "ludo"; code: string; passcode: string; now: number; you: number; host: boolean; hostSeat?: number;
   phase: "lobby" | "playing" | "gameEnd"; seats: SeatInfo[];
   order?: number[]; colors?: Record<number, Color>; tokens?: Record<number, Tok[]>; turn?: number; stage?: "roll" | "move" | "gameEnd";
   dice?: number; sixes?: number; moves?: number[]; ranks?: number[]; last?: LudoEvent | null; deadline?: number | null; moving?: boolean;
@@ -162,7 +163,6 @@ function StylePicker({ tokens, dice, stats, onTokens, onDice }: { tokens: TokenS
 export default function LudoGame({ onHome, joinCode }: { onHome: () => void; joinCode?: string }) {
   type Sub = "lobby" | "room" | "table";
   const [sub, setSub] = useState<Sub>(joinCode ? "room" : "lobby");
-  const [pick, setPick] = useState<"practice" | "pass" | "room">(joinCode ? "room" : "practice");
   const [bots, setBots] = useState(3);
   const [passCount, setPassCount] = useState(2);
   const [passNames, setPassNames] = useState(["Player 1", "Player 2", "Player 3", "Player 4"]);
@@ -171,8 +171,7 @@ export default function LudoGame({ onHome, joinCode }: { onHome: () => void; joi
   const [localNames, setLocalNames] = useState<string[]>(["You", ...BOTS]);
   const [view, setView] = useState<LView | null>(null);
   const [net, setNet] = useState<NetStatus>("idle");
-  const [roomTab, setRoomTab] = useState<"create" | "join">(joinCode ? "join" : "create");
-  const [roomName, setRoomName] = useState(""), [roomCode, setRoomCode] = useState(joinCode ?? ""), [roomPass, setRoomPass] = useState("");
+  const [roomName, setRoomName] = useState(savedName), [roomCode, setRoomCode] = useState(joinCode ?? ""), [roomPass, setRoomPass] = useState("");
   const [roomMsg, setRoomMsg] = useState("");
   const [disp, setDisp] = useState<Record<number, Tok[]> | null>(null);
   const [animating, setAnimating] = useState(false);
@@ -243,12 +242,16 @@ export default function LudoGame({ onHome, joinCode }: { onHome: () => void; joi
     send({ t: "leave" });
     window.setTimeout(() => { saveRoom(null, ROOM_KEY); lastPhase.current = null; setView(null); clientRef.current?.close(); clientRef.current = null; setSub("room"); }, 300);
   };
-  const roomSubmit = () => {
+  const createRoom = () => {
     if (!roomName.trim()) { setRoomMsg("Enter your name first."); return; }
-    if (roomTab === "join" && (roomCode.length !== 4 || roomPass.length !== 4)) { setRoomMsg("Enter the 4-letter room code and the 4-digit passcode."); return; }
-    setRoomMsg("");
-    if (roomTab === "create") openRoom({ t: "create", game: "ludo", token: deviceToken(), name: roomName.trim(), passcode: randomPasscode() });
-    else openRoom({ t: "join", game: "ludo", token: deviceToken(), name: roomName.trim(), code: roomCode, passcode: roomPass });
+    setRoomMsg(""); saveName(roomName);
+    openRoom({ t: "create", game: "ludo", token: deviceToken(), name: roomName.trim(), passcode: randomPasscode() });
+  };
+  const joinRoom = () => {
+    if (!roomName.trim()) { setRoomMsg("Enter your name first."); return; }
+    if (roomCode.length !== 4 || roomPass.length !== 4) { setRoomMsg("Enter the 4-letter room code and the 4-digit passcode."); return; }
+    setRoomMsg(""); saveName(roomName);
+    openRoom({ t: "join", game: "ludo", token: deviceToken(), name: roomName.trim(), code: roomCode, passcode: roomPass });
   };
 
   /* ---------- games on this device ---------- */
@@ -418,70 +421,38 @@ export default function LudoGame({ onHome, joinCode }: { onHome: () => void; joi
   }, []);
 
   /* ---------- screens ---------- */
-  if (sub === "lobby") return <section className="mode-page ld-mode">
-    <button className="back-link" onClick={onHome}>← Back</button>
-    <div className="eyebrow">ROYAL CLUB · LUDO</div>
-    <h1>Choose how you want to play</h1>
-    <div className="mode-grid">
-      <button className={pick === "practice" ? "mode-card selected" : "mode-card"} onClick={() => setPick("practice")}><span className="mode-ico">⚄</span><strong>Practice</strong><p>Play against computer players.</p></button>
-      <button className={pick === "pass" ? "mode-card selected" : "mode-card"} onClick={() => setPick("pass")}><span className="mode-ico">◈</span><strong>Pass &amp; play</strong><p>2 to 4 friends on one phone.</p></button>
-      <button className={pick === "room" ? "mode-card selected" : "mode-card"} onClick={() => setPick("room")}><span className="mode-ico">♛</span><strong>Room</strong><p>Play with 1 to 3 friends using a code.</p></button>
-    </div>
-    {pick === "practice" && <div className="ld-choice"><span>Computer players</span>{[1, 2, 3].map(n => <button key={n} className={bots === n ? "on" : ""} aria-pressed={bots === n} onClick={() => setBots(n)}>{n}</button>)}</div>}
-    {pick === "pass" && <div className="ld-pass">
-      <div className="ld-choice"><span>Players</span>{[2, 3, 4].map(n => <button key={n} className={passCount === n ? "on" : ""} aria-pressed={passCount === n} onClick={() => setPassCount(n)}>{n}</button>)}</div>
-      <div className="ld-names">{passNames.slice(0, passCount).map((n, i) => {
-        const c = (passCount === 2 ? ["red", "yellow"] : passCount === 3 ? ["red", "green", "yellow"] : COLORS)[i] as Color;
-        return <label key={i}><span className={`ld-dot ld-bg-${c}`} />{COLOR_NAME[c]}<input id={`ld-name-${i}`} value={n} maxLength={14} onChange={e => setPassNames(v => v.map((x, j) => (j === i ? e.target.value : x)))} /></label>;
-      })}</div>
-    </div>}
-    <button className="gold-button" onClick={() => (pick === "room" ? setSub("room") : startLocal(pick))}>
-      {pick === "practice" ? "Start practice →" : pick === "pass" ? "Start pass & play →" : "Create or join a room →"}
-    </button>
-    <details className="ld-style-box"><summary>Token and dice style</summary><StylePicker tokens={shownSet} dice={dice} stats={stats} onTokens={chooseTokens} onDice={chooseDice} /></details>
-    <p className="room-note">Rules: a 6 brings a token out · a 6, a cut or reaching home rolls again · three 6s in a row end the turn · starred and start squares are safe · exact roll to finish.</p>
-  </section>;
+  if (sub === "lobby" || (sub === "room" && !view)) return <PlayStart className="ld-mode" game="Ludo" tagline="Race your four tokens home. Cut, block and roll sixes."
+    onBack={onHome} name={roomName} onName={n => { setRoomName(n); saveName(n); }}
+    vsComputer={{ count: bots, options: [1, 2, 3], onCount: setBots, onPlay: () => startLocal("practice") }}
+    friends={{ onCreate: createRoom, code: roomCode, onCode: setRoomCode, pass: roomPass, onPass: setRoomPass, onJoin: joinRoom, busy: net === "connecting" }}
+    msg={roomMsg}
+    extra={<>
+      {view && <div className="rs-panel"><h2>Your room</h2><p className="rs-note">You are in room {view.code}.</p><button className="gold-button rs-wide" onClick={() => setSub("room")}>Return to the room →</button></div>}
+      <div className="rs-panel ld-pass">
+        <h2>Pass &amp; play</h2>
+        <p className="rs-note">2 to 4 friends on one phone.</p>
+        <div className="rs-chips" role="group" aria-label="Players">{[2, 3, 4].map(n => <button key={n} type="button" className={passCount === n ? "on" : ""} aria-pressed={passCount === n} onClick={() => setPassCount(n)}>{n}</button>)}</div>
+        <div className="ld-names">{passNames.slice(0, passCount).map((n, i) => {
+          const c = (passCount === 2 ? ["red", "yellow"] : passCount === 3 ? ["red", "green", "yellow"] : COLORS)[i] as Color;
+          return <label key={i}><span className={`ld-dot ld-bg-${c}`} />{COLOR_NAME[c]}<input id={`ld-name-${i}`} value={n} maxLength={14} onChange={e => setPassNames(v => v.map((x, j) => (j === i ? e.target.value : x)))} /></label>;
+        })}</div>
+        <button className="ghost-button rs-wide" onClick={() => startLocal("pass")}>Start pass &amp; play</button>
+      </div>
+    </>}
+    after={<details className="ld-style-box rs-panel"><summary>Token and dice style</summary><StylePicker tokens={shownSet} dice={dice} stats={stats} onTokens={chooseTokens} onDice={chooseDice} /></details>}
+    rules={<ul><li>A 6 brings a token out.</li><li>A 6, a cut or reaching home rolls again; three 6s in a row end the turn.</li><li>Starred and start squares are safe. You need the exact roll to finish.</li></ul>} />;
 
-  if (sub === "room") return <section className="mode-page room-page ld-mode">
-    <button className="back-link" onClick={() => { setSub("lobby"); setRoomMsg(""); }}>← Back</button>
-    <div className="eyebrow">ROYAL CLUB · LUDO</div>
-    <h1>{!view ? "Play with friends" : view.phase === "lobby" ? "Waiting room" : "Game in progress"}</h1>
-    {!view ? <>
-      <div className="room-tabs">
-        <button className={roomTab === "create" ? "on" : ""} onClick={() => { setRoomTab("create"); setRoomMsg(""); }}>Create a room</button>
-        <button className={roomTab === "join" ? "on" : ""} onClick={() => { setRoomTab("join"); setRoomMsg(""); }}>Join a room</button>
-      </div>
-      <div className="room-form">
-        <label>Your name<input id="ld-room-name" value={roomName} maxLength={16} onChange={e => setRoomName(e.target.value)} placeholder="Enter your name" /></label>
-        {roomTab === "join" && <div className="room-row">
-          <label>Room code<input id="ld-room-code" value={roomCode} maxLength={4} onChange={e => setRoomCode(e.target.value.toUpperCase())} placeholder="K7QM" /></label>
-          <label>Passcode<input id="ld-room-pass" value={roomPass} maxLength={4} inputMode="numeric" onChange={e => setRoomPass(e.target.value.replace(/\D/g, ""))} placeholder="4821" /></label>
-        </div>}
-        <button className="gold-button" disabled={net === "connecting"} onClick={roomSubmit}>{net === "connecting" ? "Connecting…" : roomTab === "create" ? "Create room →" : "Join room →"}</button>
-      </div>
-      {roomMsg && <p className="room-msg">{roomMsg}</p>}
-      <p className="room-note">2 to 4 real players per room. The host can start once at least two have joined.</p>
-    </> : <div className="room-wait">
-      <div className="room-share">
-        <div><small>ROOM CODE</small><b>{view.code}</b></div>
-        <div><small>PASSCODE</small><b>{view.passcode}</b></div>
-        <button className="ghost-button" onClick={() => {
-          const txt = `Ludo? Join my Royal Club room — code ${view.code}, passcode ${view.passcode} — at ${window.location.origin}`;
-          try { navigator.clipboard.writeText(txt).then(() => setRoomMsg("Invite copied."), () => setRoomMsg(txt)); } catch { setRoomMsg(txt); }
-        }}>Copy invite</button>
-      </div>
-      <ul className="room-seats">{view.seats.map((p, i) => <li key={i} className={p ? "filled" : ""}><span>{i + 1}</span>{p ? p.name + (i === view.you ? " (you)" : "") + (!p.connected ? " · offline" : "") : "Open seat"}</li>)}</ul>
-      {view.phase === "lobby" ? (() => {
-        const seated = view.seats.filter(Boolean) as NonNullable<SeatInfo>[], ok = seated.length >= 2 && seated.every(p => p.connected);
-        return <button className="gold-button" disabled={!view.host || !ok} onClick={() => send({ t: "start" })}>
-          {!view.host ? "Waiting for the host to start" : ok ? `Start game with ${seated.length} players →` : seated.length < 2 ? "Waiting for at least 1 more player" : "Waiting for everyone to come online"}
-        </button>;
-      })() : <button className="gold-button" onClick={() => setSub("table")}>Return to the board →</button>}
-      {roomMsg && <p className="room-msg">{roomMsg}</p>}
-      <button className="text-button" onClick={leaveRoom}>Leave room</button>
-      <p className="room-note">{view.phase === "lobby" ? "Colours are given when the game starts: two players sit on opposite corners. Empty seats stay empty — no computer players." : "If you leave, the game plays for you. You can rejoin from this device with the same code and passcode."}</p>
-    </div>}
-  </section>;
+  if (sub === "room" && view) {
+    const inLobby = view.phase === "lobby";
+    return <WaitingRoom className="ld-mode" game="Ludo" onBack={() => setSub("lobby")}
+      code={view.code} passcode={view.passcode}
+      invite={`Ludo? Join my Royal Club room — code ${view.code}, passcode ${view.passcode} — at ${window.location.origin}`}
+      seats={view.seats} you={view.you} hostSeat={view.hostSeat} isHost={view.host}
+      onAddBot={() => send({ t: "addBot" })} onRemoveBot={() => send({ t: "removeBot" })} onStart={() => send({ t: "start" })}
+      blocked={!inLobby ? <button className="gold-button rs-wide" onClick={() => setSub("table")}>Return to the board →</button> : undefined}
+      msg={roomMsg} onMsg={setRoomMsg} onLeave={leaveRoom}
+      note={inLobby ? "Colours are given when the game starts; two players sit on opposite corners. The host can fill empty seats with computer players." : "If you leave, the game plays for you. You can rejoin from this device with the same code and passcode."} />;
+  }
 
   /* ---------- table ---------- */
   if (!t) return <section className="mode-page ld-mode"><button className="back-link" onClick={() => setSub("lobby")}>← Back</button><p className="room-note">Loading the board…</p></section>;

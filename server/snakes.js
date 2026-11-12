@@ -13,6 +13,7 @@
  * The server rolls the die. Clients only send intents: 'start', 'roll', 'again', 'leave', 'chat'.
  */
 const crypto = require('crypto');
+const { BOT_DELAY_MS, addBot, removeBot } = require('./room-bots');
 
 /* Nine ladders and seven snakes spread over the board. Must match web/src/snakes/engine.ts (a test checks this). */
 const LADDERS = Object.freeze({ 3: 24, 8: 30, 20: 41, 33: 52, 37: 64, 45: 66, 59: 80, 68: 89, 71: 91 });
@@ -130,23 +131,24 @@ class SnakesRoom {
   }
 
   ms(n) { return n / this.speed; }
-  humans() { return this.seats.filter(Boolean); }
+  humans() { return this.seats.filter((s) => s && !s.bot); }
   connectedHumans() { return this.humans().filter((s) => s.connected); }
-  seatOf(token) { return this.seats.findIndex((s) => s && s.token === token); }
+  seatOf(token) { return this.seats.findIndex((s) => s && !s.bot && s.token === token); }
   hostSeat() {
     let i = this.seatOf(this.hostToken);
-    if (i < 0) { i = this.seats.findIndex(Boolean); this.hostToken = i >= 0 ? this.seats[i].token : null; }
+    if (i < 0) { i = this.seats.findIndex((s) => s && !s.bot); this.hostToken = i >= 0 ? this.seats[i].token : null; }
     return i;
   }
-  isAway(seat) { const s = this.seats[seat]; return !s || !s.connected || s.missed >= AWAY_AFTER_MISSES; }
+  isAway(seat) { const s = this.seats[seat]; return !s || (!s.bot && (!s.connected || s.missed >= AWAY_AFTER_MISSES)); }
+  isBot(seat) { const s = this.seats[seat]; return !!(s && s.bot); }
 
   view(seat) {
     const g = this.game;
     const base = {
       t: 'state', game: 'snakes', board: BOARD_VERSION, code: this.code, passcode: this.passcode, now: Date.now(), you: seat,
-      host: this.hostSeat() === seat,
+      host: this.hostSeat() === seat, hostSeat: this.hostSeat(),
       phase: g ? g.phase : 'lobby',
-      seats: this.seats.map((s, i) => (s ? { seat: i, name: s.name, connected: s.connected, away: g ? this.isAway(i) : false, piece: s.piece } : null)),
+      seats: this.seats.map((s, i) => (s ? { seat: i, name: s.name, bot: !!s.bot, connected: !!s.bot || s.connected, away: g ? this.isAway(i) : false, piece: s.piece } : null)),
     };
     if (!g) return base;
     return {
@@ -178,7 +180,7 @@ class SnakesRoom {
   start() {
     if (this.game) return;
     const seated = this.humans();
-    if (seated.length < 2) throw new Error('At least two players are needed to start');
+    if (this.seats.filter(Boolean).length < 2) throw new Error('At least two players are needed to start - invite a friend or add a computer player');
     if (seated.some((s) => !s.connected)) throw new Error('Wait until every player in the room is online');
     this.newGame();
   }
@@ -202,7 +204,8 @@ class SnakesRoom {
     const wait = this.pauseUntil - Date.now();
     if (wait > 0) { at(wait, () => this.schedule()); return this.broadcast(); }
     const seat = turnOf(g);
-    if (this.isAway(seat)) at(this.ms(AWAY_DELAY_MS), () => this.autoRoll(seat, false));
+    if (this.isBot(seat)) at(this.ms(BOT_DELAY_MS), () => this.autoRoll(seat, false));
+    else if (this.isAway(seat)) at(this.ms(AWAY_DELAY_MS), () => this.autoRoll(seat, false));
     else {
       const limit = this.ms(ROLL_SECS * 1000);
       this.deadline = Date.now() + limit;
@@ -221,7 +224,7 @@ class SnakesRoom {
     try {
       const g = this.game;
       if (!g || g.phase !== 'playing' || turnOf(g) !== seat) return this.schedule();
-      if (missed && this.seats[seat]) this.seats[seat].missed++;
+      if (missed && this.seats[seat] && !this.seats[seat].bot) this.seats[seat].missed++;
       this.doRoll(seat);
     } catch (e) { console.error('snakes autoRoll', e); this.schedule(); }
   }
@@ -230,6 +233,8 @@ class SnakesRoom {
   handle(seat, m) {
     const g = this.game;
     switch (m.t) {
+      case 'addBot': return addBot(this, seat);
+      case 'removeBot': return removeBot(this, seat);
       case 'start':
         if (this.hostSeat() !== seat) throw new Error('Only the host can start the game');
         return this.start();

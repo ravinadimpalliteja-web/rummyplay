@@ -1,0 +1,75 @@
+/* Royal Club room format (start screen and waiting room), shared by every game. Ivory cards, emerald headings, gold
+   actions; a single centred column on phones, and on wide screens the waiting room puts game choices beside the players. */
+.rs-page{--rs-card:#fff;--rs-ink:#1F2A24;--rs-muted:#5C6862;--rs-emerald:#0F4D3A;--rs-gold:#D9B45A;--rs-gold-text:#7A5A1C;--rs-line:#E6DAC0;--rs-soft:#F3EEE2;
+  width:100%;max-width:460px;margin:0 auto;padding:14px 16px 24px;box-sizing:border-box;color:var(--rs-ink)}
+.rs-page .back-link{margin:0 0 6px}
+.rs-head{text-align:center;margin:2px 0 14px}
+.rs-head .eyebrow{color:var(--rs-gold-text)}
+.rs-head h1{margin:4px 0 4px;font-family:'Cinzel','Playfair Display',Georgia,serif;font-size:clamp(28px,8vw,40px);color:var(--rs-emerald);line-height:1.1}
+.rs-head p{margin:0;color:var(--rs-muted);font-size:14px}
+.rs-stack{display:flex;flex-direction:column;gap:14px}
+.rs-panel{background:var(--rs-card);border:1px solid var(--rs-line);border-radius:18px;padding:16px;box-shadow:0 1px 2px rgba(60,40,10,.06),0 8px 24px rgba(60,40,10,.08);display:flex;flex-direction:column;gap:12px}
+.rs-panel h2{margin:0;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--rs-gold-text);display:flex;align-items:center;justify-content:space-between}
+.rs-count{font-size:12px;letter-spacing:.04em;color:var(--rs-muted)}
+.rs-field{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600;color:var(--rs-muted)}
+.rs-page input{font:inherit;font-size:16px;color:var(--rs-ink);background:var(--rs-soft);border:1.5px solid var(--rs-line);border-radius:12px;padding:10px 14px;min-height:46px;width:100%;box-sizing:border-box}
+.rs-page input:focus{outline:2px solid var(--rs-gold);border-color:var(--rs-gold)}
+.rs-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rs-chips{display:flex;gap:8px}
+.rs-chips button{flex:1;min-height:42px;border-radius:12px;border:1.5px solid var(--rs-line);background:var(--rs-soft);color:var(--rs-ink);font-weight:800;font-size:16px;cursor:pointer}
+.rs-chips button.on{background:var(--rs-emerald);border-color:var(--rs-emerald);color:#FBF7EE}
+.rs-wide{width:100%;min-height:48px;font-size:16px}
+.rs-page .ghost-button{color:var(--rs-emerald);border-color:var(--rs-emerald);background:transparent}
+.rs-page .ghost-button:disabled{opacity:.4}
+.rs-note{margin:0;font-size:12.5px;line-height:1.5;color:var(--rs-muted)}
+.rs-center{text-align:center}
+.rs-msg{max-width:none;margin:0}
+.rs-rules{color:var(--rs-muted);font-size:13px;line-height:1.55;padding:0 4px}
+.rs-rules summary{cursor:pointer;font-weight:700;color:var(--rs-emerald)}
+.rs-rules ul{margin:8px 0 0;padding-left:18px}
+
+/* waiting room */
+.rs-code-card{align-items:center;text-align:center;gap:4px}
+.rs-code-card>small{font-size:11px;letter-spacing:.22em;font-weight:800;color:var(--rs-gold-text)}
+.rs-code{font:800 clamp(44px,14vw,64px)/1.05 'Cinzel','Playfair Display',Georgia,serif;letter-spacing:.14em;color:var(--rs-emerald);margin:2px 0}
+.rs-pass{margin:0;font-size:15px;color:var(--rs-muted)}
+.rs-pass b{font-size:20px;letter-spacing:.18em;color:var(--rs-ink)}
+.rs-code-card .rs-note{margin:4px 0 8px}
+.rs-code-card .ghost-button{width:100%;min-height:44px}
+.rs-seats{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.rs-seats li{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:14px;background:var(--rs-soft);border:1.5px solid transparent}
+.rs-seats li.you{border-color:var(--rs-gold)}
+.rs-seats li.open{background:transparent;border:1.5px dashed var(--rs-line);color:var(--rs-muted)}
+.rs-avatar{flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;overflow:hidden;background:var(--rs-emerald);color:#FBF7EE;font-weight:800;font-size:17px;border:2.5px solid var(--rs-gold)}
+.rs-seats li.open .rs-avatar{background:transparent;color:var(--rs-muted);border:1.5px dashed var(--rs-line)}
+.rs-avatar img{width:100%;height:100%;object-fit:contain;padding:2px;box-sizing:border-box;background:radial-gradient(circle at 50% 35%,#1d6b51,#0F4D3A)}
+.rs-name{flex:1;min-width:0;font-weight:700;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rs-tag{font-size:12px;font-weight:700;color:var(--rs-gold-text)}
+.rs-tools .ghost-button{min-height:40px;font-size:14px;padding:6px 10px}
+.rs-blocked .room-note{margin:0;max-width:none}
+.rs-leave{min-height:44px}
+/* game choices in the waiting room (for example tokens) */
+.rs-wait .tp{margin:0}
+.rs-wait .tp-players{display:none}
+@media (min-width:900px){
+  .rs-page.rs-wait.has-extra{max-width:1120px}
+  .rs-wait.has-extra .rs-stack{display:grid;grid-template-columns:400px minmax(0,1fr);gap:16px 24px;align-items:start}
+  .rs-wait.has-extra .rs-stack>*{grid-column:1}
+  .rs-wait.has-extra .rs-stack>.rs-extra{grid-column:2;grid-row:1/span 4}
+  .rs-wait .rs-extra .tp{grid-template-columns:1fr}
+  .rs-wait .rs-extra .tp-preview{flex-direction:row;text-align:left}
+}
+@media (orientation:landscape) and (max-height:520px){
+  .rs-page{padding-top:6px}
+  .rs-head{margin-bottom:8px}.rs-head p{display:none}
+  .rs-page:not(.rs-wait) .rs-stack{display:grid;grid-template-columns:1fr 1fr;align-items:start}
+  .rs-page:not(.rs-wait){max-width:900px}
+}
+/* Ludo's pass & play box inside the shared start screen */
+.rs-panel.ld-pass{display:flex;justify-items:stretch;margin:0;text-align:left}
+.rs-panel .ld-names{width:100%;margin:0}
+.rs-panel .ld-names label{background:var(--rs-soft);border:1.5px solid var(--rs-line);color:var(--rs-gold-text);border-radius:12px}
+.rs-panel .ld-names input{background:#fff;border:1.5px solid var(--rs-line);color:var(--rs-ink);min-height:40px;padding:7px 10px}
+.rs-page .ld-style-box summary{cursor:pointer;font-weight:700;color:var(--rs-emerald)}
+.rs-page .ld-style-box.rs-panel{width:auto;max-width:none;margin:0;background:var(--rs-card);border:1px solid var(--rs-line);color:var(--rs-ink)}
+.rs-page .ld-style-title{color:var(--rs-gold-text)}

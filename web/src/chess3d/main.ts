@@ -117,20 +117,26 @@ const geoCache = new Map<string, Obj>();
 const geo = (key: string, make: () => Obj) => { let g = geoCache.get(key); if (!g) { g = make(); geoCache.set(key, g); } return g; };
 
 function knightHead(): Obj {
-  const s = new THREE.Shape();
-  s.moveTo(-.15, 0); s.lineTo(.13, 0);
-  s.quadraticCurveTo(.15, .1, .2, .18); s.quadraticCurveTo(.26, .24, .3, .27);
-  s.quadraticCurveTo(.33, .31, .29, .35); s.quadraticCurveTo(.2, .38, .13, .43);
-  s.lineTo(.1, .52); s.lineTo(.05, .45); s.lineTo(.0, .5); s.lineTo(-.04, .42);
-  s.quadraticCurveTo(-.13, .36, -.16, .26); s.quadraticCurveTo(-.19, .14, -.15, 0);
-  const g = new THREE.ExtrudeGeometry(s, { depth: .15, bevelEnabled: true, bevelThickness: .035, bevelSize: .03, bevelSegments: 4, curveSegments: 10 });
-  g.translate(0, 0, -.075); g.scale(1.1, HY, 1.1); g.computeVertexNormals(); return g;
+  const s = new THREE.Shape();                                   // a horse's head and neck in profile, facing +x
+  s.moveTo(-.16, 0); s.lineTo(.14, 0);
+  s.quadraticCurveTo(.17, .08, .11, .13);                        // chest
+  s.quadraticCurveTo(.09, .19, .14, .24);                        // neck front
+  s.quadraticCurveTo(.2, .25, .27, .255);                        // throat to mouth
+  s.quadraticCurveTo(.33, .27, .32, .31);                        // muzzle
+  s.quadraticCurveTo(.31, .35, .26, .36);                        // nose
+  s.quadraticCurveTo(.18, .38, .13, .44);                        // face to forehead
+  s.lineTo(.11, .53); s.lineTo(.07, .475); s.lineTo(.04, .5); s.lineTo(.01, .45);   // ears
+  s.quadraticCurveTo(-.12, .4, -.17, .25);                       // back of the neck
+  s.quadraticCurveTo(-.2, .12, -.16, 0);
+  const g = new THREE.ExtrudeGeometry(s, { depth: .14, bevelEnabled: true, bevelThickness: .03, bevelSize: .022, bevelSegments: 4, curveSegments: 12 });
+  g.translate(0, 0, -.07); g.scale(1.1, HY, 1.1); g.computeVertexNormals(); return g;
 }
 function mane(): Obj {
-  const s = new THREE.Shape();
-  s.moveTo(-.05, .44); s.quadraticCurveTo(-.17, .36, -.2, .2); s.lineTo(-.17, .05); s.quadraticCurveTo(-.13, .3, -.02, .41); s.lineTo(-.05, .44);
-  const g = new THREE.ExtrudeGeometry(s, { depth: .07, bevelEnabled: true, bevelThickness: .015, bevelSize: .012, bevelSegments: 2, curveSegments: 8 });
-  g.translate(0, 0, -.035); g.scale(1.1, HY, 1.1); return g;
+  const s = new THREE.Shape();                                   // a gold mane along the back of the neck
+  s.moveTo(.02, .47); s.quadraticCurveTo(-.13, .41, -.19, .25); s.quadraticCurveTo(-.22, .12, -.19, .04);
+  s.lineTo(-.15, .06); s.quadraticCurveTo(-.17, .2, -.12, .32); s.quadraticCurveTo(-.06, .41, 0, .43); s.lineTo(.02, .47);
+  const g = new THREE.ExtrudeGeometry(s, { depth: .08, bevelEnabled: true, bevelThickness: .015, bevelSize: .01, bevelSegments: 2, curveSegments: 10 });
+  g.translate(0, 0, -.04); g.scale(1.1, HY, 1.1); return g;
 }
 
 function buildPiece(letter: Letter, mats: { w: Mats; b: Mats }): Obj {
@@ -169,8 +175,8 @@ function buildPiece(letter: Letter, mats: { w: Mats; b: Mats }): Obj {
       head.rotation.y = white ? Math.PI / 2 : -Math.PI / 2;
       const mn = add(geo("mane", mane), m.gold, .2); mn.rotation.y = head.rotation.y;
       for (const side of [-1, 1]) {
-        const eye = add(geo("eye", () => new THREE.SphereGeometry(.018, 10, 8)), m.jewel, .2 + .37, 0, 0);
-        const fx = .19 * 1.1, fz = side * .115;          // eye on each side of the head, in head space -> rotate into place
+        const eye = add(geo("eye", () => new THREE.SphereGeometry(.02, 10, 8)), m.jewel, .2 + .365, 0, 0);
+        const fx = .2 * 1.1, fz = side * .102;          // eye on each side of the head, in head space -> rotate into place
         const c = Math.cos(head.rotation.y), s2 = Math.sin(head.rotation.y);
         eye.position.x = fx * c + fz * s2; eye.position.z = -fx * s2 + fz * c;
       }
@@ -253,9 +259,9 @@ class Board3D {
   private place() {
     const a = this.azBase + this.az, e = this.elev * Math.PI / 180;
     const fit = 9.6 / (2 * Math.tan((this.camera.fov * Math.PI / 180) / 2)) / Math.min(1, this.camera.aspect);
-    const d = fit * (1.02 + .06 * Math.cos(e));
+    const d = fit * (.97 + .06 * Math.cos(e));
     this.camera.position.set(Math.sin(a) * Math.cos(e) * d, Math.sin(e) * d, Math.cos(a) * Math.cos(e) * d);
-    this.camera.lookAt(Math.sin(a) * .3 * Math.cos(e), 0, Math.cos(a) * .3 * Math.cos(e));     // aim a touch nearer than the centre: the board sits centred on screen
+    this.camera.lookAt(Math.sin(a) * .12 * Math.cos(e), 0, Math.cos(a) * .12 * Math.cos(e));     // aim a touch nearer than the centre: the board sits centred on screen
     this.dirty = true;
   }
   private pick(e: PointerEvent): string | null {

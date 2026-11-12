@@ -36,6 +36,19 @@ export default function AuthPanel() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    const read = (q: string) => new URLSearchParams(q.replace(/^[?#]/, ""));
+    const q = read(window.location.search), h = read(window.location.hash);
+    const code = q.get("error") || h.get("error");
+    if (!code) return;
+    const detail = q.get("error_description") || h.get("error_description") || "";
+    setError(/expired|invalid.*(link|otp)/i.test(detail)
+      ? "That sign-in link has expired. Please try again."
+      : "Sign-in didn't work this time. Please try again, or play as a guest.");
+    setOpen(true);
+    window.history.replaceState(null, "", window.location.pathname);
+  }, []);
+
+  useEffect(() => {
     if (!client) return;
     let active = true;
     client.auth.getSession().then(({ data, error: sessionError }) => {
@@ -73,7 +86,7 @@ export default function AuthPanel() {
   const guest = () => { const c = supabase; if (c) void run("guest", () => c.auth.signInAnonymously()); };
   const google = () => { const c = supabase; if (c) void run("google", () => c.auth.signInWithOAuth({
     provider: "google",
-    options: { redirectTo: window.location.origin }
+    options: { redirectTo: `${window.location.origin}/` }
   })); };
   const submitEmail = (event: FormEvent) => {
     event.preventDefault();
@@ -83,7 +96,7 @@ export default function AuthPanel() {
       void run("email", () => c.auth.signUp({
         email: email.trim(),
         password,
-        options: { emailRedirectTo: window.location.origin, data: { display_name: email.split("@")[0] } }
+        options: { emailRedirectTo: `${window.location.origin}/`, data: { display_name: email.split("@")[0] } }
       }));
     } else {
       void run("email", () => c.auth.signInWithPassword({ email: email.trim(), password }));

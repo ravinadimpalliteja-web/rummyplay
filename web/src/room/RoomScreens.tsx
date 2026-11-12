@@ -1,9 +1,10 @@
 import { useState, type ReactNode } from "react";
 import "./room.css";
+import { openAuth, useAccount } from "../auth/account";
 
 /* The Royal Club room format, shared by every game (modelled on EKAH). Use these two screens for any new game:
 
-   1. <PlayStart>    one start screen: your name, a "Play vs computer" box and a "Play with friends" box
+   1. <PlayStart>    one start screen: a "Play vs computer" box and a "Play with friends" box
                      (create a room in one tap, or join with the room code and passcode). Extra boxes (for example
                      Ludo's pass & play) go in `extra`; the game's rules go in `rules`.
    2. <WaitingRoom>  the room code card (code, passcode, Copy invite), the players list (Host, Computer, You, offline),
@@ -25,7 +26,6 @@ export type StartProps = {
   game: string;                         // e.g. "Snakes & Ladders"
   tagline: string;                      // one line under the title
   onBack: () => void;
-  name: string; onName: (n: string) => void;
   /** Play vs computer: how many computer players, and what starts it. */
   vsComputer: { count: number; options: number[]; onCount: (n: number) => void; onPlay: () => void; playLabel?: string };
   /** Play with friends. `busy` while connecting. */
@@ -36,6 +36,14 @@ export type StartProps = {
   rules?: ReactNode;                    // shown under "How to play"
   className?: string;
 };
+
+/** Who you'll be in rooms: your username, or a prompt to sign in. */
+export function RoomAccountLine() {
+  const a = useAccount();
+  if (a.session && !a.guest && a.username) return <p className="rs-note rs-account"><span>Playing as <b>{a.username}</b></span></p>;
+  return <p className="rs-note rs-account"><span>{a.session && !a.guest ? "Pick a username to play with friends." : "Sign in with your username to play with friends."}</span>
+    <button type="button" className="text-button" onClick={() => openAuth(a.session && !a.guest ? "username" : "rooms")}>{a.session && !a.guest ? "Pick username" : "Sign in"}</button></p>;
+}
 
 export function PlayStart(p: StartProps) {
   const f = p.friends;
@@ -48,9 +56,6 @@ export function PlayStart(p: StartProps) {
     </div>
     <div className="rs-stack">
       <div className="rs-panel">
-        <label className="rs-field">Your name<input id="rs-name" value={p.name} maxLength={16} autoComplete="nickname" onChange={e => p.onName(e.target.value)} placeholder="Enter your name" /></label>
-      </div>
-      <div className="rs-panel">
         <h2>Play vs computer</h2>
         <div className="rs-field">Computer players
           <div className="rs-chips" role="group" aria-label="Computer players">{p.vsComputer.options.map(n => <button key={n} type="button" className={p.vsComputer.count === n ? "on" : ""} aria-pressed={p.vsComputer.count === n} onClick={() => p.vsComputer.onCount(n)}>{n}</button>)}</div>
@@ -60,6 +65,7 @@ export function PlayStart(p: StartProps) {
       {p.extra}
       <div className="rs-panel">
         <h2>Play with friends</h2>
+        <RoomAccountLine />
         <button className="gold-button rs-wide" disabled={f.busy} onClick={f.onCreate}>{f.busy ? "Connecting…" : "Create a room"}</button>
         <p className="rs-note">Friends join with the room code and passcode. You can add computer players to fill empty seats.</p>
         <div className="rs-row">

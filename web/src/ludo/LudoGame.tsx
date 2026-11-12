@@ -7,7 +7,8 @@ import {
 import { DICE, Face, Piece, PieceDefs, TOKEN_SETS, isUnlocked, setPips, unlockText, type DiceId, type Stats, type TokenSet } from "./pieces";
 import { celebrate } from "../snakes/confetti";
 import "./ludo.css";
-import { PlayStart, WaitingRoom, saveName, savedName } from "../room/RoomScreens";
+import { PlayStart, WaitingRoom } from "../room/RoomScreens";
+import { ROOM_SIGNIN_MSG, onRoomAuthError, roomAccount } from "../auth/account";
 
 /* Cinzel (design D headings) for the table; the rest of the site loads its own fonts. */
 if (typeof document !== "undefined" && !document.getElementById("rc-cinzel")) {
@@ -171,7 +172,7 @@ export default function LudoGame({ onHome, joinCode }: { onHome: () => void; joi
   const [localNames, setLocalNames] = useState<string[]>(["You", ...BOTS]);
   const [view, setView] = useState<LView | null>(null);
   const [net, setNet] = useState<NetStatus>("idle");
-  const [roomName, setRoomName] = useState(savedName), [roomCode, setRoomCode] = useState(joinCode ?? ""), [roomPass, setRoomPass] = useState("");
+  const [roomCode, setRoomCode] = useState(joinCode ?? ""), [roomPass, setRoomPass] = useState("");
   const [roomMsg, setRoomMsg] = useState("");
   const [disp, setDisp] = useState<Record<number, Tok[]> | null>(null);
   const [animating, setAnimating] = useState(false);
@@ -226,7 +227,7 @@ export default function LudoGame({ onHome, joinCode }: { onHome: () => void; joi
         else if (v.phase === "lobby" && was !== "lobby") setSub("room");
       } else if (m.t === "react" && m.game === "ludo") {
         const p = PHRASES[Number(m.i)]; if (p) showBubble(Number(m.seat), p);
-      } else if (m.t === "err") setRoomMsg(String(m.msg ?? "Something went wrong."));
+      } else if (m.t === "err") { setRoomMsg(String(m.msg ?? "Something went wrong.")); onRoomAuthError(m); }
       else if (m.t === "none" || m.t === "left") {
         saveRoom(null, ROOM_KEY); lastPhase.current = null; setView(null); clientRef.current?.close(); clientRef.current = null;
         if (m.t === "left") setSub("room");
@@ -243,16 +244,18 @@ export default function LudoGame({ onHome, joinCode }: { onHome: () => void; joi
     send({ t: "leave" });
     window.setTimeout(() => { saveRoom(null, ROOM_KEY); lastPhase.current = null; setView(null); clientRef.current?.close(); clientRef.current = null; setSub("room"); }, 300);
   };
-  const createRoom = () => {
-    if (!roomName.trim()) { setRoomMsg("Enter your name first."); return; }
-    setRoomMsg(""); saveName(roomName);
-    openRoom({ t: "create", game: "ludo", token: deviceToken(), name: roomName.trim(), passcode: randomPasscode() });
+  const createRoom = async () => {
+    setRoomMsg("");
+    const me = await roomAccount();
+    if (!me) { setRoomMsg(ROOM_SIGNIN_MSG); return; }
+    openRoom({ t: "create", game: "ludo", token: deviceToken(), name: me.username, passcode: randomPasscode(), auth: me.token });
   };
-  const joinRoom = () => {
-    if (!roomName.trim()) { setRoomMsg("Enter your name first."); return; }
+  const joinRoom = async () => {
     if (roomCode.length !== 4 || roomPass.length !== 4) { setRoomMsg("Enter the 4-letter room code and the 4-digit passcode."); return; }
-    setRoomMsg(""); saveName(roomName);
-    openRoom({ t: "join", game: "ludo", token: deviceToken(), name: roomName.trim(), code: roomCode, passcode: roomPass });
+    setRoomMsg("");
+    const me = await roomAccount();
+    if (!me) { setRoomMsg(ROOM_SIGNIN_MSG); return; }
+    openRoom({ t: "join", game: "ludo", token: deviceToken(), name: me.username, code: roomCode, passcode: roomPass, auth: me.token });
   };
 
   /* ---------- games on this device ---------- */
@@ -421,7 +424,7 @@ export default function LudoGame({ onHome, joinCode }: { onHome: () => void; joi
 
   /* ---------- screens ---------- */
   if (sub === "lobby" || (sub === "room" && !view)) return <PlayStart className="ld-mode" game="Ludo" tagline="Race your four tokens home. Cut, block and roll sixes."
-    onBack={onHome} name={roomName} onName={n => { setRoomName(n); saveName(n); }}
+    onBack={onHome}
     vsComputer={{ count: bots, options: [1, 2, 3], onCount: setBots, onPlay: () => startLocal("practice") }}
     friends={{ onCreate: createRoom, code: roomCode, onCode: setRoomCode, pass: roomPass, onPass: setRoomPass, onJoin: joinRoom, busy: net === "connecting" }}
     msg={roomMsg}

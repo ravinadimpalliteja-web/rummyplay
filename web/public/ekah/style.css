@@ -165,3 +165,4 @@ button.card { cursor: default; }
 .passline { text-align: center; font-size: 15px; color: var(--muted); margin: 0; }
 .passline b { color: var(--text); font-size: 20px; letter-spacing: .2em; font-variant-numeric: tabular-nums; }
 .opp.away { opacity: .6; }
+#roomWho a, #homeErr a { color: inherit; font-weight: 700; text-decoration: underline; }

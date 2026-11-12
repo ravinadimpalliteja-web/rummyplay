@@ -14,6 +14,7 @@ const { Game, CONFIG, timeoutCard } = require('./engine');
 const { SnakesRoom } = require('./snakes');
 const { LudoRoom } = require('./ludo');
 const { EkahRoom } = require('./ekah');
+const { playerFor, AuthError } = require('./auth');
 
 const PORT = Number(process.env.PORT) || 3000;
 const SPEED = Number(process.env.SPEED) || 1;
@@ -232,7 +233,8 @@ function handle(ws, m) {
         : kind === 'ludo' ? new LudoRoom(code, String(m.passcode), SPEED)
         : kind === 'ekah' ? new EkahRoom(code, String(m.passcode), SPEED) : new Room(code, String(m.passcode));
       rooms.set(code, room);
-      room.seats[0] = { token: m.token, name: cleanName(m.name), connected: false, ws: null, missed: 0 };
+      const who = m._player;
+      room.seats[0] = { token: m.token, uid: who ? who.id : null, name: who ? who.username : cleanName(m.name), connected: false, ws: null, missed: 0 };
       room.hostToken = m.token;
       return attach(ws, room, 0);
     }
@@ -242,13 +244,18 @@ function handle(ws, m) {
       const room = rooms.get(String(m.code || '').toUpperCase().trim());
       if (!room || !sameSecret(room.passcode, m.passcode)) return failJoin('Room not found, or the passcode is wrong');
       if (room.kind !== gameKind(m)) throw new Error(`That room code is for a ${GAME_NAME[room.kind]} game`);
+      const who = m._player;
       let seat = room.seatOf(m.token);
+      if (seat < 0 && who) {                    // the same account on another device takes back its own seat
+        seat = room.seats.findIndex((s) => s && s.uid === who.id);
+        if (seat >= 0) room.seats[seat].token = m.token;
+      }
       if (seat < 0) {
         if (room.game) throw new Error('That game has already started');
         seat = room.seats.findIndex((s) => !s);
         if (seat < 0 && room.kind !== 'spades') seat = botSeatForJoin(room);   // a friend takes a computer player's seat
         if (seat < 0) throw new Error('That room is full');
-        room.seats[seat] = { token: m.token, name: cleanName(m.name), connected: false, ws: null, missed: 0 };
+        room.seats[seat] = { token: m.token, uid: who ? who.id : null, name: who ? who.username : cleanName(m.name), connected: false, ws: null, missed: 0 };
       }
       return attach(ws, room, seat);
     }
@@ -306,6 +313,16 @@ wss.on('connection', (ws) => {
     let m;
     try { m = JSON.parse(raw); } catch { return; }
     if (!m || typeof m.t !== 'string') return;
+    delete m._player;
+    if (m.t === 'create' || m.t === 'join') {   // these need the player's sign-in checked first
+      if (ws.checking) return;
+      ws.checking = true;
+      playerFor(m)
+        .then((who) => { m._player = who; handle(ws, m); })
+        .catch((e) => send(ws, { t: 'err', msg: e instanceof AuthError ? e.message : (e && e.message) || 'Error', ...(e instanceof AuthError ? { auth: true } : {}) }))
+        .finally(() => { ws.checking = false; });
+      return;
+    }
     try { handle(ws, m); } catch (e) { send(ws, { t: 'err', msg: e.message || 'Error' }); }
   });
   ws.on('close', () => detach(ws));

@@ -89,6 +89,64 @@ function table(n, top, hands) {
   assert.strictEqual(s.phase, 'roundOver'); assert.strictEqual(s.winner, 0); assert.strictEqual(s.players[0].score, 9 + 15 + 40);
 }
 {
+  // Default and allowed winning scores.
+  assert.strictEqual(E.createGame([{ name: 'a' }, { name: 'b' }]).target, 250);
+  assert.strictEqual(E.createGame([{ name: 'a' }, { name: 'b' }], { target: 50 }).target, 50);
+  assert.strictEqual(E.createGame([{ name: 'a' }, { name: 'b' }], { target: 1000 }).target, 1000);
+}
+{
+  // Jodi: both copies of a number card together. Only number cards, only when the card can be played.
+  const s = table(3, card(1, 'num', 'AGNI', 7), [[card(2, 'num', 'AGNI', 4), card(3, 'num', 'AGNI', 4), card(4, 'num', 'JAL', 5), card(5, 'num', 'JAL', 5), card(6, 'num', 'VAYU', 1)]]);
+  assert.deepStrictEqual(E.jodiCards(s, 0).sort(), [2, 3], 'the Jal pair cannot be played on an Agni 7');
+  assert(!E.applyAction(s, 0, { type: 'play', cardId: 6, jodi: true }).ok, 'no partner');
+  // Agni: next player draws 1 and is not skipped.
+  assert(E.applyAction(s, 0, { type: 'play', cardId: 2, jodi: true }).ok);
+  assert.strictEqual(s.players[0].hand.length, 3); assert.strictEqual(s.players[1].hand.length, 3); assert.strictEqual(s.turn, 1);
+  assert.strictEqual(s.discard[s.discard.length - 1].suit, 'AGNI');
+}
+{
+  // Jal: choose an opponent and see one of their cards (only the player who used it sees it).
+  const s = table(3, card(1, 'num', 'JAL', 7), [[card(2, 'num', 'JAL', 4), card(3, 'num', 'JAL', 4), card(4, 'num', 'VAYU', 1)], [card(7, 'rin', 'VAYU')]]);
+  assert(!E.applyAction(s, 0, { type: 'play', cardId: 2, jodi: true }).ok, 'needs a player');
+  assert(!E.applyAction(s, 0, { type: 'play', cardId: 2, jodi: true, power: { target: 0 } }).ok, 'not yourself');
+  assert(E.applyAction(s, 0, { type: 'play', cardId: 2, jodi: true, power: { target: 1 }, ekah: true }).ok);
+  assert.strictEqual(E.viewFor(s, 0).peek.card.id, 7);
+  assert.strictEqual(E.viewFor(s, 1).peek, null); assert.strictEqual(E.viewFor(s, 2).peek, null);
+  assert.strictEqual(s.vulnerable, null, 'EKAH was called');
+}
+{
+  // Prithvi: discard one extra number card; it goes under the Jodi so the top card does not change.
+  const s = table(3, card(1, 'num', 'PRITHVI', 7), [[card(2, 'num', 'PRITHVI', 4), card(3, 'num', 'PRITHVI', 4), card(4, 'maya', 'JAL'), card(5, 'num', 'JAL', 9), card(6, 'num', 'AGNI', 2)]]);
+  assert(!E.applyAction(s, 0, { type: 'play', cardId: 2, jodi: true, power: { cardId: 4 } }).ok, 'only a number card');
+  assert(E.applyAction(s, 0, { type: 'play', cardId: 2, jodi: true, power: { cardId: 5 } }).ok);
+  assert.deepStrictEqual(s.players[0].hand.map((c) => c.id).sort(), [4, 6]);
+  assert.strictEqual(s.discard[s.discard.length - 1].id, 2); assert.strictEqual(s.discard[s.discard.length - 2].id, 5);
+}
+{
+  // Vayu: give one card to the next player. Forgetting EKAH after it can be caught.
+  const s = table(3, card(1, 'num', 'VAYU', 7), [[card(2, 'num', 'VAYU', 4), card(3, 'num', 'VAYU', 4), card(4, 'brahma'), card(5, 'num', 'JAL', 9)]]);
+  assert(E.applyAction(s, 0, { type: 'play', cardId: 2, jodi: true, power: { cardId: 4 } }).ok);
+  assert(s.players[1].hand.some((c) => c.id === 4)); assert.strictEqual(s.players[0].hand.length, 1);
+  assert.strictEqual(s.vulnerable, 0);
+}
+{
+  // A Jodi of your last two cards wins at once; a power that empties your hand also wins.
+  const s = table(3, card(1, 'num', 'AGNI', 7), [[card(2, 'num', 'AGNI', 4), card(3, 'num', 'AGNI', 4)]]);
+  assert(E.applyAction(s, 0, { type: 'play', cardId: 2, jodi: true }).ok);
+  assert.strictEqual(s.phase, 'roundOver'); assert.strictEqual(s.winner, 0);
+  const t = table(3, card(1, 'num', 'VAYU', 7), [[card(2, 'num', 'VAYU', 4), card(3, 'num', 'VAYU', 4), card(4, 'num', 'JAL', 2)]]);
+  assert(E.applyAction(t, 0, { type: 'play', cardId: 2, jodi: true, power: { cardId: 4 } }).ok);
+  assert.strictEqual(t.phase, 'roundOver'); assert.strictEqual(t.winner, 0);
+}
+{
+  // After drawing, only the drawn card may be played, so no Jodi.
+  const s = table(2, card(1, 'num', 'AGNI', 7), [[card(2, 'num', 'AGNI', 4), card(3, 'num', 'JAL', 1)]]);
+  s.deck = [card(5, 'num', 'AGNI', 4)];
+  E.applyAction(s, 0, { type: 'draw' });
+  assert.deepStrictEqual(E.jodiCards(s, 0), []);
+  assert(!E.applyAction(s, 0, { type: 'play', cardId: 5, jodi: true }).ok);
+}
+{
   // Many computer-only rounds with 2 to 10 players: no lost cards, no stuck rounds, every bot move is legal.
   let rounds = 0;
   for (let g = 0; g < 90; g++) {
@@ -173,8 +231,13 @@ server.listen(0, async () => {
     await a.until(() => a.state.seats.filter(Boolean).length === 3 && a.state.seats.some((x) => x && x.bot));
     assert.deepStrictEqual(a.state.seats.filter(Boolean).map((x) => x.bot), [false, false, true]);
 
+    assert.strictEqual(a.state.target, 250);
+    b.send({ t: 'target', value: 100 }); await b.until(() => b.errs.some((e) => /host/.test(e) && /score/.test(e)));
+    a.send({ t: 'target', value: 333 }); await a.until(() => a.errs.some((e) => /50 to 1000/.test(e)));
+    a.send({ t: 'target', value: 500 }); await b.until(() => b.state.target === 500);
     a.send({ t: 'start' });
     await Promise.all([a, b].map((x) => x.until(() => x.state.phase === 'game')));
+    assert.strictEqual(a.state.view.target, 500);
     assert.strictEqual(a.state.view.players.length, 3);
     assert.strictEqual(a.state.view.hand.length, 7);
     assert(b.state.view.players[0].hand === undefined, 'nobody sees other hands during play');

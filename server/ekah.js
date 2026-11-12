@@ -5,17 +5,19 @@
  * Rules live in ekah-engine.js (the same file the website uses at /ekah/engine.js; a test checks they match).
  * Room rules:
  *  - 2 to 10 seats. The host can fill open seats with computer players; friends join with code + passcode.
+ *  - The host picks the winning score in the waiting room (50 to 1000 in steps of 50, default 250).
  *  - The host can start once two or more seats are filled and every human in the room is online.
  *  - 30 seconds per turn. A player who runs out of time, leaves or goes offline is played by the computer
  *    (after 2 seconds once they have missed two turns or are offline). They can rejoin from the same device.
  *  - After a round the next one starts when any player presses Next round, or automatically after 25 seconds.
- * Clients only send intents: 'addBot', 'removeBot', 'start', 'act' (with an engine action), 'again', 'leave'.
+ * Clients only send intents: 'addBot', 'removeBot', 'target', 'start', 'act' (with an engine action), 'again', 'leave'.
  */
 const Engine = require('./ekah-engine');
 
 const MAX_SEATS = 10;
 const TURN_SECS = 30;
-const BOT_DELAY_MS = 1100;
+const BOT_DELAY_MS = 1800;          // computer players take 1.8 to 2.8 seconds, like a person thinking
+const BOT_DELAY_SPREAD_MS = 1000;
 const AWAY_DELAY_MS = 2000;
 const AWAY_AFTER_MISSES = 2;
 const NEXT_ROUND_SECS = 25;
@@ -30,6 +32,7 @@ class EkahRoom {
     this.seats = new Array(MAX_SEATS).fill(null); // humans: { token, name, connected, ws, missed }; computers: { bot: true, name }
     this.hostToken = null;
     this.game = null;
+    this.target = Engine.TARGET;
     this.order = [];          // engine player index -> seat
     this.timer = null;
     this.catchTimer = null;
@@ -54,7 +57,7 @@ class EkahRoom {
     const base = {
       t: 'state', game: 'ekah', code: this.code, passcode: this.passcode, now: Date.now(), you: seat,
       host: this.hostSeat() === seat,
-      phase: g ? 'game' : 'lobby',
+      phase: g ? 'game' : 'lobby', target: this.target,
       seats: this.seats.map((s, i) => (s ? { seat: i, name: s.name, bot: !!s.bot, connected: !!s.bot || s.connected, away: g ? this.isAway(i) && !s.bot : false } : null)),
     };
     if (!g) return base;
@@ -81,7 +84,7 @@ class EkahRoom {
 
   newGame() {
     this.order = this.seats.map((s, i) => (s ? i : -1)).filter((i) => i >= 0);
-    this.game = Engine.createGame(this.order.map((i) => ({ name: this.seats[i].name, isBot: !!this.seats[i].bot })));
+    this.game = Engine.createGame(this.order.map((i) => ({ name: this.seats[i].name, isBot: !!this.seats[i].bot })), { target: this.target });
     for (const s of this.humans()) s.missed = 0;
     this.schedule();
   }
@@ -102,7 +105,7 @@ class EkahRoom {
     if (g.phase === 'play') {
       const seat = this.order[g.turn];
       const s = this.seats[seat];
-      if (s.bot) at(this.ms(BOT_DELAY_MS), () => this.autoAct(seat, false));
+      if (s.bot) at(this.ms(BOT_DELAY_MS + Math.random() * BOT_DELAY_SPREAD_MS), () => this.autoAct(seat, false));
       else if (this.isAway(seat)) at(this.ms(AWAY_DELAY_MS), () => this.autoAct(seat, false));
       else {
         const limit = this.ms(TURN_SECS * 1000);
@@ -167,6 +170,15 @@ class EkahRoom {
         for (let i = MAX_SEATS - 1; i >= 0; i--) if (this.seats[i] && this.seats[i].bot) { this.seats[i] = null; break; }
         return this.broadcast();
       }
+      case 'target': {
+        if (!host) throw new Error('Only the host can choose the winning score');
+        if (g) throw new Error('The game has already started');
+        const v = Number(m.value);
+        if (!Number.isInteger(v) || v < Engine.TARGET_MIN || v > Engine.TARGET_MAX || v % Engine.TARGET_STEP)
+          throw new Error('Pick a winning score from 50 to 1000, in steps of 50');
+        this.target = v;
+        return this.broadcast();
+      }
       case 'start':
         if (!host) throw new Error('Only the host can start the game');
         return this.start();
@@ -181,6 +193,8 @@ class EkahRoom {
         if (a.type === 'nextRound' && g.phase === 'matchOver' && !host) throw new Error('Only the host can start a new match');
         const r = Engine.applyAction(g, this.playerOf(seat), {
           type: a.type, cardId: Number(a.cardId), color: typeof a.color === 'string' ? a.color : undefined, ekah: a.ekah === true, target: Number(a.target),
+          jodi: a.jodi === true,
+          power: a.power && typeof a.power === 'object' ? { target: Number(a.power.target), cardId: Number(a.power.cardId) } : undefined,
         });
         if (!r.ok) throw new Error(r.error);
         this.seats[seat].missed = 0;

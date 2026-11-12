@@ -1,4 +1,4 @@
-import { THICK, W } from "./board";
+import { PAD, THICK, W } from "./board";
 
 /* The 3D view: the flat board picture is tilted back with the browser's own 3D transform (done by the graphics chip, no
    3D engine). Tokens are not part of that picture; they are drawn upright on a flat canvas above it, at the screen
@@ -16,15 +16,19 @@ function raw(m: DOMMatrix, B: number, x: number, y: number, z: number) {
 }
 
 /** Fits the tilted board (with its front edge and the tokens standing on the back row) into a sw x sh area.
-    A is the tilt in degrees (0 = flat, seen from straight above). */
+    A is the tilt in degrees (0 = flat, seen from straight above). On upright phones (narrow space) the width is the limit,
+    so most of the wooden rim is allowed to run past the screen edges and the squares get the full width. */
 export function fitView(sw: number, sh: number, A: number): View {
-  const m1 = mat(A, DIST);
-  const pts = [[0, 0, 0], [W, 0, 0], [0, W, 0], [W, W, 0], [0, W, -THICK], [W, W, -THICK]].map(([x, y, z]) => raw(m1, 1, x, y, z));
-  // room above the back row for the tokens standing there
-  for (const [x] of [[0], [W]]) { const p = raw(m1, 1, x, 0, 0); pts.push({ x: p.x, y: p.y - 46 / W / p.w, w: p.w }); }
+  const m1 = mat(A, DIST), narrow = sw < sh * .9, e = narrow ? PAD * .78 : 0;
+  const corners = [[e, e, 0], [W - e, e, 0], [e, W - e, 0], [W - e, W - e, 0]];
+  if (!narrow) corners.push([0, 0, 0], [W, 0, 0], [0, W, 0], [W, W, 0], [0, W, -THICK], [W, W, -THICK]);
+  const pts = corners.map(([x, y, z]) => raw(m1, 1, x, y, z));
+  // room above the back row for the tokens standing there (on a flat board they may overlap the rim)
+  const above = A ? 46 : narrow ? 0 : 22;
+  if (above) for (const [x] of [[0], [W]]) { const p = raw(m1, 1, x, 0, 0); pts.push({ x: p.x, y: p.y - above / W / p.w, w: p.w }); }
   const minX = Math.min(...pts.map(p => p.x)), maxX = Math.max(...pts.map(p => p.x)), minY = Math.min(...pts.map(p => p.y)), maxY = Math.max(...pts.map(p => p.y));
-  // keep a little room below for the board's shadow and the leaves at its front corners
-  const ew = maxX - minX, eh = maxY - minY, room = sh * .04, B = Math.max(60, Math.min(sw / ew, (sh - room) / eh));
+  // keep a little room below for the board's shadow on the tilted board
+  const ew = maxX - minX, eh = maxY - minY, room = A && !narrow ? sh * .04 : 0, B = Math.max(60, Math.min(sw / ew, (sh - room) / eh));
   return { B, A, D: DIST * B, m: mat(A, DIST * B), sw, sh, left: (sw - ew * B) / 2 - minX * B, top: (sh - room - eh * B) / 2 - minY * B };
 }
 

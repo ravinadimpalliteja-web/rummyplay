@@ -61,7 +61,7 @@
 
 /* the stage: board picture tilted in 3D, with the base below it, tokens upright above it and snake effects on top */
 .sl-stage{grid-area:stage;position:relative;min-height:0;min-width:0}
-@media (orientation:portrait) and (max-width:599px){.sl-stage{margin:0 calc(-1 * max(10px,env(safe-area-inset-left,0px)) + 2px)}}
+@media (orientation:portrait) and (max-width:599px){.sl-stage{margin:0 calc(-1 * max(10px,env(safe-area-inset-left,0px)));overflow:hidden}}
 .sl-base,.sl-pieces{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
 .sl-plane{position:absolute;transform-origin:50% 50%;pointer-events:none;backface-visibility:hidden}
 .sl-plane canvas{display:block;width:100%;height:100%}

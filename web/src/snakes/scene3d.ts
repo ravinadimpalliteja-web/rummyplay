@@ -296,9 +296,9 @@ export class BoardScene {
     const el = (this.elevation * Math.PI) / 180, dirv = new THREE.Vector3(0, Math.sin(el), Math.cos(el));
     // frame the camera on the squares: on narrow (upright) screens the frame may run a little past the screen's edges,
     // so the squares, snakes and tokens get all the width; on wider screens the whole frame shows
-    const pts: Obj[] = [], narrow = aspect < .9, ex = narrow ? 5 + RIM * .3 : HALF;
+    const pts: Obj[] = [], narrow = aspect < .9, ex = narrow ? 5 + RIM * .06 : HALF;
     for (const x of [-ex, ex]) for (const z of [-ex, ex]) { pts.push(new THREE.Vector3(x, RIM_TOP, z)); if (!narrow) pts.push(new THREE.Vector3(x, BASE, z)); }
-    for (const x of [-4.5, 4.5]) pts.push(new THREE.Vector3(x, FIG * .8, -4.5));             // tokens standing on the back row
+    if (!narrow) for (const x of [-4.5, 4.5]) pts.push(new THREE.Vector3(x, FIG * .8, -4.5));   // tokens standing on the back row (upright phones have height to spare)
     const extent = (d: number) => {
       cam.position.copy(dirv).multiplyScalar(d); cam.lookAt(0, 0, 0); cam.updateMatrixWorld(); cam.updateProjectionMatrix();
       let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;

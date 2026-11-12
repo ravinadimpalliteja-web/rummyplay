@@ -23,6 +23,8 @@ export type Piece3D = { seat: number; piece: PieceId; color: string; x: number; 
 export type Overlay3D = SnakeOverlay & { tokens?: number[]; motion?: boolean; sparks?: { x: number; y: number; h: number; age: number }[]; burst?: { x: number; y: number; k: number } };
 export type Box = { x0: number; x1: number; y0: number; y1: number };
 
+/** Upright phones: how much taller than wide the board may be drawn. */
+const STRETCH_MAX = 1.28;                                           // the 3D board is foreshortened, so it can stretch a bit more than the flat one
 const wx = (x: number) => (x - W / 2) / S, wz = (y: number) => (y - W / 2) / S;
 const TILE_TOP = .14, RIM = .62, HALF = 5 + RIM, RIM_TOP = .26, BASE = -.5;
 const L_BOARD = 0, L_NUMBERS = 1, L_TOKENS = 2;
@@ -87,6 +89,7 @@ export class BoardScene {
   private aniso = 4; private low: boolean; private look: Look;
   private sparks: Obj[] = []; private burst: Obj;
   elevation = 55;
+  stretch = 1;
 
   private ratioCap = 2; private dpr = 1; private level = 0;
   constructor(canvas: HTMLCanvasElement, look: Look, low: boolean, opts: { testLite?: boolean } = {}) {
@@ -294,11 +297,11 @@ export class BoardScene {
     this.elevation = aspect > 1.15 ? 58 : aspect < .9 ? 74 : 64;
     cam.aspect = aspect; cam.clearViewOffset();
     const el = (this.elevation * Math.PI) / 180, dirv = new THREE.Vector3(0, Math.sin(el), Math.cos(el));
-    // frame the camera on the squares: on narrow (upright) screens the frame may run a little past the screen's edges,
-    // so the squares, snakes and tokens get all the width; on wider screens the whole frame shows
-    const pts: Obj[] = [], narrow = aspect < .9, ex = narrow ? 5 + RIM * .3 : HALF;
+    // frame the camera on the whole board (frame included); on narrow (upright) screens only its top face is fitted, with a
+    // thin margin at the screen edges
+    const pts: Obj[] = [], narrow = aspect < .9, ex = narrow ? HALF + .06 : HALF;
     for (const x of [-ex, ex]) for (const z of [-ex, ex]) { pts.push(new THREE.Vector3(x, RIM_TOP, z)); if (!narrow) pts.push(new THREE.Vector3(x, BASE, z)); }
-    for (const x of [-4.5, 4.5]) pts.push(new THREE.Vector3(x, FIG * .8, -4.5));             // tokens standing on the back row
+    if (!narrow) for (const x of [-4.5, 4.5]) pts.push(new THREE.Vector3(x, FIG * .8, -4.5));   // tokens standing on the back row (upright phones have height to spare)
     const extent = (d: number) => {
       cam.position.copy(dirv).multiplyScalar(d); cam.lookAt(0, 0, 0); cam.updateMatrixWorld(); cam.updateProjectionMatrix();
       let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
@@ -309,6 +312,9 @@ export class BoardScene {
     for (let i = 0; i < 32; i++) { const mid = (lo + hi) / 2, e = extent(mid); if (Math.max((e.x1 - e.x0) / 2, (e.y1 - e.y0) / 2) > .995) lo = mid; else hi = mid; }
     const e = extent(hi), cx = (e.x0 + e.x1) / 2, cy = (e.y0 + e.y1) / 2;
     cam.setViewOffset(w, h, (cx * w) / 2, (-cy * h) / 2, w, h); cam.updateProjectionMatrix();
+    // upright phones: the width is the limit, so stretch the picture a little taller to use the spare height
+    this.stretch = narrow ? Math.max(1, Math.min(STRETCH_MAX, 1.98 / (e.y1 - e.y0))) : 1;
+    if (this.stretch > 1) { cam.projectionMatrix.premultiply(new THREE.Matrix4().makeScale(1, this.stretch, 1)); cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert(); }
     this.renderer.shadowMap.needsUpdate = true;
   }
 
@@ -349,6 +355,7 @@ export class BoardScene {
       const qLean = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(dz, 0, -dx).normalize(), p.lean ?? 0);
       const qSway = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(dx, 0, dz).normalize(), p.sway ?? 0);
       f.tilt.quaternion.copy(qLean).multiply(qSway);
+      f.tilt.scale.set(1, 1 / this.stretch, 1 / this.stretch);                  // keep figures their true shape on a stretched (taller) board
       f.fig.rotation.x = -((this.elevation - 24) * Math.PI) / 180;          // lean back toward the camera so faces show under hats, as board-game standees do
     }
     for (const [seat, f] of this.figures) if (!seen.has(seat)) f.grp.visible = false;

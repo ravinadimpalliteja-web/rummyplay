@@ -12,7 +12,10 @@ import { DEFAULT_PIECES, PIECE_IDS, pieceById, pieceImage, pieceUrl, type PieceI
 import "./snakes.css";
 
 const ROOM_KEY = "rc-snakes-room", PIECE_KEY = "rc-snakes-piece";
-const MODEL_KEY = "rc-snakes-board", THEME_KEY = "rc-snakes-theme", DICE_KEY = "rc-snakes-dice", VIEW_KEY = "rc-snakes-view";
+const MODEL_KEY = "rc-snakes-board", THEME_KEY = "rc-snakes-theme", DICE_KEY = "rc-snakes-dice", VIEW_KEY = "rc-snakes-view", TABLE_KEY = "rc-snakes-table";
+/** Table colours behind the board (Settings → Table colour); Malachite Stone is the default. */
+const TABLES = [{ id: "malachite", name: "Malachite Stone", swatch: "repeating-radial-gradient(circle at 20% 110%,#0d6247 0 4px,#1a9a6c 5px 6px,#063a26 7px 9px)" }, { id: "champagne", name: "Champagne Gold", swatch: "radial-gradient(circle at 40% 35%,#fbf2d9,#e6cf98 60%,#c9a865)" }] as const;
+type TableId = typeof TABLES[number]["id"];
 const DICE = [
   { id: "ivory", name: "Classic ivory" }, { id: "brass", name: "Polished brass" }, { id: "glass", name: "Emerald glass" },
   { id: "rosewood", name: "Carved rosewood" }, { id: "onyx", name: "Black onyx" },
@@ -115,6 +118,7 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
   const [model, setModel] = useState<ModelId>(() => readKey(MODEL_KEY, MODEL_IDS, "marble"));
   const [theme, setTheme] = useState<ThemeId>(() => readKey(THEME_KEY, THEME_IDS, "ivory"));
   const look = useMemo<Look>(() => ({ model, theme }), [model, theme]);
+  const [tableColour, setTableColour] = useState<TableId>(() => readKey(TABLE_KEY, TABLES.map(t => t.id), "malachite"));
   const [dice, setDice] = useState<DiceId>(() => readKey(DICE_KEY, DICE.map(d => d.id), "ivory"));
   const [panel, setPanel] = useState<"none" | "settings" | "rules" | "chat">("none");
   const [view3d, setView3d] = useState<"3d" | "flat">(() => readKey(VIEW_KEY, ["3d", "flat"], can3d ? "3d" : "flat"));
@@ -679,6 +683,7 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
   const showEnd = !!table && table.phase === "gameEnd" && !animating;
   const chooseModel = (m: ModelId) => { setModel(m); keep(MODEL_KEY, m); };
   const chooseTheme = (t: ThemeId) => { setTheme(t); keep(THEME_KEY, t); };
+  const chooseTable = (t: TableId) => { setTableColour(t); keep(TABLE_KEY, t); };
   const chooseDice = (d: DiceId) => { setDice(d); keep(DICE_KEY, d); };
   const togglePanel = (p: "settings" | "rules" | "chat") => setPanel(x => (x === p ? "none" : p));
   const chooseView = (v: "3d" | "flat") => { setView3d(v); keep(VIEW_KEY, v); if (v === "3d") setGlState(s => (s === "off" ? "idle" : s)); };
@@ -733,7 +738,7 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
   const playing = table.phase === "playing";
   const rollLabel = table.phase === "gameEnd" ? "Game over" : myTurn ? (table.streak > 0 ? "Roll again" : "Roll dice") : animating ? "Rolling…" : rankOf(table.you) ? "You've finished" : `${turnName}'s turn`;
   const where = online && view ? `Room ${view.code}` : "You vs Comp";
-  return <section className={`sl-screen ${view3d === "flat" ? "flat" : ""}`}>
+  return <section className={`sl-screen table-${tableColour} ${view3d === "flat" ? "flat" : ""}`}>
     <header className="sl-head">
       <button className="sl-icon-btn" onClick={() => setSub(online ? "room" : "lobby")} aria-label={online ? "Back to the room" : "Back to the lobby"}>←</button>
       <div className="sl-crest" role="img" aria-label={`Royal Club Snakes and Ladders, ${where}`}>
@@ -815,6 +820,8 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
     {panel === "settings" && <div className="sl-sheet" role="dialog" aria-label="Settings">
       <b>Board view</b>
       <div className="sl-opts">{(["3d", "flat"] as const).map(v => <button key={v} className={v === view3d ? "on" : ""} aria-pressed={v === view3d} disabled={v === "3d" && !can3d} onClick={() => chooseView(v)}>{v === "3d" ? "3D board" : "Flat, top-down"}</button>)}</div>
+      <b>Table colour</b>
+      <div className="sl-opts">{TABLES.map(t => <button key={t.id} className={t.id === tableColour ? "on" : ""} aria-pressed={t.id === tableColour} onClick={() => chooseTable(t.id)}><i className="sl-swatch" style={{ background: t.swatch, boxShadow: "inset 0 0 0 2px #c99a3e" }} />{t.name}</button>)}</div>
       <b>Board model</b>
       <div className="sl-opts models">{MODEL_IDS.map(m => <button key={m} className={m === model ? "on" : ""} aria-pressed={m === model} onClick={() => chooseModel(m)}><i className={`sl-model m-${m}`} aria-hidden="true" /><span><b>{MODELS[m].name}</b><small>{MODELS[m].blurb}</small></span></button>)}</div>
       <b>Theme</b>

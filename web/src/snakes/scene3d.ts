@@ -24,7 +24,7 @@ export type Overlay3D = SnakeOverlay & { tokens?: number[]; motion?: boolean; sp
 export type Box = { x0: number; x1: number; y0: number; y1: number };
 
 /** Upright phones: how much taller than wide the board may be drawn. */
-const STRETCH_MAX = 1.18;
+const STRETCH_MAX = 1.28;                                           // the 3D board is foreshortened, so it can stretch a bit more than the flat one
 const wx = (x: number) => (x - W / 2) / S, wz = (y: number) => (y - W / 2) / S;
 const TILE_TOP = .14, RIM = .62, HALF = 5 + RIM, RIM_TOP = .26, BASE = -.5;
 const L_BOARD = 0, L_NUMBERS = 1, L_TOKENS = 2;
@@ -297,9 +297,9 @@ export class BoardScene {
     this.elevation = aspect > 1.15 ? 58 : aspect < .9 ? 74 : 64;
     cam.aspect = aspect; cam.clearViewOffset();
     const el = (this.elevation * Math.PI) / 180, dirv = new THREE.Vector3(0, Math.sin(el), Math.cos(el));
-    // frame the camera on the squares: on narrow (upright) screens the frame may run a little past the screen's edges,
-    // so the squares, snakes and tokens get all the width; on wider screens the whole frame shows
-    const pts: Obj[] = [], narrow = aspect < .9, ex = narrow ? 5 + RIM * .06 : HALF;
+    // frame the camera on the whole board (frame included); on narrow (upright) screens only its top face is fitted, with a
+    // thin margin at the screen edges
+    const pts: Obj[] = [], narrow = aspect < .9, ex = narrow ? HALF + .06 : HALF;
     for (const x of [-ex, ex]) for (const z of [-ex, ex]) { pts.push(new THREE.Vector3(x, RIM_TOP, z)); if (!narrow) pts.push(new THREE.Vector3(x, BASE, z)); }
     if (!narrow) for (const x of [-4.5, 4.5]) pts.push(new THREE.Vector3(x, FIG * .8, -4.5));   // tokens standing on the back row (upright phones have height to spare)
     const extent = (d: number) => {
@@ -313,7 +313,7 @@ export class BoardScene {
     const e = extent(hi), cx = (e.x0 + e.x1) / 2, cy = (e.y0 + e.y1) / 2;
     cam.setViewOffset(w, h, (cx * w) / 2, (-cy * h) / 2, w, h); cam.updateProjectionMatrix();
     // upright phones: the width is the limit, so stretch the picture a little taller to use the spare height
-    this.stretch = narrow ? Math.max(1, Math.min(STRETCH_MAX, 1.94 / (e.y1 - e.y0))) : 1;
+    this.stretch = narrow ? Math.max(1, Math.min(STRETCH_MAX, 1.98 / (e.y1 - e.y0))) : 1;
     if (this.stretch > 1) { cam.projectionMatrix.premultiply(new THREE.Matrix4().makeScale(1, this.stretch, 1)); cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert(); }
     this.renderer.shadowMap.needsUpdate = true;
   }

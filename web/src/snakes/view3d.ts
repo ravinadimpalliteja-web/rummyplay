@@ -19,10 +19,10 @@ function raw(m: DOMMatrix, B: number, x: number, y: number, z: number) {
 }
 
 /** Fits the tilted board (with its front edge and the tokens standing on the back row) into a sw x sh area.
-    A is the tilt in degrees (0 = flat, seen from straight above). On upright phones (narrow space) the width is the limit,
-    so most of the wooden rim is allowed to run past the screen edges and the squares get the full width. */
+    A is the tilt in degrees (0 = flat, seen from straight above). On upright phones (narrow space) the width is the limit:
+    the whole board fills the width with a thin margin, and it is drawn a little taller than wide to use the spare height. */
 export function fitView(sw: number, sh: number, A: number): View {
-  const narrow = sw < sh * .9, e = narrow ? PAD * .78 : 0;
+  const narrow = sw < sh * .9, e = narrow ? -PAD * .25 : 0;            // upright phones: the whole frame shows, with a thin margin at the screen edges
   const measure = (k: number) => {
     const m1 = mat(A, DIST, k);
     const corners = [[e, e, 0], [W - e, e, 0], [e, W - e, 0], [W - e, W - e, 0]];

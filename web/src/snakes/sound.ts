@@ -87,7 +87,7 @@ const AH: [number, number] = [800, 1200], EH: [number, number] = [550, 1800], EE
 /** The token's own cry: `fear` when a snake gets it, `joy` at the top of a ladder. */
 function cry(voice: string, mood: "fear" | "joy", at: number) {
   const f = mood === "fear";
-  if (SAMPLED.includes(voice) && sample(`${voice}-${mood}`, at, (voice === "lion" || voice === "tiger") && !f ? .6 : .85)) return;   // the roars are kept short and softer
+  if (SAMPLED.includes(voice) && sample(`${voice}-${mood}`, at, voice === "lion" || voice === "tiger" ? .6 : .85)) return;   // the roars are kept short and softer
   if (voice === "lion" || voice === "tiger") voice = "big-cat";
   switch (voice) {
     case "man": case "woman": case "boy": {

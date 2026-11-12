@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { RoomClient, deviceToken, randomPasscode, saveRoom, savedRoom, serverUrl, type NetStatus } from "../domain/online";
-import { BOARD_VERSION, CHAT_EMOJIS, CHAT_PHRASES, RARE_LADDERS, TIMING, newGame, roll, rollDie, rollLucky, rungsOf, snakeSlideMs, turnOf, type LastRoll, type SLGame } from "./engine";
+import { BOARD_VERSION, CHAT_EMOJIS, CHAT_PHRASES, RARE_LADDERS, SNAKES, TIMING, newGame, roll, rollDie, rollLucky, rungsOf, snakeSlideMs, turnOf, type LastRoll, type SLGame } from "./engine";
 import { MODELS, MODEL_IDS, NUM_FONT, OFF, PIECE_H, SHARED, SHARED3D, THEMES, THEME_IDS, W, center, layoutIssues, numberAt, paintBase, paintBoard, paintNumberLayer, paintPiece, S, spot, spot3D, type Look, type ModelId, type Pt, type ThemeId } from "./board";
 import { fitView, planeStyle, project, squash, type View } from "./view3d";
 import { SnakeArt, type SnakeOverlay } from "./snake2d";
@@ -10,6 +10,8 @@ import TokenPicker from "./TokenPicker";
 import { PlayStart, WaitingRoom } from "../room/RoomScreens";
 import { ROOM_SIGNIN_MSG, markPlayed, onRoomAuthError, roomAccount, useSeatLabel } from "../auth/account";
 import { DEFAULT_PIECES, PIECE_IDS, pieceById, pieceImage, pieceUrl, type PieceId } from "./tokens";
+import { gaitOf, rungPose, stepPose, voiceOf, type Gait } from "./motion";
+import { motionReduced, setMotionReduced } from "../lib/motion";
 import "./snakes.css";
 
 const ROOM_KEY = "rc-snakes-room", PIECE_KEY = "rc-snakes-piece";
@@ -30,8 +32,9 @@ const COLORS = ["#d23b45", "#2f6fd6", "#e3a21a", "#8a4fd0"];
 const BOTS = ["Maya", "Alex", "Jordan"];
 const PIPS: Record<number, number[]> = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
 const PLACE = ["1st", "2nd", "3rd", "4th"], MEDAL = ["🥇", "🥈", "🥉", "🎖️"];
-const reduced = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-const pace = reduced ? 0.3 : 1;
+let reduced = motionReduced();
+let pace = reduced ? 0.3 : 1;
+const setReduced = (on: boolean) => { setMotionReduced(on); reduced = on; pace = on ? 0.3 : 1; };
 const can3d = typeof CSS !== "undefined" && !!CSS.supports?.("transform-style", "preserve-3d");
 /** Can this device draw WebGL (for the full 3D board)? Checked once, without loading the 3D code. */
 let glOk: boolean | null = null;
@@ -127,6 +130,7 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
   const [geo, setGeo] = useState<View | null>(null);
   /* full WebGL 3D board: "off" after a failure (falls back to the tilted canvas board) */
   const [glState, setGlState] = useState<"idle" | "loading" | "ready" | "off">("idle");
+  const [lessMotion, setLessMotion] = useState(reduced);
   const sceneRef = useRef<Scene3D | null>(null), glRef = useRef<HTMLCanvasElement | null>(null);
   const [sound, setSoundState] = useState(soundOn());
   const [bubbles, setBubbles] = useState<Record<number, { text: string; id: number }>>({});
@@ -550,6 +554,27 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
     requestAnimationFrame(step);
   });
 
+  /** One step from square to square in the token's own gait (same time for every token). */
+  const walk = (seat: number, from: Pt, to: Pt, ms: number, gait: Gait, n: number, extra?: (t: number, d: Disp) => void) => {
+    const dir = Math.atan2(to.y - from.y, to.x - from.x);
+    return tween(ms, t => {
+      const p = stepPose(gait, t, n);
+      const d: Disp = { x: from.x + (to.x - from.x) * p.k, y: from.y + (to.y - from.y) * p.k, h: p.h, s: p.s, sway: p.sway, lean: p.lean, dir };
+      extra?.(t, d);
+      disp.current[seat] = d;
+    });
+  };
+  /** A snake whose head is on or right next to square n (not counting a snake the token is about to land on). */
+  const snakeBeside = (n: number, landing: number) => {
+    const c = center(n);
+    for (const h of Object.keys(SNAKES).map(Number)) {
+      if (h === landing) continue;
+      const hc = center(h), d = Math.hypot(hc.x - c.x, hc.y - c.y);
+      if (h === n || d <= S * 1.05) return h;
+    }
+    return null;
+  };
+
   /* Rolls the 2D die on its pedestal: it is tossed up spinning flat, its face flicking through numbers as it tumbles
      (slowing down), bounces with a little squash and settles showing `value`. The value always comes from the game
      (engine or server); this only shows it. */
@@ -586,7 +611,30 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
     if (l.outcome === "enter") { sfx.hop(); await follow(seat, [OFF, spotOf(1)], TIMING.enter, 16); }
     // landing on a snake's head: the token stops at the edge of the square, on the side it came from, facing the snake
     const approach = (n: number) => { const c = center(n), p = center(Math.max(1, n - 1)), d = Math.hypot(p.x - c.x, p.y - c.y) || 1; return { x: c.x + ((p.x - c.x) / d) * S * .42, y: c.y + ((p.y - c.y) / d) * S * .42 }; };
-    if (l.outcome === "move") for (let n = l.from + 1; n <= l.landed; n++) { sfx.hop(); await follow(seat, [here(), n === l.landed && l.via === "snake" && n > 1 ? approach(n) : spotOf(n)], TIMING.step, 12); }
+    const piece = tableRef.current?.pieces[seat], gait = gaitOf(piece), voice = voiceOf(piece);
+    if (l.outcome === "move") {
+      let lunged = false;
+      for (let n = l.from + 1; n <= l.landed; n++) {
+        sfx.hop();
+        const dest = n === l.landed && l.via === "snake" && n > 1 ? approach(n) : spotOf(n);
+        /* passing a snake: it rears up, flicks its tongue and snaps at the token, which jumps away with a yelp
+           (all inside the normal step time, so online rooms stay in step) */
+        const h = !lunged && !reduced && n < l.landed ? snakeBeside(n, l.landed) : null;
+        if (h !== null && (h === n || Math.random() < .7)) {
+          lunged = true;
+          const facing = SnakeArt.facingFrom(h, h === n ? Math.max(1, n - 1) : n), away = facing;
+          sfx.hiss(0, .3, .12); sfx.snap(TIMING.step * pace * .55 / 1000); sfx.startle(voice, TIMING.step * pace * .5 / 1000);
+          await walk(seat, here(), dest, TIMING.step, gait, n, (t, d) => {
+            const open = t < .2 ? t / .2 * .7 : t < .55 ? .7 + (t - .2) / .35 * .3 : Math.max(0, 1 - (t - .55) / .45);
+            const lunge = t < .3 ? 0 : t < .55 ? (t - .3) / .25 : Math.max(0, 1 - (t - .55) / .45);
+            overlay.current.mouth = t < .98 ? { head: h, open, facing, lunge, tongue: t < .3 ? Math.abs(Math.sin(t / .3 * Math.PI * 2)) : 0 } : undefined;
+            const jump = t > .45 && t < .9 ? Math.sin((t - .45) / .45 * Math.PI) : 0;          // the startled jump
+            d.h = (d.h ?? 0) + jump * 14; d.sway = (d.sway ?? 0) + jump * .3 * (Math.cos(away) > 0 ? -1 : 1);
+          });
+          overlay.current = {};
+        } else await walk(seat, here(), dest, TIMING.step, gait, n);
+      }
+    }
     if (l.via === "ladder") {
       /* The climb (same length as the server's pause): the token steps onto the foot of the ladder and leans in, then
          goes up rung by rung, hand over hand, swaying side to side with a little bounce on each rung and a trail of gold
@@ -596,12 +644,12 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
       await tween(TIMING.ladderBase, t => { const e = t * t * (3 - 2 * t); disp.current[seat] = { x: from.x + (foot.x - from.x) * e, y: from.y + (foot.y - from.y) * e, h: Math.sin(t * Math.PI) * 4, s: 1 - .07 * Math.sin(t * Math.PI), lean: LEAN * e, dir }; });
       sfx.ladder(rungs, TIMING.rung * pace, 0);
       for (let i = 1; i <= rungs; i++) {
-        const k0 = (i - 1) / rungs, k1 = i / rungs, last = i === rungs, side = i % 2 ? 1 : -1;
+        const k0 = (i - 1) / rungs, k1 = i / rungs, last = i === rungs;
         const a = { x: foot.x + (topC.x - foot.x) * k0, y: foot.y + (topC.y - foot.y) * k0 }, b = last ? top : { x: foot.x + (topC.x - foot.x) * k1, y: foot.y + (topC.y - foot.y) * k1 };
         let sparked = false;
         await tween(TIMING.rung, t => {
-          const e = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-          disp.current[seat] = { x: a.x + (b.x - a.x) * e, y: a.y + (b.y - a.y) * e, h: Math.sin(t * Math.PI) * (last ? 12 : 6), s: last ? 1 + .1 * Math.sin(t * Math.PI) : 1, lean: last ? LEAN * (1 - e) : LEAN, sway: last ? 0 : side * .2 * Math.sin(t * Math.PI), dir };
+          const p = rungPose(gait, t, i, last), e = p.k;
+          disp.current[seat] = { x: a.x + (b.x - a.x) * e, y: a.y + (b.y - a.y) * e, h: p.h, s: p.s, lean: last ? LEAN * (1 - e) : p.lean, sway: p.sway, dir };
           if (!sparked && t > .45) {
             sparked = true;
             const now = performance.now(), p = disp.current[seat]!;
@@ -610,6 +658,7 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
         });
       }
       effects.current.burst = { x: top.x, y: top.y, born: performance.now() };
+      sfx.cry(voice, "joy");
     }
     if (l.via === "snake") {
       // the snake opens its mouth and swallows the pawn, a bulge slides down its body, and the pawn pops out at the tail
@@ -619,7 +668,7 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
          travels down the body to the tail and the head eases back to its resting angle. */
       const head = l.landed, slide = snakeSlideMs(l.landed, l.to), color = COLORS[seat], at = center(head);
       const facing = SnakeArt.facingFrom(head, Math.max(1, head - 1)), mouthAt = { x: at.x + Math.cos(facing) * 14, y: at.y + Math.sin(facing) * 14 };
-      sfx.snake(TIMING.mouth * pace, slide * pace);
+      sfx.snake(TIMING.mouth * pace, slide * pace, voice);
       const start = here();
       await tween(TIMING.mouth, t => {
         const u = Math.min(1, Math.max(0, (t - .08) / .34));
@@ -833,6 +882,8 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
       <div className="sl-opts themes">{THEME_IDS.map(t => { const [a, b, c] = THEMES[t].swatch; return <button key={t} className={t === theme ? "on" : ""} aria-pressed={t === theme} onClick={() => chooseTheme(t)}><i className="sl-swatch" style={{ background: `conic-gradient(${a} 0 25%,${b} 0 50%,${a} 0 75%,${b} 0)`, boxShadow: `inset 0 0 0 3px ${c}, 0 0 0 1.5px rgba(255,235,190,.5)` }} />{THEMES[t].name}</button>; })}</div>
       <b>Dice</b>
       <div className="sl-opts dice">{DICE.map(d => <button key={d.id} className={d.id === dice ? "on" : ""} aria-pressed={d.id === dice} onClick={() => chooseDice(d.id)}><span className={`sl-mini d-${d.id}`}><span className="sl-face"><Face v={5} /></span></span>{d.name}</button>)}</div>
+      <b>Animations</b>
+      <div className="sl-opts">{([false, true] as const).map(v => <button key={String(v)} className={v === lessMotion ? "on" : ""} aria-pressed={v === lessMotion} onClick={() => { setReduced(v); setLessMotion(v); }}>{v ? "Reduced" : "Full (walks, climbs, snake strikes)"}</button>)}</div>
       <div className="sl-sheet-row"><button className="ghost-button" onClick={() => setPanel("rules")}>Rules</button><button className="gold-button" onClick={() => setPanel("none")}>Done</button></div>
     </div>}
     {panel === "rules" && <div className="sl-sheet sl-rules" role="dialog" aria-label="Rules">

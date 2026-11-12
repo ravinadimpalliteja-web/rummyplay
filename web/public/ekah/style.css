@@ -149,9 +149,9 @@ details.rules ul { margin: 6px 0 0; padding-left: 18px; }
 .bubble.below::after { bottom: auto; top: -6px; border: 6px solid transparent; border-top: 0; border-bottom-color: inherit; }
 @keyframes bubdown { 0% { opacity: 0; transform: translate(-50%, -20%) scale(.6); } 12% { opacity: 1; transform: translate(-50%, 0) scale(1.05); } 20% { transform: translate(-50%, 0) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, 25%); } }
 @keyframes bub { 0% { opacity: 0; transform: translate(-50%, -80%) scale(.6); } 12% { opacity: 1; transform: translate(-50%, -100%) scale(1.05); } 20% { transform: translate(-50%, -100%) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -125%); } }
-.confetti { position: fixed; top: -20px; width: 9px; height: 14px; border-radius: 2px; animation: fall linear forwards; }
+.confetti { position: fixed; z-index: 1; top: -20px; width: 9px; height: 14px; border-radius: 2px; animation: fall linear forwards; }
 @keyframes fall { to { transform: translate(var(--dx), 110vh) rotate(var(--r)); } }
-.banner { position: fixed; left: 50%; top: 38%; transform: translate(-50%, -50%); pointer-events: auto; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding: 18px 26px; border-radius: 24px; background: rgba(20, 10, 44, .92); border: 3px solid var(--gold); box-shadow: 0 0 60px rgba(255,201,60,.45); animation: bannerin .55s cubic-bezier(.2,1.5,.4,1); width: max-content; max-width: min(88vw, 520px); }
+.banner { position: fixed; z-index: 2; left: 50%; top: 38%; transform: translate(-50%, -50%); pointer-events: auto; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding: 18px 26px; border-radius: 24px; background: rgba(20, 10, 44, .92); border: 3px solid var(--gold); box-shadow: 0 0 60px rgba(255,201,60,.45); animation: bannerin .55s cubic-bezier(.2,1.5,.4,1); width: max-content; max-width: min(88vw, 520px); }
 .banner svg { width: 54px; height: 42px; color: var(--gold); }
 .banner b { font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 30px; line-height: 1.05; color: #fff; -webkit-text-stroke: 5px var(--gold-ink); paint-order: stroke fill; }
 .banner small { color: var(--muted); font-size: 13px; }

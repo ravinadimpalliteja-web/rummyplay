@@ -1,0 +1,10 @@
+// Cloudflare Workers settings for the Royal Club website (static files only).
+// Production builds run `npx wrangler deploy`; branch previews run `npx wrangler preview`.
+{
+  "name": "rummyplay",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./dist"
+  },
+  "previews": {}
+}

@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { LADDERS, RARE_LADDERS, SNAKES } from "./engine";
-import { NUM_FONT_3D, PAD, S, W, center, lookKey, numberAt3D, paintNumbers, paintPlank, paintRail, paintSurface, palette, type Look } from "./board";
+import { NUM_FONT_3D, PAD, S, W, center, lookKey, numberAt3D, numbersCanvas, paintRail, plankCanvas, palette, surfaceCanvas, type Look } from "./board";
 import { SnakeArt, type SnakeOverlay } from "./snake2d";
 import { buildFigure, gloss, gold, mat } from "./models3d";
 import type { PieceId } from "./tokens";
@@ -28,7 +28,7 @@ const TILE_TOP = .14, RIM = .62, HALF = 5 + RIM, RIM_TOP = .26, BASE = -.5;
 const L_BOARD = 0, L_NUMBERS = 1, L_TOKENS = 2;
 /** Token figures are modelled about 0.85 squares tall on a base 0.27 across; on the board they stand this much larger
     (big enough that their faces and details read at board size). */
-const FIG = 1.8;
+const FIG = 1.73;                                      // token figures (three quarters of the earlier 2.3)
 /** Extra shift for token positions, in board units (positions already come laid out for the 3D board). */
 const SHIFT = { x: 0, y: 0 };
 
@@ -66,12 +66,22 @@ function rosette(metal: Obj, x: number, y: number, z: number) {
   return g;
 }
 
+/** Paints the board's textures for `look` ahead of time (one at a time, between other work), so the 3D board appears
+    quickly when the game starts. Safe to call more than once. */
+export function warmBoard(look: Look, low: boolean) {
+  const px = low ? 1536 : 2048, jobs = [() => surfaceCanvas(px, look), () => plankCanvas(look), () => numbersCanvas(px, look)];
+  const idle = (f: () => void) => { const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }; if (w.requestIdleCallback) w.requestIdleCallback(f, { timeout: 600 }); else window.setTimeout(f, 30); };
+  const next = () => { const j = jobs.shift(); if (j) idle(() => { j(); next(); }); };
+  next();
+}
+
 /* ---------- the scene ---------- */
 export class BoardScene {
   renderer: Obj; scene: Obj; camera: Obj; light: Obj;
   private board = new THREE.Group(); private numbersMesh: Obj = null; private texes: Obj[] = [];
   private figures = new Map<number, { id: PieceId; grp: Obj; tilt: Obj; fig: Obj; ring: Obj; glow: Obj }>();
   /** The painted snakes: drawn into a canvas that lies on the playing surface as a transparent texture. */
+  private snakesBusy = true;
   private snakeArt: SnakeArt; private snakeCanvas = document.createElement("canvas"); private snakeTex: Obj = null;
   private size = { w: 1, h: 1 };
   private aniso = 4; private low: boolean; private look: Look;
@@ -81,7 +91,7 @@ export class BoardScene {
   private ratioCap = 2; private dpr = 1; private level = 0;
   constructor(canvas: HTMLCanvasElement, look: Look, low: boolean, opts: { testLite?: boolean } = {}) {
     this.snakeArt = new SnakeArt(low ? 2.2 : 3);
-    this.low = low; this.look = look; this.ratioCap = opts.testLite ? .75 : low ? 1.5 : 2;
+    this.low = low; this.look = look; this.ratioCap = opts.testLite ? .75 : 2;                     // sharp on phones too
     const r = new THREE.WebGLRenderer({ canvas, antialias: !opts.testLite, alpha: true, powerPreference: "high-performance" });
     r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.NeutralToneMapping; r.toneMappingExposure = 1;
     r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFShadowMap; r.shadowMap.autoUpdate = false;
@@ -111,7 +121,7 @@ export class BoardScene {
     // the table only catches shadows; the page shows the green felt behind
     const table = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.ShadowMaterial({ opacity: .5 }));
     table.rotation.x = -Math.PI / 2; table.position.y = BASE - .01; table.receiveShadow = true; scene.add(table);
-    this.camera = new THREE.PerspectiveCamera(30, 1, .5, 120);
+    this.camera = new THREE.PerspectiveCamera(22, 1, .5, 160);          // a longer lens: less perspective, so the board fills more of the screen
     this.camera.layers.enableAll();
     // gold sparkles (a small pool, reused) and the ring that flashes when a token lands at the top of a ladder
     const sc2 = document.createElement("canvas"); sc2.width = sc2.height = 64;
@@ -137,9 +147,9 @@ export class BoardScene {
     B.traverse((o: Obj) => { o.geometry?.dispose?.(); });
     B.clear();
     const T = (c: HTMLCanvasElement, srgb = true) => { const t = canvasTex(c, this.aniso, srgb); this.texes.push(t); return t; };
-    const surf = document.createElement("canvas"); paintSurface(surf, px, look);
+    const surf = surfaceCanvas(px, look);
     const surfTex = T(surf), hgt = RIM_TOP - BASE;
-    const plank = document.createElement("canvas"); paintPlank(plank, 1024, 96, look, 11);
+    const plank = plankCanvas(look);
     const rimTex = T(plank); rimTex.wrapS = rimTex.wrapT = THREE.RepeatWrapping;
     const metal = new THREE.MeshStandardMaterial({ color: pal.metal[1], roughness: .26, metalness: 1, envMapIntensity: 1.2 });
     if (look.model === "tray") {
@@ -213,9 +223,9 @@ export class BoardScene {
       }
     }
     // numbers: their own transparent layer drawn above snakes and ladders, so a number is never hidden
-    const nc = document.createElement("canvas"); paintNumbers(nc, px, look);
+    const nc = numbersCanvas(px, look);
     const nm = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshBasicMaterial({ map: T(nc), transparent: true, depthTest: false, depthWrite: false, toneMapped: false }));
-    nm.rotation.x = -Math.PI / 2; nm.position.y = TILE_TOP + .002; nm.renderOrder = 10; setLayer(nm, L_NUMBERS); this.numbersMesh = nm; B.add(nm);
+    nm.rotation.x = -Math.PI / 2; nm.position.y = TILE_TOP + .002; nm.renderOrder = 10; setLayer(nm, L_NUMBERS); this.numbersMesh = nm; B.add(nm);      // its own pass: over the ladders and snakes, under the tokens
     // ladders: dark polished rails, light rungs and gold caps, the same on every board so they always stand out
     const lp = document.createElement("canvas"); paintRail(lp, 512, 64, 31);
     const lt = T(lp); lt.wrapS = lt.wrapT = THREE.RepeatWrapping;
@@ -228,7 +238,7 @@ export class BoardScene {
     for (const [s, e] of Object.entries(RARE_LADDERS)) this.ladder(+s, e, goldRail, goldRung, metal);
     // snakes: painted in 2D on a transparent layer just above the squares (and the inlay's brass strips), under the
     // ladders, the numbers and the tokens; it catches the tokens' and ladders' shadows like the board does
-    const spx = this.low ? 1024 : 1536; this.snakeCanvas.width = this.snakeCanvas.height = spx;
+    const spx = this.low ? 768 : 1536; this.snakeCanvas.width = this.snakeCanvas.height = spx;
     const stex = T(this.snakeCanvas); stex.anisotropy = Math.min(4, this.aniso); this.snakeTex = stex;
     const sm = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshStandardMaterial({ map: stex, transparent: true, depthWrite: false, roughness: .55, metalness: 0, alphaTest: .01 }));
     sm.rotation.x = -Math.PI / 2; sm.position.y = TILE_TOP + .026; sm.receiveShadow = true; sm.renderOrder = 2; B.add(sm);
@@ -281,11 +291,13 @@ export class BoardScene {
     this.size = { w, h };
     this.dpr = dpr; this.renderer.setPixelRatio(Math.min(dpr, this.ratioCap)); this.renderer.setSize(w, h, false);
     const cam = this.camera, aspect = w / h;
-    this.elevation = aspect > 1.15 ? 58 : aspect < .9 ? 71 : 63;
+    this.elevation = aspect > 1.15 ? 58 : aspect < .9 ? 74 : 64;
     cam.aspect = aspect; cam.clearViewOffset();
     const el = (this.elevation * Math.PI) / 180, dirv = new THREE.Vector3(0, Math.sin(el), Math.cos(el));
-    const pts: Obj[] = [];
-    for (const x of [-HALF, HALF]) for (const z of [-HALF, HALF]) { pts.push(new THREE.Vector3(x, RIM_TOP, z), new THREE.Vector3(x, BASE, z)); }
+    // frame the camera on the squares: on narrow (upright) screens the frame may run a little past the screen's edges,
+    // so the squares, snakes and tokens get all the width; on wider screens the whole frame shows
+    const pts: Obj[] = [], narrow = aspect < .9, ex = narrow ? 5 + RIM * .3 : HALF;
+    for (const x of [-ex, ex]) for (const z of [-ex, ex]) { pts.push(new THREE.Vector3(x, RIM_TOP, z)); if (!narrow) pts.push(new THREE.Vector3(x, BASE, z)); }
     for (const x of [-4.5, 4.5]) pts.push(new THREE.Vector3(x, FIG * .8, -4.5));             // tokens standing on the back row
     const extent = (d: number) => {
       cam.position.copy(dirv).multiplyScalar(d); cam.lookAt(0, 0, 0); cam.updateMatrixWorld(); cam.updateProjectionMatrix();
@@ -293,25 +305,27 @@ export class BoardScene {
       for (const p of pts) { const q = p.clone().project(cam); x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); }
       return { x0, x1, y0, y1 };
     };
-    let lo = 5, hi = 120;
-    for (let i = 0; i < 30; i++) { const mid = (lo + hi) / 2, e = extent(mid); if (Math.max((e.x1 - e.x0) / 2, (e.y1 - e.y0) / 2) > .985) lo = mid; else hi = mid; }
+    let lo = 5, hi = 160;
+    for (let i = 0; i < 32; i++) { const mid = (lo + hi) / 2, e = extent(mid); if (Math.max((e.x1 - e.x0) / 2, (e.y1 - e.y0) / 2) > .995) lo = mid; else hi = mid; }
     const e = extent(hi), cx = (e.x0 + e.x1) / 2, cy = (e.y0 + e.y1) / 2;
     cam.setViewOffset(w, h, (cx * w) / 2, (-cy * h) / 2, w, h); cam.updateProjectionMatrix();
     this.renderer.shadowMap.needsUpdate = true;
   }
 
-  /** One step lighter when frames are slow: lower resolution, then no shadows. Returns false when there is nothing left to drop. */
+  /** One step lighter when frames are slow: shadows off. The resolution is never lowered (that made the board blurry on
+      phones). Returns false when there is nothing left to drop. */
   degrade() {
     this.level++;
-    if (this.level === 1 && this.ratioCap > 1) { this.ratioCap = 1; this.resize(this.size.w, this.size.h, this.dpr); return true; }
-    if (this.level <= 2 && this.renderer.shadowMap.enabled) { this.renderer.shadowMap.enabled = false; this.scene.traverse((o: Obj) => { if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach((m: Obj) => { m.needsUpdate = true; }); }); return true; }
+    if (this.renderer.shadowMap.enabled) { this.renderer.shadowMap.enabled = false; this.scene.traverse((o: Obj) => { if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach((m: Obj) => { m.needsUpdate = true; }); }); return true; }
     return false;
   }
   /** Screen position (CSS px within the canvas) of a world point. */
   toScreen(x: number, y: number, z: number) { const q = new THREE.Vector3(x, y, z).project(this.camera); return { x: (q.x + 1) / 2 * this.size.w, y: (1 - q.y) / 2 * this.size.h }; }
 
   /* ----- per frame: tokens and swallow effects, then draw ----- */
-  frame(pieces: Piece3D[], ov: Overlay3D): boolean {
+  /** Draws a frame. `snakes` false reuses the snake layer as it is (only tokens or effects moved), which saves
+      repainting it and sending it to the graphics chip again. */
+  frame(pieces: Piece3D[], ov: Overlay3D, snakes = true): boolean {
     const seen = new Set<number>();
     for (const p of pieces) {
       seen.add(p.seat);
@@ -319,9 +333,9 @@ export class BoardScene {
       if (!f || f.id !== p.piece) {
         if (f) this.scene.remove(f.grp);
         const grp = new THREE.Group(), tilt = new THREE.Group(), fig = buildFigure(p.piece);
-        const ring = new THREE.Mesh(new THREE.TorusGeometry(.19, .024, 10, 48), new THREE.MeshStandardMaterial({ color: p.color, roughness: .4, emissive: p.color, emissiveIntensity: .3 }));
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(.142, .02, 10, 48), new THREE.MeshStandardMaterial({ color: p.color, roughness: .4, emissive: p.color, emissiveIntensity: .3 }));
         ring.rotation.x = Math.PI / 2; ring.position.y = .012;
-        const glow = new THREE.Mesh(new THREE.TorusGeometry(.23, .028, 10, 48), new THREE.MeshBasicMaterial({ color: "#ffd56e", transparent: true, opacity: .9, toneMapped: false }));
+        const glow = new THREE.Mesh(new THREE.TorusGeometry(.172, .022, 10, 48), new THREE.MeshBasicMaterial({ color: "#ffd56e", transparent: true, opacity: .9, toneMapped: false }));
         glow.rotation.x = Math.PI / 2; glow.position.y = .016;
         tilt.add(fig); grp.add(tilt, ring, glow); setLayer(grp, L_TOKENS); grp.traverse((o: Obj) => { if (o.isMesh && o !== glow) o.castShadow = true; });
         this.scene.add(grp); f = { id: p.piece, grp, tilt, fig, ring, glow }; this.figures.set(p.seat, f);
@@ -348,7 +362,8 @@ export class BoardScene {
     if (ov.burst) { const k = ov.burst.k; this.burst.visible = true; this.burst.position.set(wx(ov.burst.x), TILE_TOP + .03, wz(ov.burst.y)); this.burst.scale.setScalar(.35 + k * 1.1); this.burst.material.opacity = (1 - k) * .9; }
     else this.burst.visible = false;
     // the snakes: slithering, heads turning, the swallow
-    const busy = this.paintSnakes(ov);
+    const busy = snakes ? this.paintSnakes(ov) : this.snakesBusy;
+    this.snakesBusy = busy;
     this.render();
     return busy;
   }

@@ -13,7 +13,7 @@ import { S, center, snakePath, type Pt } from "./board";
    - a swallowed token travels down the body as a bulge in the player's colour.
    Everything here is presentation only: the rules and the timing of the swallow come from engine.ts. */
 
-type Kind = "cobra" | "viper" | "krait" | "python" | "vine" | "rat";
+type Kind = "cobra" | "kingcobra" | "viper" | "pitviper" | "krait" | "python" | "vine" | "rat";
 type Species = {
   name: string; base: string; spine: string; belly: string; iris: string; slit: boolean; keeled: boolean;
   half: number;                    // body half-width at its thickest, in board units
@@ -24,12 +24,17 @@ export const SPECIES2D: Record<Kind, Species> = {
   cobra: { name: "Spectacled cobra", base: "#6e5733", spine: "#4b3b22", belly: "#e8d6a2", iris: "#3a2414", slit: false, keeled: false, half: 9.4, headL: 3.1, headW: 1.28, shape: "round", gloss: .55, pits: "none" },
   viper: { name: "Russell's viper", base: "#b98b54", spine: "#9c7140", belly: "#efe2c4", iris: "#caa24c", slit: true, keeled: true, half: 9.4, headL: 3.1, headW: 1.62, shape: "triangle", gloss: .35, pits: "facial" },
   krait: { name: "Common krait", base: "#171a24", spine: "#0c0e14", belly: "#e8e8e2", iris: "#0b0b0d", slit: false, keeled: false, half: 7.6, headL: 3.3, headW: 1.3, shape: "oval", gloss: 1, pits: "none" },
-  python: { name: "Indian rock python", base: "#c8a676", spine: "#b18f5e", belly: "#efe3c8", iris: "#b5873a", slit: true, keeled: false, half: 9.5, headL: 3.3, headW: 1.25, shape: "oval", gloss: .5, pits: "labial" },
+  kingcobra: { name: "King cobra", base: "#3a3f26", spine: "#262a17", belly: "#efe2a0", iris: "#2a1d0e", slit: false, keeled: false, half: 10.2, headL: 3.4, headW: 1.34, shape: "round", gloss: .7, pits: "none" },
+  pitviper: { name: "Malabar pit viper", base: "#d0652a", spine: "#a9471a", belly: "#f6d9a4", iris: "#e6c04a", slit: true, keeled: true, half: 8.6, headL: 3.1, headW: 1.62, shape: "triangle", gloss: .45, pits: "facial" },
+  python: { name: "Indian rock python", base: "#a9a486", spine: "#8d8868", belly: "#ece6cc", iris: "#b5873a", slit: true, keeled: false, half: 9.5, headL: 3.3, headW: 1.25, shape: "oval", gloss: .5, pits: "labial" },
   vine: { name: "Green vine snake", base: "#5db62f", spine: "#3f9420", belly: "#a9dc6c", iris: "#d8c04a", slit: false, keeled: false, half: 5.2, headL: 5.4, headW: 1.55, shape: "pointed", gloss: .6, pits: "none" },
   rat: { name: "Indian rat snake", base: "#a98a3e", spine: "#8a6d2a", belly: "#f0e1a6", iris: "#5a3a16", slit: false, keeled: true, half: 8.2, headL: 3.4, headW: 1.32, shape: "round", gloss: .45, pits: "none" },
 };
 /** Which species each snake on the board is. */
-export const SNAKE_KIND: Record<number, Kind> = { 97: "cobra", 87: "viper", 95: "python", 70: "vine", 36: "rat", 27: "krait", 23: "viper", 49: "viper", 60: "krait", 66: "python", 73: "rat", 82: "vine", 93: "viper", 98: "cobra" };
+/* every snake on the board has its own colours: king cobra (olive-black, yellow bands), Russell's viper (warm tan),
+   rock python (olive-grey), green vine snake (bright green), rat snake (yellow-brown), krait (black and white) and
+   Malabar pit viper (orange) */
+export const SNAKE_KIND: Record<number, Kind> = { 97: "kingcobra", 87: "viper", 95: "python", 70: "vine", 36: "rat", 27: "krait", 23: "pitviper", 49: "viper", 60: "krait", 66: "python", 73: "rat", 82: "vine", 93: "viper", 98: "cobra" };
 const kindOf = (head: number): Kind => SNAKE_KIND[head] ?? (["viper", "krait", "python", "rat", "vine", "cobra"] as Kind[])[head % 6];
 
 export type SnakeMouth = { head: number; open: number; facing?: number; lunge?: number; tongue?: number; still?: boolean };
@@ -100,6 +105,17 @@ function paintStrip(kind: Kind, total: number, res: number, seed: number): Strip
   } else if (kind === "rat") {                // yellow-brown, dark crossbars coming in toward the tail
     for (let u = T * .42; u < T * .97; u += 8) { const a = smooth(.42, .7, u / T) * .85; band(u, 2.6, `rgba(48,34,14,${a})`); }
     for (let i = 0; i < 70; i++) blob(r() * T * .5, .15 + r() * .7, .9, .03, "rgba(70,50,20,.25)");
+  } else if (kind === "kingcobra") {         // olive-black with pale yellow chevron bands, brighter toward the head
+    for (let u = 6; u < T * .96; u += 11) {
+      const a = .75 - .4 * (u / T), cu = u;
+      g.fillStyle = `rgba(236,214,120,${a})`; g.beginPath();
+      g.moveTo(U(cu), Vy(.12)); g.lineTo(U(cu + 4.5), Vy(.5)); g.lineTo(U(cu), Vy(.88)); g.lineTo(U(cu + 1.6), Vy(.88)); g.lineTo(U(cu + 6.1), Vy(.5)); g.lineTo(U(cu + 1.6), Vy(.12)); g.closePath(); g.fill();
+    }
+  } else if (kind === "pitviper") {          // orange with dark brown blotches along the back and flanks
+    for (let u = 7; u < T * .94; u += 10) {
+      blob(u, .5, 3.6, .14, "#4a1e0c", "#2a1006", .6);
+      for (const v of [.22, .78]) if (r() < .8) blob(u + 5, v, 2.2, .07, "#5a2510");
+    }
   } else {                                    // cobra: brown-olive with faint pale crossbands
     for (let u = 22; u < T * .95; u += 16) band(u, 2.4, "rgba(230,212,160,.28)");
     for (let i = 0; i < 90; i++) blob(r() * T, .15 + r() * .7, .8, .025, "rgba(40,28,14,.22)");
@@ -254,6 +270,12 @@ function headMarks(g: CanvasRenderingContext2D, kind: Kind, sp: Species, L: numb
     g.beginPath(); g.moveTo(-L * .4, -W * .62); g.lineTo(L * .32, -W * .05); g.lineTo(L * .32, W * .05); g.lineTo(-L * .4, W * .62); g.stroke();
     g.fillStyle = "#5e3315"; for (const s of [-1, 1]) { g.beginPath(); g.ellipse(-L * .2, s * W * .3, L * .1, W * .16, 0, 0, Math.PI * 2); g.fill(); }
   }
+  if (kind === "kingcobra") {                  // the king cobra's pair of large occipital scales behind the crown, and pale bands
+    g.strokeStyle = "rgba(0,0,0,.4)"; g.lineWidth = .55;
+    for (const s of [-1, 1]) { g.beginPath(); g.ellipse(-L * .3, s * W * .2, L * .13, W * .22, 0, 0, Math.PI * 2); g.stroke(); }
+    g.fillStyle = "rgba(236,214,120,.55)"; for (const x of [-L * .44, L * .02]) { g.beginPath(); g.ellipse(x, 0, L * .03, W * .8, 0, 0, Math.PI * 2); g.fill(); }
+  }
+  if (kind === "pitviper") { g.strokeStyle = "rgba(60,20,6,.75)"; g.lineWidth = W * .1; for (const s of [-1, 1]) { g.beginPath(); g.moveTo(L * .22, s * W * .5); g.lineTo(-L * .45, s * W * .9); g.stroke(); } }
   if (kind === "python") {                     // the dark spearhead on the crown
     g.fillStyle = "rgba(80,50,22,.75)"; g.beginPath(); g.moveTo(L * .38, 0); g.lineTo(-L * .38, -W * .5); g.lineTo(-L * .2, 0); g.lineTo(-L * .38, W * .5); g.closePath(); g.fill();
   }
@@ -346,7 +368,7 @@ export class SnakeArt {
       const s = sn.s[q], k = s / sn.total, env = smooth(0, .16, k) * (1 - smooth(.78, 1, k));
       const wv = 2.6 * env * Math.sin((s / 68) * Math.PI * 2 - phase * Math.PI * 2 * .32);
       let x = sn.base[q].x + sn.normals[q].x * wv, y = sn.base[q].y + sn.normals[q].y * wv;
-      const wgt = 1 - smooth(0, neckLen, s);
+      const wgt = sn.kind === "kingcobra" ? 0 : 1 - smooth(0, neckLen, s);          // the king cobra keeps its spread hood still and turns only its head
       if (wgt > 0) {
         const a = turn * wgt, dx = x - hc.x, dy = y - hc.y, c = Math.cos(a), si = Math.sin(a);
         x = hc.x + dx * c - dy * si + lx * wgt; y = hc.y + dx * si + dy * c + ly * wgt;
@@ -354,6 +376,7 @@ export class SnakeArt {
       P[q] = { x, y };
       let w = HALF * profile(k);
       if (bulge) { const sb = bulge.k * sn.total; w *= 1 + .62 * Math.exp(-Math.pow((s - sb) / 10, 2)); }
+      if (sn.kind === "kingcobra") { const hood = s > 6 && s < 50 ? Math.sin(Math.PI * Math.pow((s - 6) / 44, .8)) : 0; w *= 1 + (1.35 + .45 * open) * Math.pow(Math.max(0, hood), .5); }
       if (sn.kind === "cobra") { const hood = s > 3 && s < 30 ? Math.sin(Math.PI * (s - 3) / 27) : 0; w *= 1 + (1.45 + .45 * open) * Math.pow(Math.max(0, hood), .7); }
       Wd[q] = w;
     }
@@ -408,6 +431,22 @@ export class SnakeArt {
       }
     }
     g.restore();
+    // the king cobra's hood: pale chevrons across the spread hood and a dark rim along its edges
+    if (sn.kind === "kingcobra") {
+      g.save();
+      for (const sd of [-1, 1]) {
+        g.strokeStyle = "rgba(14,16,8,.55)"; g.lineWidth = 1.1; g.beginPath();
+        for (let q = 2; q < Math.min(n, Math.round(50 / STEP)); q++) { const p = P[q], x = p.x + sn.normals[q].x * Wd[q] * sd * .97, y = p.y + sn.normals[q].y * Wd[q] * sd * .97; if (q === 2) g.moveTo(x, y); else g.lineTo(x, y); }
+        g.stroke();
+      }
+      for (const sAt of [16, 26, 36]) {
+        const q = Math.min(n - 2, Math.round(sAt / STEP)), a = P[q], b = P[q + 1], w = Wd[q];
+        g.save(); g.translate(a.x, a.y); g.rotate(Math.atan2(b.y - a.y, b.x - a.x));
+        g.strokeStyle = "rgba(240,220,130,.8)"; g.lineWidth = Math.max(.8, w * .1); g.lineJoin = "round";
+        g.beginPath(); g.moveTo(-w * .2, -w * .85); g.lineTo(w * .25, 0); g.lineTo(-w * .2, w * .85); g.stroke(); g.restore();
+      }
+      g.restore();
+    }
     // the cobra's hood marking: the spectacle on the back of the spread hood
     if (sn.kind === "cobra") {
       const q = Math.min(n - 2, Math.round(14 / STEP)), a = P[q], b = P[q + 1], w = Wd[q];

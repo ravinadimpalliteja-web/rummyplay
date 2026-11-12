@@ -178,7 +178,8 @@ export default function LudoGame({ onHome }: { onHome: () => void }) {
   const [animating, setAnimating] = useState(false);
   const [moving, setMoving] = useState<string | null>(null);
   const [hits, setHits] = useState<string[]>([]);
-  const [dieValue, setDieValue] = useState(6);
+  const [lastDie, setLastDie] = useState<Record<number, number>>({});   // the value showing on each player's die
+  const [rollingSeat, setRollingSeat] = useState<number | null>(null);
   const [tokenSet, setTokenSet] = useState<TokenSet>(() => readKey(TOKEN_KEY, TOKEN_SETS.map(x => x.id), "sentry"));
   const [dice, setDice] = useState<DiceId>(() => readKey(DICE_KEY, DICE.map(x => x.id), "ivory"));
   const chooseTokens = (v: TokenSet) => { setTokenSet(v); keep(TOKEN_KEY, v); };
@@ -189,7 +190,7 @@ export default function LudoGame({ onHome }: { onHome: () => void }) {
   const [unlockedNow, setUnlockedNow] = useState<string[]>([]);
   const showBanner = (text: string, big = false) => { const id = Date.now(); setBanner({ id, text, big }); window.setTimeout(() => setBanner(b => (b && b.id === id ? null : b)), big ? 2600 : 1800); };
   const chooseDice = (v: DiceId) => { setDice(v); keep(DICE_KEY, v); };
-  const diceRef = useRef<HTMLDivElement | null>(null), faceRef = useRef<HTMLDivElement | null>(null), shadowRef = useRef<HTMLDivElement | null>(null);
+  const dieEls = useRef<Record<number, HTMLElement | null>>({});
   const [msg, setMsg] = useState(""), [sheet, setSheet] = useState<"none" | "rules" | "style">("none"), [sound, setSound] = useState(audioOn());
   const [bubbles, setBubbles] = useState<{ id: number; seat: number; text: string }[]>([]);
   const [, setTick] = useState(0);
@@ -274,36 +275,34 @@ export default function LudoGame({ onHome }: { onHome: () => void }) {
 
   /* ---------- animation: each new event (from this device or the server) is shown once, in order ---------- */
   const settle = () => { const t = tableRef.current; if (t) setDisp(copyTokens(t.tokens)); };
-  /* The Snakes & Ladders die: tossed up off its pedestal spinning flat, the face flicking through numbers as it
-     tumbles, then it bounces with a little squash and settles on the value the game rolled. */
-  const throwDie = (value: number) => new Promise<void>(resolve => {
-    const el = diceRef.current, face = faceRef.current, sh = shadowRef.current;
-    if (!el || !face || !sh) { resolve(); return; }
+  /* The Snakes & Ladders die, thrown in the rolling player's seat card: it hops up spinning, the face flicking
+     through numbers as it tumbles, then lands with a little squash on the value the game rolled. */
+  const throwDie = (seat: number, value: number) => new Promise<void>(resolve => {
+    const el = dieEls.current[seat], face = el?.querySelector(".ld-face") as HTMLElement | null;
+    if (!el || !face) { resolve(); return; }
     const size = el.clientWidth || 56, dir = Math.random() < .5 ? -1 : 1;
-    const spins = (2 + Math.floor(Math.random() * 2)) * 360 * dir, endTilt = (Math.random() - .5) * 16;
-    const jx = (Math.random() - .5) * size * .6, dur = reduced ? 250 : ANIM.die - 60, t0 = performance.now();
+    const spins = (2 + Math.floor(Math.random() * 2)) * 360 * dir, endTilt = (Math.random() - .5) * 14;
+    const dur = reduced ? 250 : ANIM.die - 60, t0 = performance.now();
     let nextFlip = 0, shown = value;
     sDice();
     const step = (now: number) => {
-      const t = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - t, 3), rot = 1 - Math.pow(1 - t, 2.2);
-      const bounce = Math.abs(Math.cos(t * Math.PI * 2.5)), h = reduced ? 0 : size * 1.5 * Math.pow(1 - t, 1.6) * bounce, x = jx * (1 - e);
-      const squash = h < size * .06 && t > .2 && t < .97 ? .9 : 1;
-      el.style.transform = `translate(${x}px, ${-h}px)`;
-      face.style.transform = t < 1 ? `rotate(${spins * (1 - rot) + endTilt * rot}deg) scale(${1 + h / size * .12}, ${(1 + h / size * .12) * squash})` : `rotate(${endTilt}deg)`;
+      const t = Math.min(1, (now - t0) / dur), rot = 1 - Math.pow(1 - t, 2.2);
+      const bounce = Math.abs(Math.cos(t * Math.PI * 2.5)), h = reduced ? 0 : size * .55 * Math.pow(1 - t, 1.6) * bounce;
+      const squash = h < size * .05 && t > .2 && t < .97 ? .9 : 1, grow = 1 + h / size * .25;
+      face.style.transform = t < 1 ? `translateY(${-h}px) rotate(${spins * (1 - rot) + endTilt * rot}deg) scale(${grow}, ${grow * squash})` : `rotate(${endTilt}deg)`;
       if (t < .82 && now >= nextFlip) { let n = shown; while (n === shown) n = 1 + Math.floor(Math.random() * 6); shown = n; setPips(face, n); nextFlip = now + 45 + t * 140; }
       else if (t >= .82 && shown !== value) { shown = value; setPips(face, value); }
-      sh.style.transform = `translateX(${x}px) scale(${Math.max(.45, 1 - h / size * .4)})`;
-      sh.style.opacity = String(Math.max(.2, .6 - h / size * .3));
       if (t < 1) requestAnimationFrame(step);
-      else { el.style.transform = ""; setPips(face, value); try { navigator.vibrate?.(18); } catch { /* not supported */ } resolve(); }
+      else { setPips(face, value); try { navigator.vibrate?.(18); } catch { /* not supported */ } resolve(); }
     };
     requestAnimationFrame(step);
   });
   const play = async (l: LudoEvent) => {
     const t = tableRef.current!;
     if (l.kind === "roll") {
-      await throwDie(l.value);
-      setDieValue(l.value);
+      setRollingSeat(l.seat);
+      await throwDie(l.seat, l.value);
+      setLastDie(d => ({ ...d, [l.seat]: l.value })); setRollingSeat(null);
       if (l.value === 6) tone(988, .12, "triangle", .05);
       setMsg(describe(l, t));
       if (l.outcome !== "choose") await wait(ANIM.pass - 60);
@@ -334,7 +333,7 @@ export default function LudoGame({ onHome }: { onHome: () => void }) {
     const l = table.last;
     if (animatedN.current === null || !l || l.n < animatedN.current || l.n > animatedN.current + 1) {   // fresh table, resumed game, new game
       animatedN.current = l?.n ?? 0; settle();
-      if (l?.kind === "roll") setDieValue(l.value);
+      if (l?.kind === "roll") setLastDie({ [l.seat]: l.value });
       setMsg(l ? describe(l, table) : `${table.names[table.turn]}${table.names[table.turn] === "You" ? " go" : " goes"} first. Roll a 6 to bring a token out.`);
       return;
     }
@@ -498,6 +497,33 @@ export default function LudoGame({ onHome }: { onHome: () => void }) {
     list.forEach(([s, i], j) => { const [x, y] = pointOf(t.colors[s], shown[s][i], i); place[`${s}-${i}`] = { x: x + offs[j][0], y: y + offs[j][1], sc: n === 1 ? 1 : n === 2 ? .74 : .6 }; });
   }
   const homeCount = (s: number) => t.tokens[s].filter(x => x.s === "home").length;
+  const seatAt = (ci: number) => { const c = COLORS[(ci - k + 8) % 4]; return { color: c, seat: t.order.find(s => t.colors[s] === c) ?? null }; };
+  const seatCard = (ci: number) => {
+    const { color, seat } = seatAt(ci);
+    if (seat == null) return <div key={ci} className="ld-seat off" style={{ "--c": `var(--ld-${color})` } as CSSProperties}>
+      <span className="ld-seat-chip" /><div className="ld-seat-txt"><strong>Empty seat</strong><small>{COLOR_NAME[color]}</small></div>
+    </div>;
+    const turn = t.stage !== "gameEnd" && (rollingSeat ?? t.turn) === seat, mine = canRoll && seat === t.turn;
+    const rank = t.ranks.indexOf(seat), homeN = homeCount(seat);
+    const who = t.names[seat] === "You" ? "You" : t.bots[seat] ? "CPU" : t.away[seat] ? "Away" : "Player";
+    return <div key={ci} className={`ld-seat${turn ? " turn" : ""}${t.away[seat] ? " away" : ""}`} style={{ "--c": `var(--ld-${color})` } as CSSProperties}>
+      <span className="ld-seat-chip" />
+      <div className="ld-seat-txt">
+        <strong>{t.names[seat]}</strong>
+        <small><span className="ld-cn">{COLOR_NAME[color]} · </span>{who}</small>
+        <span className="ld-seat-home" aria-label={`${homeN} of 4 tokens home`}>
+          {[0, 1, 2, 3].map(i => <b key={i} className={i < homeN ? "on" : ""} />)}
+          <em>{rank >= 0 ? ORD[rank] : `${homeN}/4`}</em>
+        </span>
+      </div>
+      {/* each player's die: yours glows on your turn and is the roll button (or press Space / Enter) */}
+      <button type="button" ref={el => { dieEls.current[seat] = el; }} className={`ld-sdie d-${dice}${mine ? " ready" : ""}${turn ? " live" : ""}`}
+        disabled={!mine} onClick={doRoll} aria-label={mine ? "Roll the dice" : `${t.names[seat]}'s dice${lastDie[seat] ? `, showing ${lastDie[seat]}` : ""}`}>
+        <span className="ld-face"><Face v={lastDie[seat] ?? 0} /></span>
+      </button>
+      {turn && secsLeft !== null && ready && seat === t.turn && <span className={`ld-seat-timer${secsLeft <= 5 ? " urgent" : ""}`}>{secsLeft}s</span>}
+    </div>;
+  };
   const turnName = t.names[t.turn];
   const hint = t.stage === "gameEnd" ? "Game over"
     : canRoll ? (t.mode === "pass" ? `${turnName}: tap the dice` : t.sixes > 0 ? "Tap the dice to roll again" : "Tap the dice to roll")
@@ -514,6 +540,7 @@ export default function LudoGame({ onHome }: { onHome: () => void }) {
       </span>
     </div>
     <div className="ld-main">
+      <div className="ld-seats top">{seatCard(0)}{seatCard(1)}</div>
       <div className="ld-stage">
         <div className="ld-board-wrap">
           <div className={`ld-board ld-set-${shownSet}`} style={{ "--rot": `${rot}deg` } as CSSProperties}>
@@ -558,30 +585,12 @@ export default function LudoGame({ onHome }: { onHome: () => void }) {
           </div>}
         </div>
       </div>
-      <aside className="ld-panel" aria-label="Players and dice">
-        <ul className="ld-players">
-          {t.order.map(s => <li key={s} className={t.stage !== "gameEnd" && t.turn === s ? "turn" : ""}>
-            <span className={`ld-dot ld-bg-${t.colors[s]}`} />
-            <span className="ld-name">{t.names[s]}{t.away[s] && <em> · away</em>}{t.bots[s] && <em className="bot"> · CPU</em>}</span>
-            <span className="ld-home">{t.ranks.includes(s) ? ORD[t.ranks.indexOf(s)] : `${homeCount(s)}/4`}</span>
-          </li>)}
-        </ul>
-        <div className="ld-dock">
-          {/* the die is the roll button, as in Snakes & Ladders: tap it (or press Space / Enter) to roll */}
-          <button type="button" className={`ld-tray${canRoll ? " ready" : ""}`} disabled={!canRoll} onClick={doRoll} aria-label={canRoll ? "Roll the dice" : hint}>
-            <div className="ld-pedestal" aria-hidden="true" />
-            <div className="ld-dice-shadow" ref={shadowRef} />
-            <div className={`ld-dice d-${dice}`} ref={diceRef} aria-hidden="true">
-              <div className="ld-face flat" ref={faceRef}><Face v={dieValue} /></div>
-            </div>
-          </button>
-          <div className="ld-dock-text">
-            <span className={`ld-hint${canRoll ? " ready" : ""}`}>{hint}{secsLeft !== null && ready && <span className={`timer-chip ${secsLeft <= 5 ? "urgent" : ""}`}>⏱ {secsLeft}s</span>}</span>
-            <p className="ld-msg" aria-live="polite">{msg}</p>
-          </div>
-        </div>
-        <div className="ld-reacts" aria-label="Quick messages">{PHRASES.map((p, i) => <button key={i} onClick={() => react(i)}>{p}</button>)}</div>
-      </aside>
+      <div className="ld-seats bottom">{seatCard(3)}{seatCard(2)}</div>
+      <div className="ld-status">
+        <span className={`ld-hint${canRoll ? " ready" : ""}`}>{hint}</span>
+        <p className="ld-msg" aria-live="polite">{msg}</p>
+      </div>
+      <div className="ld-reacts" aria-label="Quick messages">{PHRASES.map((p, i) => <button key={i} onClick={() => react(i)}>{p}</button>)}</div>
     </div>
     {sheet !== "none" && <div className="ld-backdrop" onClick={() => setSheet("none")} />}
     {sheet === "rules" && <div className="ld-sheet" role="dialog" aria-label="Rules">

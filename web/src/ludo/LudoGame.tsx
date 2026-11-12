@@ -8,7 +8,7 @@ import { DICE, Face, Piece, PieceDefs, TOKEN_SETS, isUnlocked, setPips, unlockTe
 import { celebrate } from "../snakes/confetti";
 import "./ludo.css";
 import { PlayStart, WaitingRoom } from "../room/RoomScreens";
-import { ROOM_SIGNIN_MSG, onRoomAuthError, roomAccount } from "../auth/account";
+import { ROOM_SIGNIN_MSG, markPlayed, onRoomAuthError, roomAccount } from "../auth/account";
 
 /* Cinzel (design D headings) for the table; the rest of the site loads its own fonts. */
 if (typeof document !== "undefined" && !document.getElementById("rc-cinzel")) {
@@ -240,6 +240,7 @@ export default function LudoGame({ onHome, joinCode }: { onHome: () => void; joi
     return () => clientRef.current?.close();
   }, []);
   useEffect(() => { if (!view) return; const id = window.setInterval(() => setTick(t => t + 1), 500); return () => window.clearInterval(id); }, [!!view]);
+  useEffect(() => { if (sub === "table") markPlayed(); }, [sub]);
   const leaveRoom = () => {
     send({ t: "leave" });
     window.setTimeout(() => { saveRoom(null, ROOM_KEY); lastPhase.current = null; setView(null); clientRef.current?.close(); clientRef.current = null; setSub("room"); }, 300);

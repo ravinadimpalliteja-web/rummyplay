@@ -713,6 +713,7 @@
 
   function goHome(skipLeave) {
     if (ctrl && skipLeave !== true) ctrl.leave();
+    if (view) store.set('rc-played', '1');      // the main site's "Protect your account" reminder waits for a game
     clearCelebration();
     ctrl = null; view = null; lastSeq = null; lastTop = null; prevHand = new Set(); armed = false;
     celebrated = null; winnerPi = null; scoresBefore = null;

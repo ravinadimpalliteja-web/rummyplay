@@ -14,17 +14,24 @@ export const USERNAME_RE = /^[A-Za-z0-9_]{3,16}$/;
 export const USERNAME_HINT = "3–16 letters, numbers or _";
 const USERNAME_DOMAIN = "players.royalclubgames.com";
 export const usernameEmail = (name: string) => `${name.trim().toLowerCase()}@${USERNAME_DOMAIN}`;
-export const isUsernameAccount = (s: Session | null) => !!s?.user.email?.endsWith("@" + USERNAME_DOMAIN);
+/** Signed up with a username and password (not Google, not a guest). */
+export const isUsernameAccount = (s: Session | null) => !!s && !s.user.is_anonymous && (s.user.app_metadata?.provider ?? "email") === "email";
+const isPrivateAddress = (email?: string | null) => !email || email.endsWith("@" + USERNAME_DOMAIN);
+/** The confirmed recovery email on a username account, or null. */
+export const recoveryEmail = (s: Session | null) => (isUsernameAccount(s) && !isPrivateAddress(s?.user.email) ? s!.user.email! : null);
+/** An email change waiting for the player to click the confirmation link. */
+export const pendingEmail = (s: Session | null) => (s?.user.new_email && !isPrivateAddress(s.user.new_email) ? s.user.new_email : null);
 
 export type Account = {
   ready: boolean;            // first session check finished
   session: Session | null;
   guest: boolean;            // anonymous sign-in
   username: string | null;   // null for guests and for accounts that haven't picked one yet
+  recovering: boolean;       // arrived from a "reset your password" email: ask for a new password
 };
 
 const NAME_KEY = "rc-username";
-let state: Account = { ready: !supabase, session: null, guest: false, username: null };
+let state: Account = { ready: !supabase, session: null, guest: false, username: null, recovering: false };
 const subs = new Set<() => void>();
 function set(patch: Partial<Account>) {
   state = { ...state, ...patch };
@@ -60,7 +67,10 @@ export function startAccount() {
     if ((state.session?.user.id ?? null) === uid) set({ username, ready: true });
   };
   void c.auth.getSession().then(({ data }) => apply(data.session));
-  c.auth.onAuthStateChange((_event, session) => { window.setTimeout(() => void apply(session), 0); });
+  c.auth.onAuthStateChange((event, session) => {
+    if (event === "PASSWORD_RECOVERY") set({ recovering: true });
+    window.setTimeout(() => void apply(session), 0);
+  });
 }
 
 /** True when nobody has that username yet (case-insensitive). */
@@ -112,3 +122,49 @@ export async function roomAccount(): Promise<{ token: string; username: string }
 export function onRoomAuthError(m: Record<string, unknown>) {
   if (m.t === "err" && m.auth) openAuth(state.session && !state.guest && !state.username ? "username" : "rooms");
 }
+
+export const doneRecovering = () => set({ recovering: false });
+
+/**
+ * Sign in with a username. Accounts without a recovery email sign in directly; once a player has added a recovery
+ * email, their sign-in address is that email, so a small Supabase function looks it up privately and signs them in.
+ */
+export async function signInWithUsername(name: string, password: string): Promise<string> {
+  const c = supabase;
+  if (!c) return "Accounts are not set up in this version of the site.";
+  const first = await c.auth.signInWithPassword({ email: usernameEmail(name), password });
+  if (!first.error) return "";
+  if (!/invalid login credentials/i.test(first.error.message)) return first.error.message;
+  const { data, error } = await c.functions.invoke("username-signin", { body: { username: name, password } });
+  if (error || !data?.access_token || !data?.refresh_token) return "Invalid login credentials";
+  const { error: setErr } = await c.auth.setSession({ access_token: data.access_token, refresh_token: data.refresh_token });
+  return setErr ? setErr.message : "";
+}
+
+/** Add or change the recovery email; Supabase emails a confirmation link. Returns an error message or "". */
+export async function setRecoveryEmail(email: string): Promise<string> {
+  const c = supabase;
+  if (!c) return "Accounts are not set up in this version of the site.";
+  const clean = email.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(clean)) return "Enter a valid email address.";
+  if (clean.endsWith("@" + USERNAME_DOMAIN)) return "Enter your own email address.";
+  const { error } = await c.auth.updateUser({ email: clean }, { emailRedirectTo: `${window.location.origin}/?email=confirmed` });
+  if (!error) return "";
+  if (/already.*(registered|exists|used)/i.test(error.message)) return "That email is already used by another account.";
+  if (/rate limit|too many|security purposes/i.test(error.message)) return "Please wait a minute before trying again.";
+  return "Could not send the confirmation email. Please try again.";
+}
+
+/** Email a password-reset link to a recovery email. Always says the same thing, so it can't be used to find accounts. */
+export async function sendPasswordReset(email: string): Promise<string> {
+  const c = supabase;
+  if (!c) return "Accounts are not set up in this version of the site.";
+  const clean = email.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(clean)) return "Enter the recovery email on your account.";
+  const { error } = await c.auth.resetPasswordForEmail(clean, { redirectTo: `${window.location.origin}/` });
+  if (error && /rate limit|too many|security purposes/i.test(error.message)) return "Please wait a minute before trying again.";
+  return "";
+}
+
+/** Remember that a game was played on this device (the "Protect your account" reminder waits for this). */
+export function markPlayed() { try { window.localStorage.setItem("rc-played", "1"); } catch { /* storage off */ } }

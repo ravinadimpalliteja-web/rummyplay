@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { createPortal } from "react-dom";
 import type { Session, User } from "@supabase/supabase-js";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
 
@@ -106,7 +107,7 @@ export default function AuthPanel() {
         <button className="account-secondary" disabled={busy !== null} onClick={signOut}>Sign out</button>
       </div>}
     </div> : <button className="account-trigger" onClick={() => { setOpen(true); setError(""); setMessage(""); }}>Sign in</button>}
-    {open && !session?.user && <div className="auth-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setOpen(false); }}>
+    {open && !session?.user && createPortal(<div className="auth-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setOpen(false); }}>
       <section className="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="auth-title">
         <button className="auth-close" aria-label="Close" onClick={() => setOpen(false)}>×</button>
         <div className="auth-kicker">ROYAL CLUB GAMES</div>
@@ -125,7 +126,7 @@ export default function AuthPanel() {
         {message && <p className="auth-message" role="status">{message}</p>}
         <small className="auth-footnote">By continuing, your player profile is stored securely with Royal Club Games.</small>
       </section>
-    </div>}
-    {message && !open && <span className="auth-toast" role="status">{message}</span>}
+    </div>, document.body)}
+    {message && !open && createPortal(<span className="auth-toast" role="status">{message}</span>, document.body)}
   </>;
 }

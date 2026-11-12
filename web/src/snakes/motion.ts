@@ -14,7 +14,7 @@
 import type { PieceId } from "./tokens";
 
 export type Gait = "glide" | "walk" | "bound" | "hop" | "plod" | "scamper" | "flutter";
-export type Voice = "chime" | "man" | "woman" | "boy" | "big-cat" | "elephant" | "monkey" | "small" | "panda" | "fox" | "peacock";
+export type Voice = "chime" | "man" | "woman" | "boy" | "lion" | "tiger" | "elephant" | "monkey" | "small" | "panda" | "fox" | "peacock";
 
 const GAIT: Record<PieceId, Gait> = {
   "pawn-gold": "glide", "pawn-green": "glide", "pawn-red": "glide", "pawn-blue": "glide",
@@ -26,7 +26,7 @@ const VOICE: Record<PieceId, Voice> = {
   "pawn-gold": "chime", "pawn-green": "chime", "pawn-red": "chime", "pawn-blue": "chime",
   "young-explorer": "boy", "jungle-adventurer": "woman", "mountain-adventurer": "man", "outdoor-explorer": "man",
   cricketer: "man", chef: "man", dancer: "woman", scholar: "man",
-  lion: "big-cat", tiger: "big-cat", elephant: "elephant", monkey: "monkey", rabbit: "small", deer: "small", panda: "panda", fox: "fox", peacock: "peacock",
+  lion: "lion", tiger: "tiger", elephant: "elephant", monkey: "monkey", rabbit: "small", deer: "small", panda: "panda", fox: "fox", peacock: "peacock",
 };
 export const gaitOf = (id: PieceId | undefined): Gait => (id && GAIT[id]) || "glide";
 export const voiceOf = (id: PieceId | undefined): Voice => (id && VOICE[id]) || "chime";

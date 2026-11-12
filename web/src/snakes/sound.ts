@@ -14,7 +14,29 @@ export function unlock() {
       ctx = new AC(); master = ctx.createGain(); master.gain.value = .55; master.connect(ctx.destination);
     }
     if (ctx.state === "suspended") void ctx.resume();
+    loadSamples();
   } catch { ctx = null; }
+}
+
+/* Real recordings for the animals that need them (elephant, tiger, lion, monkey): short clips from Pixabay
+   (Pixabay Content License: free to use, no attribution), trimmed and compressed to ~10-14 KB each in
+   public/sounds/animals/. They are fetched only after the first tap, so they never slow the page down;
+   until they arrive (or if they fail) the generated sound plays instead. */
+const SAMPLED = ["elephant", "tiger", "lion", "monkey"];
+const samples = new Map<string, AudioBuffer>();
+let samplesAsked = false;
+function loadSamples() {
+  const c = ctx; if (!c || samplesAsked) return;
+  samplesAsked = true;
+  for (const v of SAMPLED) for (const mood of ["joy", "fear"]) {
+    const key = `${v}-${mood}`;
+    fetch(`/sounds/animals/${key}.mp3`).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject())).then((b) => c.decodeAudioData(b)).then((buf) => { samples.set(key, buf); }).catch(() => { /* keep the generated sound */ });
+  }
+}
+function sample(key: string, at: number, gain = .85): boolean {
+  const c = ready(), buf = samples.get(key); if (!c || !master || !buf) return false;
+  const src = c.createBufferSource(), g = c.createGain(); src.buffer = buf; g.gain.value = gain;
+  src.connect(g); g.connect(master); src.start(c.currentTime + at); return true;
 }
 const ready = () => (on && ctx && master && ctx.state === "running" ? ctx : null);
 
@@ -65,6 +87,8 @@ const AH: [number, number] = [800, 1200], EH: [number, number] = [550, 1800], EE
 /** The token's own cry: `fear` when a snake gets it, `joy` at the top of a ladder. */
 function cry(voice: string, mood: "fear" | "joy", at: number) {
   const f = mood === "fear";
+  if (SAMPLED.includes(voice) && sample(`${voice}-${mood}`, at)) return;
+  if (voice === "lion" || voice === "tiger") voice = "big-cat";
   switch (voice) {
     case "man": case "woman": case "boy": {
       const p = voice === "man" ? 1 : voice === "woman" ? 1.85 : 2.2;

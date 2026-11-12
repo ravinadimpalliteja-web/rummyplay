@@ -6,6 +6,7 @@ import {
 } from "./engine";
 import { DICE, Face, Piece, PieceDefs, TOKEN_SETS, isUnlocked, setPips, unlockText, type DiceId, type Stats, type TokenSet } from "./pieces";
 import { celebrate } from "../snakes/confetti";
+import { motionReduced, setMotionReduced } from "../lib/motion";
 import "./ludo.css";
 import { PlayStart, WaitingRoom } from "../room/RoomScreens";
 import { ROOM_SIGNIN_MSG, markPlayed, onRoomAuthError, roomAccount, useSeatLabel } from "../auth/account";
@@ -30,8 +31,9 @@ const ORD = ["1st", "2nd", "3rd", "4th"];
 /* Rotate the board so the viewer's yard sits bottom-left (red is top-left in board coordinates). */
 const ROT: Record<Color, number> = { blue: 0, red: -90, green: 180, yellow: 90 };
 const CORNERS: [number, number][] = [[18, 15], [82, 15], [82, 85], [18, 85]];
-const reduced = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-const pace = reduced ? 0.3 : 1;
+let reduced = motionReduced();
+let pace = reduced ? 0.3 : 1;
+const setReduced = (on: boolean) => { setMotionReduced(on); reduced = on; pace = on ? 0.3 : 1; };
 const wait = (ms: number) => new Promise<void>(r => window.setTimeout(r, ms * pace));
 const copyTokens = (t: Record<number, Tok[]>) => JSON.parse(JSON.stringify(t)) as Record<number, Tok[]>;
 
@@ -100,6 +102,26 @@ function tone(f: number, dur: number, type: OscillatorType = "triangle", vol = .
 const sDice = () => { for (let i = 0; i < 6; i++) tone(180 + Math.random() * 260, .04, "square", .03, i * .075); };
 const sStep = () => tone(620, .05, "triangle", .045);
 const sCut = () => tone(520, .35, "sawtooth", .055, 0, 90);
+/** A short burst of filtered noise (whoosh, clash, thud). */
+function hiss(dur: number, freq: number, vol = .08, when = 0, endFreq?: number, q = 1.2) {
+  if (!audioOn()) return;
+  try {
+    ac = ac ?? new AudioContext(); if (ac.state === "suspended") void ac.resume();
+    const t0 = ac.currentTime + when, n = Math.floor(ac.sampleRate * dur), buf = ac.createBuffer(1, n, ac.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+    const src = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+    src.buffer = buf; f.type = "bandpass"; f.Q.value = q; f.frequency.setValueAtTime(freq, t0); if (endFreq) f.frequency.exponentialRampToValueAtTime(endFreq, t0 + dur);
+    g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + Math.min(.03, dur / 3)); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
+    src.connect(f).connect(g).connect(ac.destination); src.start(t0); src.stop(t0 + dur + .02);
+  } catch { /* no audio */ }
+}
+/** The capture duel: wind-up, a spear whoosh, a metal clash with a thud, and the captured token flying off with a falling cry. */
+const sDuel = (spear: boolean) => {
+  hiss(.22, 900, .05, .12, 2600);                                         // wind-up swish
+  if (spear) { hiss(.16, 3200, .09, .34, 6000, 2); tone(2350, .28, "triangle", .05, .38); tone(3130, .22, "sine", .03, .4); }   // clash of steel
+  tone(140, .18, "sine", .14, .38, 60); hiss(.08, 400, .1, .38);          // thud of the hit
+  tone(660, .5, "triangle", .05, .46, 180);                               // the captured token's falling "whoaa"
+};
 const sHome = () => [523, 659, 784, 1047].forEach((f, i) => tone(f, .18, "triangle", .06, i * .08));
 const sWin = () => [392, 523, 659, 784, 659, 1047].forEach((f, i) => tone(f, .26, "triangle", .07, i * .13));
 
@@ -179,6 +201,8 @@ export default function LudoGame({ onHome, joinCode }: { onHome: () => void; joi
   const [animating, setAnimating] = useState(false);
   const [moving, setMoving] = useState<string | null>(null);
   const [hits, setHits] = useState<string[]>([]);
+  const [duel, setDuel] = useState<{ atk: string; vic: string[] } | null>(null);
+  const [lessMotion, setLessMotion] = useState(reduced);
   const [lastDie, setLastDie] = useState<Record<number, number>>({});   // the value showing on each player's die
   const [rollingSeat, setRollingSeat] = useState<number | null>(null);
   const [tokenSet, setTokenSet] = useState<TokenSet>(() => readKey(TOKEN_KEY, TOKEN_SETS.map(x => x.id), "sentry"));
@@ -186,6 +210,7 @@ export default function LudoGame({ onHome, joinCode }: { onHome: () => void; joi
   const chooseTokens = (v: TokenSet) => { setTokenSet(v); keep(TOKEN_KEY, v); };
   const [stats, setStats] = useState<Stats>(readStats);
   const shownSet: TokenSet = isUnlocked(tokenSet, stats) ? tokenSet : "sentry";
+  const shownSetRef = useRef(shownSet); shownSetRef.current = shownSet;
   const [banner, setBanner] = useState<{ id: number; text: string; big: boolean } | null>(null);
   const [homeFx, setHomeFx] = useState(0);
   const [unlockedNow, setUnlockedNow] = useState<string[]>([]);
@@ -322,12 +347,23 @@ export default function LudoGame({ onHome, joinCode }: { onHome: () => void; joi
     for (const st of l.steps) { base[l.seat][l.token] = st; setDisp(copyTokens(base)); sStep(); await wait(ANIM.step); }
     setMoving(null);
     if (l.cuts.length) {
-      /* the cut token reacts where it stood (sentries topple over), then goes back to its yard */
-      setHits(l.cuts.map(c => `${c.seat}-${c.token}`)); sCut();
-      await wait(ANIM.cut * .6);
-      for (const c of l.cuts) base[c.seat][c.token] = { s: "base", r: 0, l: 0 };
-      setDisp(copyTokens(base)); setHits([]);
-      await wait(ANIM.cut * .4);
+      const vic = l.cuts.map(c => `${c.seat}-${c.token}`);
+      if (reduced) {
+        setHits(vic); sCut();
+        await wait(ANIM.cut * .6);
+        for (const c of l.cuts) base[c.seat][c.token] = { s: "base", r: 0, l: 0 };
+        setDisp(copyTokens(base)); setHits([]);
+        await wait(ANIM.cut * .4);
+      } else {
+        /* the duel: the two tokens step apart, the attacker winds up and strikes (sentries thrust their spear),
+           the captured token is knocked flying off the square, then drops back into its yard */
+        setDuel({ atk: `${l.seat}-${l.token}`, vic }); sDuel(shownSetRef.current === "sentry");
+        try { navigator.vibrate?.([0, 380, 40]); } catch { /* not supported */ }
+        await wait(1050);
+        for (const c of l.cuts) base[c.seat][c.token] = { s: "base", r: 0, l: 0 };
+        setDuel(null); setDisp(copyTokens(base)); setHits(vic.map(v => v + "!back"));
+        await wait(420); setHits([]);
+      }
     }
     if (l.home) { sHome(); const id = Date.now(); setHomeFx(id); window.setTimeout(() => setHomeFx(v => (v === id ? 0 : v)), 900); await wait(ANIM.home); }
     if (l.finished) {
@@ -525,7 +561,7 @@ export default function LudoGame({ onHome, joinCode }: { onHome: () => void; joi
               {t.order.flatMap(s => [0, 1, 2, 3].map(i => {
                 const p = place[`${s}-${i}`]; if (!p) return null;
                 const id = `${s}-${i}`, mv = canMove(s, i);
-                return <button key={id} type="button" className={`ld-token${mv ? " movable" : ""}${moving === id ? " moving" : ""}${hits.includes(id) ? " hit" : ""}`}
+                return <button key={id} type="button" className={`ld-token${mv ? " movable" : ""}${moving === id ? " moving" : ""}${hits.includes(id) ? " hit" : ""}${hits.includes(id + "!back") ? " back" : ""}${duel?.atk === id ? " duel-atk" : ""}${duel?.vic.includes(id) ? " duel-vic" : ""}`}
                   style={{ left: `${p.x / 15 * 100}%`, top: `${p.y / 15 * 100}%`, "--s": p.sc } as CSSProperties}
                   tabIndex={mv ? 0 : -1} aria-label={`${t.names[s]} token ${i + 1}${mv ? ", can move" : ""}`} onClick={() => doMove(s, i)}>
                   <Piece set={shownSet} color={t.colors[s]} />
@@ -583,6 +619,7 @@ export default function LudoGame({ onHome, joinCode }: { onHome: () => void; joi
     </div>}
     {sheet === "style" && <div className="ld-sheet" role="dialog" aria-label="Token and dice style">
       <StylePicker tokens={shownSet} dice={dice} stats={stats} onTokens={chooseTokens} onDice={chooseDice} />
+      <label className="ld-motion"><input type="checkbox" checked={lessMotion} onChange={e => { setReduced(e.target.checked); setLessMotion(e.target.checked); }} /> Reduce animations <small>(shorter moves, no capture duel)</small></label>
       <p className="ld-small">Your choice is saved on this device. In a room, everyone sees their own style.</p>
       <button className="gold-button" onClick={() => setSheet("none")}>Done</button>
     </div>}

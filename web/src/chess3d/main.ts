@@ -212,15 +212,15 @@ class Board3D {
     table.rotation.x = -Math.PI / 2; table.position.y = -.2; table.receiveShadow = true; sc.add(table);
     const wood = woodTexture(); wood.repeat.set(2, 2);
     const frame = new THREE.Mesh(new THREE.BoxGeometry(9.4, .36, 9.4), new THREE.MeshPhysicalMaterial({ map: wood, roughness: .35, clearcoat: .8, clearcoatRoughness: .2 }));
-    frame.position.y = -.02; frame.castShadow = true; frame.receiveShadow = true; sc.add(frame);
+    frame.position.y = -.03; frame.castShadow = true; frame.receiveShadow = true; sc.add(frame);
     const goldTrim = new THREE.MeshStandardMaterial({ color: 0xd4a63e, metalness: 1, roughness: .3 });
     for (const [w, d, x, z] of [[8.18, .09, 0, 4.045], [8.18, .09, 0, -4.045], [.09, 8.18, 4.045, 0], [.09, 8.18, -4.045, 0], [9.42, .05, 0, 4.69], [9.42, .05, 0, -4.69], [.05, 9.42, 4.69, 0], [.05, 9.42, -4.69, 0]]) {
       const b = new THREE.Mesh(new THREE.BoxGeometry(w, .05, d), goldTrim); b.position.set(x, BOARD_TOP + .005, z); b.castShadow = true; sc.add(b);
     }
     const squares = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), new THREE.MeshPhysicalMaterial({ map: marbleBoard(), roughness: .22, clearcoat: .9, clearcoatRoughness: .08 }));
-    squares.rotation.x = -Math.PI / 2; squares.position.y = BOARD_TOP; squares.receiveShadow = true; sc.add(squares);
+    squares.rotation.x = -Math.PI / 2; squares.position.y = BOARD_TOP + .002; squares.receiveShadow = true; sc.add(squares);
     const labels = new THREE.Mesh(new THREE.PlaneGeometry(9.4, 9.4), new THREE.MeshBasicMaterial({ map: frameLabels(), transparent: true, depthWrite: false }));
-    labels.rotation.x = -Math.PI / 2; labels.position.y = BOARD_TOP + .001; sc.add(labels);
+    labels.rotation.x = -Math.PI / 2; labels.position.y = BOARD_TOP - .005; sc.add(labels);
 
     // square highlights (selection, last move, targets, check, hint)
     this.marks = new THREE.Group(); sc.add(this.marks);
@@ -253,9 +253,9 @@ class Board3D {
   private place() {
     const a = this.azBase + this.az, e = this.elev * Math.PI / 180;
     const fit = 9.6 / (2 * Math.tan((this.camera.fov * Math.PI / 180) / 2)) / Math.min(1, this.camera.aspect);
-    const d = fit * (.74 + .1 * Math.cos(e) + .12 * Math.sin(e));
+    const d = fit * (1.02 + .06 * Math.cos(e));
     this.camera.position.set(Math.sin(a) * Math.cos(e) * d, Math.sin(e) * d, Math.cos(a) * Math.cos(e) * d);
-    this.camera.lookAt(-Math.sin(a) * .35 * Math.cos(e), 0, -Math.cos(a) * .35 * Math.cos(e));   // aim a little past the centre so the near rank isn't cut off
+    this.camera.lookAt(Math.sin(a) * .3 * Math.cos(e), 0, Math.cos(a) * .3 * Math.cos(e));     // aim a touch nearer than the centre: the board sits centred on screen
     this.dirty = true;
   }
   private pick(e: PointerEvent): string | null {

@@ -7,7 +7,8 @@ import { SnakeArt, type SnakeOverlay } from "./snake2d";
 import { setSound, sfx, soundOn, unlock } from "./sound";
 import { celebrate } from "./confetti";
 import TokenPicker from "./TokenPicker";
-import { PlayStart, WaitingRoom, saveName, savedName } from "../room/RoomScreens";
+import { PlayStart, WaitingRoom } from "../room/RoomScreens";
+import { ROOM_SIGNIN_MSG, onRoomAuthError, roomAccount } from "../auth/account";
 import { DEFAULT_PIECES, PIECE_IDS, pieceById, pieceImage, pieceUrl, type PieceId } from "./tokens";
 import "./snakes.css";
 
@@ -108,7 +109,7 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
   const [picking, setPicking] = useState(0);
   const [view, setView] = useState<SLView | null>(null);
   const [net, setNet] = useState<NetStatus>("idle");
-  const [roomName, setRoomName] = useState(savedName), [roomCode, setRoomCode] = useState(joinCode ?? ""), [roomPass, setRoomPass] = useState("");
+  const [roomCode, setRoomCode] = useState(joinCode ?? ""), [roomPass, setRoomPass] = useState("");
   const [roomMsg, setRoomMsg] = useState("");
   const [animating, setAnimating] = useState(false);
   /** While a roll is being shown, the player who rolled stays highlighted (the game has already moved the turn on). */
@@ -211,7 +212,7 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
       } else if (m.t === "chat") {
         const seat = Number(m.seat), text = chatText(String(m.k), Number(m.i));
         if (text) { showBubble(seat, text); if (seat !== tableRef.current?.you) sfx.pop(); }
-      } else if (m.t === "err") setRoomMsg(String(m.msg ?? "Something went wrong."));
+      } else if (m.t === "err") { setRoomMsg(String(m.msg ?? "Something went wrong.")); onRoomAuthError(m); }
       else if (m.t === "none" || m.t === "left") {
         saveRoom(null, ROOM_KEY); lastPhase.current = null; setView(null); clientRef.current?.close(); clientRef.current = null;
         if (m.t === "left") setSub("room");
@@ -228,16 +229,18 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
     send({ t: "leave" });
     window.setTimeout(() => { saveRoom(null, ROOM_KEY); lastPhase.current = null; setView(null); clientRef.current?.close(); clientRef.current = null; setSub("room"); }, 300);
   };
-  const createRoom = () => {
-    if (!roomName.trim()) { setRoomMsg("Enter your name first."); return; }
-    setRoomMsg(""); saveName(roomName);
-    openRoom({ t: "create", game: "snakes", token: deviceToken(), name: roomName.trim(), passcode: randomPasscode() });
+  const createRoom = async () => {
+    setRoomMsg("");
+    const me = await roomAccount();
+    if (!me) { setRoomMsg(ROOM_SIGNIN_MSG); return; }
+    openRoom({ t: "create", game: "snakes", token: deviceToken(), name: me.username, passcode: randomPasscode(), auth: me.token });
   };
-  const joinRoom = () => {
-    if (!roomName.trim()) { setRoomMsg("Enter your name first."); return; }
+  const joinRoom = async () => {
     if (roomCode.length !== 4 || roomPass.length !== 4) { setRoomMsg("Enter the 4-letter room code and the 4-digit passcode."); return; }
-    setRoomMsg(""); saveName(roomName);
-    openRoom({ t: "join", game: "snakes", token: deviceToken(), name: roomName.trim(), code: roomCode, passcode: roomPass });
+    setRoomMsg("");
+    const me = await roomAccount();
+    if (!me) { setRoomMsg(ROOM_SIGNIN_MSG); return; }
+    openRoom({ t: "join", game: "snakes", token: deviceToken(), name: me.username, code: roomCode, passcode: roomPass, auth: me.token });
   };
 
   /* ---------- practice ---------- */
@@ -695,7 +698,7 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
 
   /* ---------- screens ---------- */
   const startScreen = <PlayStart className="sl-mode" game="Snakes & Ladders" tagline="Climb the ladders, dodge the snakes, first to 100 wins."
-    onBack={onHome} name={roomName} onName={n => { setRoomName(n); saveName(n); }}
+    onBack={onHome}
     vsComputer={{ count: bots, options: [1, 2, 3], onCount: setBots, onPlay: choosePracticeTokens, playLabel: "Choose tokens →" }}
     friends={{ onCreate: createRoom, code: roomCode, onCode: setRoomCode, pass: roomPass, onPass: setRoomPass, onJoin: joinRoom, busy: net === "connecting" }}
     msg={roomMsg}

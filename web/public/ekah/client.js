@@ -326,7 +326,7 @@
           store.del(ROOM_KEY);
           if (first) ws.send(JSON.stringify(first)); else { live = false; ws.close(); goHome(true); }
         } else if (m.t === 'err') {
-          if (!api.room) { $('homeErr').textContent = m.msg; live = false; ws.close(); goHome(true); }
+          if (!api.room) { if (m.auth) needSignIn(); else $('homeErr').textContent = m.msg; live = false; ws.close(); goHome(true); }
           else if (!$('lobby').classList.contains('hidden')) $('lobbyErr').textContent = m.msg;
           else toast(m.msg, true);
         } else if (m.t === 'left') {
@@ -381,6 +381,48 @@
     try { navigator.clipboard.writeText(text).then(() => toast('Invite copied'), () => toast(text)); } catch (e) { toast(text); }
   });
 
+  // ---------- Royal Club account (signed in on the main site; rooms need a username) ----------
+  const SB_URL = String(window.RC_SUPABASE_URL || ''), SB_KEY = String(window.RC_SUPABASE_KEY || '');
+  const SB_STORE = SB_URL ? 'sb-' + SB_URL.replace(/^https:\/\//, '').split('.')[0] + '-auth-token' : '';
+  const SIGNIN_URL = '/?signin=rooms';
+  function readSession() {
+    try { const s = JSON.parse(store.get(SB_STORE) || 'null'); return s && s.access_token ? s : null; } catch (e) { return null; }
+  }
+  function roomUser() {
+    const s = readSession(), name = store.get('rc-username');
+    return s && !(s.user && s.user.is_anonymous) && name && /^[A-Za-z0-9_]{3,16}$/.test(name) ? name : null;
+  }
+  /** A fresh sign-in token and the username, or null (not signed in, a guest, or no username yet). */
+  async function roomAuth() {
+    const username = roomUser();
+    let s = readSession();
+    if (!username || !s) return null;
+    if (!s.expires_at || s.expires_at * 1000 < Date.now() + 60000) {
+      try {
+        const res = await fetch(SB_URL + '/auth/v1/token?grant_type=refresh_token', {
+          method: 'POST', headers: { apikey: SB_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: s.refresh_token })
+        });
+        if (!res.ok) return null;
+        const fresh = await res.json();
+        if (!fresh.access_token) return null;
+        if (!fresh.expires_at && fresh.expires_in) fresh.expires_at = Math.floor(Date.now() / 1000) + fresh.expires_in;
+        s = fresh; store.set(SB_STORE, JSON.stringify(fresh));   // the main site keeps using the same session
+      } catch (e) { return null; }
+    }
+    return { token: s.access_token, username: username };
+  }
+  function showRoomWho() {
+    const who = $('roomWho'); if (!who) return;
+    const name = roomUser();
+    who.innerHTML = name ? 'Playing as <b>' + esc(name) + '</b>'
+      : 'Sign in with your Royal Club username to play with friends. <a href="' + SIGNIN_URL + '">Sign in</a>';
+  }
+  function needSignIn() {
+    $('homeErr').textContent = 'Please sign in first (link above).';
+    showRoomWho();
+  }
+
   // ---------- home ----------
   function playerName() {
     const n = $('name').value.trim().slice(0, 16) || 'Player';
@@ -397,17 +439,23 @@
     $('onlinePanel').hidden = true;
     $('offlineNote').hidden = false;
   } else {
-    $('createRoom').addEventListener('click', () => {
+    showRoomWho();
+    window.addEventListener('storage', showRoomWho);
+    $('createRoom').addEventListener('click', async () => {
       $('homeErr').textContent = '';
-      ctrl = OnlineGame({ t: 'create', game: 'ekah', token: deviceToken(), name: playerName(), passcode: randomPasscode() });
+      const me = await roomAuth();
+      if (!me) { needSignIn(); return; }
+      ctrl = OnlineGame({ t: 'create', game: 'ekah', token: deviceToken(), name: me.username, passcode: randomPasscode(), auth: me.token });
     });
-    const joinNow = () => {
+    const joinNow = async () => {
       const code = $('joinCode').value.trim().toUpperCase(), pass = $('joinPass').value.trim();
       if (!/^[A-Z]{4}$/.test(code)) { $('homeErr').textContent = 'Enter the 4-letter room code.'; return; }
       if (!/^\d{4}$/.test(pass)) { $('homeErr').textContent = 'Enter the 4-digit passcode.'; return; }
       $('homeErr').textContent = '';
+      const me = await roomAuth();
+      if (!me) { needSignIn(); return; }
       store.del(ROOM_KEY);
-      ctrl = OnlineGame({ t: 'join', game: 'ekah', code: code, passcode: pass, token: deviceToken(), name: playerName() });
+      ctrl = OnlineGame({ t: 'join', game: 'ekah', code: code, passcode: pass, token: deviceToken(), name: me.username, auth: me.token });
     };
     $('joinRoom').addEventListener('click', joinNow);
     $('joinPass').addEventListener('keydown', (e) => { if (e.key === 'Enter') joinNow(); });

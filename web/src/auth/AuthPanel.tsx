@@ -1,145 +1,240 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
-import type { Session, User } from "@supabase/supabase-js";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
+import {
+  USERNAME_HINT, USERNAME_RE, claimUsername, startAccount, useAccount, usernameAvailable, usernameEmail,
+  type AuthReason
+} from "./account";
 
-type AuthMode = "guest" | "google" | "email";
-type EmailMode = "signin" | "signup";
+type Tab = "signin" | "signup";
+type Busy = "guest" | "google" | "form" | "signout" | "username" | null;
+type Avail = "idle" | "checking" | "free" | "taken" | "bad";
 
-function profileName(user: User) {
-  const metadataName = user.user_metadata?.full_name || user.user_metadata?.name;
-  if (typeof metadataName === "string" && metadataName.trim()) return metadataName.trim();
-  if (user.email) return user.email.split("@")[0];
-  return "Guest Player";
+const INTRO: Record<AuthReason, string> = {
+  signin: "Sign in with your username to play with friends. No email needed.",
+  rooms: "Sign in with your Royal Club username to create or join rooms.",
+  username: "Pick the username other players will see."
+};
+
+function friendly(message: string, tab: Tab) {
+  if (/invalid login credentials/i.test(message)) return "Wrong username or password.";
+  if (/already registered|already exists/i.test(message)) return "That username is taken. Try another one.";
+  if (/password/i.test(message) && /least|short|weak/i.test(message)) return "Use a password with at least 6 characters.";
+  if (/rate limit|too many/i.test(message)) return "Too many tries. Please wait a minute and try again.";
+  return tab === "signup" ? "Could not create the account. Please try again." : "Sign-in didn't work. Please try again.";
 }
 
-async function saveProfile(user: User) {
-  if (!supabase) return;
-  const { error } = await supabase.from("player_profiles").upsert({
-    user_id: user.id,
-    display_name: profileName(user),
-    avatar_url: typeof user.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : null,
-    updated_at: new Date().toISOString()
-  }, { onConflict: "user_id" });
-  if (error) console.error("Could not save player profile:", error.message);
+/** Live "is this username free?" check while typing. */
+function useAvailability(name: string, enabled: boolean): Avail {
+  const [avail, setAvail] = useState<Avail>("idle");
+  useEffect(() => {
+    if (!enabled || !name) { setAvail("idle"); return; }
+    if (!USERNAME_RE.test(name)) { setAvail("bad"); return; }
+    setAvail("checking");
+    let live = true;
+    const t = window.setTimeout(() => {
+      void usernameAvailable(name).then(ok => { if (live) setAvail(ok === null ? "idle" : ok ? "free" : "taken"); });
+    }, 350);
+    return () => { live = false; window.clearTimeout(t); };
+  }, [name, enabled]);
+  return avail;
+}
+
+function AvailLine({ avail }: { avail: Avail }) {
+  if (avail === "idle") return <small className="auth-hint">{USERNAME_HINT}</small>;
+  if (avail === "checking") return <small className="auth-hint">Checking…</small>;
+  if (avail === "free") return <small className="auth-hint ok">✓ Available</small>;
+  if (avail === "taken") return <small className="auth-hint bad">✗ Already taken</small>;
+  return <small className="auth-hint bad">{USERNAME_HINT}</small>;
 }
 
 export default function AuthPanel() {
-  const client = supabase;
-  const [session, setSession] = useState<Session | null>(null);
+  const account = useAccount();
+  const { session, guest, username, ready } = account;
   const [open, setOpen] = useState(false);
-  const [emailMode, setEmailMode] = useState<EmailMode>("signin");
-  const [email, setEmail] = useState("");
+  const [menu, setMenu] = useState(false);
+  const [reason, setReason] = useState<AuthReason>("signin");
+  const [tab, setTab] = useState<Tab>("signin");
+  const [name, setName] = useState("");
   const [password, setPassword] = useState("");
-  const [busy, setBusy] = useState<AuthMode | "email" | "signout" | null>(null);
-  const [message, setMessage] = useState("");
+  const [password2, setPassword2] = useState("");
+  const [pick, setPick] = useState("");
+  const [busy, setBusy] = useState<Busy>(null);
   const [error, setError] = useState("");
+  const [toast, setToast] = useState("");
+  const menuRef = useRef<HTMLDivElement>(null);
 
+  const needsUsername = !!session && !guest && ready && !username;
+  const signupAvail = useAvailability(name, open && tab === "signup" && !needsUsername);
+  const pickAvail = useAvailability(pick, open && needsUsername);
+
+  useEffect(() => { startAccount(); }, []);
+
+  const show = (why: AuthReason) => { setReason(why); setError(""); setTab("signin"); setMenu(false); setOpen(true); };
+
+  // Opened from elsewhere (room buttons, EKAH's "sign in" link, sign-in errors coming back from Google).
   useEffect(() => {
+    const onAsk = (e: Event) => show((e as CustomEvent<AuthReason>).detail || "signin");
+    window.addEventListener("rc:auth", onAsk);
     const read = (q: string) => new URLSearchParams(q.replace(/^[?#]/, ""));
     const q = read(window.location.search), h = read(window.location.hash);
-    const code = q.get("error") || h.get("error");
-    if (!code) return;
-    const detail = q.get("error_description") || h.get("error_description") || "";
-    setError(/expired|invalid.*(link|otp)/i.test(detail)
-      ? "That sign-in link has expired. Please try again."
-      : "Sign-in didn't work this time. Please try again, or play as a guest.");
-    setOpen(true);
-    window.history.replaceState(null, "", window.location.pathname);
+    if (q.get("error") || h.get("error")) {
+      const detail = q.get("error_description") || h.get("error_description") || "";
+      show("signin");
+      setError(/expired|invalid.*(link|otp)/i.test(detail) ? "That sign-in link has expired. Please try again." : "Sign-in didn't work this time. Please try again.");
+      window.history.replaceState(null, "", window.location.pathname);
+    } else if (q.get("signin")) {
+      show(q.get("signin") === "rooms" ? "rooms" : "signin");
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+    return () => window.removeEventListener("rc:auth", onAsk);
   }, []);
 
+  // A signed-in account without a username (new Google players) is asked to pick one.
+  useEffect(() => { if (needsUsername) { setReason("username"); setOpen(true); } }, [needsUsername]);
+  // Close the dialog once the player is fully signed in.
+  useEffect(() => { if (open && session && !guest && username) setOpen(false); }, [session, guest, username]);
   useEffect(() => {
-    if (!client) return;
-    let active = true;
-    client.auth.getSession().then(({ data, error: sessionError }) => {
-      if (!active) return;
-      if (sessionError) setError(sessionError.message);
-      setSession(data.session);
-      if (data.session?.user) void saveProfile(data.session.user);
-    });
-    const { data: listener } = client.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-      if (nextSession?.user) window.setTimeout(() => void saveProfile(nextSession.user), 0);
-    });
-    return () => {
-      active = false;
-      listener.subscription.unsubscribe();
-    };
-  }, []);
+    if (!menu) return;
+    const close = (e: MouseEvent) => { if (!menuRef.current?.contains(e.target as Node)) setMenu(false); };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [menu]);
+  useEffect(() => { if (!toast) return; const t = window.setTimeout(() => setToast(""), 3500); return () => window.clearTimeout(t); }, [toast]);
 
-  const run = async (kind: AuthMode | "email" | "signout", action: () => Promise<{ error: { message: string } | null; data?: any }>) => {
-    setBusy(kind); setError(""); setMessage("");
+  const c = supabase;
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!c) return;
+    const u = name.trim();
+    if (!USERNAME_RE.test(u)) { setError(`Usernames are ${USERNAME_HINT}.`); return; }
+    if (password.length < 6) { setError("Use a password with at least 6 characters."); return; }
+    if (tab === "signup" && password !== password2) { setError("The two passwords don't match."); return; }
+    if (tab === "signup" && signupAvail === "taken") { setError("That username is taken. Try another one."); return; }
+    setBusy("form"); setError("");
     try {
-      const result = await action();
-      if (result.error) throw result.error;
-      if (kind === "email" && emailMode === "signup") {
-        setMessage("Check your email for the confirmation link. Then return here to sign in.");
+      if (guest) await c.auth.signOut();               // a guest creating an account starts a fresh one
+      if (tab === "signin") {
+        const { error: err } = await c.auth.signInWithPassword({ email: usernameEmail(u), password });
+        if (err) throw err;
+        setToast("Welcome back!");
       } else {
-        setMessage(kind === "guest" ? "Guest profile ready. You can play now." : "Sign-in request completed.");
-        if (kind !== "signout") setOpen(false);
+        const { data, error: err } = await c.auth.signUp({ email: usernameEmail(u), password, options: { data: { username: u } } });
+        if (err) throw err;
+        if (!data.session) throw new Error("Account created, but sign-in is waiting for email confirmation.");
+        const claimErr = await claimUsername(u);
+        if (claimErr) { setError(claimErr); return; }
+        setToast(`Welcome, ${u}!`);
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
+      setPassword(""); setPassword2("");
+    } catch (x) {
+      const msg = x instanceof Error ? x.message : String(x);
+      setError(/email confirmation/.test(msg) ? msg : friendly(msg, tab));
     } finally { setBusy(null); }
   };
 
-  const guest = () => { const c = supabase; if (c) void run("guest", () => c.auth.signInAnonymously()); };
-  const google = () => { const c = supabase; if (c) void run("google", () => c.auth.signInWithOAuth({
-    provider: "google",
-    options: { redirectTo: `${window.location.origin}/` }
-  })); };
-  const submitEmail = (event: FormEvent) => {
-    event.preventDefault();
-    const c = supabase;
-    if (!c) return;
-    if (emailMode === "signup") {
-      void run("email", () => c.auth.signUp({
-        email: email.trim(),
-        password,
-        options: { emailRedirectTo: `${window.location.origin}/`, data: { display_name: email.split("@")[0] } }
-      }));
-    } else {
-      void run("email", () => c.auth.signInWithPassword({ email: email.trim(), password }));
-    }
+  const savePick = async (e: FormEvent) => {
+    e.preventDefault();
+    const u = pick.trim();
+    if (pickAvail === "taken") { setError("That username is taken. Try another one."); return; }
+    setBusy("username"); setError("");
+    const err = await claimUsername(u);
+    setBusy(null);
+    if (err) setError(err); else setToast(`You're ${u} now.`);
   };
-  const signOut = () => { const c = supabase; if (c) void run("signout", () => c.auth.signOut()); };
 
-  if (!isSupabaseConfigured || !supabase) {
-    return <button className="account-trigger" onClick={() => { setOpen(true); setError("Account sign-in is not configured in this deployment yet."); }}>Player account</button>;
+  const google = async () => {
+    if (!c) return;
+    setBusy("google"); setError("");
+    const { error: err } = await c.auth.signInWithOAuth({ provider: "google", options: { redirectTo: `${window.location.origin}/` } });
+    if (err) { setError("Could not reach Google. Please try again."); setBusy(null); }
+  };
+  const playAsGuest = async () => {
+    if (!c) return;
+    setBusy("guest"); setError("");
+    const { error: err } = await c.auth.signInAnonymously();
+    setBusy(null);
+    if (err) setError("Could not start guest play. Please try again.");
+    else { setOpen(false); setToast("Playing as a guest on this device."); }
+  };
+  const signOut = async () => {
+    if (!c) return;
+    setBusy("signout");
+    await c.auth.signOut();
+    setBusy(null); setMenu(false); setToast("Signed out.");
+  };
+
+  if (!isSupabaseConfigured || !c) {
+    return <button className="account-trigger" onClick={() => setToast("Accounts are not set up in this version of the site.")}>Sign in{toast && createPortal(<span className="auth-toast" role="status">{toast}</span>, document.body)}</button>;
   }
 
-  return <>
-    {session?.user ? <div className="account-user">
-      <button className="account-trigger" onClick={() => setOpen(v => !v)}>
-        <span className="account-avatar">{profileName(session.user).slice(0, 1).toUpperCase()}</span>
-        <span>{session.user.is_anonymous ? "Guest player" : profileName(session.user)}</span>
-      </button>
-      {open && <div className="account-popover">
-        <strong>{session.user.is_anonymous ? "Playing as guest" : "Player account"}</strong>
-        <p>{session.user.email || "Guest sessions are currently tied to this browser. Account linking will be added in the next stage."}</p>
-        <button className="account-secondary" disabled={busy !== null} onClick={signOut}>Sign out</button>
-      </div>}
-    </div> : <button className="account-trigger" onClick={() => { setOpen(true); setError(""); setMessage(""); }}>Sign in</button>}
-    {open && !session?.user && createPortal(<div className="auth-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setOpen(false); }}>
-      <section className="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+  const shownName = username ?? (guest ? "Guest" : session ? "Pick a username" : "");
+  const header = session
+    ? <div className="account-user" ref={menuRef}>
+        <button className="account-trigger" onClick={() => needsUsername ? show("username") : setMenu(v => !v)} aria-expanded={menu}>
+          <span className="account-avatar">{(username ?? "G").slice(0, 1).toUpperCase()}</span>
+          <span>{shownName}</span>
+        </button>
+        {menu && <div className="account-popover">
+          {guest ? <>
+            <strong>Playing as a guest</strong>
+            <p>Your games stay on this device. Create a username to play with friends in rooms.</p>
+            <button className="account-secondary auth-strong" onClick={() => { show("signin"); setTab("signup"); }}>Create an account</button>
+            <button className="account-secondary" onClick={() => show("signin")}>I have an account</button>
+          </> : <>
+            <strong>{username}</strong>
+            <p>{isGoogle(session) ? "Signed in with Google" : "Royal Club account"}</p>
+          </>}
+          <button className="account-secondary" disabled={busy !== null} onClick={() => void signOut()}>Sign out</button>
+        </div>}
+      </div>
+    : <button className="account-trigger" onClick={() => show("signin")}>Sign in</button>;
+
+  const dialog = needsUsername
+    ? <section className="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="auth-title">
         <button className="auth-close" aria-label="Close" onClick={() => setOpen(false)}>×</button>
         <div className="auth-kicker">ROYAL CLUB GAMES</div>
-        <h2 id="auth-title">Your games. Your progress.</h2>
-        <p className="auth-intro">Play as a guest or sign in to build your player profile.</p>
-        <button className="auth-option auth-primary" disabled={busy !== null} onClick={guest}>{busy === "guest" ? "Starting guest play…" : "Continue as Guest"}</button>
-        <button className="auth-option" disabled={busy !== null} onClick={google}>{busy === "google" ? "Connecting to Google…" : "Continue with Google"}</button>
-        <div className="auth-divider"><span>or use email</span></div>
-        <form onSubmit={submitEmail} className="auth-form">
-          <div className="auth-form-heading"><strong>{emailMode === "signin" ? "Email sign in" : "Create an account"}</strong><button type="button" onClick={() => { setEmailMode(v => v === "signin" ? "signup" : "signin"); setError(""); setMessage(""); }}>{emailMode === "signin" ? "Create account" : "I already have an account"}</button></div>
-          <label>Email address<input type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" /></label>
-          <label>Password<input type="password" autoComplete={emailMode === "signin" ? "current-password" : "new-password"} minLength={6} required value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 6 characters" /></label>
-          <button className="auth-option auth-email" type="submit" disabled={busy !== null}>{busy === "email" ? "Please wait…" : emailMode === "signin" ? "Sign in with Email" : "Create account"}</button>
+        <h2 id="auth-title">Pick your username</h2>
+        <p className="auth-intro">{INTRO.username}{session && isGoogle(session) ? " You'll keep signing in with Google." : ""}</p>
+        <form onSubmit={e => void savePick(e)} className="auth-form">
+          <label>Username<input autoFocus autoComplete="username" maxLength={16} value={pick} onChange={e => setPick(e.target.value.replace(/\s/g, ""))} placeholder="e.g. RaviKing" /></label>
+          <AvailLine avail={pickAvail} />
+          <button className="auth-option auth-primary" type="submit" disabled={busy !== null || pickAvail !== "free"}>{busy === "username" ? "Saving…" : "Save username"}</button>
         </form>
         {error && <p className="auth-error" role="alert">{error}</p>}
-        {message && <p className="auth-message" role="status">{message}</p>}
-        <small className="auth-footnote">By continuing, your player profile is stored securely with Royal Club Games.</small>
+        <button className="auth-link" disabled={busy !== null} onClick={() => void signOut()}>Sign out instead</button>
       </section>
-    </div>, document.body)}
-    {message && !open && createPortal(<span className="auth-toast" role="status">{message}</span>, document.body)}
+    : <section className="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+        <button className="auth-close" aria-label="Close" onClick={() => setOpen(false)}>×</button>
+        <div className="auth-kicker">ROYAL CLUB GAMES</div>
+        <h2 id="auth-title">{tab === "signin" ? "Welcome back" : "Create your account"}</h2>
+        <p className="auth-intro">{reason === "rooms" ? INTRO.rooms : tab === "signup" ? "Choose a username and password. No email needed." : INTRO.signin}</p>
+        <div className="auth-tabs" role="tablist">
+          <button role="tab" aria-selected={tab === "signin"} className={tab === "signin" ? "on" : ""} onClick={() => { setTab("signin"); setError(""); }}>Sign in</button>
+          <button role="tab" aria-selected={tab === "signup"} className={tab === "signup" ? "on" : ""} onClick={() => { setTab("signup"); setError(""); }}>Create account</button>
+        </div>
+        <form onSubmit={e => void submit(e)} className="auth-form">
+          <label>Username<input autoComplete="username" autoCapitalize="none" spellCheck={false} maxLength={16} required value={name} onChange={e => setName(e.target.value.replace(/\s/g, ""))} placeholder="Your username" /></label>
+          {tab === "signup" && <AvailLine avail={signupAvail} />}
+          <label>Password<input type="password" autoComplete={tab === "signin" ? "current-password" : "new-password"} minLength={6} required value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 6 characters" /></label>
+          {tab === "signup" && <label>Confirm password<input type="password" autoComplete="new-password" minLength={6} required value={password2} onChange={e => setPassword2(e.target.value)} placeholder="Type it again" /></label>}
+          <button className="auth-option auth-primary" type="submit" disabled={busy !== null || (tab === "signup" && signupAvail === "taken")}>{busy === "form" ? "Please wait…" : tab === "signin" ? "Sign in" : "Create account"}</button>
+        </form>
+        {tab === "signup" && <small className="auth-footnote">Keep your password safe — there's no email to reset it yet. You can add a recovery email later.</small>}
+        <div className="auth-divider"><span>or</span></div>
+        <button className="auth-option" disabled={busy !== null} onClick={() => void google()}>{busy === "google" ? "Connecting to Google…" : "Continue with Google"}</button>
+        {error && <p className="auth-error" role="alert">{error}</p>}
+        {!session && reason !== "rooms" && <button className="auth-link" disabled={busy !== null} onClick={() => void playAsGuest()}>{busy === "guest" ? "Starting…" : "Just play as a guest (no rooms)"}</button>}
+      </section>;
+
+  return <>
+    {header}
+    {open && createPortal(<div className="auth-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setOpen(false); }}>{dialog}</div>, document.body)}
+    {toast && createPortal(<span className="auth-toast" role="status">{toast}</span>, document.body)}
   </>;
+}
+
+function isGoogle(s: { user: { app_metadata?: { provider?: string } } }) {
+  return s.user.app_metadata?.provider === "google";
 }

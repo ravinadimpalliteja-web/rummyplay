@@ -30,7 +30,7 @@ export default function TokenPicker({ players, active, onActive, onPick, note }:
       </ul>
       <figure className="tp-preview" aria-live="polite">
         <span className="tp-stage"><img key={curPiece.id} src={pieceUrl(curPiece.id)} alt={`${curPiece.name} token`} /></span>
-        <figcaption><b>{curPiece.name}</b><span>{cur?.name === "You" ? "Your token" : `${cur?.name}'s token`} · {COLLECTIONS.find((c) => c.id === curPiece.collection)?.name}</span></figcaption>
+        <figcaption><b>{curPiece.name}</b><span>{cur?.name === "You" || cur?.name?.endsWith(" (you)") ? "Your token" : `${cur?.name}'s token`} · {COLLECTIONS.find((c) => c.id === curPiece.collection)?.name}</span></figcaption>
       </figure>
     </div>
     <div className="tp-main">

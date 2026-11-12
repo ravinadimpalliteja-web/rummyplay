@@ -8,7 +8,7 @@ import { DICE, Face, Piece, PieceDefs, TOKEN_SETS, isUnlocked, setPips, unlockTe
 import { celebrate } from "../snakes/confetti";
 import "./ludo.css";
 import { PlayStart, WaitingRoom } from "../room/RoomScreens";
-import { ROOM_SIGNIN_MSG, markPlayed, onRoomAuthError, roomAccount } from "../auth/account";
+import { ROOM_SIGNIN_MSG, markPlayed, onRoomAuthError, roomAccount, useSeatLabel } from "../auth/account";
 
 /* Cinzel (design D headings) for the table; the rest of the site loads its own fonts. */
 if (typeof document !== "undefined" && !document.getElementById("rc-cinzel")) {
@@ -172,6 +172,7 @@ export default function LudoGame({ onHome, joinCode }: { onHome: () => void; joi
   const [localNames, setLocalNames] = useState<string[]>(["You", ...BOTS]);
   const [view, setView] = useState<LView | null>(null);
   const [net, setNet] = useState<NetStatus>("idle");
+  const label = useSeatLabel();
   const [roomCode, setRoomCode] = useState(joinCode ?? ""), [roomPass, setRoomPass] = useState("");
   const [roomMsg, setRoomMsg] = useState("");
   const [disp, setDisp] = useState<Record<number, Tok[]> | null>(null);
@@ -484,7 +485,7 @@ export default function LudoGame({ onHome, joinCode }: { onHome: () => void; joi
     return <div key={ci} className={`ld-seat${turn ? " turn" : ""}${t.away[seat] ? " away" : ""}`} style={{ "--c": `var(--ld-${color})` } as CSSProperties}>
       <span className="ld-seat-chip" />
       <div className="ld-seat-txt">
-        <strong>{t.names[seat]}</strong>
+        <strong>{label(t.names[seat])}</strong>
         <small>{who === "You" ? COLOR_NAME[color] : <><span className="ld-cn">{COLOR_NAME[color]} · </span>{who}</>}</small>
         <span className="ld-seat-home" aria-label={`${homeN} of 4 tokens home`}>
           {[0, 1, 2, 3].map(i => <b key={i} className={i < homeN ? "on" : ""} />)}
@@ -545,12 +546,12 @@ export default function LudoGame({ onHome, joinCode }: { onHome: () => void; joi
             </div>
             {homeFx > 0 && <div key={homeFx} className="ld-homeburst" aria-hidden="true" />}
           </div>
-          <div className="ld-fx">{bubbles.map(b => { const [x, y] = corner(b.seat); return <div key={b.id} className={`ld-bubble ld-bd-${t.colors[b.seat]}`} style={{ left: `${x}%`, top: `${y}%` }}><small>{t.names[b.seat]}</small>{b.text}</div>; })}</div>
+          <div className="ld-fx">{bubbles.map(b => { const [x, y] = corner(b.seat); return <div key={b.id} className={`ld-bubble ld-bd-${t.colors[b.seat]}`} style={{ left: `${x}%`, top: `${y}%` }}><small>{label(t.names[b.seat])}</small>{b.text}</div>; })}</div>
           {banner && <div key={banner.id} className={`ld-banner${banner.big ? " big" : ""}`} role="status">{banner.text}</div>}
           {showEnd && <div className="ld-win">
             <span className="eyebrow">ROYAL CLUB · LUDO</span>
             <h2>{t.ranks[0] === t.you ? "You take the crown!" : `${t.names[t.ranks[0]]} wins`}</h2>
-            <ol className="ld-podium">{t.ranks.map((s, i) => <li key={s}><b>{ORD[i]}</b><span className={`ld-dot ld-bg-${t.colors[s]}`} />{t.names[s]}</li>)}</ol>
+            <ol className="ld-podium">{t.ranks.map((s, i) => <li key={s}><b>{ORD[i]}</b><span className={`ld-dot ld-bg-${t.colors[s]}`} />{label(t.names[s])}</li>)}</ol>
             {unlockedNow.length > 0 && <p className="ld-unlocked">🔓 New tokens unlocked: <b>{unlockedNow.join(", ")}</b>. Try them from Style.</p>}
             <div className="ld-win-actions">
               {online ? (view?.host ? <button className="gold-button" onClick={() => send({ t: "again" })}>Play again</button> : <p className="ld-small">Waiting for the host to start a new game.</p>)

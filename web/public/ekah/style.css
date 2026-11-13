@@ -170,7 +170,8 @@ details.rules ul { margin: 6px 0 0; padding-left: 18px; }
 @keyframes crownin { from { transform: translate(-50%, 10px) scale(.2); opacity: 0; } }
 
 /* you */
-.me { padding: 4px 8px calc(30px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 4px; }
+/* your name bar and cards sit well clear of the bottom edge and may overlap the bottom of the table */
+.me { position: relative; z-index: 2; margin-top: -44px; padding: 4px 8px calc(72px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 4px; }
 .mybar { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; min-height: 48px; }
 .meseat { position: relative; display: flex; align-items: center; gap: 8px; padding: 4px 12px 4px 4px; border-radius: 999px; background: rgba(20, 10, 44, .78); border: 2px solid transparent; }
 .meseat .avatar { width: 34px; height: 34px; font-size: 17px; border-width: 2px; }
@@ -259,7 +260,7 @@ button.card { cursor: default; }
 @keyframes tin { from { transform: translateY(-10px); opacity: 0; } }
 .err { color: var(--danger); font-size: 14px; min-height: 18px; margin: 0; }
 
-@media (max-height: 640px) { :root { --cw: clamp(46px, 11vw, 68px); --hand-cw: clamp(58px, 16vw, 80px); } .me { padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px)); } }
+@media (max-height: 640px) { :root { --cw: clamp(46px, 11vw, 68px); --hand-cw: clamp(58px, 16vw, 80px); } .me { margin-top: -28px; padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px)); } }
 /* phones on their side: compact seats, no caption */
 @media (max-height: 500px) {
   .topbar { padding: 4px 10px; } .topbar .title { font-size: 20px; }
@@ -270,7 +271,7 @@ button.card { cursor: default; }
   .seat .dots { position: absolute; right: 6px; top: 6px; }
   .caption { display: none; }
   :root { --cw: clamp(40px, 12.5vh, 58px); --hand-cw: clamp(46px, 15vh, 66px); }
-  .me { padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+  .me { margin-top: 0; padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
   .me { flex-direction: row; align-items: flex-end; gap: 8px; padding-bottom: 6px; }
   .mybar { flex: 0 0 168px; flex-direction: column; align-items: flex-start; justify-content: flex-end; min-height: 0; gap: 6px; }
   .mybar .msg { font-size: 13px; }

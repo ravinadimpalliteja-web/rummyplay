@@ -87,6 +87,6 @@
 
 /* Royal Club crowned elephant, faint, behind every game lobby and waiting room (Ludo, Snakes & Ladders, any game using these screens) */
 .rs-page{position:relative;isolation:isolate}
-.rs-watermark{position:fixed;left:50%;top:54%;width:min(1100px,150vw);aspect-ratio:900/467;transform:translate(-50%,-50%);
-  background:url("../brand/elephant-logo.webp") center/contain no-repeat;opacity:.13;pointer-events:none;z-index:-1}
+.rs-watermark{position:fixed;left:50%;top:54%;width:min(1100px,150vw);aspect-ratio:1000/438;transform:translate(-50%,-50%);
+  background:url("../brand/elephant-watermark.webp") center/contain no-repeat;opacity:.13;pointer-events:none;z-index:-1}
 @media (max-width:760px){.rs-watermark{width:170vw;opacity:.11}}

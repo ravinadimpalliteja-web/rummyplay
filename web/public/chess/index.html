@@ -283,15 +283,16 @@ html body .learn-txt span{font-size:12.5px;line-height:1.35;color:#DCE8E0}
 html body .learn-go{flex:none;font-size:20px;color:#F0D99D}
 /* Royal Club crowned elephant, faint, behind the lobby screens */
 .rc-wm-host{position:relative;isolation:isolate}
-.rc-watermark{position:fixed;left:50%;top:54%;width:min(1100px,150vw);aspect-ratio:900/467;transform:translate(-50%,-50%);
-  background:url("../brand/elephant-logo.webp") center/contain no-repeat;opacity:.13;pointer-events:none;z-index:-1}
+.rc-watermark{position:fixed;left:50%;top:54%;width:min(1100px,150vw);aspect-ratio:1000/438;transform:translate(-50%,-50%);
+  background:url("../brand/elephant-watermark.webp") center/contain no-repeat;opacity:.13;pointer-events:none;z-index:-1}
 @media (max-width:760px){.rc-watermark{width:170vw;opacity:.11}}
 
 /* Royal Club crowned elephant as the header mark */
-html body .brand-mark.rc-el{width:auto;height:38px;border:0;border-radius:0;background:none;box-shadow:none;padding:0;display:block}
+html body .brand-mark.rc-el{width:auto;height:46px;border:0;border-radius:0;background:none;box-shadow:none;padding:0;display:block}
 html body .brand-mark.rc-el img{display:block;height:100%;width:auto}
+html body .brand .rc-el + span strong{display:none}
 html body .club-back{flex:none}
-@media (max-width:420px){html body .brand-mark.rc-el{height:30px}}
+@media (max-width:420px){html body .brand-mark.rc-el{height:40px}}
 </style>
 </head>
 <body>
@@ -300,7 +301,7 @@ html body .club-back{flex:none}
   <header class="top">
     <span class="lead-group"><a class="club-back" id="clubLink" href="/" hidden aria-label="Back to Royal Club">←</a>
     <button class="brand" id="homeBtn" type="button" aria-label="Royal Club Chess home">
-      <span class="brand-mark rc-el" id="brandMark"><img src="../brand/elephant-logo-small.webp" alt="" width="240" height="125"></span>
+      <span class="brand-mark rc-el" id="brandMark"><img src="../brand/badge-logo-small.webp" alt="" width="320" height="224"></span>
       <span><strong>ROYAL CLUB</strong><small>CHESS</small></span>
     </button></span>
     <span class="top-tools"><button class="chip icon-chip" id="soundBtn" type="button" aria-pressed="true" aria-label="Sound on"></button><button class="chip theme-trigger" id="themeOpen" type="button" aria-haspopup="dialog" aria-controls="themeDialog"><span aria-hidden="true">▦</span> Themes</button><button class="chip" id="topAction" type="button" hidden>New game</button></span>

@@ -154,6 +154,58 @@ h1{margin:0;font:700 30px/1.15 var(--display);color:var(--emerald)}
   .side .pad{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
   .side .num{font-size:28px;padding:10px 0 6px}
 }
+/* ---------- race with friends ---------- */
+.race-card{border-radius:20px;background:var(--card);box-shadow:var(--shadow);padding:18px;display:grid;gap:10px;border:1.5px solid #EBD9AE}
+.race-card .tag{justify-self:start;padding:3px 10px;border-radius:999px;background:var(--saffron);color:var(--saffron-ink);font-size:11px;font-weight:800;letter-spacing:.12em}
+.race-card strong{font:700 22px/1.15 var(--display);color:var(--emerald)}
+.race-card .sub{color:var(--muted);font-size:14px;margin:0}
+.race-card .who{margin:0;font-size:13.5px;color:var(--muted)}
+.race-card .who a{color:var(--emerald);font-weight:800}
+.join-row{display:flex;gap:8px}
+.join-row input{flex:1 1 0;min-width:0;height:46px;border-radius:12px;border:1.5px solid #B39A63;background:var(--ivory);padding:0 12px;font:inherit;font-size:16px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink)}
+.join-row input::placeholder{letter-spacing:0;text-transform:none}
+.join-row .btn{padding:0 18px;min-height:46px}
+.err{margin:0;min-height:0;color:#9E2A23;font-size:13.5px;font-weight:600}
+.err:empty{display:none}
+.room-card{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px;border-radius:18px;background:radial-gradient(ellipse at 90% 0%,#1A6A50 0%,#0F4D3A 60%,#0A3528 100%);color:var(--ivory)}
+.room-card small{display:block;font-size:11px;font-weight:800;letter-spacing:.14em;color:#C9DACF}
+.room-card b{font:700 30px/1.1 var(--display);letter-spacing:.12em;color:var(--gold-light)}
+.room-card .btn{min-height:40px;padding:0 14px;font-size:13px}
+.seats{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.seats li{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:var(--card);box-shadow:var(--shadow)}
+.seats .av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800}
+.seats .nm{flex:1;min-width:0;font-weight:700}
+.seats .tg{font-size:12px;font-weight:800;color:var(--gold-text)}
+.seats li.open{background:transparent;box-shadow:none;border:1.5px dashed var(--line);color:var(--muted)}
+.seg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:4px;border-radius:12px;background:var(--soft)}
+.seg button{border:0;background:none;border-radius:9px;min-height:40px;font-weight:700;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--card);color:var(--emerald);box-shadow:0 1px 2px rgba(60,40,10,.1),0 3px 8px rgba(60,40,10,.08)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.race-strip{width:var(--bw);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.rp{display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 8px;padding:6px 10px;border-radius:12px;background:var(--card);box-shadow:var(--shadow);font-size:12.5px}
+.rp .nm{font-weight:800;color:var(--emerald);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rp .st{font-weight:700;color:var(--gold-text);font-variant-numeric:tabular-nums}
+.rp .bar{grid-column:1/3;height:6px;border-radius:3px;background:var(--soft);overflow:hidden}
+.rp .bar i{display:block;height:100%;background:var(--emerald);border-radius:3px;transition:width .3s ease}
+.rp.me{box-shadow:0 0 0 1.5px var(--saffron),var(--shadow)}
+.rp.me .bar i{background:var(--saffron)}
+.rp.out{opacity:.55}
+.rp.done .st{color:var(--emerald)}
+.countdown{position:absolute;inset:0;border-radius:12px;background:rgba(251,247,238,.94);display:grid;place-items:center;text-align:center}
+.countdown b{display:block;font:700 96px/1 var(--display);color:var(--saffron)}
+.countdown span{font-weight:700;color:var(--emerald)}
+.racing #hintBtn,.racing #undoBtn,.racing #pauseBtn{display:none}
+.racing .tools{grid-template-columns:repeat(2,minmax(0,1fr))}
+.rank{list-style:none;margin:0;padding:0;display:grid;gap:6px;text-align:left}
+.rank li{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--card);box-shadow:var(--shadow)}
+.rank .pos{width:28px;text-align:center;font-size:20px}
+.rank .nm{flex:1;font-weight:800;color:var(--emerald)}
+.rank .rs{font-size:13px;font-weight:700;color:var(--gold-text)}
+.rank li.me{box-shadow:0 0 0 1.5px var(--saffron),var(--shadow)}
+@media (orientation:landscape) and (min-width:700px){
+  .racing .race-strip{grid-column:2;grid-row:1;width:100%}
+  .racing .side{grid-row:2}
+}
 @media (prefers-reduced-motion:reduce){.cell.pop,.cell.hinted{animation:none}}
 /* Royal Club crowned elephant, faint, behind the lobby screens */
 .rc-wm-host{position:relative;isolation:isolate}
@@ -198,6 +250,21 @@ html body .brand-mark.rc-el img{display:block;height:100%;width:auto}
       <span class="go" id="dailyGo">Play today's puzzle</span>
     </button>
 
+    <section class="race-card" id="raceCard" hidden aria-labelledby="raceTitle">
+      <span class="tag">NEW · RACE</span>
+      <strong id="raceTitle">Race with friends</strong>
+      <p class="sub">Everyone gets the same puzzle at the same time. The fastest correct solve wins.</p>
+      <p class="who" id="roomWho"></p>
+      <button class="btn ghost" id="backToRace" type="button" hidden>Return to your race</button>
+      <button class="btn primary" id="createRoom" type="button">Create a race room</button>
+      <div class="join-row">
+        <input id="joinCode" maxlength="4" autocomplete="off" autocapitalize="characters" placeholder="Code" aria-label="Room code">
+        <input id="joinPass" maxlength="4" inputmode="numeric" autocomplete="off" placeholder="Passcode" aria-label="Passcode">
+        <button class="btn emerald" id="joinRoom" type="button">Join</button>
+      </div>
+      <p class="err" id="raceErr" role="alert"></p>
+    </section>
+
     <button class="resume" id="resumeBtn" type="button" hidden>
       <span><small>CONTINUE</small><b id="resumeText"></b></span><i>Resume</i>
     </button>
@@ -218,6 +285,24 @@ html body .brand-mark.rc-el img{display:block;height:100%;width:auto}
     </details>
   </section>
 
+  <!-- Race waiting room -->
+  <section class="setup" id="lobby" hidden>
+    <p class="eyebrow">Sudoku race</p>
+    <h1>Waiting room</h1>
+    <div class="room-card"><div><small>ROOM CODE</small><b id="roomCode">----</b><small>PASSCODE <span id="roomPass" style="font-size:14px;letter-spacing:.12em;color:#F0D99D">----</span></small></div><button class="btn primary" id="copyInvite" type="button">Copy invite</button></div>
+    <ul class="seats" id="seats"></ul>
+    <div id="hostTools">
+      <p class="eyebrow" style="margin-bottom:8px">Level</p>
+      <div class="seg" id="lobbyLevels"></div>
+      <div class="two" style="margin-top:10px"><button class="btn ghost" id="addBot" type="button">Add computer</button><button class="btn ghost" id="removeBot" type="button">Remove computer</button></div>
+    </div>
+    <p class="lede" id="waitNote"></p>
+    <button class="btn primary" id="startRace" type="button">Start race</button>
+    <p class="err" id="lobbyErr" role="alert"></p>
+    <button class="btn ghost" id="leaveRoom" type="button">Leave room</button>
+    <p class="lede" style="font-size:13px">Share the code and passcode with up to three friends. No hints in a race; three mistakes and you are out.</p>
+  </section>
+
   <!-- Game -->
   <section class="game" id="game" hidden>
     <div class="hud">
@@ -225,8 +310,10 @@ html body .brand-mark.rc-el img{display:block;height:100%;width:auto}
       <span class="mist" id="mistakes"></span>
       <span class="clock"><span id="clock">0:00</span><button type="button" id="pauseBtn" aria-label="Pause"></button></span>
     </div>
+    <div class="race-strip" id="raceStrip" hidden aria-live="polite"></div>
     <div class="board-wrap">
       <div class="board" id="board" role="grid" aria-label="Sudoku board"></div>
+      <div class="countdown" id="countdown" hidden><div><b id="countNum">3</b><span>Get ready…</span></div></div>
       <div class="paused" id="paused" hidden><div><b>Paused</b><p class="lede">The timer is stopped.</p><br><button class="btn primary" id="resumePlay" type="button" style="padding:0 26px">Resume</button></div></div>
     </div>
     <div class="side">
@@ -244,6 +331,8 @@ html body .brand-mark.rc-el img{display:block;height:100%;width:auto}
 
 <div class="overlay" id="overlay" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 
+<!-- The room server address and sign-in settings, written by the site build (shared with EKAH). -->
+<script src="../ekah/config.js" onerror="void 0"></script>
 <script src="engine.js"></script>
 <script>
 (function () {
@@ -316,15 +405,16 @@ html body .brand-mark.rc-el img{display:block;height:100%;width:auto}
     sel = game.grid.indexOf(0); notesMode = false; history = []; paused = false;
     save(); openGame();
   }
-  function save() { if (game) { game.elapsed = elapsed(); tickStart = Date.now(); store.set(GAME_KEY, game); } }
-  const elapsed = () => game ? game.elapsed + (running() ? Date.now() - tickStart : 0) : 0;
+  function save() { if (game && !game.race) { game.elapsed = elapsed(); tickStart = Date.now(); store.set(GAME_KEY, game); } }
+  const elapsed = () => !game ? 0 : game.race ? raceElapsed() : game.elapsed + (running() ? Date.now() - tickStart : 0);
   const running = () => game && !game.done && !game.lost && !paused && !$('game').hidden && document.visibilityState === 'visible';
 
   /* ---------- menu ---------- */
   function showMenu() {
     if (game && running()) save();
     stopTimer();
-    $('setup').hidden = false; $('game').hidden = true; $('newBtn').hidden = true;
+    $('setup').hidden = false; $('game').hidden = true; $('lobby').hidden = true; $('newBtn').hidden = true; closeSheet();
+    raceCard();
     $('clubLink').hidden = !inClub; $('clubLink').setAttribute('aria-label', 'Back to Royal Club');
     const st = stats(), today = S.dateKey(), lvl = ['expert', 'easy', 'easy', 'medium', 'medium', 'hard', 'hard'][new Date().getDay()];
     const doneMs = st.dailyDone[today];
@@ -334,7 +424,7 @@ html body .brand-mark.rc-el img{display:block;height:100%;width:auto}
     $('dailyStreak').innerHTML = `<span>🔥 ${streak} day streak</span>${st.bestStreak ? `<span>Best ${st.bestStreak}</span>` : ''}`;
     $('dailyGo').textContent = doneMs != null ? `Solved in ${fmt(doneMs)} ✓ · Come back tomorrow` : (game && game.daily === today && !game.done && !game.lost ? 'Continue today\'s puzzle' : 'Play today\'s puzzle');
     $('dailyGo').className = doneMs != null ? 'done' : 'go';
-    const saved = game && !game.done && !game.lost && !game.daily ? game : null;
+    const saved = game && !game.race && !game.done && !game.lost && !game.daily ? game : null;
     $('resumeBtn').hidden = !saved;
     if (saved) $('resumeText').textContent = `${S.LEVELS[saved.level].name} · ${fmt(saved.elapsed)} · ${81 - saved.grid.filter((v, i) => v === saved.solution[i]).length} squares left`;
     $('levels').innerHTML = Object.keys(S.LEVELS).map((k) => `<button class="level" type="button" data-level="${k}"><b>${S.LEVELS[k].name}</b><span>${LEVEL_NOTE[k]}</span><span class="dots">${[1, 2, 3, 4].map((n) => `<i class="${n <= LEVEL_DOTS[k] ? 'on' : ''}"></i>`).join('')}</span><em>${st.best[k] != null ? 'Best ' + fmt(st.best[k]) : 'No best time yet'}</em></button>`).join('');
@@ -343,12 +433,14 @@ html body .brand-mark.rc-el img{display:block;height:100%;width:auto}
   $('levels').addEventListener('click', (e) => {
     const b = e.target.closest('[data-level]'); if (!b) return;
     const level = b.dataset.level;
+    if (room) { $('raceErr').textContent = 'Leave the race room first to play on your own.'; return; }
     if (unfinished()) { askReplace('Start a new game?', () => newGame(level)); return; }
     newGame(level);
   });
   $('dailyBtn').addEventListener('click', () => {
     const st = stats(), today = S.dateKey();
     if (st.dailyDone[today] != null) { flash('You have solved today\'s puzzle. A new one arrives tomorrow.'); return; }
+    if (room) { flash('Leave the race room first.'); return; }
     if (game && game.daily === today && !game.lost) { openGame(); return; }
     if (unfinished()) { askReplace('Start the daily puzzle?', () => newGame(null, S.daily())); return; }
     newGame(null, S.daily());
@@ -361,29 +453,39 @@ html body .brand-mark.rc-el img{display:block;height:100%;width:auto}
     pendingReplace = go;
     sheet(`<h2>${title}</h2><p>Your unfinished ${S.LEVELS[game.level].name} game will be replaced.</p><button class="btn primary" type="button" data-act="replace">Yes, start</button><button class="btn ghost" type="button" data-act="keep">Keep my game</button>`);
   }
-  $('resumeBtn').addEventListener('click', openGame);
+  $('resumeBtn').addEventListener('click', () => { if (game && !game.race) openGame(); });
   /* Back from a game goes to the Sudoku menu (not the Royal Club home). Opening a game adds a history step,
      so the phone's back button and the browser's back button do the same. */
   const inClub = /\/sudoku\//.test(location.pathname);
   const inGame = () => !$('game').hidden;
   function backToMenu() {
+    if (!$('lobby').hidden) { leaveRoom(); return; }
     if (!inGame()) return;
+    if (game && game.race && room && room.phase !== 'gameEnd') { askLeaveRace(); return; }
     let pushed = false; try { pushed = !!(window.history.state && window.history.state.rcSudoku === 'game'); } catch { pushed = false; }
     if (pushed) window.history.back(); else showMenu();
   }
-  addEventListener('popstate', () => { if (inGame() || !$('overlay').hidden) { closeSheet(); showMenu(); } });
-  $('clubLink').addEventListener('click', (e) => { if (inGame()) { e.preventDefault(); backToMenu(); } });
+  addEventListener('popstate', () => {
+    if (game && game.race && room && room.phase !== 'gameEnd' && inGame()) {   // mid-race: stay, and ask first
+      try { window.history.pushState({ rcSudoku: 'game' }, ''); } catch { /* history not available */ }
+      askLeaveRace(); return;
+    }
+    if (game && game.race && inGame()) { leaveRoom(); return; }
+    if (inGame() || !$('overlay').hidden) { closeSheet(); showMenu(); }
+  });
+  $('clubLink').addEventListener('click', (e) => { if (inGame() || !$('lobby').hidden) { e.preventDefault(); backToMenu(); } });
   $('homeBtn').addEventListener('click', backToMenu);
   $('newBtn').addEventListener('click', backToMenu);
   function flash(text) { const d = $('dailyGo'); const old = d.textContent; d.textContent = text; setTimeout(() => { d.textContent = old; }, 2600); }
 
   /* ---------- game screen ---------- */
   function openGame() {
-    $('setup').hidden = true; $('game').hidden = false; $('newBtn').hidden = false;
+    $('setup').hidden = true; $('lobby').hidden = true; $('game').hidden = false; $('newBtn').hidden = !!game.race;
+    $('game').classList.toggle('racing', !!game.race); $('raceStrip').hidden = !game.race;
     $('clubLink').hidden = false; $('clubLink').setAttribute('aria-label', 'Back to Sudoku menu');
     try { if (!(window.history.state && window.history.state.rcSudoku === 'game')) window.history.pushState({ rcSudoku: 'game' }, ''); } catch { /* history not available */ }
     paused = false; tickStart = Date.now();
-    $('lvlName').textContent = (game.daily ? 'Daily · ' : '') + S.LEVELS[game.level].name;
+    $('lvlName').textContent = (game.race ? 'Race · ' : game.daily ? 'Daily · ' : '') + S.LEVELS[game.level].name;
     if (sel < 0 || game.puzzle[sel]) sel = game.grid.findIndex((v, i) => !v || v !== game.solution[i]);
     buildBoard(); size(); render(); startTimer();
   }
@@ -395,7 +497,8 @@ html body .brand-mark.rc-el img{display:block;height:100%;width:auto}
   function size() {
     const W = Math.min(innerWidth - 24, 1000), H = innerHeight - 54 - 20;
     const land = matchMedia('(orientation:landscape) and (min-width:700px)').matches;
-    const bw = land ? Math.min(H - 40, W - 300, 560) : Math.min(W, H - 230, 540);
+    const strip = game && game.race ? 76 : 0;
+    const bw = land ? Math.min(H - 40 - (strip ? 56 : 0), W - 300, 560) : Math.min(W, H - 230 - strip, 540);
     document.documentElement.style.setProperty('--bw', Math.max(260, Math.floor(bw)) + 'px');
   }
   addEventListener('resize', size);
@@ -437,14 +540,14 @@ html body .brand-mark.rc-el img{display:block;height:100%;width:auto}
   const say = (t) => { $('msg').textContent = t || ''; };
 
   /* ---------- timer ---------- */
-  function tickClock() { $('clock').textContent = fmt(elapsed()); }
+  function tickClock() { $('clock').textContent = fmt(elapsed()); if (game && game.race) raceTick(); }
   function startTimer() { stopTimer(); tickStart = Date.now(); timer = setInterval(tickClock, 500); }
   function stopTimer() { clearInterval(timer); timer = 0; }
-  function setPaused(p) { if (!game || game.done || game.lost) return; if (p) save(); paused = p; tickStart = Date.now(); render(); }
+  function setPaused(p) { if (!game || game.race || game.done || game.lost) return; if (p) save(); paused = p; tickStart = Date.now(); render(); }
   $('pauseBtn').addEventListener('click', () => setPaused(!paused));
   $('resumePlay').addEventListener('click', () => setPaused(false));
   /* Leaving the app or tab pauses the clock and saves. */
-  document.addEventListener('visibilitychange', () => { if (!game || $('game').hidden) return; if (document.visibilityState === 'hidden' && !paused && !game.done && !game.lost) { game.elapsed += Date.now() - tickStart; store.set(GAME_KEY, game); } tickStart = Date.now(); });
+  document.addEventListener('visibilitychange', () => { if (!game || game.race || $('game').hidden) return; if (document.visibilityState === 'hidden' && !paused && !game.done && !game.lost) { game.elapsed += Date.now() - tickStart; store.set(GAME_KEY, game); } tickStart = Date.now(); });
   addEventListener('pagehide', () => { if (game && !$('game').hidden) save(); });
 
   /* ---------- moves ---------- */
@@ -453,7 +556,7 @@ html body .brand-mark.rc-el img{display:block;height:100%;width:auto}
   const editable = (i) => i >= 0 && !game.puzzle[i] && !(game.grid[i] && game.grid[i] === game.solution[i]);
 
   function input(n) {
-    if (!game || game.done || game.lost || paused || sel < 0) return;
+    if (!game || game.done || game.lost || paused || sel < 0 || game.locked) return;
     if (!editable(sel)) { say(game.puzzle[sel] ? 'That number is a clue and cannot be changed.' : 'That number is already correct.'); return; }
     if (notesMode) {
       if (game.grid[sel]) return;
@@ -462,18 +565,19 @@ html body .brand-mark.rc-el img{display:block;height:100%;width:auto}
     if (game.grid[sel] === n) return;
     push();
     game.grid[sel] = n; game.notes[sel] = 0; lastPop = sel;
+    if (game.race) rc && rc.send({ t: 'place', i: sel, v: n });
     if (n !== game.solution[sel]) {
       game.mistakes++; sound.play('wrong'); buzz([40, 40, 40]);
       say(game.mistakes >= MAX_MISTAKES ? '' : `Not quite — ${n} doesn't go there. ${MAX_MISTAKES - game.mistakes} mistake${MAX_MISTAKES - game.mistakes === 1 ? '' : 's'} left.`);
       save(); render();
-      if (game.mistakes >= MAX_MISTAKES) lose();
+      if (game.mistakes >= MAX_MISTAKES) { if (game.race) raceOut(); else lose(); }
       return;
     }
     /* Correct: clear this number from the notes of its row, column and box. */
     for (const p of S.PEERS[sel]) game.notes[p] &= ~(1 << n);
     const completedUnit = unitDone(sel);
     sound.play(completedUnit ? 'unit' : 'place'); buzz(12); say('');
-    if (game.grid.every((v, i) => v === game.solution[i])) { save(); render(); win(); return; }
+    if (game.grid.every((v, i) => v === game.solution[i])) { save(); render(); if (game.race) raceFinished(); else win(); return; }
     save(); render();
   }
   function unitDone(i) {
@@ -488,11 +592,11 @@ html body .brand-mark.rc-el img{display:block;height:100%;width:auto}
     push(); game.grid[sel] = 0; game.notes[sel] = 0; save(); render();
   }
   function undo() {
-    if (!game || game.done || game.lost || paused || !history.length) return;
+    if (!game || game.race || game.done || game.lost || paused || !history.length) return;
     const s = history.pop(); game.grid = s.grid; game.notes = s.notes; sel = s.sel; save(); render();
   }
   function useHint() {
-    if (!game || game.done || game.lost || paused) return;
+    if (!game || game.race || game.done || game.lost || paused) return;
     /* Monetization hook: when hints run out, a rewarded ad can give one more here. */
     if (!game.hints) { say('No hints left in this game.'); return; }
     const h = S.hint(game.grid, game.solution); if (!h) return;
@@ -568,6 +672,7 @@ html body .brand-mark.rc-el img{display:block;height:100%;width:auto}
     const act = b.dataset.act; closeSheet();
     if (act === 'replace') { const go = pendingReplace; pendingReplace = null; if (go) go(); return; }
     if (act === 'keep') { pendingReplace = null; return; }
+    if (act.startsWith('race-')) { raceAction(act); return; }
     if (act === 'chance') { game.lost = false; game.secondChance = true; game.mistakes = MAX_MISTAKES - 1; undo(); tickStart = Date.now(); startTimer(); say('Second chance — one more mistake allowed.'); }
     else if (act === 'retry') {
       Object.assign(game, { grid: game.puzzle.slice(), notes: new Array(81).fill(0), mistakes: 0, hints: HINTS, elapsed: 0, secondChance: false, lost: false, done: false });
@@ -594,6 +699,258 @@ html body .brand-mark.rc-el img{display:block;height:100%;width:auto}
   }
 
 
+  /* ====================================================================================================
+     Race with friends: everyone in a room solves the same puzzle at the same time on the Royal Club room
+     server. The server makes the puzzle, checks every number and keeps the scores; this page shows them.
+     ==================================================================================================== */
+  const ROOM_KEY = 'rc-room-sudoku', TOKEN_KEY = 'rc-token';
+  const AVATAR = ['#0F4D3A', '#B4465A', '#2878C8', '#BE6E1E'];
+  const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const raw = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch { /* off */ } }, del(k) { try { localStorage.removeItem(k); } catch { /* off */ } } };
+  let rc = null, room = null, skew = 0, outShown = false, resultsShown = false, raceAway = false;
+
+  /* Room server address: written by the site build into ../ekah/config.js. On localhost and previews ?server=wss://... may override it. */
+  function serverUrl() {
+    const host = location.hostname;
+    const testing = host === 'localhost' || host === '127.0.0.1' || host.startsWith('deploy-preview-') || host.includes('--') || host.endsWith('.workers.dev');
+    const qs = testing ? new URLSearchParams(location.search).get('server') : null;
+    const url = String(qs || window.RC_ROOM_SERVER_URL || '').trim();
+    return /^wss?:\/\//.test(url) ? url : '';
+  }
+  function deviceToken() {
+    let t = raw.get(TOKEN_KEY);
+    if (!t || !/^[A-Za-z0-9_-]{8,64}$/.test(t)) {
+      const b = new Uint8Array(18); crypto.getRandomValues(b);
+      t = Array.from(b, (x) => x.toString(36).padStart(2, '0')).join('').slice(0, 32);
+      raw.set(TOKEN_KEY, t);
+    }
+    return t;
+  }
+  function randomPasscode() { const b = new Uint32Array(1); crypto.getRandomValues(b); return String(b[0] % 10000).padStart(4, '0'); }
+
+  /* ---------- Royal Club account: rooms need a signed-in username (same sign-in as the main site and EKAH) ---------- */
+  const SB_URL = String(window.RC_SUPABASE_URL || ''), SB_KEY = String(window.RC_SUPABASE_KEY || '');
+  const SB_STORE = SB_URL ? 'sb-' + SB_URL.replace(/^https:\/\//, '').split('.')[0] + '-auth-token' : '';
+  const SIGNIN_URL = '/?signin=rooms';
+  function readSession() { try { const x = JSON.parse(raw.get(SB_STORE) || 'null'); return x && x.access_token ? x : null; } catch { return null; } }
+  function roomUser() {
+    const x = readSession(), name = raw.get('rc-username');
+    return x && !(x.user && x.user.is_anonymous) && name && /^[A-Za-z0-9_]{3,16}$/.test(name) ? name : null;
+  }
+  async function roomAuth() {
+    const username = roomUser();
+    let x = readSession();
+    if (!username || !x) return null;
+    if (!x.expires_at || x.expires_at * 1000 < Date.now() + 60000) {
+      try {
+        const res = await fetch(SB_URL + '/auth/v1/token?grant_type=refresh_token', { method: 'POST', headers: { apikey: SB_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: x.refresh_token }) });
+        if (!res.ok) return null;
+        const fresh = await res.json();
+        if (!fresh.access_token) return null;
+        if (!fresh.expires_at && fresh.expires_in) fresh.expires_at = Math.floor(Date.now() / 1000) + fresh.expires_in;
+        x = fresh; raw.set(SB_STORE, JSON.stringify(fresh));
+      } catch { return null; }
+    }
+    return { token: x.access_token, username };
+  }
+  function showWho() {
+    const name = roomUser();
+    $('roomWho').innerHTML = name ? `Playing as <b>${esc(name)}</b>` : `Sign in with your Royal Club username to race with friends. <a href="${SIGNIN_URL}">Sign in</a>`;
+  }
+
+  /* ---------- connection (reconnects and takes back the same seat after a refresh or a dropped line) ---------- */
+  function connect(first) {
+    let ws = null, live = true, tries = 0, t = 0;
+    const api = {};
+    function open() {
+      ws = new WebSocket(serverUrl());
+      ws.onopen = () => { tries = 0; const code = raw.get(ROOM_KEY); ws.send(JSON.stringify(code ? { t: 'hello', game: 'sudoku', code, token: deviceToken() } : first)); };
+      ws.onmessage = (e) => {
+        let m; try { m = JSON.parse(e.data); } catch { return; }
+        if (m.t === 'state') { raw.set(ROOM_KEY, m.code); onRoom(m); }
+        else if (m.t === 'placed') onPlaced(m);
+        else if (m.t === 'none') { raw.del(ROOM_KEY); if (first) ws.send(JSON.stringify(first)); else { live = false; ws.close(); dropRoom(); } }
+        else if (m.t === 'err') {
+          if (!room) { $('raceErr').textContent = m.auth ? 'Please sign in first (link above).' : m.msg; if (m.auth) showWho(); live = false; ws.close(); dropRoom(); }
+          else if (!$('lobby').hidden) $('lobbyErr').textContent = m.msg;
+          else say(m.msg);
+        } else if (m.t === 'left') raw.del(ROOM_KEY);
+      };
+      ws.onclose = () => {
+        if (!live) return;
+        if (!raw.get(ROOM_KEY)) { if (!room) { $('raceErr').textContent = 'Could not reach the room server. Try again in a moment.'; dropRoom(); } return; }
+        tries++;
+        if (tries > 8) { say('Connection lost.'); dropRoom(); return; }
+        if (inGame()) say('Reconnecting…');
+        t = setTimeout(() => live && open(), Math.min(8000, 700 * Math.pow(2, tries)));
+      };
+    }
+    open();
+    api.send = (m) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(m)); };
+    api.close = () => { live = false; clearTimeout(t); setTimeout(() => { try { ws.close(); } catch { /* closed */ } }, 150); };
+    return api;
+  }
+  /* Back to playing on your own: the solo game saved on this device comes back. */
+  function dropRoom() {
+    if (rc) rc.close();
+    rc = null; room = null; raceAway = false; raw.del(ROOM_KEY);
+    if (game && game.race) game = loadSolo();
+    showMenu();
+  }
+  function leaveRoom() { if (rc) rc.send({ t: 'leave' }); raw.del(ROOM_KEY); dropRoom(); }
+
+  /* ---------- menu card ---------- */
+  function raceCard() {
+    if (!serverUrl()) { $('raceCard').hidden = true; return; }
+    $('raceCard').hidden = false; showWho();
+    const inRace = !!room && room.phase !== 'lobby';
+    $('backToRace').hidden = !inRace;
+    $('createRoom').hidden = !!room; $('joinCode').parentElement.hidden = !!room;
+  }
+  $('createRoom').addEventListener('click', async () => {
+    $('raceErr').textContent = '';
+    const me = await roomAuth();
+    if (!me) { $('raceErr').textContent = 'Please sign in first (link above).'; return; }
+    raw.del(ROOM_KEY);
+    rc = connect({ t: 'create', game: 'sudoku', token: deviceToken(), name: me.username, passcode: randomPasscode(), auth: me.token });
+  });
+  async function joinNow() {
+    const code = $('joinCode').value.trim().toUpperCase(), pass = $('joinPass').value.trim();
+    if (!/^[A-Z]{4}$/.test(code)) { $('raceErr').textContent = 'Enter the 4-letter room code.'; return; }
+    if (!/^\d{4}$/.test(pass)) { $('raceErr').textContent = 'Enter the 4-digit passcode.'; return; }
+    $('raceErr').textContent = '';
+    const me = await roomAuth();
+    if (!me) { $('raceErr').textContent = 'Please sign in first (link above).'; return; }
+    raw.del(ROOM_KEY);
+    rc = connect({ t: 'join', game: 'sudoku', code, passcode: pass, token: deviceToken(), name: me.username, auth: me.token });
+  }
+  $('joinRoom').addEventListener('click', joinNow);
+  $('joinPass').addEventListener('keydown', (e) => { if (e.key === 'Enter') joinNow(); });
+  $('joinCode').addEventListener('input', () => { $('joinCode').value = $('joinCode').value.replace(/[^a-zA-Z]/g, '').toUpperCase(); });
+  $('joinPass').addEventListener('input', () => { $('joinPass').value = $('joinPass').value.replace(/\D/g, ''); });
+  $('backToRace').addEventListener('click', () => { raceAway = false; if (room) onRoom(room); });
+  addEventListener('storage', () => { if (!$('raceCard').hidden) showWho(); });
+
+  /* ---------- waiting room ---------- */
+  function showLobby(m) {
+    $('setup').hidden = true; $('game').hidden = true; $('lobby').hidden = false; $('newBtn').hidden = true;
+    $('clubLink').hidden = false; $('clubLink').setAttribute('aria-label', 'Leave room');
+    $('roomCode').textContent = m.code; $('roomPass').textContent = m.passcode;
+    const filled = m.seats.filter(Boolean).length;
+    $('seats').innerHTML = m.seats.map((x, i) => x
+      ? `<li><span class="av" style="background:${AVATAR[i % AVATAR.length]}">${esc(x.name.charAt(0).toUpperCase())}</span><span class="nm">${esc(x.name)}${i === m.you ? ' (you)' : ''}</span><span class="tg">${x.bot ? 'Computer' : i === m.hostSeat ? 'Host' : x.connected ? 'Joined' : 'Offline'}</span></li>`
+      : '<li class="open"><span class="nm">Open seat</span></li>').join('');
+    $('hostTools').hidden = !m.host; $('startRace').hidden = !m.host;
+    $('lobbyLevels').innerHTML = Object.keys(S.LEVELS).map((k) => `<button type="button" data-lv="${k}" aria-pressed="${k === m.level}">${S.LEVELS[k].name}</button>`).join('');
+    $('addBot').disabled = filled >= m.seats.length; $('removeBot').disabled = !m.seats.some((x) => x && x.bot);
+    $('startRace').disabled = filled < 2;
+    $('startRace').textContent = filled < 2 ? 'Invite a friend or add a computer' : `Start race · ${S.LEVELS[m.level].name}`;
+    $('waitNote').textContent = m.host ? '' : `Level: ${S.LEVELS[m.level].name}. Waiting for the host to start the race…`;
+  }
+  $('lobbyLevels').addEventListener('click', (e) => { const b = e.target.closest('[data-lv]'); if (b && rc) { $('lobbyErr').textContent = ''; rc.send({ t: 'level', value: b.dataset.lv }); } });
+  $('addBot').addEventListener('click', () => { $('lobbyErr').textContent = ''; rc && rc.send({ t: 'addBot' }); });
+  $('removeBot').addEventListener('click', () => { $('lobbyErr').textContent = ''; rc && rc.send({ t: 'removeBot' }); });
+  $('startRace').addEventListener('click', () => { $('lobbyErr').textContent = ''; rc && rc.send({ t: 'start' }); });
+  $('leaveRoom').addEventListener('click', leaveRoom);
+  $('copyInvite').addEventListener('click', () => {
+    const text = `Race me at Sudoku on Royal Club! Room code ${room.code}, passcode ${room.passcode} — ${location.origin}/sudoku/?room=${room.code}`;
+    const done = () => { $('lobbyErr').textContent = ''; $('copyInvite').textContent = 'Copied ✓'; setTimeout(() => { $('copyInvite').textContent = 'Copy invite'; }, 1800); };
+    try { navigator.clipboard.writeText(text).then(done, () => { $('lobbyErr').textContent = text; }); } catch { $('lobbyErr').textContent = text; }
+  });
+
+  /* ---------- the race ---------- */
+  const meOf = (m) => m.players && m.players.find((x) => x.seat === m.you);
+  function onRoom(m) {
+    room = m; skew = m.now - Date.now();
+    if (m.phase === 'lobby') {
+      raceAway = false;
+      if (game && game.race) { game = loadSolo(); closeSheet(); }
+      outShown = false; resultsShown = false;
+      showLobby(m); return;
+    }
+    const id = m.code + ':' + m.startAt;
+    if (!game || !game.race || game.id !== id) {
+      game = { race: true, id, level: m.level, puzzle: m.puzzle, solution: m.solution, grid: m.puzzle.slice(), notes: new Array(81).fill(0), mistakes: 0, hints: 0, elapsed: 0, done: false, lost: false, locked: true };
+      sel = game.grid.indexOf(0); history = []; notesMode = false; outShown = false; resultsShown = false; closeSheet();
+    }
+    const me = meOf(m);
+    for (const i of m.mine || []) game.grid[i] = game.solution[i];
+    if (me) { game.mistakes = me.mistakes; game.lost = me.out; game.done = me.finishedMs !== null || m.phase === 'gameEnd'; }
+    game.locked = m.phase === 'countdown';
+    if (raceAway) { if (!$('setup').hidden) raceCard(); return; }   // the player stepped out to the menu
+    if (!inGame()) openGame(); else render();
+    if (me && me.out && !outShown && m.phase !== 'gameEnd') raceOut();
+    if (m.phase === 'gameEnd' && !resultsShown) showResults(m);
+  }
+  function onPlaced(x) { if (!x.ok && game && game.race && room) say(`Not quite — ${x.v} doesn't go there.`); }
+  function raceElapsed() {
+    if (!room || !room.startAt) return 0;
+    const me = meOf(room);
+    if (me && me.finishedMs !== null) return me.finishedMs;
+    if (room.phase === 'gameEnd') return Math.max(0, (room.endAt || room.now) - room.startAt);
+    return Math.max(0, Date.now() + skew - room.startAt);
+  }
+  /* Every half second: countdown, everyone's progress, and the finish-line timer. */
+  function raceTick() {
+    if (!room || !game || !game.race) return;
+    const now = Date.now() + skew;
+    const left = Math.ceil((room.startAt - now) / 1000);
+    $('countdown').hidden = !(room.phase === 'countdown' && left > 0);
+    if (!$('countdown').hidden && $('countNum').textContent !== String(left)) { $('countNum').textContent = left; sound.play('note'); }
+    if (room.phase === 'playing' && game.locked) { game.locked = false; }
+    $('raceStrip').innerHTML = (room.players || []).map((x) => {
+      const seat = room.seats[x.seat], name = seat ? seat.name : 'Player', mine = x.seat === room.you;
+      const pct = Math.round(x.filled / room.need * 100);
+      const st = x.finishedMs !== null ? '✓ ' + fmt(x.finishedMs) : x.out ? 'Out' : `${x.filled}/${room.need}`;
+      return `<div class="rp${mine ? ' me' : ''}${x.out ? ' out' : ''}${x.finishedMs !== null ? ' done' : ''}"><span class="nm">${esc(mine ? 'You' : name)}</span><span class="st">${st}</span><span class="bar"><i style="width:${pct}%"></i></span></div>`;
+    }).join('');
+    const me = meOf(room);
+    if (room.phase === 'playing' && room.endAt && me && (me.finishedMs !== null || me.out)) say(`Race ends in ${Math.max(0, Math.ceil((room.endAt - now) / 1000))}s`);
+    else if (room.phase === 'playing' && room.endAt && $('msg').textContent === '') say('Someone has finished — the race ends soon!');
+  }
+  function raceOut() {
+    outShown = true; game.lost = true; sound.play('lose'); buzz([60, 40, 60]);
+    sheet(`<h2>You're out</h2><p>Three mistakes ends your race. Stay to watch the others finish.</p>
+      <button class="btn primary" type="button" data-act="race-watch">Watch the race</button>
+      <button class="btn ghost" type="button" data-act="race-leave">Leave the room</button>`);
+  }
+  function raceFinished() {
+    game.done = true; sound.play('win'); buzz([30, 60, 30]);
+    say('Finished! Waiting for the others…');
+  }
+  function showResults(m) {
+    resultsShown = true; game.done = true;
+    const me = meOf(m), first = m.ranking[0] === m.you;
+    if (first) { sound.play('win'); confetti(); }
+    const medal = ['🥇', '🥈', '🥉', '4'];
+    const rows = m.ranking.map((seat, k) => {
+      const x = m.players.find((p) => p.seat === seat), s = m.seats[seat];
+      const rs = x.finishedMs !== null ? fmt(x.finishedMs) : x.out ? `Out · ${x.filled}/${m.need}` : `${x.filled}/${m.need} squares`;
+      return `<li class="${seat === m.you ? 'me' : ''}"><span class="pos">${medal[k]}</span><span class="nm">${esc(s ? s.name : 'Player')}${seat === m.you ? ' (you)' : ''}</span><span class="rs">${rs}</span></li>`;
+    }).join('');
+    setTimeout(() => sheet(`<h2>${first ? 'You won the race!' : 'Race over'}</h2>
+      ${me && me.finishedMs !== null ? `<p>Your time: <b>${fmt(me.finishedMs)}</b> · ${me.mistakes} mistake${me.mistakes === 1 ? '' : 's'}</p>` : ''}
+      <ol class="rank">${rows}</ol>
+      ${m.host ? '<button class="btn primary" type="button" data-act="race-again">Race again</button>' : '<p>Waiting for the host to start another race.</p>'}
+      <button class="btn ghost" type="button" data-act="race-leave">Leave the room</button>`), first && !reduced ? 900 : 200);
+  }
+  function askLeaveRace() {
+    sheet(`<h2>Leave the race?</h2><p>Your progress is kept, and you can come back to this race from the Sudoku menu.</p>
+      <button class="btn primary" type="button" data-act="race-stay">Keep racing</button>
+      <button class="btn ghost" type="button" data-act="race-menu">Go to the menu</button>
+      <button class="btn ghost" type="button" data-act="race-leave">Leave the room</button>`);
+  }
+  function raceAction(act) {
+    if (act === 'race-leave') leaveRoom();
+    else if (act === 'race-again') rc && rc.send({ t: 'again' });
+    else if (act === 'race-menu') { raceAway = true; $('game').hidden = true; showMenu(); }
+    /* race-watch, race-stay: just close the sheet */
+  }
+  function loadSolo() {
+    const g = store.get(GAME_KEY, null);
+    return g && Array.isArray(g.grid) && g.grid.length === 81 && !g.done && !g.lost && !(g.daily && g.daily !== S.dateKey()) ? g : null;
+  }
+
   /* ---------- start ---------- */
   const savedGame = store.get(GAME_KEY, null);
   if (savedGame && Array.isArray(savedGame.grid) && savedGame.grid.length === 81 && !savedGame.done && !savedGame.lost) {
@@ -604,7 +961,9 @@ html body .brand-mark.rc-el img{display:block;height:100%;width:auto}
   /* ?level=easy|medium|hard|expert or ?daily=1 opens straight into a game (used by the home screen). */
   const q = new URLSearchParams(location.search);
   showMenu();
-  if (q.get('daily') && stats().dailyDone[S.dateKey()] == null) $('dailyBtn').click();
+  if (serverUrl() && raw.get(ROOM_KEY)) rc = connect(null);       // a refresh or dropped connection takes back the same seat
+  if (q.get('room')) { $('joinCode').value = q.get('room').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4); if (!$('raceCard').hidden) { $('raceCard').scrollIntoView({ block: 'center' }); $('joinPass').focus(); } }
+  else if (q.get('daily') && stats().dailyDone[S.dateKey()] == null) $('dailyBtn').click();
   else if (q.get('level') && S.LEVELS[q.get('level')]) newGame(q.get('level'));
 })();
 </script>

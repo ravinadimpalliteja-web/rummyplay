@@ -14,6 +14,7 @@ const { Game, CONFIG, timeoutCard } = require('./engine');
 const { SnakesRoom } = require('./snakes');
 const { LudoRoom } = require('./ludo');
 const { EkahRoom } = require('./ekah');
+const { SudokuRoom } = require('./sudoku');
 const { playerFor, AuthError } = require('./auth');
 
 const PORT = Number(process.env.PORT) || 3000;
@@ -181,8 +182,8 @@ class Room {
 
 const { botSeatForJoin } = require('./room-bots');
 const send = (ws, o) => ws.open && ws.send(JSON.stringify(o));
-const gameKind = (m) => (m && (m.game === 'snakes' || m.game === 'ludo' || m.game === 'ekah') ? m.game : 'spades');
-const GAME_NAME = { spades: 'Spades', snakes: 'Snakes & Ladders', ludo: 'Ludo', ekah: 'EKAH' };
+const gameKind = (m) => (m && (m.game === 'snakes' || m.game === 'ludo' || m.game === 'ekah' || m.game === 'sudoku') ? m.game : 'spades');
+const GAME_NAME = { spades: 'Spades', snakes: 'Snakes & Ladders', ludo: 'Ludo', ekah: 'EKAH', sudoku: 'Sudoku' };
 const cleanName = (n) => String(n || '').replace(/[^\p{L}\p{N} _.'-]/gu, '').trim().slice(0, 16) || 'Player';
 
 function attach(ws, room, seat) {
@@ -231,7 +232,8 @@ function handle(ws, m) {
       const kind = gameKind(m);
       const room = kind === 'snakes' ? new SnakesRoom(code, String(m.passcode), SPEED)
         : kind === 'ludo' ? new LudoRoom(code, String(m.passcode), SPEED)
-        : kind === 'ekah' ? new EkahRoom(code, String(m.passcode), SPEED) : new Room(code, String(m.passcode));
+        : kind === 'ekah' ? new EkahRoom(code, String(m.passcode), SPEED)
+        : kind === 'sudoku' ? new SudokuRoom(code, String(m.passcode), SPEED) : new Room(code, String(m.passcode));
       rooms.set(code, room);
       const who = m._player;
       room.seats[0] = { token: m.token, uid: who ? who.id : null, name: who ? who.username : cleanName(m.name), connected: false, ws: null, missed: 0 };

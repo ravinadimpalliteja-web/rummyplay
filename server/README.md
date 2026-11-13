@@ -47,6 +47,16 @@ Zero dependencies (Node 18+). Rooms live in memory, so a restart ends any game i
 - 30 seconds per turn, then the computer plays for you. A player who left, is offline or missed two turns is played for after 2 seconds.
   The next round starts when anyone presses Next round, or after 25 seconds. Computer players may catch a missed EKAH call.
 
+## Sudoku race rooms
+- Same server, same code + passcode flow, with `game: "sudoku"` on `create`, `join` and `hello`. Codes are not shared between games.
+- 2 to 4 seats; the host picks the level (Easy to Expert) and may add computer players (`addBot` / `removeBot`).
+- The server makes the puzzle with `sudoku-engine.js` (the same file the website serves at `/sudoku/engine.js`; a test fails if they differ).
+  Everyone gets the same puzzle after a 3-second countdown. Clients send `place` {i, v}; the server checks it, replies `placed` {ok}
+  and keeps each player's progress. Three mistakes put a player out. No hints in a race.
+- The race ends when everyone has finished or is out, or 90 seconds after the first finisher. Ranking: finishers by time,
+  then the rest by squares filled. Computer players fill a correct square every 7 to 15 seconds on average, by level.
+- A player who leaves or goes offline mid-race keeps their progress and can rejoin. The host sends `again` for a new race.
+
 ## Connect the website
 Set the Netlify build variable `VITE_ROOM_SERVER_URL` to the server's WebSocket address (for example
 `wss://royal-club-rooms.onrender.com`) and redeploy. For testing a preview, `?server=wss://...` can be added to the URL.

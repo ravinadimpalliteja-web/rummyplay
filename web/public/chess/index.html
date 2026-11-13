@@ -275,6 +275,11 @@ html body .theme-close{background:#FFFFFF;border:1px solid #D8C9A6;color:var(--i
 html body .theme-card{background:#FFFFFF;border:1.5px solid transparent;color:#1F2A24;box-shadow:var(--iv-shadow)}
 html body .theme-card[aria-pressed=true]{border:2px solid var(--iv-emerald);box-shadow:var(--iv-shadow)}
 html body .theme-card small{color:#7A5A1C}
+/* Royal Club crowned elephant, faint, behind the lobby screens */
+.rc-wm-host{position:relative;isolation:isolate}
+.rc-watermark{position:fixed;left:50%;top:54%;width:min(1100px,150vw);aspect-ratio:900/467;transform:translate(-50%,-50%);
+  background:url("../brand/elephant-logo.webp") center/contain no-repeat;opacity:.13;pointer-events:none;z-index:-1}
+@media (max-width:760px){.rc-watermark{width:170vw;opacity:.11}}
 </style>
 </head>
 <body>
@@ -289,7 +294,8 @@ html body .theme-card small{color:#7A5A1C}
     <span class="top-tools"><button class="chip icon-chip" id="soundBtn" type="button" aria-pressed="true" aria-label="Sound on"></button><button class="chip theme-trigger" id="themeOpen" type="button" aria-haspopup="dialog" aria-controls="themeDialog"><span aria-hidden="true">▦</span> Themes</button><button class="chip" id="topAction" type="button" hidden>New game</button></span>
   </header>
 
-  <section class="setup" id="setup">
+  <section class="setup rc-wm-host" id="setup">
+    <div class="rc-watermark" aria-hidden="true"></div>
     <p class="eyebrow">Royal Club · Board games</p>
     <h1>Chess, <em>your move.</em></h1>
     <p class="lead">Play a friend on this phone, or take on the computer at three levels.</p>

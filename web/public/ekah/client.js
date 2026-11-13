@@ -939,7 +939,65 @@
     store.set('ekahName', n); store.set('rc-player-name', n);
     return n;
   }
-  $('name').value = store.get('rc-player-name') || store.get('ekahName') || '';
+  /* Signed-in players start with their Royal Club username; an edit is remembered for that account. */
+  function savedName() {
+    const user = roomUser();
+    if (user) {
+      let edit = null;
+      try { edit = JSON.parse(store.get('ekahNameFor') || 'null'); } catch (e) {}
+      return edit && edit.user === user && edit.name ? edit.name : user;
+    }
+    return store.get('rc-player-name') || store.get('ekahName') || '';
+  }
+  function paintAvatar() {
+    const n = $('name').value.trim() || 'Player';
+    $('meAvatar').textContent = n.charAt(0).toUpperCase();
+  }
+  $('name').value = savedName();
+  paintAvatar();
+  $('name').addEventListener('input', paintAvatar);
+  $('name').addEventListener('change', () => {
+    const user = roomUser(), n = $('name').value.trim().slice(0, 16);
+    if (user) store.set('ekahNameFor', JSON.stringify({ user: user, name: n || user }));
+    if (!n && user) { $('name').value = user; paintAvatar(); }
+  });
+  $('editName').addEventListener('click', () => { const i = $('name'); i.focus(); i.select(); });
+
+  // tabs: Vs Computer / With Friends
+  function pickTab(which) {
+    const local = which !== 'friends';
+    $('tabLocal').setAttribute('aria-selected', String(local)); $('tabLocal').tabIndex = local ? 0 : -1;
+    $('tabFriends').setAttribute('aria-selected', String(!local)); $('tabFriends').tabIndex = local ? -1 : 0;
+    $('panelLocal').hidden = !local; $('panelFriends').hidden = local;
+    store.set('ekahTab', local ? 'local' : 'friends');
+  }
+  $('tabLocal').addEventListener('click', () => pickTab('local'));
+  $('tabFriends').addEventListener('click', () => pickTab('friends'));
+  [$('tabLocal'), $('tabFriends')].forEach((t) => t.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    const to = t.id === 'tabLocal' ? 'friends' : 'local';
+    pickTab(to); $(to === 'local' ? 'tabLocal' : 'tabFriends').focus();
+  }));
+  pickTab(new URLSearchParams(location.search).get('room') ? 'friends' : store.get('ekahTab'));
+
+  // tap-to-pick chips for computer players and the winning score (they drive the hidden selects)
+  function chipGroup(box, items, current, onPick) {
+    box.innerHTML = items.map((it) => '<button type="button" role="radio" data-v="' + it.v + '" aria-checked="' + (String(it.v) === String(current)) + '" aria-label="' + esc(it.label) + '">' + it.html + '</button>').join('');
+    box.addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-v]');
+      if (!b) return;
+      box.querySelectorAll('button').forEach((x) => x.setAttribute('aria-checked', String(x === b)));
+      onPick(b.dataset.v);
+    });
+  }
+  const dots = (k) => '<span class="mini-av">' + Array.from({ length: k }, (_, j) => '<span style="--c:' + AVATAR_COLORS[(j + 1) % AVATAR_COLORS.length] + '"></span>').join('') + '</span>';
+  chipGroup($('botChips'), [1, 2, 3, 4, 5].map((k) => ({ v: k, label: k + ' computer ' + (k === 1 ? 'player' : 'players'), html: k + dots(Math.min(k, 3)) })),
+    store.get('ekahBots') || '3', (v) => { $('bots').value = v; store.set('ekahBots', v); });
+  $('bots').value = store.get('ekahBots') || '3';
+  const scoreNow = $('localTarget').value;
+  chipGroup($('scoreChips'), [100, 200, 250, 300, 500].map((v) => ({ v: v, label: v + ' points', html: String(v) })).concat([{ v: 'custom', label: 'Custom score', html: 'Custom' }]),
+    scoreNow, (v) => { $('localTarget').value = v; $('localTarget').dispatchEvent(new Event('change')); });
+  $('learnCards').innerHTML = [{ type: 'num', suit: 'JAL', value: 7 }, { type: 'maya', suit: 'VAYU' }, { type: 'mahakal', suit: null }].map((c) => cardHTML(c)).join('');
   $('homeFan').innerHTML = [{ type: 'num', suit: 'AGNI', value: 7 }, { type: 'maya', suit: 'JAL' }, { type: 'num', suit: 'PRITHVI', value: 9 }, { type: 'mahakal', suit: null }].map((c) => cardHTML(c)).join('');
   $('playLocal').addEventListener('click', () => {
     const target = localPick.read();

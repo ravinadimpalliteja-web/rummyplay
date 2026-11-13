@@ -5,10 +5,18 @@
 .rc-home :focus-visible{outline:2.5px solid var(--rc-emerald);outline-offset:3px}
 .rc-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
-/* Brand mark: crown instead of the spade (App header and footer) */
-.brand-mark .rc-crown{display:block;width:60%;height:60%}
-.brand-mark:has(.rc-crown){display:grid;place-items:center}
-footer .rc-foot-brand{display:inline-flex;align-items:center;gap:6px}
+/* Brand mark: the crowned elephant (App header and footer) */
+.brand-elephant{display:block;height:50px;width:auto;flex:0 0 auto}
+footer .rc-foot-brand{display:inline-flex;align-items:center;gap:8px}
+.rc-foot-elephant{display:block;height:22px;width:auto}
+@media (max-width:760px){.brand-elephant{height:40px}}
+@media (max-width:420px){.brand-elephant{height:34px}}
+
+/* Large faint elephant behind the home page */
+.rc-home{position:relative;isolation:isolate}
+.rc-watermark{position:fixed;left:50%;top:54%;width:min(1100px,150vw);aspect-ratio:900/467;transform:translate(-50%,-50%);
+  background:url("../brand/elephant-logo.webp") center/contain no-repeat;opacity:.13;pointer-events:none;z-index:-1}
+@media (max-width:760px){.rc-watermark{width:170vw;opacity:.11}}
 
 /* Mood shortcuts */
 .rc-moods{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:22px}
@@ -89,6 +97,7 @@ footer .rc-foot-brand{display:inline-flex;align-items:center;gap:6px}
 .rc-steps li span{flex:0 0 32px;height:32px;border-radius:50%;background:var(--rc-emerald);color:var(--rc-gold-light);font-family:'Cinzel',serif;display:grid;place-items:center}
 .rc-promise{flex:1 1 300px;min-width:0;background:radial-gradient(ellipse at 90% 10%,#1A6A50 0%,#0F4D3A 60%,#0A3528 100%);color:var(--rc-ivory);display:flex;flex-direction:column;justify-content:center;gap:16px}
 .rc-promise-mark{width:56px;height:56px;border-radius:16px;background:var(--rc-ivory);display:grid;place-items:center}
+.rc-promise-mark img{display:block;width:92%;height:auto}
 .rc-promise>span:last-child{display:flex;flex-direction:column;gap:6px}
 .rc-promise strong{font-family:'Cinzel',serif;font-size:22px;color:var(--rc-gold-light)}
 .rc-promise small{font-size:14px;line-height:1.5;color:#C9DACF}

@@ -16,12 +16,13 @@ const TILES: Tile[] = [
   { id: "ludo", name: "Ludo", sub: "2–4 players · computer, one phone or a room", moods: ["friends", "classics", "computer"] },
   { id: "snakes", name: "Snakes & Ladders", sub: "Race to 100 · roll a six to start", moods: ["friends", "quick", "classics", "computer"] },
   { id: "chess", name: "Chess", sub: "A friend on one phone, or the computer", moods: ["classics", "computer"] },
+  { id: "sudoku", name: "Sudoku", sub: "Daily puzzle · Easy to Expert", moods: ["quick", "classics", "computer"] },
 ];
 
 const MOODS: { id: Mood; label: string; note: string }[] = [
   { id: "friends", label: "With friends", note: "Rooms with a code" },
   { id: "quick", label: "Quick game", note: "Done in a few minutes" },
-  { id: "classics", label: "Classics", note: "Ludo, Snakes & Ladders, Chess" },
+  { id: "classics", label: "Classics", note: "Ludo, Chess, Sudoku & more" },
   { id: "computer", label: "vs Computer", note: "Practise any time" },
 ];
 
@@ -109,7 +110,24 @@ const ChessArt = () => (
   </svg>
 );
 
-const ART: Partial<Record<GameId, () => ReactNode>> = { ludo: () => <LudoArt />, snakes: () => <SnakesArt />, chess: () => <ChessArt /> };
+/* Sudoku: an ivory grid with emerald box lines and a few gold and saffron numbers. */
+const SUDOKU_DIGITS: [number, number, string, string][] = [[0, 0, "5", "#0F4D3A"], [1, 1, "3", "#7A5A1C"], [2, 0, "7", "#0F4D3A"], [4, 1, "9", "#0F4D3A"], [3, 2, "1", "#F28C28"], [5, 2, "4", "#0F4D3A"], [6, 3, "8", "#7A5A1C"], [8, 3, "2", "#0F4D3A"], [7, 4, "6", "#0F4D3A"], [0, 4, "9", "#7A5A1C"], [2, 5, "4", "#0F4D3A"], [4, 5, "7", "#F28C28"], [1, 6, "8", "#0F4D3A"], [6, 6, "3", "#0F4D3A"], [3, 7, "5", "#7A5A1C"], [8, 7, "1", "#0F4D3A"], [5, 8, "2", "#0F4D3A"], [7, 8, "9", "#7A5A1C"]];
+const SudokuArt = () => (
+  <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <rect width="100" height="100" fill="#EAD9B0" />
+    <g fill="none" stroke="#B8892E" strokeOpacity=".22" strokeWidth=".6">{[0, 1, 2, 3, 4].map(k => <circle key={k} cx="50" cy="36" r={34 + k * 12} />)}</g>
+    <g transform="translate(23 9) scale(.54)">
+      <rect x="0" y="0" width="100" height="100" rx="5" fill="#FFFFFF" />
+      <rect x="33.3" y="33.3" width="33.4" height="33.4" fill="#F3E6C4" />
+      <rect x="44.4" y="55.6" width="11.1" height="11.1" fill="#FFD9B0" />
+      <g stroke="#E2D7BD" strokeWidth=".8">{[1, 2, 4, 5, 7, 8].map(k => <path key={k} d={`M${k * 11.11} 0V100M0 ${k * 11.11}H100`} />)}</g>
+      <g stroke="#0F4D3A" strokeWidth="2" fill="none"><path d="M33.33 0V100M66.67 0V100M0 33.33H100M0 66.67H100" /><rect x="0" y="0" width="100" height="100" rx="5" strokeWidth="3" /></g>
+      <g fontFamily="DM Sans, sans-serif" fontWeight="700" fontSize="8.4" textAnchor="middle">{SUDOKU_DIGITS.map(([c, r, d, f]) => <text key={`${c}-${r}`} x={5.55 + c * 11.11} y={8.6 + r * 11.11} fill={f}>{d}</text>)}</g>
+    </g>
+  </svg>
+);
+
+const ART: Partial<Record<GameId, () => ReactNode>> = { ludo: () => <LudoArt />, snakes: () => <SnakesArt />, chess: () => <ChessArt />, sudoku: () => <SudokuArt /> };
 
 export interface HomeProps {
   onOpen: (id: GameId) => void;

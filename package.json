@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test:spades": "node --test spades/*.test.js"
+    "test:spades": "node --test spades/*.test.js",
+    "test:sudoku": "node --test sudoku/*.test.js"
   }
 }

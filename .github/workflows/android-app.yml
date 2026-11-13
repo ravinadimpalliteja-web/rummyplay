@@ -18,6 +18,9 @@ on:
       - ".github/workflows/android-app.yml"
   workflow_dispatch:
 
+permissions:
+  contents: write   # to publish the test APK on the "test-app" release page
+
 jobs:
   android:
     runs-on: ubuntu-latest
@@ -84,3 +87,13 @@ jobs:
           name: RoyalClub-offline-apk
           path: apk/RoyalClub-offline.apk
           retention-days: 30
+
+      # Fixed phone-friendly link (no GitHub sign-in needed):
+      # https://github.com/<owner>/<repo>/releases/download/test-app/RoyalClub-test.apk
+      - name: Publish the test APK to the "test-app" release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view test-app >/dev/null 2>&1 || gh release create test-app --prerelease --title "Royal Club test app" \
+            --notes "Latest test build of the Royal Club Android app. Install RoyalClub-test.apk on your phone."
+          gh release upload test-app ../apk/RoyalClub-test.apk ../apk/RoyalClub-offline.apk --clobber

@@ -91,8 +91,23 @@
   background:url("../brand/elephant-watermark.webp") center/contain no-repeat;opacity:.13;pointer-events:none;z-index:-1}
 @media (max-width:760px){.rs-watermark{width:170vw;opacity:.11}}
 
+/* Start screen tabs (same layout as EKAH): Vs Computer / With Friends / Online */
+.rs-modes { display: flex; flex-direction: column; gap: 10px; }
+.rs-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 5px; border-radius: 16px; background: #efe6d2; border: 1px solid #e0d2b2; }
+.rs-tabs button { border: 0; border-radius: 12px; min-height: 44px; padding: 4px 6px; background: transparent; color: #5c6862; font-weight: 800; font-size: 14px; line-height: 1.15; cursor: pointer; }
+.rs-tabs button.on { background: #0f4d3a; color: #fff; box-shadow: 0 3px 0 #08311f; }
+.rs-tabs button:focus-visible { outline: 3px solid #c9a24a; outline-offset: 2px; }
+.rs-tabs .rs-soon-tag { display: inline-block; margin-left: 2px; padding: 1px 5px; border: 0; border-radius: 999px; background: rgba(201,162,74,.22); color: inherit; font-size: 9px; vertical-align: 2px; }
+.rs-tabpanel { gap: 12px; }
+.rs-or { display: flex; align-items: center; gap: 10px; margin: 2px 0; color: #827a69; font-size: 12px; }
+.rs-or::before, .rs-or::after { content: ""; flex: 1; height: 1px; background: #e0d2b2; }
+.rs-tabpanel .rs-row { display: flex; gap: 8px; }
+.rs-tabpanel .rs-row input { flex: 1; min-width: 0; }
+.rs-pass { margin-top: 6px; padding-top: 14px; border-top: 1px solid #e8dcc2; display: flex; flex-direction: column; gap: 10px; }
+.rs-pass > .rs-panel { padding: 0; border: 0; box-shadow: none; background: none; }
 /* "Play online" (random players) — coming soon */
-.rs-soon { opacity: .82; }
-.rs-soon h2 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rs-soon { align-items: center; text-align: center; }
+.rs-soon h3 { margin: 0; font-size: 18px; }
 .rs-soon-tag { padding: 2px 8px; border: 1px solid #c9a24a; border-radius: 999px; color: #8a6420; font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.rs-soon-badge { padding: 3px 10px; border: 1px solid #c9a24a; border-radius: 999px; color: #8a6420; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 .rs-soon button[disabled] { cursor: not-allowed; opacity: .6; }

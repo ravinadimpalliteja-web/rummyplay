@@ -31,7 +31,8 @@ export type StartProps = {
   /** Play with friends. `busy` while connecting. */
   friends: { onCreate: () => void; code: string; onCode: (c: string) => void; pass: string; onPass: (p: string) => void; onJoin: () => void; busy: boolean };
   msg?: string;
-  extra?: ReactNode;                    // more boxes between the two (for example pass & play)
+  extra?: ReactNode;                    // above the tabs (for example "Return to your room")
+  passPlay?: ReactNode;                 // inside the With Friends tab, under the room boxes (for example pass & play)
   after?: ReactNode;                    // below the boxes (for example style choices)
   rules?: ReactNode;                    // shown under "How to play"
   className?: string;
@@ -45,8 +46,18 @@ export function RoomAccountLine() {
     <button type="button" className="text-button" onClick={() => openAuth(a.session && !a.guest ? "username" : "rooms")}>{a.session && !a.guest ? "Pick username" : "Sign in"}</button></p>;
 }
 
+type Tab = "computer" | "friends" | "online";
+const TAB_KEY = (game: string) => `rc-tab-${game.toLowerCase().replace(/[^a-z]+/g, "-")}`;
+
+/** The start screen, laid out like EKAH's: three tabs (Vs Computer / With Friends / Online), one panel at a time. */
 export function PlayStart(p: StartProps) {
   const f = p.friends;
+  const [tab, setTabState] = useState<Tab>(() => {
+    if (p.msg) return "friends";
+    try { const t = window.localStorage.getItem(TAB_KEY(p.game)); return t === "friends" ? "friends" : "computer"; } catch { return "computer"; }
+  });
+  const setTab = (t: Tab) => { setTabState(t); if (t !== "online") try { window.localStorage.setItem(TAB_KEY(p.game), t); } catch { /* storage off */ } };
+  const tabs: [Tab, ReactNode][] = [["computer", "Vs Computer"], ["friends", "With Friends"], ["online", <>Online <small className="rs-soon-tag">Soon</small></>]];
   return <section className={`mode-page rs-page ${p.className ?? ""}`}>
     <div className="rs-watermark" aria-hidden="true" />
     <button className="back-link" onClick={p.onBack}>← Back</button>
@@ -56,31 +67,42 @@ export function PlayStart(p: StartProps) {
       <p>{p.tagline}</p>
     </div>
     <div className="rs-stack">
-      <div className="rs-panel">
-        <h2>Play vs computer</h2>
-        <div className="rs-field">Computer players
-          <div className="rs-chips" role="group" aria-label="Computer players">{p.vsComputer.options.map(n => <button key={n} type="button" className={p.vsComputer.count === n ? "on" : ""} aria-pressed={p.vsComputer.count === n} onClick={() => p.vsComputer.onCount(n)}>{n}</button>)}</div>
-        </div>
-        <button className="gold-button rs-wide" onClick={p.vsComputer.onPlay}>{p.vsComputer.playLabel ?? "Play now"}</button>
-      </div>
       {p.extra}
-      <div className="rs-panel">
-        <h2>Play with friends</h2>
-        <RoomAccountLine />
-        <button className="gold-button rs-wide" disabled={f.busy} onClick={f.onCreate}>{f.busy ? "Connecting…" : "Create a room"}</button>
-        <p className="rs-note">Friends join with the room code and passcode. You can add computer players to fill empty seats.</p>
-        <div className="rs-row">
-          <input id="rs-code" value={f.code} maxLength={4} autoCapitalize="characters" autoComplete="off" aria-label="Room code" placeholder="Code" onChange={e => f.onCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))} />
-          <input id="rs-pass" value={f.pass} maxLength={4} inputMode="numeric" autoComplete="off" aria-label="Passcode" placeholder="Passcode" onChange={e => f.onPass(e.target.value.replace(/\D/g, ""))} />
+      <div className="rs-modes">
+        <div className="rs-tabs" role="tablist" aria-label="How to play">
+          {tabs.map(([id, label]) => <button key={id} role="tab" type="button" id={`rs-tab-${id}`} aria-controls={`rs-panel-${id}`} aria-selected={tab === id} tabIndex={tab === id ? 0 : -1} className={tab === id ? "on" : ""} onClick={() => setTab(id)}
+            onKeyDown={e => { if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return; const i = tabs.findIndex(t => t[0] === id), to = tabs[(i + (e.key === "ArrowRight" ? 1 : 2)) % 3][0]; setTab(to); document.getElementById(`rs-tab-${to}`)?.focus(); }}>{label}</button>)}
         </div>
-        <button className="ghost-button rs-wide" disabled={f.busy} onClick={f.onJoin}>Join room</button>
+
+        {tab === "computer" && <div className="rs-panel rs-tabpanel" role="tabpanel" id="rs-panel-computer" aria-labelledby="rs-tab-computer">
+          <div className="rs-field">Computer players
+            <div className="rs-chips" role="group" aria-label="Computer players">{p.vsComputer.options.map(n => <button key={n} type="button" className={p.vsComputer.count === n ? "on" : ""} aria-pressed={p.vsComputer.count === n} onClick={() => p.vsComputer.onCount(n)}>{n}</button>)}</div>
+          </div>
+          <button className="gold-button rs-wide" onClick={p.vsComputer.onPlay}>{p.vsComputer.playLabel ?? "Play now"}</button>
+        </div>}
+
+        {tab === "friends" && <div className="rs-panel rs-tabpanel" role="tabpanel" id="rs-panel-friends" aria-labelledby="rs-tab-friends">
+          <RoomAccountLine />
+          <button className="gold-button rs-wide" disabled={f.busy} onClick={f.onCreate}>{f.busy ? "Connecting…" : "Create a room"}</button>
+          <p className="rs-or"><span>or join a friend's room</span></p>
+          <div className="rs-row">
+            <input id="rs-code" value={f.code} maxLength={4} autoCapitalize="characters" autoComplete="off" aria-label="Room code" placeholder="Code" onChange={e => f.onCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))} />
+            <input id="rs-pass" value={f.pass} maxLength={4} inputMode="numeric" autoComplete="off" aria-label="Passcode" placeholder="Passcode" onChange={e => f.onPass(e.target.value.replace(/\D/g, ""))} />
+            <button className="ghost-button" disabled={f.busy} onClick={f.onJoin}>Join</button>
+          </div>
+          <p className="rs-note">Friends join with the room code and passcode. You can add computer players to fill empty seats.</p>
+          {p.msg && <p className="room-msg rs-msg" role="alert">{p.msg}</p>}
+          {p.passPlay && <div className="rs-pass">{p.passPlay}</div>}
+        </div>}
+
+        {tab === "online" && <div className="rs-panel rs-tabpanel rs-soon" role="tabpanel" id="rs-panel-online" aria-labelledby="rs-tab-online">
+          <span className="rs-soon-badge">Coming soon</span>
+          <h3>Play online</h3>
+          <p className="rs-note">Get matched with players from around the world. Until then, create a room and play with your friends.</p>
+          <button className="ghost-button rs-wide" type="button" disabled>Find a match</button>
+        </div>}
       </div>
-      <div className="rs-panel rs-soon" aria-disabled="true">
-        <h2>Play online <span className="rs-soon-tag">Coming soon</span></h2>
-        <p className="rs-note">Get matched with players from around the world. Until then, create a room and play with your friends.</p>
-        <button className="ghost-button rs-wide" type="button" disabled>Find a match</button>
-      </div>
-      {p.msg && <p className="room-msg rs-msg" role="alert">{p.msg}</p>}
+      {tab !== "friends" && p.msg && <p className="room-msg rs-msg" role="alert">{p.msg}</p>}
       {p.after}
       {p.rules && <details className="rs-rules"><summary>How to play</summary>{p.rules}</details>}
     </div>

@@ -275,6 +275,12 @@ html body .theme-close{background:#FFFFFF;border:1px solid #D8C9A6;color:var(--i
 html body .theme-card{background:#FFFFFF;border:1.5px solid transparent;color:#1F2A24;box-shadow:var(--iv-shadow)}
 html body .theme-card[aria-pressed=true]{border:2px solid var(--iv-emerald);box-shadow:var(--iv-shadow)}
 html body .theme-card small{color:#7A5A1C}
+html body .learn-card{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:linear-gradient(135deg,#0F4D3A,#16664c);color:#FBF7EE;text-decoration:none;box-shadow:0 8px 20px rgba(15,77,58,.25)}
+html body .learn-ico{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:rgba(255,255,255,.12);border:1px solid rgba(233,200,119,.6);color:#F0D99D;font-size:24px}
+html body .learn-txt{flex:1;min-width:0;display:grid;gap:2px}
+html body .learn-txt b{font:700 16px/1.15 var(--font-display);letter-spacing:.04em;color:#F7E7BC}
+html body .learn-txt span{font-size:12.5px;line-height:1.35;color:#DCE8E0}
+html body .learn-go{flex:none;font-size:20px;color:#F0D99D}
 </style>
 </head>
 <body>
@@ -297,6 +303,7 @@ html body .theme-card small{color:#7A5A1C}
       <button class="mode" type="button" data-mode="ai" aria-pressed="true"><span class="ico">♚</span><b>Play vs Computer</b><span>Easy, Medium or Hard.</span></button>
       <button class="mode" type="button" data-mode="multiplayer" aria-pressed="false"><span class="ico">♟</span><b>Multiplayer <small class="coming-soon-label">Coming Soon</small></b><span>Private rooms and online matches are coming soon.</span></button>
     </div>
+    <a class="learn-card" href="learn.html" id="learnLink"><span class="learn-ico" aria-hidden="true">♔</span><span class="learn-txt"><b>Learn Chess</b><span>32 interactive classes, from first moves to tournaments. First 3 free.</span></span><span class="learn-go" aria-hidden="true">→</span></a>
     <section class="multiplayer-panel" id="multiplayerPanel" hidden aria-labelledby="multiplayerTitle">
       <div class="multiplayer-heading"><b id="multiplayerTitle">Play with friends</b><span>Online multiplayer</span></div>
       <div class="multiplayer-actions">

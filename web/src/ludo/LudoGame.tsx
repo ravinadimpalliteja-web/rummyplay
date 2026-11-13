@@ -466,11 +466,11 @@ export default function LudoGame({ onHome, joinCode }: { onHome: () => void; joi
     vsComputer={{ count: bots, options: [1, 2, 3], onCount: setBots, onPlay: () => startLocal("practice") }}
     friends={{ onCreate: createRoom, code: roomCode, onCode: setRoomCode, pass: roomPass, onPass: setRoomPass, onJoin: joinRoom, busy: net === "connecting" }}
     msg={roomMsg}
-    extra={<>
-      {view && <div className="rs-panel"><h2>Your room</h2><p className="rs-note">You are in room {view.code}.</p><button className="gold-button rs-wide" onClick={() => setSub("room")}>Return to the room →</button></div>}
+    extra={view && <div className="rs-panel"><h2>Your room</h2><p className="rs-note">You are in room {view.code}.</p><button className="gold-button rs-wide" onClick={() => setSub("room")}>Return to the room →</button></div>}
+    passPlay={<>
       <div className="rs-panel ld-pass">
         <h2>Pass &amp; play</h2>
-        <p className="rs-note">2 to 4 friends on one phone.</p>
+        <p className="rs-note">Or play 2 to 4 friends on this one phone.</p>
         <div className="rs-chips" role="group" aria-label="Players">{[2, 3, 4].map(n => <button key={n} type="button" className={passCount === n ? "on" : ""} aria-pressed={passCount === n} onClick={() => setPassCount(n)}>{n}</button>)}</div>
         <div className="ld-names">{passNames.slice(0, passCount).map((n, i) => {
           const c = (passCount === 2 ? ["red", "yellow"] : passCount === 3 ? ["red", "green", "yellow"] : COLORS)[i] as Color;

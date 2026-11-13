@@ -964,21 +964,24 @@
   });
   $('editName').addEventListener('click', () => { const i = $('name'); i.focus(); i.select(); });
 
-  // tabs: Vs Computer / With Friends
+  // tabs: Vs Computer / With Friends / Online (online play with random players is coming soon)
+  const TABS = [['local', 'tabLocal', 'panelLocal'], ['friends', 'tabFriends', 'panelFriends'], ['online', 'tabOnline', 'panelOnline']];
   function pickTab(which) {
-    const local = which !== 'friends';
-    $('tabLocal').setAttribute('aria-selected', String(local)); $('tabLocal').tabIndex = local ? 0 : -1;
-    $('tabFriends').setAttribute('aria-selected', String(!local)); $('tabFriends').tabIndex = local ? -1 : 0;
-    $('panelLocal').hidden = !local; $('panelFriends').hidden = local;
-    store.set('ekahTab', local ? 'local' : 'friends');
+    const pick = TABS.some((t) => t[0] === which) ? which : 'local';
+    for (const [id, tab, panel] of TABS) {
+      const on = id === pick;
+      $(tab).setAttribute('aria-selected', String(on)); $(tab).tabIndex = on ? 0 : -1; $(panel).hidden = !on;
+    }
+    if (pick !== 'online') store.set('ekahTab', pick);
   }
-  $('tabLocal').addEventListener('click', () => pickTab('local'));
-  $('tabFriends').addEventListener('click', () => pickTab('friends'));
-  [$('tabLocal'), $('tabFriends')].forEach((t) => t.addEventListener('keydown', (e) => {
-    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-    const to = t.id === 'tabLocal' ? 'friends' : 'local';
-    pickTab(to); $(to === 'local' ? 'tabLocal' : 'tabFriends').focus();
-  }));
+  TABS.forEach(([id, tab]) => {
+    $(tab).addEventListener('click', () => pickTab(id));
+    $(tab).addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      const i = TABS.findIndex((t) => t[0] === id), to = TABS[(i + (e.key === 'ArrowRight' ? 1 : TABS.length - 1)) % TABS.length];
+      pickTab(to[0]); $(to[1]).focus();
+    });
+  });
   pickTab(new URLSearchParams(location.search).get('room') ? 'friends' : store.get('ekahTab'));
 
   // tap-to-pick chips for computer players and the winning score (they drive the hidden selects)

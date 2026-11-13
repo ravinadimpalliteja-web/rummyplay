@@ -80,6 +80,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--gold-2); ou
 .multiplayer-action small{font-size:10px;color:var(--muted);line-height:1.35}
 .multiplayer-note{margin:12px 0 0;line-height:1.45}
 .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mode-wide { grid-column: 1 / -1; }
 .mode { text-align: left; padding: 12px; border: 1px solid #41634f; border-radius: 14px; background: linear-gradient(145deg, #0d3024, #09241b); display: grid; gap: 4px; }
 .mode[aria-pressed="true"] { border-color: var(--gold); box-shadow: inset 0 0 0 1px #d9b96f55, 0 10px 26px #0005; }
 .mode b { font: 600 17px var(--font-display); }
@@ -314,7 +315,8 @@ html body .club-back{flex:none}
     <p class="lead">Play a friend on this phone, or take on the computer at three levels.</p>
     <div class="modes">
       <button class="mode" type="button" data-mode="ai" aria-pressed="true"><span class="ico">♚</span><b>Play vs Computer</b><span>Easy, Medium or Hard.</span></button>
-      <button class="mode" type="button" data-mode="multiplayer" aria-pressed="false"><span class="ico">♟</span><b>Multiplayer <small class="coming-soon-label">Coming Soon</small></b><span>Private rooms and online matches are coming soon.</span></button>
+      <button class="mode" type="button" data-mode="local" aria-pressed="false"><span class="ico">♙</span><b>Pass &amp; Play</b><span>Two players on this phone.</span></button>
+      <button class="mode mode-wide" type="button" data-mode="multiplayer" aria-pressed="false"><span class="ico">♟</span><b>Multiplayer <small class="coming-soon-label">Coming Soon</small></b><span>Private rooms and online matches are coming soon.</span></button>
     </div>
     <a class="learn-card" href="learn.html" id="learnLink"><span class="learn-ico" aria-hidden="true">♔</span><span class="learn-txt"><b>Learn Chess</b><span>32 interactive classes, from first moves to tournaments. First 3 free.</span></span><span class="learn-go" aria-hidden="true">→</span></a>
     <section class="multiplayer-panel" id="multiplayerPanel" hidden aria-labelledby="multiplayerTitle">
@@ -578,8 +580,9 @@ html body .club-back{flex:none}
   document.querySelectorAll('.mode').forEach((b) => b.addEventListener('click', () => {
     setup.mode = b.dataset.mode;
     document.querySelectorAll('.mode').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-    $('levelField').hidden = $('colorField').hidden = $('timeField').hidden = setup.mode !== 'ai';
-    $('namesField').hidden = true;
+    $('levelField').hidden = $('colorField').hidden = setup.mode !== 'ai';
+    $('timeField').hidden = setup.mode === 'multiplayer';
+    $('namesField').hidden = setup.mode !== 'local';
     $('multiplayerPanel').hidden = setup.mode !== 'multiplayer';
     $('startBtn').hidden = setup.mode === 'multiplayer';
   }));

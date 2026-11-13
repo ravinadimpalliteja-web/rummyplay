@@ -340,3 +340,4 @@ button.card { cursor: default; }
 .mode .err:empty { display: none; }
 @media (max-width: 419px) { .el-word { display: none; } .elements li { font-size: 12px; padding: 4px 10px 4px 6px; } }
 .chips.score button[data-v="custom"] { font-size: 12.5px; letter-spacing: -.01em; }
+@media (max-height: 760px) and (min-height: 701px) { .fan { height: 66px; margin-bottom: 6px; } .fan .card { --cw: 42px; } .hero h1 { font-size: 62px; } .home-wrap { gap: 10px; } .mode { gap: 8px; } }

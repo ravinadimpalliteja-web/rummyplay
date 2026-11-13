@@ -289,7 +289,8 @@
     const n = cards.length;
     if (!n) return;
     const W = h.clientWidth, cw = cards[0].offsetWidth, ch = cards[0].offsetHeight;
-    let sp = n > 1 ? Math.min(cw * 0.62, (W - cw - 16) / (n - 1)) : 0;
+    /* leave room at both ends for the tilt of the outer cards, so none hangs off the screen */
+    let sp = n > 1 ? Math.min(cw * 0.62, (W - cw * 1.75 - 12) / (n - 1)) : 0;
     sp = Math.max(sp, Math.min(12, cw * 0.2));
     const R = Math.max(W * 1.15, 360) * (1 + Math.max(0, n - 8) * 0.1);
     let maxSag = 0;

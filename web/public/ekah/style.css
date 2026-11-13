@@ -60,7 +60,7 @@ input:focus, select:focus, .btn:focus-visible, .card:focus-visible { outline: 3p
 .iconbtn.edit svg { width: 18px; height: 18px; }
 
 .modes { border-radius: 20px; background: var(--panel); border: 1px solid var(--line); overflow: hidden; }
-.tabs { display: grid; grid-template-columns: 1fr 1fr; padding: 6px; gap: 6px; background: rgba(0,0,0,.22); }
+.tabs { display: grid; grid-template-columns: 1fr 1fr 1fr; padding: 6px; gap: 6px; background: rgba(0,0,0,.22); }
 .tabs button { border: 0; border-radius: 14px; min-height: 44px; background: transparent; color: var(--muted); font-weight: 800; font-size: 15px; }
 .tabs button[aria-selected="true"] { background: var(--gold); color: var(--gold-ink); box-shadow: 0 3px 0 #B8861A; }
 .tabs button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
@@ -341,3 +341,10 @@ button.card { cursor: default; }
 @media (max-width: 419px) { .el-word { display: none; } .elements li { font-size: 12px; padding: 4px 10px 4px 6px; } }
 .chips.score button[data-v="custom"] { font-size: 12.5px; letter-spacing: -.01em; }
 @media (max-height: 760px) and (min-height: 701px) { .fan { height: 66px; margin-bottom: 6px; } .fan .card { --cw: 42px; } .hero h1 { font-size: 62px; } .home-wrap { gap: 10px; } .mode { gap: 8px; } }
+
+/* "Online" tab: play with random players is coming soon */
+.tabs .soon-tag { display: inline-block; margin-left: 3px; padding: 1px 5px; border-radius: 999px; font-size: 9px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; vertical-align: 2px; background: rgba(255,255,255,.12); color: inherit; }
+.soon-box { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 8px 4px 4px; text-align: center; }
+.soon-box h3 { margin: 0; font-size: 18px; }
+.soon-badge { padding: 3px 10px; border: 1px solid var(--gold); border-radius: 999px; color: var(--gold); font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.soon-box .btn[disabled] { opacity: .5; cursor: not-allowed; width: 100%; }

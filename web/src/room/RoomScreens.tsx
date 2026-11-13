@@ -75,6 +75,11 @@ export function PlayStart(p: StartProps) {
         </div>
         <button className="ghost-button rs-wide" disabled={f.busy} onClick={f.onJoin}>Join room</button>
       </div>
+      <div className="rs-panel rs-soon" aria-disabled="true">
+        <h2>Play online <span className="rs-soon-tag">Coming soon</span></h2>
+        <p className="rs-note">Get matched with players from around the world. Until then, create a room and play with your friends.</p>
+        <button className="ghost-button rs-wide" type="button" disabled>Find a match</button>
+      </div>
       {p.msg && <p className="room-msg rs-msg" role="alert">{p.msg}</p>}
       {p.after}
       {p.rules && <details className="rs-rules"><summary>How to play</summary>{p.rules}</details>}

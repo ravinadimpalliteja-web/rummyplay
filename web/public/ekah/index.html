@@ -45,6 +45,7 @@
       <div class="tabs" role="tablist" aria-label="How to play">
         <button role="tab" id="tabLocal" aria-controls="panelLocal" aria-selected="true">Vs Computer</button>
         <button role="tab" id="tabFriends" aria-controls="panelFriends" aria-selected="false" tabindex="-1">With Friends</button>
+        <button role="tab" id="tabOnline" aria-controls="panelOnline" aria-selected="false" tabindex="-1">Online <small class="soon-tag">Soon</small></button>
       </div>
 
       <div class="mode" role="tabpanel" id="panelLocal" aria-labelledby="tabLocal">
@@ -79,6 +80,15 @@
         </div>
         <div id="offlineNote" hidden>
           <p class="note">Online rooms are not switched on for this version of the site yet. You can play against the computer.</p>
+        </div>
+      </div>
+
+      <div class="mode" role="tabpanel" id="panelOnline" aria-labelledby="tabOnline" hidden>
+        <div class="soon-box">
+          <span class="soon-badge">Coming soon</span>
+          <h3>Play online</h3>
+          <p class="note">Get matched with players from around the world. Until then, create a room and play with your friends.</p>
+          <button class="btn big" type="button" disabled>Find a match</button>
         </div>
       </div>
     </div>

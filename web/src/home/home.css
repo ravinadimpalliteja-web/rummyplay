@@ -6,16 +6,16 @@
 .rc-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
 /* Brand mark: the crowned elephant (App header and footer) */
-.brand-elephant{display:block;height:50px;width:auto;flex:0 0 auto}
+.brand-elephant{display:block;height:64px;width:auto;flex:0 0 auto}
 footer .rc-foot-brand{display:inline-flex;align-items:center;gap:8px}
-.rc-foot-elephant{display:block;height:22px;width:auto}
-@media (max-width:760px){.brand-elephant{height:40px}}
-@media (max-width:420px){.brand-elephant{height:34px}}
+.rc-foot-elephant{display:block;height:40px;width:auto}
+@media (max-width:760px){.brand-elephant{height:52px}}
+@media (max-width:420px){.brand-elephant{height:46px}}
 
 /* Large faint elephant behind the home page */
 .rc-home{position:relative;isolation:isolate}
-.rc-watermark{position:fixed;left:50%;top:54%;width:min(1100px,150vw);aspect-ratio:900/467;transform:translate(-50%,-50%);
-  background:url("../brand/elephant-logo.webp") center/contain no-repeat;opacity:.13;pointer-events:none;z-index:-1}
+.rc-watermark{position:fixed;left:50%;top:54%;width:min(1100px,150vw);aspect-ratio:1000/438;transform:translate(-50%,-50%);
+  background:url("../brand/elephant-watermark.webp") center/contain no-repeat;opacity:.13;pointer-events:none;z-index:-1}
 @media (max-width:760px){.rc-watermark{width:170vw;opacity:.11}}
 
 /* Mood shortcuts */

@@ -19,52 +19,75 @@
       <a class="club-back" href="/" aria-label="Back to Royal Club"><span aria-hidden="true">←</span><img class="club-el" src="../brand/badge-logo-small.webp" alt="" width="320" height="224"></a>
       <span class="tag">FREE TO PLAY</span>
     </div>
-    <div class="logo">
+    <div class="hero">
       <div class="fan" id="homeFan" aria-hidden="true"></div>
       <h1 class="display">EKAH</h1>
-      <p>Match the suit or number. Call EKAH! First to empty your hand wins.</p>
+      <p class="sanskrit" lang="sa">एकः · the one</p>
+      <p class="tagline">Match the suit or number. Call EKAH! First to empty your hand wins.</p>
+      <ul class="elements" aria-label="The four suits">
+        <li style="--c:var(--agni)"><i></i>Agni<span class="el-word"> · Fire</span></li>
+        <li style="--c:var(--jal)"><i></i>Jal<span class="el-word"> · Water</span></li>
+        <li style="--c:var(--prithvi)"><i></i>Prithvi<span class="el-word"> · Earth</span></li>
+        <li style="--c:var(--vayu)"><i></i>Vayu<span class="el-word"> · Air</span></li>
+      </ul>
     </div>
-    <div class="panel">
-      <div class="field">
-        <label for="name">Your name</label>
-        <input id="name" maxlength="16" autocomplete="nickname" placeholder="Enter your name">
+
+    <div class="profile">
+      <div class="avatar" id="meAvatar" style="--c:#2878C8" aria-hidden="true">P</div>
+      <div class="profile-name">
+        <label for="name">Playing as</label>
+        <input id="name" maxlength="16" autocomplete="nickname" placeholder="Your name">
       </div>
+      <button class="iconbtn edit" id="editName" type="button" aria-label="Edit your name"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg></button>
     </div>
-    <div class="panel">
-      <h2>Play vs computer</h2>
-      <div class="field">
-        <label for="bots">Computer players</label>
-        <select id="bots">
-          <option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option>
-        </select>
+
+    <div class="modes">
+      <div class="tabs" role="tablist" aria-label="How to play">
+        <button role="tab" id="tabLocal" aria-controls="panelLocal" aria-selected="true">Vs Computer</button>
+        <button role="tab" id="tabFriends" aria-controls="panelFriends" aria-selected="false" tabindex="-1">With Friends</button>
       </div>
-      <div class="field">
-        <label for="localTarget">Winning score</label>
-        <div class="row target-row">
-          <select id="localTarget"><option value="100">100 points</option><option value="200">200 points</option><option value="250" selected>250 points</option><option value="300">300 points</option><option value="500">500 points</option><option value="custom">Custom…</option></select>
-          <input id="localCustom" type="number" inputmode="numeric" min="50" max="1000" step="50" placeholder="50 to 1000" aria-label="Custom winning score" hidden>
+
+      <div class="mode" role="tabpanel" id="panelLocal" aria-labelledby="tabLocal">
+        <div class="opt">
+          <span class="opt-label" id="botsLabel">Computer players</span>
+          <div class="chips bots" id="botChips" role="radiogroup" aria-labelledby="botsLabel"></div>
+          <select id="bots" hidden aria-hidden="true" tabindex="-1">
+            <option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option>
+          </select>
+        </div>
+        <div class="opt">
+          <span class="opt-label" id="scoreLabel">Winning score</span>
+          <div class="chips score" id="scoreChips" role="radiogroup" aria-labelledby="scoreLabel"></div>
+          <select id="localTarget" hidden aria-hidden="true" tabindex="-1"><option value="100">100 points</option><option value="200">200 points</option><option value="250" selected>250 points</option><option value="300">300 points</option><option value="500">500 points</option><option value="custom">Custom…</option></select>
+          <input id="localCustom" type="number" inputmode="numeric" min="50" max="1000" step="50" placeholder="Your score, 50 to 1000" aria-label="Custom winning score" hidden>
+        </div>
+        <p class="err" id="localErr" role="alert"></p>
+        <button class="btn primary big" id="playLocal">Play</button>
+      </div>
+
+      <div class="mode" role="tabpanel" id="panelFriends" aria-labelledby="tabFriends" hidden>
+        <div id="onlinePanel">
+          <p class="note" id="roomWho"></p>
+          <button class="btn primary big" id="createRoom">Create a room</button>
+          <p class="or"><span>or join a friend's room</span></p>
+          <div class="joinrow">
+            <input id="joinCode" maxlength="4" placeholder="Code" autocapitalize="characters" autocomplete="off" aria-label="Room code">
+            <input id="joinPass" maxlength="4" placeholder="Passcode" inputmode="numeric" autocomplete="off" aria-label="Passcode">
+            <button class="btn" id="joinRoom">Join</button>
+          </div>
+          <p class="err" id="homeErr" role="alert"></p>
+        </div>
+        <div id="offlineNote" hidden>
+          <p class="note">Online rooms are not switched on for this version of the site yet. You can play against the computer.</p>
         </div>
       </div>
-      <p class="err" id="localErr" role="alert"></p>
-      <button class="btn primary" id="playLocal">Play now</button>
     </div>
-    <div class="panel" id="onlinePanel">
-      <h2>Play with friends</h2>
-      <p class="note" id="roomWho"></p>
-      <button class="btn primary" id="createRoom">Create a room</button>
-      <p class="note">Friends join with the room code and passcode.</p>
-      <div class="row">
-        <input id="joinCode" maxlength="4" placeholder="Code" autocapitalize="characters" autocomplete="off" aria-label="Room code">
-        <input id="joinPass" maxlength="4" placeholder="Passcode" inputmode="numeric" autocomplete="off" aria-label="Passcode">
-      </div>
-      <button class="btn" id="joinRoom">Join room</button>
-      <p class="err" id="homeErr" role="alert"></p>
-    </div>
-    <div class="panel" id="offlineNote" hidden>
-      <h2>Play with friends</h2>
-      <p class="note">Online rooms are not switched on for this version of the site yet. You can play against the computer.</p>
-    </div>
-    <button class="btn ghost" id="openGuide">How to play &amp; card guide</button>
+
+    <button class="learn" id="openGuide">
+      <span class="learn-cards" id="learnCards" aria-hidden="true"></span>
+      <span class="learn-text"><b>How to play</b><span>Learn the cards, Jodi powers and scoring</span></span>
+      <span class="learn-go" aria-hidden="true">→</span>
+    </button>
   </div>
 </section>
 

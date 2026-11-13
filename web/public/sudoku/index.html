@@ -315,6 +315,7 @@ h1{margin:0;font:700 30px/1.15 var(--display);color:var(--emerald)}
     if (game && running()) save();
     stopTimer();
     $('setup').hidden = false; $('game').hidden = true; $('newBtn').hidden = true;
+    $('clubLink').hidden = !inClub; $('clubLink').setAttribute('aria-label', 'Back to Royal Club');
     const st = stats(), today = S.dateKey(), lvl = ['expert', 'easy', 'easy', 'medium', 'medium', 'hard', 'hard'][new Date().getDay()];
     const doneMs = st.dailyDone[today];
     $('dailyTitle').textContent = new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
@@ -351,13 +352,26 @@ h1{margin:0;font:700 30px/1.15 var(--display);color:var(--emerald)}
     sheet(`<h2>${title}</h2><p>Your unfinished ${S.LEVELS[game.level].name} game will be replaced.</p><button class="btn primary" type="button" data-act="replace">Yes, start</button><button class="btn ghost" type="button" data-act="keep">Keep my game</button>`);
   }
   $('resumeBtn').addEventListener('click', openGame);
-  $('homeBtn').addEventListener('click', showMenu);
-  $('newBtn').addEventListener('click', showMenu);
+  /* Back from a game goes to the Sudoku menu (not the Royal Club home). Opening a game adds a history step,
+     so the phone's back button and the browser's back button do the same. */
+  const inClub = /\/sudoku\//.test(location.pathname);
+  const inGame = () => !$('game').hidden;
+  function backToMenu() {
+    if (!inGame()) return;
+    let pushed = false; try { pushed = !!(window.history.state && window.history.state.rcSudoku === 'game'); } catch { pushed = false; }
+    if (pushed) window.history.back(); else showMenu();
+  }
+  addEventListener('popstate', () => { if (inGame() || !$('overlay').hidden) { closeSheet(); showMenu(); } });
+  $('clubLink').addEventListener('click', (e) => { if (inGame()) { e.preventDefault(); backToMenu(); } });
+  $('homeBtn').addEventListener('click', backToMenu);
+  $('newBtn').addEventListener('click', backToMenu);
   function flash(text) { const d = $('dailyGo'); const old = d.textContent; d.textContent = text; setTimeout(() => { d.textContent = old; }, 2600); }
 
   /* ---------- game screen ---------- */
   function openGame() {
     $('setup').hidden = true; $('game').hidden = false; $('newBtn').hidden = false;
+    $('clubLink').hidden = false; $('clubLink').setAttribute('aria-label', 'Back to Sudoku menu');
+    try { if (!(window.history.state && window.history.state.rcSudoku === 'game')) window.history.pushState({ rcSudoku: 'game' }, ''); } catch { /* history not available */ }
     paused = false; tickStart = Date.now();
     $('lvlName').textContent = (game.daily ? 'Daily · ' : '') + S.LEVELS[game.level].name;
     if (sel < 0 || game.puzzle[sel]) sel = game.grid.findIndex((v, i) => !v || v !== game.solution[i]);
@@ -550,7 +564,7 @@ h1{margin:0;font:700 30px/1.15 var(--display);color:var(--emerald)}
       history = []; sel = game.grid.indexOf(0); save(); openGame();
     }
     else if (act === 'next') { const lvl = game.level; game = null; store.del(GAME_KEY); newGame(lvl); }
-    else showMenu();
+    else backToMenu();
   });
 
   /* Gold, emerald and ivory confetti when a puzzle is solved. */
@@ -569,8 +583,6 @@ h1{margin:0;font:700 30px/1.15 var(--display);color:var(--emerald)}
     })(t0);
   }
 
-  /* Inside the Royal Club site or app (served at /sudoku/) show a way back to the club home page. */
-  if (/\/sudoku\//.test(location.pathname)) $('clubLink').hidden = false;
 
   /* ---------- start ---------- */
   const savedGame = store.get(GAME_KEY, null);

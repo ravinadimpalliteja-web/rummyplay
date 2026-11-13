@@ -419,7 +419,7 @@ html body .theme-card small{color:#7A5A1C}
     const eye = white ? '#1c2a22' : '#d9b96f';
     return `<svg class="${cls}" viewBox="0 0 45 45" aria-hidden="true"><g fill="${fill}" stroke="${stroke}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">${SHAPES[p.toUpperCase()].replace('class="eye"', `fill="${eye}" stroke="none"`)}</g></svg>`;
   }
-  /* ---------- sound: wooden clicks and soft chimes, made with the Web Audio API (no sound files) ---------- */
+  /* ---------- sound: wooden pieces set on a wooden board, and soft chimes, made with the Web Audio API (no sound files) ---------- */
   const sound = (() => {
     let ctx = null, noise = null, on = store.get(SOUND_KEY) !== false;
     const ac = () => {
@@ -428,16 +428,23 @@ html body .theme-card small{color:#7A5A1C}
       return ctx;
     };
     const noiseBuf = (c) => { if (!noise) { noise = c.createBuffer(1, c.sampleRate * .2, c.sampleRate); const d = noise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; } return noise; };
-    // a wooden knock: a short filtered click plus a low thump
+    // a weighted, felt-based piece set down on a wooden board: a soft contact tap, the board's hollow wooden body and a
+    // low thud, with a little variation each time so moves never sound machine-identical
     function knock(c, t, tone, vol) {
-      const src = c.createBufferSource(), bp = c.createBiquadFilter(), g1 = c.createGain();
-      src.buffer = noiseBuf(c); bp.type = 'bandpass'; bp.frequency.value = tone; bp.Q.value = 1.4;
-      g1.gain.setValueAtTime(vol, t); g1.gain.exponentialRampToValueAtTime(.001, t + .06);
-      src.connect(bp).connect(g1).connect(c.destination); src.start(t); src.stop(t + .08);
-      const o = c.createOscillator(), g2 = c.createGain();
-      o.type = 'sine'; o.frequency.setValueAtTime(tone / 9, t); o.frequency.exponentialRampToValueAtTime(tone / 16, t + .08);
-      g2.gain.setValueAtTime(vol * .9, t); g2.gain.exponentialRampToValueAtTime(.001, t + .1);
-      o.connect(g2).connect(c.destination); o.start(t); o.stop(t + .12);
+      const vary = .92 + Math.random() * .16, out = c.createGain();
+      out.gain.value = vol; out.connect(c.destination);
+      const src = c.createBufferSource(), lp = c.createBiquadFilter(), g1 = c.createGain();
+      src.buffer = noiseBuf(c); lp.type = 'lowpass'; lp.frequency.value = 2600 * vary; lp.Q.value = .7;
+      g1.gain.setValueAtTime(.55, t); g1.gain.exponentialRampToValueAtTime(.001, t + .025);
+      src.connect(lp).connect(g1).connect(out); src.start(t); src.stop(t + .04);
+      const body = c.createBufferSource(), bp = c.createBiquadFilter(), g2 = c.createGain();
+      body.buffer = noiseBuf(c); bp.type = 'bandpass'; bp.frequency.value = tone * vary; bp.Q.value = 9;
+      g2.gain.setValueAtTime(1.6, t); g2.gain.exponentialRampToValueAtTime(.001, t + .11);
+      body.connect(bp).connect(g2).connect(out); body.start(t); body.stop(t + .13);
+      const o = c.createOscillator(), g3 = c.createGain();
+      o.type = 'sine'; o.frequency.setValueAtTime(170 * vary, t); o.frequency.exponentialRampToValueAtTime(95, t + .07);
+      g3.gain.setValueAtTime(.5, t); g3.gain.exponentialRampToValueAtTime(.001, t + .08);
+      o.connect(g3).connect(out); o.start(t); o.stop(t + .1);
     }
     function bell(c, t, f, dur, vol, type = 'sine') {
       const o = c.createOscillator(), g = c.createGain();
@@ -448,10 +455,10 @@ html body .theme-card small{color:#7A5A1C}
     const NOTES = { C4: 261.6, Eb4: 311.1, G4: 392, C5: 523.3, E5: 659.3, G5: 784, C6: 1046.5, A5: 880, D6: 1174.7 };
     function play(name) {
       if (!on) return; const c = ac(); if (!c) return; const t = c.currentTime + .01;
-      if (name === 'move') knock(c, t, 1900, .5);
-      else if (name === 'capture') { knock(c, t, 1500, .75); knock(c, t + .045, 2300, .45); }
-      else if (name === 'castle') { knock(c, t, 1900, .45); knock(c, t + .11, 1750, .45); }
-      else if (name === 'check') { knock(c, t, 1900, .45); bell(c, t + .05, NOTES.A5, .28, .16); bell(c, t + .15, NOTES.D6, .35, .14); }
+      if (name === 'move') knock(c, t, 720, .55);
+      else if (name === 'capture') { knock(c, t, 900, .45); knock(c, t + .07, 640, .7); }
+      else if (name === 'castle') { knock(c, t, 720, .5); knock(c, t + .14, 680, .45); }
+      else if (name === 'check') { knock(c, t, 720, .5); bell(c, t + .05, NOTES.A5, .28, .16); bell(c, t + .15, NOTES.D6, .35, .14); }
       else if (name === 'win') ['C5', 'E5', 'G5', 'C6'].forEach((n, i) => bell(c, t + .12 + i * .12, NOTES[n], .6, .16, 'triangle'));
       else if (name === 'lose') ['G4', 'Eb4', 'C4'].forEach((n, i) => bell(c, t + .12 + i * .18, NOTES[n], .7, .15, 'triangle'));
       else if (name === 'draw') { bell(c, t + .12, NOTES.G4, .6, .14, 'triangle'); bell(c, t + .32, NOTES.G4, .7, .12, 'triangle'); }
@@ -609,12 +616,32 @@ html body .theme-card small{color:#7A5A1C}
       worker.postMessage({ id, fen, level });
     });
   }
+  /** How long a person would take over this move (ms): quick in the opening and for forced moves or recaptures,
+      longer in the middlegame and on harder levels, now and then a long think; on the clock it never spends more than
+      a sensible share of the time left. */
+  function humanDelay(m) {
+    const rnd = (a, b) => a + Math.random() * (b - a);
+    const myMoves = Math.floor(g.history().length / 2), legal = g.moves().length;
+    const capture = !!(m && g.get(m.to)), lastWasCapture = (() => { const h = g.history(); return !!(h.length && h[h.length - 1].captured); })();
+    const base = { easy: [1200, 3200], medium: [1800, 4800], hard: [2500, 7000] }[game.level] || [1800, 4800];
+    let ms;
+    if (legal <= 1) ms = rnd(700, 1300);                                 // only one move: play it
+    else if (myMoves < 4) ms = rnd(900, 2000);                           // opening moves come quickly
+    else if (capture && lastWasCapture) ms = rnd(1000, 2200);            // taking back
+    else { ms = rnd(base[0], base[1]); if (Math.random() < .12) ms *= rnd(1.4, 1.9); }  // a normal move, sometimes a long think
+    if (game.clock) {
+      const mine = left(g.turn()), inc = (TIME[game.tc] && TIME[game.tc][1] || 0) * 1000;
+      ms = Math.min(ms, mine / 25 + inc * .8, mine < 20000 ? 900 : Infinity);
+      ms = Math.max(ms, 400);
+    }
+    return ms;
+  }
   async function maybeComputer() {
     if (!game || game.mode !== 'ai' || thinking || isOver() || g.turn() === game.human) return;
     thinking = true; render();
     const startedAt = Date.now(), fenAt = g.fen();
     const m = await think(fenAt, game.level);
-    await new Promise((r) => setTimeout(r, Math.max(0, 450 - (Date.now() - startedAt))));
+    await new Promise((r) => setTimeout(r, Math.max(0, humanDelay(m) - (Date.now() - startedAt))));
     thinking = false;
     if (!game || g.fen() !== fenAt || isOver()) { render(); return; }   // the game changed while thinking (undo, new game, time ran out)
     const mv = m ? g.move({ from: m.from, to: m.to, promotion: m.promotion }) : null;

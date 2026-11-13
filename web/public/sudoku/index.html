@@ -161,7 +161,7 @@ h1{margin:0;font:700 30px/1.15 var(--display);color:var(--emerald)}
 <div class="app">
   <header class="top">
     <span class="lead">
-      <a class="club-back" id="clubLink" href="/" aria-label="Back to Royal Club">←</a>
+      <a class="club-back" id="clubLink" href="/" hidden aria-label="Back to Royal Club">←</a>
       <button class="brand" id="homeBtn" type="button" aria-label="Sudoku menu">
         <span class="brand-mark"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8.5l4.2 3.6L12 4.5l4.8 7.6L21 8.5l-1.8 9.5H4.8z" fill="#D9B45A"/><rect x="4.6" y="19" width="14.8" height="2" rx="1" fill="#D9B45A"/></svg></span>
         <span><strong>ROYAL CLUB</strong><small>SUDOKU</small></span>
@@ -322,16 +322,24 @@ h1{margin:0;font:700 30px/1.15 var(--display);color:var(--emerald)}
   $('levels').addEventListener('click', (e) => {
     const b = e.target.closest('[data-level]'); if (!b) return;
     const level = b.dataset.level;
-    if (game && !game.done && !game.lost && !game.daily && game.grid.some((v, i) => v && !game.puzzle[i]) && !confirm('Start a new game? Your unfinished game will be replaced.')) return;
+    if (unfinished()) { askReplace('Start a new game?', () => newGame(level)); return; }
     newGame(level);
   });
   $('dailyBtn').addEventListener('click', () => {
     const st = stats(), today = S.dateKey();
     if (st.dailyDone[today] != null) { flash('You have solved today\'s puzzle. A new one arrives tomorrow.'); return; }
     if (game && game.daily === today && !game.lost) { openGame(); return; }
-    if (game && !game.done && !game.lost && !game.daily && game.grid.some((v, i) => v && !game.puzzle[i]) && !confirm('Start the daily puzzle? Your unfinished game will be replaced.')) return;
+    if (unfinished()) { askReplace('Start the daily puzzle?', () => newGame(null, S.daily())); return; }
     newGame(null, S.daily());
   });
+  /* An unfinished practice game the player has already filled in some numbers on. */
+  const unfinished = () => game && !game.done && !game.lost && !game.daily && game.grid.some((v, i) => v && !game.puzzle[i]);
+  /* In-page question (browser pop-ups are blocked inside the app's frames). */
+  let pendingReplace = null;
+  function askReplace(title, go) {
+    pendingReplace = go;
+    sheet(`<h2>${title}</h2><p>Your unfinished ${S.LEVELS[game.level].name} game will be replaced.</p><button class="btn primary" type="button" data-act="replace">Yes, start</button><button class="btn ghost" type="button" data-act="keep">Keep my game</button>`);
+  }
   $('resumeBtn').addEventListener('click', openGame);
   $('homeBtn').addEventListener('click', showMenu);
   $('newBtn').addEventListener('click', showMenu);
@@ -524,6 +532,8 @@ h1{margin:0;font:700 30px/1.15 var(--display);color:var(--emerald)}
   $('sheet').addEventListener('click', (e) => {
     const b = e.target.closest('[data-act]'); if (!b) return;
     const act = b.dataset.act; closeSheet();
+    if (act === 'replace') { const go = pendingReplace; pendingReplace = null; if (go) go(); return; }
+    if (act === 'keep') { pendingReplace = null; return; }
     if (act === 'chance') { game.lost = false; game.secondChance = true; game.mistakes = MAX_MISTAKES - 1; undo(); tickStart = Date.now(); startTimer(); say('Second chance — one more mistake allowed.'); }
     else if (act === 'retry') {
       Object.assign(game, { grid: game.puzzle.slice(), notes: new Array(81).fill(0), mistakes: 0, hints: HINTS, elapsed: 0, secondChance: false, lost: false, done: false });
@@ -548,6 +558,9 @@ h1{margin:0;font:700 30px/1.15 var(--display);color:var(--emerald)}
       if (t < 2800) requestAnimationFrame(frame); else cv.remove();
     })(t0);
   }
+
+  /* Inside the Royal Club site or app (served at /sudoku/) show a way back to the club home page. */
+  if (/\/sudoku\//.test(location.pathname)) $('clubLink').hidden = false;
 
   /* ---------- start ---------- */
   const savedGame = store.get(GAME_KEY, null);

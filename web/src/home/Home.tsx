@@ -7,7 +7,7 @@ import { pageHref } from "../lib/native";
    resume card, a room-code box and the free-to-play promise. All artwork is original. */
 
 type Mood = "friends" | "quick" | "classics" | "computer";
-type RoomGame = "ekah" | "ludo" | "snakes";
+type RoomGame = "ekah" | "ludo" | "snakes" | "sudoku";
 
 interface Tile { id: GameId; name: string; sub: string; moods: Mood[] }
 
@@ -16,7 +16,7 @@ const TILES: Tile[] = [
   { id: "ludo", name: "Ludo", sub: "2–4 players · computer, one phone or a room", moods: ["friends", "classics", "computer"] },
   { id: "snakes", name: "Snakes & Ladders", sub: "Race to 100 · roll a six to start", moods: ["friends", "quick", "classics", "computer"] },
   { id: "chess", name: "Chess", sub: "A friend on one phone, or the computer", moods: ["classics", "computer"] },
-  { id: "sudoku", name: "Sudoku", sub: "Daily puzzle · Easy to Expert", moods: ["quick", "classics", "computer"] },
+  { id: "sudoku", name: "Sudoku", sub: "Daily puzzle · race your friends", moods: ["friends", "quick", "classics", "computer"] },
 ];
 
 const MOODS: { id: Mood; label: string; note: string }[] = [
@@ -31,6 +31,7 @@ const RESUME: { id: RoomGame; key: string; name: string }[] = [
   { id: "ekah", key: "rc-room-ekah", name: "EKAH" },
   { id: "ludo", key: "rc-ludo-room", name: "Ludo" },
   { id: "snakes", key: "rc-snakes-room", name: "Snakes & Ladders" },
+  { id: "sudoku", key: "rc-room-sudoku", name: "Sudoku race" },
 ];
 function findResume(): { id: RoomGame; name: string; code: string } | null {
   for (const r of RESUME) {
@@ -152,7 +153,7 @@ export default function Home({ onOpen, onJoin }: HomeProps) {
     const c = code.trim().toUpperCase();
     if (!/^[A-Z]{4}$/.test(c)) { setErr("Enter the 4-letter room code."); return; }
     setErr("");
-    if (joinGame === "ekah") { window.location.href = pageHref(`/ekah/?room=${c}`); return; }
+    if (joinGame === "ekah" || joinGame === "sudoku") { window.location.href = pageHref(`/${joinGame}/?room=${c}`); return; }
     onJoin(joinGame, c);
   };
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -171,7 +172,7 @@ export default function Home({ onOpen, onJoin }: HomeProps) {
 
       {resume && (
         <section className="rc-resume" aria-label="Continue playing">
-          <span className="rc-resume-art">{resume.id === "ludo" ? <LudoArt mini /> : resume.id === "snakes" ? <SnakesArt /> : <span className="rc-resume-ekah"><Crown size={24} /></span>}</span>
+          <span className="rc-resume-art">{resume.id === "ludo" ? <LudoArt mini /> : resume.id === "snakes" ? <SnakesArt /> : resume.id === "sudoku" ? <SudokuArt /> : <span className="rc-resume-ekah"><Crown size={24} /></span>}</span>
           <span className="rc-resume-text"><small>CONTINUE PLAYING</small><strong>{resume.name} · room {resume.code}</strong></span>
           <button type="button" className="rc-saffron rc-pill" onClick={() => onOpen(resume.id)}>Resume</button>
         </section>

@@ -271,3 +271,7 @@ button.card { cursor: default; }
 .rc-watermark{position:fixed;left:50%;top:54%;width:min(1100px,150vw);aspect-ratio:900/467;transform:translate(-50%,-50%);
   background:url("../brand/elephant-logo.webp") center/contain no-repeat;opacity:.13;pointer-events:none;z-index:-1}
 @media (max-width:760px){.rc-watermark{width:170vw;opacity:.11}}
+
+/* Royal Club crowned elephant in the back link */
+.club-el{display:block;height:30px;width:auto}
+.club-back{gap:8px}

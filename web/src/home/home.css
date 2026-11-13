@@ -53,23 +53,23 @@ footer .rc-foot-brand{display:inline-flex;align-items:center;gap:8px}
 .rc-head small{font-size:12px;font-weight:700;letter-spacing:.1em;color:#5E4512}
 .rc-clear{border:0;background:none;color:var(--rc-emerald);font-weight:700;font-size:14px;text-decoration:underline;text-underline-offset:3px;padding:8px 0}
 
-/* Game grid — big featured EKAH plus full-art tiles */
+/* Game grid — big featured EKAH plus full-art tiles (Royal Gold art: one jewel colour per game) */
 .rc-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:250px;grid-auto-flow:dense;gap:18px}
 .rc-tile{position:relative;display:block;border:0;padding:0;margin:0;border-radius:22px;overflow:hidden;text-decoration:none;text-align:left;background:var(--rc-card);color:inherit;box-shadow:var(--rc-shadow);transition:transform .18s ease,box-shadow .18s ease}
 @media (hover:hover){.rc-tile:not(.rc-soon):hover{transform:translateY(-3px);box-shadow:0 2px 4px rgba(60,40,10,.06),0 16px 34px rgba(60,40,10,.16)}}
 .rc-art{position:absolute;inset:0;display:block}
 .rc-art svg{display:block;width:100%;height:100%}
-.rc-tile-ekah{grid-column:span 2;grid-row:span 2;box-shadow:0 14px 36px rgba(15,77,58,.3)}
-.rc-feature{position:absolute;left:0;right:0;bottom:0;padding:70px 30px 28px;display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;background:linear-gradient(to top,rgba(6,42,32,.95) 30%,rgba(6,42,32,0))}
+.rc-tile-ekah{grid-column:span 2;grid-row:span 2;box-shadow:0 14px 36px rgba(62,4,16,.32)}
+.rc-feature{position:absolute;left:0;right:0;bottom:0;padding:70px 30px 28px;display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;background:linear-gradient(to top,rgba(14,6,10,.92) 30%,rgba(14,6,10,0))}
 .rc-feature-text{display:flex;flex-direction:column;gap:6px}
 .rc-feature-text strong{font-family:'Cinzel',serif;font-size:56px;line-height:1;color:var(--rc-gold-light)}
-.rc-feature-text>span:last-child{font-size:15px;color:#D9E6DE}
+.rc-feature-text>span:last-child{font-size:15px;color:#F1E6D2}
 .rc-badge{align-self:flex-start;padding:4px 11px;border-radius:999px;background:var(--rc-saffron);color:var(--rc-saffron-ink);font-size:11px;font-weight:800;letter-spacing:.14em}
 .rc-cta{min-height:52px;padding:0 28px;border-radius:12px;font-size:16px;display:inline-flex;align-items:center}
-.rc-label{position:absolute;left:0;right:0;bottom:0;padding:44px 18px 14px;display:flex;flex-direction:column;gap:2px;background:linear-gradient(to top,rgba(8,45,34,.94) 45%,rgba(8,45,34,0))}
+.rc-label{position:absolute;left:0;right:0;bottom:0;padding:44px 18px 14px;display:flex;flex-direction:column;gap:2px;background:linear-gradient(to top,rgba(14,6,10,.9) 45%,rgba(14,6,10,0))}
 .rc-label strong{font-family:'Cinzel',serif;font-size:22px;line-height:1.15;color:var(--rc-ivory)}
 .rc-tile-chess .rc-label strong{color:var(--rc-gold-light)}
-.rc-label span{font-size:13px;color:#D9E6DE}
+.rc-label span{font-size:13px;color:#F1E6D2}
 .rc-label .rc-play{margin-top:6px;align-self:flex-start;padding:5px 12px;border-radius:999px;background:var(--rc-saffron);color:var(--rc-saffron-ink);font-weight:800;font-size:12.5px}
 .rc-soon{background:transparent;box-shadow:none;border:1.5px dashed #C9B47F;padding:22px;display:flex;flex-direction:column;justify-content:space-between}
 .rc-soon span{display:flex;flex-direction:column;gap:2px}

@@ -264,7 +264,7 @@ h1{margin:0;font:700 30px/1.15 var(--display);color:var(--emerald)}
       if (!on) return; const c = ac(); if (!c) return; const t = c.currentTime + .01;
       /* Number placed: a soft, low "tap" — quiet enough to hear on every move without getting tiring. */
       if (name === 'place') { tone(c, t, 520, .07, .025, 'sine'); tone(c, t, 1040, .04, .006, 'sine'); }
-      else if (name === 'note') tone(c, t, 780, .04, .012, 'sine');
+      else if (name === 'note') { tone(c, t, 900, .05, .03, 'sine'); tone(c, t, 1800, .03, .008, 'sine'); }
       else if (name === 'wrong') { tone(c, t, 220, .16, .1, 'square'); tone(c, t + .08, 180, .2, .08, 'square'); }
       else if (name === 'unit') [659, 784, 988].forEach((f, i) => tone(c, t + i * .07, f, .16, .035, 'sine'));
       else if (name === 'hint') { tone(c, t, 660, .15, .07); tone(c, t + .1, 990, .25, .07); }

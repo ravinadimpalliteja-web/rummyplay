@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Learn Chess · Royal Club</title>
+<meta name="theme-color" content="#FBF7EE">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&family=Playfair+Display:wght@500;600;700&family=Cinzel:wght@600;700&display=swap">
+<style>
+/* Royal Club Learn Chess. Same ivory look as Royal Club Chess: ivory page, white cards, emerald actions, gold labels. */
+:root{--bg:#FBF7EE;--card:#FFFFFF;--ink:#1F2A24;--muted:#5C6862;--emerald:#0F4D3A;--emerald-2:#1a6b51;--gold:#D9B45A;--gold-text:#7A5A1C;--line:#E6DAC0;--soft:#F3EEE2;--red:#B8352C;
+  --shadow:0 1px 2px rgba(60,40,10,.06),0 8px 24px rgba(60,40,10,.08);
+  --sq-light-image:linear-gradient(145deg,#f4faf0,#d6e8d6 65%,#c0d9c4);--sq-dark-image:linear-gradient(145deg,#579b76,#327b5a 65%,#205b40);--board-edge:#57916f;--light-sq:#e1eee2;--dark-sq:#327b5a;
+  --font-display:"Cinzel","Playfair Display",Georgia,serif;--font-body:"DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:light}
+body[data-board-theme="walnut"]{--light-sq:#e6c69b;--dark-sq:#95613d;--board-edge:#9b7048;--sq-light-image:linear-gradient(135deg,#f4dfbd,#dfb982 60%,#c99c68);--sq-dark-image:linear-gradient(135deg,#b47b4e,#895333 62%,#68402b)}
+body[data-board-theme="slate"]{--light-sq:#e2e3e4;--dark-sq:#737a82;--board-edge:#8b9299;--sq-light-image:linear-gradient(145deg,#f4f5f5,#d5d8da 65%,#c3c8cc);--sq-dark-image:linear-gradient(145deg,#969da4,#737a82 65%,#59616a)}
+body[data-board-theme="sandstone"]{--light-sq:#f5ead5;--dark-sq:#cbb58f;--board-edge:#b69c72;--sq-light-image:linear-gradient(145deg,#fff8e9,#f0e1c5 65%,#e4d2b0);--sq-dark-image:linear-gradient(145deg,#dfcba5,#cbb58f 65%,#b39b70)}
+body[data-board-theme="ocean"]{--light-sq:#e1eaf2;--dark-sq:#547493;--board-edge:#7793ad;--sq-light-image:linear-gradient(145deg,#f4f8fc,#d9e5f0 65%,#c5d6e5);--sq-dark-image:linear-gradient(145deg,#7797b7,#547493 65%,#3d5d7d)}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 var(--font-body);-webkit-tap-highlight-color:transparent;overflow:hidden;
+  padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.app{height:100%;display:flex;flex-direction:column;max-width:1100px;margin:0 auto}
+.top{flex:none;height:52px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:env(safe-area-inset-top,0px)}
+.lead-group{display:flex;align-items:center;gap:8px;min-width:0}
+.back{width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--emerald);text-decoration:none;font-size:18px;box-shadow:var(--shadow)}
+.brand{display:flex;align-items:center;gap:9px;min-width:0}
+.brand-mark{width:32px;height:32px;border:1px solid var(--gold-text);border-radius:10px;display:grid;place-items:center}
+.brand strong{display:block;font:700 14px/1.1 var(--font-display);letter-spacing:.14em;color:var(--emerald);white-space:nowrap}
+.brand small{display:block;font-size:8.5px;letter-spacing:.26em;color:var(--gold-text);font-weight:700}
+.pill{font-size:12px;font-weight:800;color:var(--gold-text);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 11px;box-shadow:var(--shadow);white-space:nowrap}
+
+/* ---------- class list ---------- */
+.home{flex:1;min-height:0;overflow-y:auto;padding:6px 0 28px}
+.home-inner{max-width:560px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+.eyebrow{font-size:10px;font-weight:800;letter-spacing:.25em;color:var(--gold-text);text-transform:uppercase;margin:0}
+.home h1{font:600 clamp(28px,8vw,40px)/1.08 var(--font-display);color:var(--emerald);margin:4px 0 0}
+.home .lead{margin:6px 0 0;color:var(--muted)}
+.progress{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:14px 16px;display:grid;gap:8px}
+.progress-row{display:flex;justify-content:space-between;align-items:baseline;font-weight:700}
+.progress-row span{color:var(--muted);font-weight:600;font-size:13px}
+.bar{height:8px;border-radius:99px;background:var(--soft);overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--emerald),var(--emerald-2));border-radius:99px;transition:width .4s}
+.level{min-width:0;background:var(--card);border-radius:18px;box-shadow:var(--shadow);overflow:hidden}
+.level-head{display:flex;gap:12px;align-items:center;padding:14px 16px 10px}
+.level-num{flex:none;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:var(--emerald);color:#FBF7EE;font:700 17px var(--font-display)}
+.level-head b{display:block;font:700 16px/1.2 var(--font-display);color:var(--emerald)}
+.level-head span{font-size:12.5px;color:var(--muted)}
+.level-head .level-num{color:#FBF7EE;font-size:17px}
+.level-head .tag{margin-left:auto;align-self:flex-start}
+.tag{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:3px 8px;white-space:nowrap}
+.tag.free{background:#E3F1E8;color:var(--emerald)}
+.tag.prem{background:#F6ECD3;color:var(--gold-text)}
+.tag.soon{background:var(--soft);color:var(--muted)}
+.classes{list-style:none;margin:0;padding:0 8px 8px}
+.cls{width:100%;display:flex;align-items:center;gap:12px;padding:10px 8px;border:0;border-top:1px solid var(--soft);background:none;text-align:left}
+.cls:first-child{border-top:0}
+.cls .num{flex:none;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:13px;background:var(--soft);color:var(--emerald)}
+.cls.done .num{background:var(--emerald);color:#FBF7EE}
+.cls .txt{flex:1;min-width:0}
+.cls .txt b{display:block;font-size:14.5px;line-height:1.25}
+.cls .txt small{display:block;color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cls .end{flex:none;display:flex;align-items:center;gap:6px;color:var(--gold-text);font-size:13px}
+.stars{letter-spacing:1px;color:var(--gold);font-size:14px}
+.stars .off{color:#E2D6B8}
+.lock{width:16px;height:16px}
+.cls.locked .txt b{color:#56625c}
+.note{color:var(--muted);font-size:12.5px;text-align:center;margin:2px 8px}
+
+/* ---------- a class ---------- */
+.lesson{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;gap:10px;padding-bottom:max(10px,env(safe-area-inset-bottom,0px))}
+.lesson-head{width:100%;max-width:560px;display:flex;align-items:center;gap:10px}
+.lesson-head .t{flex:1;min-width:0}
+.lesson-head .t small{display:block;font-size:10px;font-weight:800;letter-spacing:.2em;color:var(--gold-text);text-transform:uppercase}
+.lesson-head .t b{display:block;font:700 16px/1.2 var(--font-display);color:var(--emerald);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.close{flex:none;width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--emerald);font-size:20px;line-height:1;box-shadow:var(--shadow)}
+.steps{width:100%;max-width:560px;display:flex;gap:4px}
+.steps i{flex:1;height:5px;border-radius:9px;background:#E6DAC0}
+.steps i.on{background:var(--emerald)}
+.steps i.cur{background:var(--gold)}
+.board-wrap{position:relative;flex:none;width:min(100%,calc(100svh - 330px),560px);aspect-ratio:1;padding:5px;border:1px solid var(--board-edge);border-radius:12px;background:linear-gradient(145deg,#0d3a2b,#06251b);box-shadow:0 12px 28px rgba(31,42,36,.28)}
+.board{position:relative;width:100%;height:100%;display:grid;grid-template:repeat(8,1fr)/repeat(8,1fr);border-radius:6px;overflow:hidden;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.sq{position:relative;border:0;padding:0;margin:0;display:grid;place-items:center;background:var(--sq-light-image)}
+.sq.d{background:var(--sq-dark-image)}
+.sq .coord{position:absolute;font-size:clamp(8px,2.2vw,11px);font-weight:800;pointer-events:none}
+.sq .coord.f{right:3px;bottom:1px}.sq .coord.r{left:3px;top:1px}
+.sq.d .coord{color:var(--light-sq)}.sq:not(.d) .coord{color:var(--dark-sq)}
+.sq.mark::before{content:"";position:absolute;inset:0;background:rgba(240,200,90,.5)}
+.sq.red::before{content:"";position:absolute;inset:0;background:radial-gradient(circle,rgba(220,70,60,.85),rgba(220,70,60,.35) 55%,transparent 78%)}
+.sq.sel::before{content:"";position:absolute;inset:0;background:rgba(240,210,120,.75)}
+.sq.last::before{content:"";position:absolute;inset:0;background:rgba(240,210,120,.42)}
+.sq.good::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 4px #2f9d6a;background:rgba(47,157,106,.25);z-index:3}
+.sq.wrong::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 4px var(--red);background:rgba(184,53,44,.2);z-index:3;animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+.sq .dot{position:absolute;width:28%;height:28%;border-radius:50%;background:rgba(12,40,30,.34);pointer-events:none;z-index:2}
+.sq .ring{position:absolute;inset:5%;border-radius:50%;border:4px solid rgba(12,40,30,.34);pointer-events:none;z-index:2}
+.sq .star{position:absolute;inset:14%;pointer-events:none;z-index:2;filter:drop-shadow(0 2px 2px rgba(0,0,0,.3));animation:twinkle 1.6s ease-in-out infinite}
+@keyframes twinkle{50%{transform:scale(.9)}}
+.pc{position:relative;width:92%;height:92%;pointer-events:none;filter:drop-shadow(0 2px 1.5px rgba(0,0,0,.35));z-index:1}
+.pc.pop{animation:pop .25s ease-out}
+@keyframes pop{from{transform:scale(.6);opacity:.4}}
+.arrows{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:4}
+.coach{width:100%;max-width:560px;background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:12px 14px;display:grid;gap:6px;min-height:0;overflow-y:auto}
+.coach p{margin:0;font-size:15.5px;line-height:1.45}
+.coach .fb{font-size:14px;font-weight:700}
+.coach .fb.good{color:#1f7a50}.coach .fb.bad{color:var(--red)}.coach .fb.info{color:var(--gold-text)}
+.opts{display:grid;gap:8px;margin-top:4px}
+.opts button{min-height:44px;border-radius:12px;border:1.5px solid var(--line);background:var(--soft);font-weight:700;text-align:left;padding:8px 12px}
+.opts button.right{border-color:#2f9d6a;background:#E3F1E8;color:#14583a}
+.opts button.wrong{border-color:var(--red);background:#FBE9E7;color:#8c2620}
+.actions{width:100%;max-width:560px;display:flex;gap:8px}
+.actions button{min-height:46px;border-radius:12px;font-weight:800;font-size:15px}
+.ghost{flex:1;background:var(--card);border:1.5px solid var(--emerald);color:var(--emerald)}
+.gold{flex:2;border:0;background:var(--emerald);color:#FBF7EE;box-shadow:0 6px 16px rgba(15,77,58,.28)}
+.gold:disabled{opacity:.4;box-shadow:none;cursor:default}
+.ghost:disabled{opacity:.4;cursor:default}
+.counter{font-size:12.5px;color:var(--muted);font-weight:700}
+
+/* ---------- finish + premium sheets ---------- */
+.sheet{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:18px;background:rgba(31,42,36,.45);backdrop-filter:blur(6px)}
+.sheet .box{width:min(420px,100%);background:var(--bg);border-radius:20px;padding:22px 20px;box-shadow:0 24px 60px rgba(31,42,36,.3);display:grid;gap:12px;text-align:center}
+.sheet h2{margin:0;font:700 24px/1.15 var(--font-display);color:var(--emerald)}
+.sheet p{margin:0;color:var(--muted)}
+.big-stars{font-size:42px;letter-spacing:6px;color:var(--gold)}
+.big-stars .off{color:#E2D6B8}
+.sheet .row{display:flex;gap:8px}
+.sheet .row button{flex:1;min-height:46px;border-radius:12px;font-weight:800}
+.perks{list-style:none;margin:0;padding:0;display:grid;gap:6px;text-align:left}
+.perks li{background:var(--card);border-radius:12px;padding:9px 12px;box-shadow:var(--shadow);font-size:14px}
+.perks li::before{content:"✓";color:var(--emerald);font-weight:900;margin-right:8px}
+
+@media (orientation:landscape) and (max-height:560px){
+  .lesson{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto 1fr auto;column-gap:16px;row-gap:8px;align-items:start}
+  .lesson-head,.steps{grid-column:2}
+  .board-wrap{grid-column:1;grid-row:1/span 4;width:calc(100svh - 70px)}
+  .coach,.actions{grid-column:2}
+}
+@media (prefers-reduced-motion:reduce){.sq .star,.pc.pop,.sq.wrong::after{animation:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <span class="lead-group">
+      <a class="back" href="./" aria-label="Back to Royal Club Chess">←</a>
+      <span class="brand"><span class="brand-mark" id="brandMark"></span><span><strong>ROYAL CLUB</strong><small>LEARN CHESS</small></span></span>
+    </span>
+    <span class="pill" id="starPill">★ 0</span>
+  </header>
+
+  <section class="home" id="home">
+    <div class="home-inner">
+      <div>
+        <p class="eyebrow">Royal Club · Learn Chess</p>
+        <h1>Learn chess, one class at a time.</h1>
+        <p class="lead">Short interactive classes on a real board: learn an idea, try it yourself, then solve puzzles. The first three classes are free.</p>
+      </div>
+      <div class="progress"><div class="progress-row">Your progress <span id="progText">0 of 32 classes</span></div><div class="bar"><i id="progBar" style="width:0"></i></div></div>
+      <div id="levels"></div>
+      <p class="note">Progress is saved on this device.</p>
+    </div>
+  </section>
+
+  <section class="lesson" id="lesson" hidden>
+    <div class="lesson-head">
+      <div class="t"><small id="lsKicker">Class 1</small><b id="lsTitle">Title</b></div>
+      <span class="counter" id="lsCounter"></span>
+      <button class="close" id="lsClose" type="button" aria-label="Close class">×</button>
+    </div>
+    <div class="steps" id="lsSteps"></div>
+    <div class="board-wrap"><div class="board" id="board" role="grid" aria-label="Chess board"></div><svg class="arrows" id="arrows" viewBox="0 0 8 8" aria-hidden="true"></svg></div>
+    <div class="coach" id="coach" aria-live="polite"></div>
+    <div class="actions">
+      <button class="ghost" id="btnAlt" type="button">Hint</button>
+      <button class="gold" id="btnNext" type="button">Next →</button>
+    </div>
+  </section>
+</div>
+
+<div class="sheet" id="sheet" hidden><div class="box" id="sheetBox" role="dialog" aria-modal="true"></div></div>
+
+<script src="engine.js"></script>
+<script src="ai.js"></script>
+<script src="learn-core.js"></script>
+<script src="lessons.js"></script>
+<script>
+(function () {
+  'use strict';
+  const { Chess } = window.RoyalChess, AI = window.RoyalChessAI, core = window.LearnCore, { LEVELS } = window.RoyalChessLessons;
+  const $ = (id) => document.getElementById(id);
+  const store = {
+    get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* storage off: progress lasts this visit */ } },
+  };
+  const PROGRESS_KEY = 'rc-learn-chess-progress';
+  let progress = store.get(PROGRESS_KEY) || {};
+  /* Premium classes are locked until payments are switched on. ?unlock opens them for testing on this visit only. */
+  const unlocked = new URLSearchParams(location.search).has('unlock');
+  const theme = store.get('rc-chess-board-theme'); if (theme) document.body.dataset.boardTheme = theme;
+
+  /* ---------- pieces (the Royal Club piece set) ---------- */
+  const BASE = '<path d="M11 39.5h23v-2.3a2.2 2.2 0 0 0-2.2-2.2H13.2a2.2 2.2 0 0 0-2.2 2.2z"/>';
+  const SHAPES = {
+    P: '<path d="M22.5 9a5 5 0 0 0-3.2 8.85C16.7 19.3 15 22 15 25.2c0 .65.07 1.25.2 1.8h14.6c.13-.55.2-1.15.2-1.8 0-3.2-1.7-5.9-4.3-7.35A5 5 0 0 0 22.5 9z"/><path d="M15.5 27h14l2 8h-18z"/>' + BASE,
+    R: '<path d="M12.5 10h4.2v3.2h3.4V10h4.8v3.2h3.4V10h4.2v7l-3.2 2.4V30l3.2 5H12.5l3.2-5V19.4L12.5 17z"/><path d="M15.7 19.4h13.6M15.7 30h13.6" fill="none"/>' + BASE,
+    N: '<path d="M13.5 35h19c.6-7.5-.7-13-3.3-17.2-1.6-2.6-1.9-5.4-1.2-8.6-2.9.6-5 1.9-6.4 3.8L20 9.5l-1.6 5c-4.3 2.4-7.4 6.5-8.6 11-.5 1.8.6 3.5 2.4 3.6 2 .1 3.6-.7 5.2-2.1.8-.7 2-.6 2.6.3.5.8.3 1.7-.4 2.4-2.5 2.2-4.6 3.7-6.1 5.3z"/><circle cx="18.6" cy="17.6" r="1.35" class="eye"/>' + BASE,
+    B: '<circle cx="22.5" cy="7.6" r="2.6"/><path d="M22.5 10.6c-5.3 4.1-7.8 8.7-7.8 12.8 0 4.1 3.1 6.6 7.8 6.6s7.8-2.5 7.8-6.6c0-4.1-2.5-8.7-7.8-12.8z"/><path d="M24.8 15.6l-4.6 5.6" fill="none"/><path d="M16.5 30h12l2 5h-16z"/>' + BASE,
+  };
+  SHAPES.Q = '<path d="M14.6 30.5 10.8 14l4.9 8.2 1-10.6 3 9.6 2.8-11 2.8 11 3-9.6 1 10.6 4.9-8.2-3.8 16.5z"/><circle cx="10.8" cy="13" r="2.1"/><circle cx="16.7" cy="10.6" r="2.1"/><circle cx="22.5" cy="9" r="2.1"/><circle cx="28.3" cy="10.6" r="2.1"/><circle cx="34.2" cy="13" r="2.1"/><path d="M14.6 30.5h15.8l1.4 4.5H13.2z"/>' + BASE;
+  SHAPES.K = '<path d="M21.2 3.5h2.6v2.9h2.9V9h-2.9v3.4h-2.6V9h-2.9V6.4h2.9z"/><path d="M22.5 13c-3.6 0-5 2.5-4.6 5.2-3.2-2.4-8.7-1.2-8.7 3.6 0 3.9 3.6 6.5 5.6 8.7h15.4c2-2.2 5.6-4.8 5.6-8.7 0-4.8-5.5-6-8.7-3.6.4-2.7-1-5.2-4.6-5.2z"/><path d="M22.5 18v12.5" fill="none"/><path d="M14.8 30.5h15.4l1.4 4.5H13.4z"/>' + BASE;
+  function pieceSVG(p, cls = 'pc') {
+    const white = p === p.toUpperCase();
+    const fill = white ? '#faf4e4' : '#1f2a24', stroke = white ? '#1c2a22' : '#d9b96f';
+    return `<svg class="${cls}" viewBox="0 0 45 45" aria-hidden="true"><g fill="${fill}" stroke="${stroke}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">${SHAPES[p.toUpperCase()].replace('class="eye"', `fill="${stroke}" stroke="none"`)}</g></svg>`;
+  }
+  const STAR = '<svg class="star" viewBox="0 0 24 24"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z" fill="#E9C46A" stroke="#7A5A1C" stroke-width="1.2" stroke-linejoin="round"/></svg>';
+  const LOCK = '<svg class="lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+  $('brandMark').innerHTML = pieceSVG('k', '').replace('<svg ', '<svg width="20" height="20" ');
+
+  /* ---------- class list ---------- */
+  const ALL = LEVELS.flatMap((lv) => lv.classes.map((c) => Object.assign(c, { level: lv.n })));
+  const isOpen = (c) => !c.soon && (c.free || unlocked);
+  const starsHTML = (n) => '★★★'.split('').map((s, i) => `<span class="${i < n ? '' : 'off'}">${s}</span>`).join('');
+  function renderHome() {
+    const done = ALL.filter((c) => progress[c.id]).length, stars = Object.values(progress).reduce((a, b) => a + b, 0);
+    $('progText').textContent = `${done} of ${ALL.length} classes`;
+    $('progBar').style.width = (100 * done / ALL.length) + '%';
+    $('starPill').textContent = `★ ${stars}`;
+    $('levels').innerHTML = LEVELS.map((lv) => {
+      const free = lv.classes.some((c) => c.free), soon = lv.classes.every((c) => c.soon);
+      const tag = soon ? '<span class="tag soon">Coming soon</span>' : free ? '<span class="tag free">3 free</span>' : '<span class="tag prem">Premium</span>';
+      return `<section class="level" aria-label="Level ${lv.n}"><div class="level-head"><span class="level-num">${lv.n}</span><div><b>${lv.title}</b><span>${lv.goal}</span></div>${tag}</div>
+        <ul class="classes">${lv.classes.map((c) => {
+          const st = progress[c.id], open = isOpen(c);
+          const end = c.soon ? '<span class="tag soon">Soon</span>' : !open ? `<span class="tag prem">Premium</span>${LOCK}` : st ? `<span class="stars">${starsHTML(st)}</span>` : c.free ? '<span class="tag free">Free</span>' : '';
+          return `<li><button class="cls ${st ? 'done' : ''} ${open ? '' : 'locked'}" type="button" data-id="${c.id}"><span class="num">${st ? '✓' : c.n}</span><span class="txt"><b>${c.title}</b><small>${c.sub}</small></span><span class="end">${end}</span></button></li>`;
+        }).join('')}</ul></section>`;
+    }).join('');
+  }
+  $('levels').addEventListener('click', (e) => {
+    const b = e.target.closest('.cls'); if (!b) return;
+    const c = ALL.find((x) => x.id === b.dataset.id);
+    if (c.soon) return showSheet(`<h2>${c.title}</h2><p>Class ${c.n} is being prepared and will arrive with Learn Chess Premium.</p><div class="row"><button class="gold" type="button" data-close>OK</button></div>`);
+    if (!isOpen(c)) return showPremium(c);
+    openClass(c);
+  });
+  function showPremium(c) {
+    showSheet(`<p class="eyebrow">Learn Chess Premium</p><h2>Unlock every class</h2>
+      <p>${c ? `“${c.title}” is a premium class.` : ''} Premium opens all 32 classes, from pawns and special moves to tactics, openings and endgames.</p>
+      <ul class="perks"><li>Level 1: classes 4–8</li><li>Levels 2–4: tactics, strategy, endgames</li><li>Puzzles and practice games against the computer</li></ul>
+      <p><b>Purchases are coming soon.</b> No payment is taken today.</p>
+      <div class="row"><button class="gold" type="button" data-close>OK</button></div>`);
+  }
+  function showSheet(html) { $('sheetBox').innerHTML = html; $('sheet').hidden = false; const b = $('sheetBox').querySelector('button'); if (b) b.focus(); }
+  function hideSheet() { $('sheet').hidden = true; }
+  $('sheet').addEventListener('click', (e) => {
+    if (e.target === $('sheet') || e.target.closest('[data-close]')) return hideSheet();
+    const go = e.target.closest('[data-go]'); if (!go) return;
+    hideSheet();
+    if (go.dataset.go === 'home') return closeClass();
+    if (go.dataset.go === 'again') return openClass(cls);
+    const c = ALL.find((x) => x.id === go.dataset.go);
+    if (c) { if (isOpen(c)) openClass(c); else { closeClass(); showPremium(c); } }
+  });
+
+  /* ---------- the board ---------- */
+  const FILES = 'abcdefgh';
+  const sqName = (f, r) => FILES[f] + (r + 1);
+  const boardEl = $('board');
+  (function buildBoard() {
+    let html = '';
+    for (let row = 7; row >= 0; row--) for (let f = 0; f < 8; f++) {
+      const s = sqName(f, row), dark = (f + row) % 2 === 0;
+      html += `<button class="sq ${dark ? 'd' : ''}" type="button" data-sq="${s}" data-dark="${dark ? 1 : 0}" aria-label="${s}">${row === 0 ? `<span class="coord f">${FILES[f]}</span>` : ''}${f === 0 ? `<span class="coord r">${row + 1}</span>` : ''}</button>`;
+    }
+    boardEl.innerHTML = html;
+  })();
+  const cell = (s) => boardEl.querySelector(`[data-sq="${s}"]`);
+  function draw(pos, marks = {}, extra = {}) {
+    boardEl.querySelectorAll('.sq').forEach((el) => {
+      const s = el.dataset.sq, p = pos[s];
+      el.className = 'sq' + (el.dataset.dark === '1' ? ' d' : '');
+      el.querySelectorAll('.pc,.dot,.ring,.star').forEach((n) => n.remove());
+      if ((marks.sq || []).includes(s)) el.classList.add('mark');
+      if ((marks.red || []).includes(s)) el.classList.add('red');
+      if ((extra.last || []).includes(s)) el.classList.add('last');
+      if (extra.sel === s) el.classList.add('sel');
+      if ((marks.star || []).includes(s) || ((extra.stars || []).includes(s) && !(extra.visited || new Set()).has(s))) el.insertAdjacentHTML('beforeend', STAR);
+      if (p) el.insertAdjacentHTML('beforeend', pieceSVG(p, 'pc' + ((extra.pop || []).includes(s) ? ' pop' : '')));
+      if ((marks.dots || []).includes(s)) el.insertAdjacentHTML('beforeend', '<span class="dot"></span>');
+      if ((extra.targets || []).includes(s)) el.insertAdjacentHTML('beforeend', p ? '<span class="ring"></span>' : '<span class="dot"></span>');
+    });
+    const c = (s) => [FILES.indexOf(s[0]) + .5, 8 - Number(s[1]) + .5];
+    $('arrows').innerHTML = '<defs><marker id="ah" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="3.2" markerHeight="3.2" orient="auto"><path d="M0 0 10 5 0 10z" fill="#D9A520"/></marker></defs>' +
+      (marks.arrows || []).map(([a, b]) => {
+        const [x1, y1] = c(a), [x2, y2] = c(b), d = Math.hypot(x2 - x1, y2 - y1), k = (d - .38) / d;
+        return `<line x1="${x1}" y1="${y1}" x2="${x1 + (x2 - x1) * k}" y2="${y1 + (y2 - y1) * k}" stroke="#D9A520" stroke-opacity=".9" stroke-width=".17" stroke-linecap="round" marker-end="url(#ah)"/>`;
+      }).join('');
+  }
+  function flash(s, cls) { const el = cell(s); if (!el) return; el.classList.add(cls); setTimeout(() => el.classList.remove(cls), 700); }
+  const fromEngine = (g) => { const pos = {}; g.board().forEach((row, i) => row.forEach((p, f) => { if (p) pos[sqName(f, 7 - i)] = p; })); return pos; };
+
+  /* ---------- running a class ---------- */
+  let cls = null, idx = 0, mistakes = 0, st = null;
+  function openClass(c) {
+    cls = c; idx = 0; mistakes = 0;
+    $('home').hidden = true; $('lesson').hidden = false;
+    $('lsKicker').textContent = `Level ${c.level} · Class ${c.n}`; $('lsTitle').textContent = c.title;
+    startStep();
+  }
+  function closeClass() { cls = null; $('lesson').hidden = true; $('home').hidden = false; renderHome(); }
+  $('lsClose').addEventListener('click', closeClass);
+
+  function coach(text, fb = '', kind = 'info', extraHTML = '') {
+    $('coach').innerHTML = `<p>${text}</p>${extraHTML}${fb ? `<p class="fb ${kind}">${fb}</p>` : ''}`;
+  }
+  function setButtons({ alt, altLabel = 'Hint', next = true, nextLabel = 'Next →' }) {
+    $('btnAlt').hidden = !alt; $('btnAlt').textContent = altLabel; $('btnAlt').disabled = false;
+    $('btnNext').disabled = !next; $('btnNext').textContent = nextLabel;
+  }
+  function startStep() {
+    const s = cls.steps[idx];
+    $('lsSteps').innerHTML = cls.steps.map((_, i) => `<i class="${i < idx ? 'on' : i === idx ? 'cur' : ''}"></i>`).join('');
+    $('lsCounter').textContent = `${idx + 1}/${cls.steps.length}`;
+    const lastLabel = idx === cls.steps.length - 1 ? 'Finish ✓' : 'Next →';
+    st = { s, done: false, wrong: 0, hinted: false, sel: null, last: [], nextLabel: lastLabel };
+    if (s.kind === 'card') { draw(core.parse(s.fen), s.marks); coach(s.text); setButtons({ next: true, nextLabel: lastLabel }); }
+    else if (s.kind === 'quiz') {
+      draw(s.fen ? core.parse(s.fen) : {}, s.marks);
+      coach(s.text, '', 'info', `<div class="opts">${s.options.map((o, i) => `<button type="button" data-i="${i}">${o}</button>`).join('')}</div>`);
+      setButtons({ next: false, nextLabel: lastLabel });
+    } else if (s.kind === 'tap') { draw(core.parse(s.fen), s.marks); coach(s.text); setButtons({ alt: !!s.hint, next: false, nextLabel: lastLabel }); }
+    else if (s.kind === 'goal') {
+      st.pos = core.parse(s.fen); st.moves = 0; st.visited = new Set();
+      drawGoal(); coach(s.text, `Best: ${s.par} move${s.par > 1 ? 's' : ''}`);
+      setButtons({ alt: true, altLabel: 'Restart', next: false, nextLabel: lastLabel });
+    } else if (s.kind === 'move' || s.kind === 'play') {
+      st.g = new Chess(s.fen); st.moves = 0;
+      draw(fromEngine(st.g), s.marks); coach(s.text);
+      setButtons({ alt: s.kind === 'play' || !!s.hint, altLabel: s.kind === 'play' ? 'Restart' : 'Hint', next: false, nextLabel: lastLabel });
+      if (s.pre && s.pre.length) {
+        st.busy = true;
+        setTimeout(() => { let mv; for (const p of s.pre) mv = st.g.move(p); st.last = [mv.from, mv.to]; st.busy = false; drawEngine(); }, 650);
+      }
+    }
+  }
+  const drawGoal = (extra = {}) => draw(st.pos, {}, Object.assign({ stars: st.s.stars || [], visited: st.visited, sel: st.sel, last: st.last }, extra));
+  const drawEngine = (extra = {}) => draw(fromEngine(st.g), {}, Object.assign({ sel: st.sel, last: st.last, red: [] }, extra));
+
+  function succeed(msg) {
+    st.done = true; st.sel = null;
+    coach(st.s.text, msg, 'good');
+    setButtons({ alt: false, next: true, nextLabel: st.nextLabel });
+    $('btnNext').focus({ preventScroll: true });
+  }
+  function miss(msg) { mistakes++; st.wrong++; coach(st.s.text, msg + (st.wrong >= 2 && st.s.hint ? ' Hint: ' + st.s.hint : ''), 'bad'); }
+
+  $('coach').addEventListener('click', (e) => {
+    const b = e.target.closest('.opts button'); if (!b || !st || st.s.kind !== 'quiz' || st.done) return;
+    const i = Number(b.dataset.i), s = st.s;
+    if (i === s.answer) {
+      b.classList.add('right'); st.done = true;
+      $('coach').insertAdjacentHTML('beforeend', `<p class="fb good">Correct! ${s.explain || ''}</p>`);
+      $('coach').querySelectorAll('.opts button').forEach((x) => { x.disabled = true; });
+      setButtons({ next: true, nextLabel: st.nextLabel });
+    } else { b.classList.add('wrong'); b.disabled = true; mistakes++; }
+  });
+
+  boardEl.addEventListener('click', (e) => {
+    const el = e.target.closest('.sq'); if (!el || !st || st.done || st.busy) return;
+    const s = el.dataset.sq, k = st.s.kind;
+    if (k === 'tap') {
+      if (s === st.s.answer) { flash(s, 'good'); succeed(`Yes, that is ${s}.`); }
+      else { flash(s, 'wrong'); miss(`That is ${s}. Try again.`); }
+    } else if (k === 'goal') goalClick(s);
+    else if (k === 'move' || k === 'play') engineClick(s);
+  });
+
+  function goalClick(s) {
+    const p = st.pos[s];
+    if (st.sel && st.targets.includes(s)) {
+      const r = core.play(st.pos, st.sel, s); st.pos = r.board; st.moves++; st.last = [st.sel, s]; st.sel = null;
+      if ((st.s.stars || []).includes(s)) st.visited.add(s);
+      drawGoal({ pop: [s] });
+      if (core.goalDone(st.pos, st.s.stars || [], st.visited)) {
+        const over = Math.max(0, st.moves - st.s.par); mistakes += over;
+        return succeed(over ? `Done in ${st.moves} moves. It can be done in ${st.s.par}; tap Restart to try for the best.` : `Perfect! Done in ${st.moves} move${st.moves > 1 ? 's' : ''}.`);
+      }
+      if (r.promoted) coach(st.s.text, 'Promoted to a queen!', 'good');
+      else coach(st.s.text, `Moves: ${st.moves} · Best: ${st.s.par}`);
+      return;
+    }
+    if (p && p === p.toUpperCase()) { st.sel = s; st.targets = core.targets(st.pos, s); drawGoal({ targets: st.targets }); if (!st.targets.length) coach(st.s.text, 'That piece cannot move right now.', 'info'); }
+    else if (st.sel) { st.sel = null; drawGoal(); }
+  }
+
+  function engineClick(s) {
+    const g = st.g, p = g.get(s), mine = p && (p === p.toUpperCase()) === (g.turn() === 'w');
+    if (st.sel) {
+      const mv = g.moves({ square: st.sel }).find((m) => m.to === s);
+      if (mv) return tryMove(mv);
+    }
+    if (mine) { st.sel = s; drawEngine({ targets: g.moves({ square: s }).map((m) => m.to) }); }
+    else if (st.sel) { st.sel = null; drawEngine(); }
+  }
+  function tryMove(mv) {
+    const s = st.s, g = st.g; st.sel = null;
+    const promo = mv.promotion ? 'q' : undefined;
+    if (s.kind === 'move') {
+      const san = mv.san.replace(/[+#]/, '');
+      const ok = s.accept === 'any' || (s.accept === 'mate' ? mv.san.endsWith('#') : s.accept.includes(san));
+      if (!ok) { flash(mv.to, 'wrong'); drawEngine(); return miss(s.accept === 'mate' ? `${mv.san} is not checkmate. Try again.` : 'Not quite. Try again.'); }
+      g.move({ from: mv.from, to: mv.to, promotion: promo }); st.last = [mv.from, mv.to];
+      drawEngine({ pop: [mv.to] }); flash(mv.to, 'good');
+      return succeed(s.done || 'Well done!');
+    }
+    // play: against the computer
+    g.move({ from: mv.from, to: mv.to, promotion: promo }); st.moves++; st.last = [mv.from, mv.to];
+    drawEngine({ pop: [mv.to] });
+    if (finishPlay()) return;
+    st.busy = true; coach(s.text, `Your moves: ${st.moves}`, 'info');
+    setTimeout(() => {
+      const r = AI.bestMove(g.fen(), 'hard'); const m = g.move(r); st.last = [m.from, m.to]; st.busy = false;
+      drawEngine(); if (!finishPlay()) coach(s.text, `Your moves: ${st.moves}`, 'info');
+    }, 380);
+  }
+  function finishPlay() {
+    const g = st.g, r = g.status(); if (!r.over) return false;
+    if (r.reason === 'checkmate' && r.result === '1-0') {
+      const over = st.moves <= st.s.par ? 0 : st.moves <= st.s.par + 10 ? 1 : 3; mistakes += over;
+      succeed(`Checkmate in ${st.moves} moves!` + (over ? ` Try again for three stars: ${st.s.par} moves or fewer.` : ''));
+    } else {
+      mistakes++;
+      coach(st.s.text, r.reason === 'stalemate' ? 'Stalemate: the king had no move but was not in check. It is a draw. Tap Restart and leave it a square.' : `The game ended in a draw (${r.reason}). Tap Restart.`, 'bad');
+    }
+    return true;
+  }
+
+  $('btnAlt').addEventListener('click', () => {
+    const s = st.s;
+    if (s.kind === 'goal' || s.kind === 'play') return startStep();
+    if (s.hint) { if (!st.hinted) { mistakes++; st.hinted = true; } coach(s.text, 'Hint: ' + s.hint, 'info'); if (s.kind === 'tap') flash(s.answer, 'good'); }
+  });
+  $('btnNext').addEventListener('click', () => {
+    if (!cls) return;
+    if (idx < cls.steps.length - 1) { idx++; return startStep(); }
+    finish();
+  });
+  function finish() {
+    const stars = mistakes === 0 ? 3 : mistakes <= 2 ? 2 : 1;
+    if (!progress[cls.id] || stars > progress[cls.id]) { progress[cls.id] = stars; store.set(PROGRESS_KEY, progress); }
+    const i = ALL.indexOf(cls), next = ALL.slice(i + 1).find((c) => !c.soon);
+    const nextBtn = next ? `<button class="gold" type="button" data-go="${next.id}">${isOpen(next) ? 'Next class →' : 'Next class 🔒'}</button>` : '';
+    showSheet(`<p class="eyebrow">Class ${cls.n} complete</p><h2>${cls.title}</h2><div class="big-stars">${starsHTML(stars)}</div>
+      <p>${stars === 3 ? 'Perfect class: no mistakes and no hints.' : stars === 2 ? 'Well done! A couple of slips; replay any time for three stars.' : 'Class finished. Replay it to earn more stars.'}</p>
+      <div class="row"><button class="ghost" type="button" data-go="home">All classes</button>${nextBtn || '<button class="ghost" type="button" data-go="again">Replay</button>'}</div>`);
+  }
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('sheet').hidden) hideSheet(); });
+
+  if (new URLSearchParams(location.search).has('debug')) window.__fen = () => (st && st.g ? st.g.fen() : null);
+  renderHome();
+  const want = new URLSearchParams(location.search).get('class');
+  if (want) { const c = ALL.find((x) => x.id === want || String(x.n) === want); if (c && isOpen(c)) openClass(c); }
+})();
+</script>
+</body>
+</html>

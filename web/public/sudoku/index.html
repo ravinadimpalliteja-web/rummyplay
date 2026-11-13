@@ -160,6 +160,10 @@ h1{margin:0;font:700 30px/1.15 var(--display);color:var(--emerald)}
 .rc-watermark{position:fixed;left:50%;top:54%;width:min(1100px,150vw);aspect-ratio:900/467;transform:translate(-50%,-50%);
   background:url("../brand/elephant-logo.webp") center/contain no-repeat;opacity:.13;pointer-events:none;z-index:-1}
 @media (max-width:760px){.rc-watermark{width:170vw;opacity:.11}}
+
+/* Royal Club crowned elephant as the header mark */
+html body .brand-mark.rc-el{width:auto;height:38px;border:0;border-radius:0;background:none;box-shadow:none;padding:0;display:block}
+html body .brand-mark.rc-el img{display:block;height:100%;width:auto}
 </style>
 </head>
 <body>
@@ -168,7 +172,7 @@ h1{margin:0;font:700 30px/1.15 var(--display);color:var(--emerald)}
     <span class="lead">
       <a class="club-back" id="clubLink" href="/" hidden aria-label="Back to Royal Club">←</a>
       <button class="brand" id="homeBtn" type="button" aria-label="Sudoku menu">
-        <span class="brand-mark"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8.5l4.2 3.6L12 4.5l4.8 7.6L21 8.5l-1.8 9.5H4.8z" fill="#D9B45A"/><rect x="4.6" y="19" width="14.8" height="2" rx="1" fill="#D9B45A"/></svg></span>
+        <span class="brand-mark rc-el"><img src="../brand/elephant-logo-small.webp" alt="" width="240" height="125"></span>
         <span><strong>ROYAL CLUB</strong><small>SUDOKU</small></span>
       </button>
     </span>

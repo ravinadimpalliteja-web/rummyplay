@@ -141,6 +141,10 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
   .coach,.actions{grid-column:2}
 }
 @media (prefers-reduced-motion:reduce){.sq .star,.pc.pop,.sq.wrong::after{animation:none}}
+
+/* Royal Club crowned elephant as the header mark */
+html body .brand-mark.rc-el{width:auto;height:38px;border:0;border-radius:0;background:none;box-shadow:none;padding:0;display:block}
+html body .brand-mark.rc-el img{display:block;height:100%;width:auto}
 </style>
 </head>
 <body>
@@ -148,7 +152,7 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
   <header class="top">
     <span class="lead-group">
       <a class="back" href="./" aria-label="Back to Royal Club Chess">←</a>
-      <span class="brand"><span class="brand-mark" id="brandMark"></span><span><strong>ROYAL CLUB</strong><small>LEARN CHESS</small></span></span>
+      <span class="brand"><span class="brand-mark rc-el" id="brandMark"><img src="../brand/elephant-logo-small.webp" alt="" width="240" height="125"></span><span><strong>ROYAL CLUB</strong><small>LEARN CHESS</small></span></span>
     </span>
     <span class="pill" id="starPill">★ 0</span>
   </header>
@@ -220,7 +224,6 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
   }
   const STAR = '<svg class="star" viewBox="0 0 24 24"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z" fill="#E9C46A" stroke="#7A5A1C" stroke-width="1.2" stroke-linejoin="round"/></svg>';
   const LOCK = '<svg class="lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
-  $('brandMark').innerHTML = pieceSVG('k', '').replace('<svg ', '<svg width="20" height="20" ');
 
   /* ---------- class list ---------- */
   const ALL = LEVELS.flatMap((lv) => lv.classes.map((c) => Object.assign(c, { level: lv.n })));

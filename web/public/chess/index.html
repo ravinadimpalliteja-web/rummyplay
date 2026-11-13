@@ -286,6 +286,12 @@ html body .learn-go{flex:none;font-size:20px;color:#F0D99D}
 .rc-watermark{position:fixed;left:50%;top:54%;width:min(1100px,150vw);aspect-ratio:900/467;transform:translate(-50%,-50%);
   background:url("../brand/elephant-logo.webp") center/contain no-repeat;opacity:.13;pointer-events:none;z-index:-1}
 @media (max-width:760px){.rc-watermark{width:170vw;opacity:.11}}
+
+/* Royal Club crowned elephant as the header mark */
+html body .brand-mark.rc-el{width:auto;height:38px;border:0;border-radius:0;background:none;box-shadow:none;padding:0;display:block}
+html body .brand-mark.rc-el img{display:block;height:100%;width:auto}
+html body .club-back{flex:none}
+@media (max-width:420px){html body .brand-mark.rc-el{height:30px}}
 </style>
 </head>
 <body>
@@ -294,7 +300,7 @@ html body .learn-go{flex:none;font-size:20px;color:#F0D99D}
   <header class="top">
     <span class="lead-group"><a class="club-back" id="clubLink" href="/" hidden aria-label="Back to Royal Club">←</a>
     <button class="brand" id="homeBtn" type="button" aria-label="Royal Club Chess home">
-      <span class="brand-mark" id="brandMark"></span>
+      <span class="brand-mark rc-el" id="brandMark"><img src="../brand/elephant-logo-small.webp" alt="" width="240" height="125"></span>
       <span><strong>ROYAL CLUB</strong><small>CHESS</small></span>
     </button></span>
     <span class="top-tools"><button class="chip icon-chip" id="soundBtn" type="button" aria-pressed="true" aria-label="Sound on"></button><button class="chip theme-trigger" id="themeOpen" type="button" aria-haspopup="dialog" aria-controls="themeDialog"><span aria-hidden="true">▦</span> Themes</button><button class="chip" id="topAction" type="button" hidden>New game</button></span>
@@ -505,7 +511,6 @@ html body .learn-go{flex:none;font-size:20px;color:#F0D99D}
 
   /* Inside the Royal Club site (served at /chess/) show a way back to the club home page. */
   if (/\/chess\/?/.test(location.pathname)) $('clubLink').hidden = false;
-  $('brandMark').innerHTML = pieceSVG('k', '').replace('<svg ', '<svg width="20" height="20" ');
 
   /* ---------- state ---------- */
   const setup = { mode: 'ai', level: 'medium', color: 'w', time: 'none' };

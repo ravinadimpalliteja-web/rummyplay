@@ -2,6 +2,7 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { isListed, type GameId } from "../domain/game";
 import "./home.css";
 import { pageHref } from "../lib/native";
+import elephantMark from "../brand/elephant-logo-small.webp";
 
 /* Royal Club home ("FINAL" design): mood shortcuts, a featured EKAH tile, full-art game tiles,
    resume card, a room-code box and the free-to-play promise. All artwork is original. */
@@ -159,6 +160,7 @@ export default function Home({ onOpen, onJoin }: HomeProps) {
 
   return (
     <div className="rc-home" id="rc-top">
+      <div className="rc-watermark" aria-hidden="true" />
       <nav className="rc-moods" aria-label="Choose by mood">
         {MOODS.map(m => (
           <button key={m.id} type="button" className={`rc-mood rc-mood-${m.id}${mood === m.id ? " on" : ""}`} aria-pressed={mood === m.id}
@@ -233,7 +235,7 @@ export default function Home({ onOpen, onJoin }: HomeProps) {
           </ol>
         </div>
         <div className="rc-card rc-promise">
-          <span className="rc-promise-mark"><Crown size={30} fill="#0F4D3A" /></span>
+          <span className="rc-promise-mark"><img src={elephantMark} alt="" width={240} height={125} /></span>
           <span><strong>Free to play. Always.</strong><small>No real money, no betting, no deposits. Royal Club for Android is coming soon.</small></span>
         </div>
       </section>

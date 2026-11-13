@@ -265,3 +265,9 @@ button.card { cursor: default; }
 .gscore td { padding: 6px 4px; border-bottom: 1px solid var(--line); }
 .gscore td:last-child { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
 .scores .plus { color: var(--ok); font-size: 13px; margin-left: 6px; }
+
+/* Royal Club crowned elephant, faint, behind the lobby screens */
+.rc-wm-host{position:relative;isolation:isolate}
+.rc-watermark{position:fixed;left:50%;top:54%;width:min(1100px,150vw);aspect-ratio:900/467;transform:translate(-50%,-50%);
+  background:url("../brand/elephant-logo.webp") center/contain no-repeat;opacity:.13;pointer-events:none;z-index:-1}
+@media (max-width:760px){.rc-watermark{width:170vw;opacity:.11}}

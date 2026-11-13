@@ -48,6 +48,7 @@ export function RoomAccountLine() {
 export function PlayStart(p: StartProps) {
   const f = p.friends;
   return <section className={`mode-page rs-page ${p.className ?? ""}`}>
+    <div className="rs-watermark" aria-hidden="true" />
     <button className="back-link" onClick={p.onBack}>← Back</button>
     <div className="rs-head">
       <div className="eyebrow">ROYAL CLUB · {p.game.toUpperCase()}</div>
@@ -115,6 +116,7 @@ export function WaitingRoom(p: WaitProps) {
   };
   const hostSeat = p.hostSeat ?? (p.isHost ? p.you : undefined);
   return <section className={`mode-page rs-page rs-wait ${p.children ? "has-extra" : ""} ${p.className ?? ""}`}>
+    <div className="rs-watermark" aria-hidden="true" />
     <button className="back-link" onClick={p.onBack}>← Back</button>
     <div className="rs-stack">
       <div className="rs-panel rs-code-card">

@@ -281,6 +281,11 @@ html body .learn-txt{flex:1;min-width:0;display:grid;gap:2px}
 html body .learn-txt b{font:700 16px/1.15 var(--font-display);letter-spacing:.04em;color:#F7E7BC}
 html body .learn-txt span{font-size:12.5px;line-height:1.35;color:#DCE8E0}
 html body .learn-go{flex:none;font-size:20px;color:#F0D99D}
+/* Royal Club crowned elephant, faint, behind the lobby screens */
+.rc-wm-host{position:relative;isolation:isolate}
+.rc-watermark{position:fixed;left:50%;top:54%;width:min(1100px,150vw);aspect-ratio:900/467;transform:translate(-50%,-50%);
+  background:url("../brand/elephant-logo.webp") center/contain no-repeat;opacity:.13;pointer-events:none;z-index:-1}
+@media (max-width:760px){.rc-watermark{width:170vw;opacity:.11}}
 </style>
 </head>
 <body>
@@ -295,7 +300,8 @@ html body .learn-go{flex:none;font-size:20px;color:#F0D99D}
     <span class="top-tools"><button class="chip icon-chip" id="soundBtn" type="button" aria-pressed="true" aria-label="Sound on"></button><button class="chip theme-trigger" id="themeOpen" type="button" aria-haspopup="dialog" aria-controls="themeDialog"><span aria-hidden="true">▦</span> Themes</button><button class="chip" id="topAction" type="button" hidden>New game</button></span>
   </header>
 
-  <section class="setup" id="setup">
+  <section class="setup rc-wm-host" id="setup">
+    <div class="rc-watermark" aria-hidden="true"></div>
     <p class="eyebrow">Royal Club · Board games</p>
     <h1>Chess, <em>your move.</em></h1>
     <p class="lead">Play a friend on this phone, or take on the computer at three levels.</p>

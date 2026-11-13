@@ -155,6 +155,11 @@ h1{margin:0;font:700 30px/1.15 var(--display);color:var(--emerald)}
   .side .num{font-size:28px;padding:10px 0 6px}
 }
 @media (prefers-reduced-motion:reduce){.cell.pop,.cell.hinted{animation:none}}
+/* Royal Club crowned elephant, faint, behind the lobby screens */
+.rc-wm-host{position:relative;isolation:isolate}
+.rc-watermark{position:fixed;left:50%;top:54%;width:min(1100px,150vw);aspect-ratio:900/467;transform:translate(-50%,-50%);
+  background:url("../brand/elephant-logo.webp") center/contain no-repeat;opacity:.13;pointer-events:none;z-index:-1}
+@media (max-width:760px){.rc-watermark{width:170vw;opacity:.11}}
 </style>
 </head>
 <body>
@@ -174,7 +179,8 @@ h1{margin:0;font:700 30px/1.15 var(--display);color:var(--emerald)}
   </header>
 
   <!-- Menu: daily puzzle, continue, levels, stats -->
-  <section class="setup" id="setup">
+  <section class="setup rc-wm-host" id="setup">
+    <div class="rc-watermark" aria-hidden="true"></div>
     <p class="eyebrow">Royal Club · Puzzles</p>
     <h1>Sudoku</h1>
     <p class="lede">Fill every row, column and box with 1 to 9. A fresh daily puzzle every day.</p>

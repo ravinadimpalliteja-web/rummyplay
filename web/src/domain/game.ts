@@ -1,4 +1,4 @@
-export type GameId = "spades" | "ekah" | "snakes" | "chess" | "rummy" | "ludo";
+export type GameId = "spades" | "ekah" | "snakes" | "chess" | "rummy" | "ludo" | "sudoku";
 export type PlayMode = "practice" | "online";
 
 export interface GameDefinition {
@@ -17,6 +17,7 @@ export const GAMES: GameDefinition[] = [
   { id: "snakes", name: "Snakes & Ladders", description: "Race to 100 with 1 to 3 friends. Roll a six to start.", status: "available", category: "board" },
   { id: "chess", name: "Chess", description: "Play a friend on one phone or the computer.", status: "available", category: "board" },
   { id: "ludo", name: "Ludo", description: "Race all four tokens home. Play the computer, friends on one phone, or a room.", status: "available", category: "board" },
+  { id: "sudoku", name: "Sudoku", description: "A fresh daily puzzle plus Easy to Expert levels. Solo, any time.", status: "available", category: "board" },
   { id: "rummy", name: "Indian Rummy", description: "Build sequences, sets and outplay the table.", status: "coming-soon", category: "card", hidden: true }
 ];
 

@@ -125,9 +125,7 @@ footer .rc-foot-brand{display:inline-flex;align-items:center;gap:6px}
   .rc-label strong{font-size:16px}
   .rc-label span{font-size:12px}
   .rc-label span:not(.rc-play){display:none}
-  .rc-tile-chess,.rc-soon{grid-column:span 2}
-  .rc-tile-chess{height:150px}
-  .rc-tile-chess .rc-label span:not(.rc-play){display:block}
+  .rc-soon{grid-column:span 2}
   .rc-soon{flex-direction:row;align-items:center;justify-content:flex-start;gap:12px;padding:14px;height:auto;min-height:72px}
   .rc-soon strong{font-size:16px}
   .rc-soon small{font-size:13px}

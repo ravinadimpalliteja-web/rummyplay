@@ -31,18 +31,16 @@ jobs:
       VITE_ROOM_SERVER_URL: ${{ vars.VITE_ROOM_SERVER_URL || 'wss://royal-club-rooms.onrender.com' }}
       TEST_SITE_URL: ${{ vars.TEST_SITE_URL || 'https://test.royalclubgames.com' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
-
-      - uses: android-actions/setup-android@v3
 
       - name: Install and build the website
         run: |

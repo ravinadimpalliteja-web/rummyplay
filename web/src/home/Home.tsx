@@ -1,6 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { isListed, type GameId } from "../domain/game";
 import "./home.css";
+import { pageHref } from "../lib/native";
 
 /* Royal Club home ("FINAL" design): mood shortcuts, a featured EKAH tile, full-art game tiles,
    resume card, a room-code box and the free-to-play promise. All artwork is original. */
@@ -133,7 +134,7 @@ export default function Home({ onOpen, onJoin }: HomeProps) {
     const c = code.trim().toUpperCase();
     if (!/^[A-Z]{4}$/.test(c)) { setErr("Enter the 4-letter room code."); return; }
     setErr("");
-    if (joinGame === "ekah") { window.location.href = `/ekah/?room=${c}`; return; }
+    if (joinGame === "ekah") { window.location.href = pageHref(`/ekah/?room=${c}`); return; }
     onJoin(joinGame, c);
   };
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -165,7 +166,7 @@ export default function Home({ onOpen, onJoin }: HomeProps) {
         </div>
         <div className="rc-grid">
           {featured && (
-            <a href="/ekah/" className="rc-tile rc-tile-ekah" onClick={e => { e.preventDefault(); onOpen("ekah"); }}>
+            <a href={pageHref("/ekah/")} className="rc-tile rc-tile-ekah" onClick={e => { e.preventDefault(); onOpen("ekah"); }}>
               <span className="rc-art"><EkahArt /></span>
               <span className="rc-feature">
                 <span className="rc-feature-text"><span className="rc-badge">NEW · FEATURED</span><strong>EKAH</strong><span>{featured.sub}</span></span>

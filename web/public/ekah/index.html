@@ -180,6 +180,16 @@
 <div class="fx" id="fx" aria-hidden="true"></div>
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
+<!-- Royal Club app only: the Android back button returns to the Royal Club home screen (asking first) instead of closing the app. -->
+<script>
+  (function () {
+    var C = window.Capacitor;
+    if (!C || !C.isNativePlatform || !C.isNativePlatform() || !C.Plugins || !C.Plugins.App) return;
+    C.Plugins.App.addListener('backButton', function () {
+      if (window.confirm('Leave EKAH and go back to Royal Club?')) location.href = '/';
+    });
+  })();
+</script>
 <!-- config.js is written by the site build (vite.config.ts) and carries the room server address. -->
 <script src="config.js"></script>
 <script src="engine.js"></script>

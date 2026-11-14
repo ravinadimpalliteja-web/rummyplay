@@ -14,9 +14,9 @@
     "react-dom": "^19.1.0",
     "three": "0.170.0",
     "@supabase/supabase-js": "^2.57.4",
-    "@capacitor/core": "^7.4.0",
-    "@capacitor/app": "^7.0.0",
-    "@capacitor/splash-screen": "^7.0.0"
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/splash-screen": "^8.0.0"
   },
   "devDependencies": {
     "@types/react": "^19.1.0",
@@ -24,8 +24,8 @@
     "@vitejs/plugin-react": "^4.4.1",
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
-    "@capacitor/cli": "^7.4.0",
-    "@capacitor/android": "^7.4.0"
+    "@capacitor/cli": "^8.0.0",
+    "@capacitor/android": "^8.0.0"
   },
   "overrides": {
     "@babel/parser": "7.29.13"

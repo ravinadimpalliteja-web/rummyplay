@@ -14,7 +14,11 @@ const config: CapacitorConfig = {
   backgroundColor: "#FAF5E9",
   android: { allowMixedContent: false },
   plugins: {
-    SplashScreen: { launchShowDuration: 1200, backgroundColor: "#FAF5E9", showSpinner: false }
+    SplashScreen: { launchShowDuration: 1200, backgroundColor: "#FAF5E9", showSpinner: false },
+    /* Capacitor 8 / Android 16 draw the app edge to edge. "css" keeps Capacitor's default: pages without
+       viewport-fit=cover are padded natively between the status and navigation bars; pages with it
+       (EKAH, Chess, Sudoku) get correct --safe-area-inset-* CSS variables. */
+    SystemBars: { insetsHandling: "css", style: "DEFAULT" }
   },
   ...(liveUrl ? { server: { url: liveUrl, cleartext: false } } : {})
 };

@@ -18,5 +18,5 @@ export function onNativeBack(onBack: () => boolean): () => void {
     because the app's built-in file server does not turn "/ekah/" into "/ekah/index.html" by itself. */
 export function pageHref(href: string): string {
   if (!isNativeApp()) return href;
-  return href.replace(/^(\/[a-z]+\/)(\?|$)/, "$1index.html$2");
+  return href.replace(/^(\/[a-z-]+\/)(\?|$)/, "$1index.html$2");
 }

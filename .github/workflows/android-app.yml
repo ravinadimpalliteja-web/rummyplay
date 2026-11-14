@@ -5,6 +5,8 @@ name: Royal Club Android app
 #   RoyalClub-test.apk    – opens test.royalclubgames.com, so every game change shows up without a new APK.
 #   RoyalClub-offline.apk – the games are packaged inside the app (works offline); this is the shape of the Play Store app.
 # Both use the same app id, so install one of them at a time.
+#   RoyalClub-play.aab    – the Play Store bundle (games packaged inside), signed with the upload key from the
+#                           repository secrets. Upload it in Play Console. Built only when those secrets exist.
 
 on:
   push:
@@ -33,6 +35,7 @@ jobs:
       VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_o89SjkD_5i4ay4JdKhVydw_VzNWbi8G' }}
       VITE_ROOM_SERVER_URL: ${{ vars.VITE_ROOM_SERVER_URL || 'wss://royal-club-rooms.onrender.com' }}
       TEST_SITE_URL: ${{ vars.TEST_SITE_URL || 'https://test.royalclubgames.com' }}
+      HAS_UPLOAD_KEY: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_B64 != '' }}
     steps:
       - uses: actions/checkout@v5
 
@@ -58,7 +61,8 @@ jobs:
             --iconBackgroundColor '#0F4D3A' --iconBackgroundColorDark '#0F4D3A' \
             --splashBackgroundColor '#FAF5E9' --splashBackgroundColorDark '#0F4D3A'
           # Each build gets a higher version number, so a new APK installs over the old one.
-          sed -i -E "s/versionCode [0-9]+/versionCode ${{ github.run_number }}/; s/versionName \"[^\"]+\"/versionName \"0.1.${{ github.run_number }}\"/" android/app/build.gradle
+          sed -i -E "s/versionCode( =)? [0-9]+/versionCode\\1 ${{ github.run_number }}/; s/versionName( =)? \"[^\"]+\"/versionName\\1 \"0.1.${{ github.run_number }}\"/" android/app/build.gradle
+          grep -E "versionCode|versionName|targetSdk" android/app/build.gradle android/variables.gradle || true
           # Same signing key on every build (see web/app-signing/README.md).
           mkdir -p ~/.android
           cp app-signing/test.keystore ~/.android/debug.keystore
@@ -69,6 +73,24 @@ jobs:
           npx cap sync android
           (cd android && ./gradlew --no-daemon assembleDebug)
           cp android/app/build/outputs/apk/debug/app-debug.apk ../apk/RoyalClub-offline.apk
+
+      - name: Build the Play Store bundle (AAB, games packaged inside)
+        if: env.HAS_UPLOAD_KEY == 'true'
+        env:
+          UPLOAD_KEYSTORE_B64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_B64 }}
+          UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_STORE_PASSWORD }}
+          UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+          UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+        run: |
+          npx cap sync android
+          (cd android && ./gradlew --no-daemon bundleRelease)
+          echo "$UPLOAD_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          jarsigner -keystore "$RUNNER_TEMP/upload.jks" -storepass "$UPLOAD_STORE_PASSWORD" -keypass "$UPLOAD_KEY_PASSWORD" \
+            -sigalg SHA256withRSA -digestalg SHA-256 \
+            android/app/build/outputs/bundle/release/app-release.aab "$UPLOAD_KEY_ALIAS"
+          rm -f "$RUNNER_TEMP/upload.jks"
+          jarsigner -verify android/app/build/outputs/bundle/release/app-release.aab | tail -1
+          cp android/app/build/outputs/bundle/release/app-release.aab ../apk/RoyalClub-play.aab
 
       - name: Build the test APK (opens the test site)
         run: |
@@ -88,9 +110,17 @@ jobs:
           path: apk/RoyalClub-offline.apk
           retention-days: 30
 
+      - uses: actions/upload-artifact@v4
+        if: env.HAS_UPLOAD_KEY == 'true'
+        with:
+          name: RoyalClub-play-aab
+          path: apk/RoyalClub-play.aab
+          retention-days: 90
+
       # Fixed phone-friendly link (no GitHub sign-in needed):
       # https://github.com/<owner>/<repo>/releases/download/test-app/RoyalClub-test.apk
       - name: Publish the test APK to the "test-app" release
+        if: github.event_name != 'pull_request'   # only merged code goes to the shared link
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

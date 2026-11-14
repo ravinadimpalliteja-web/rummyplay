@@ -348,3 +348,9 @@ button.card { cursor: default; }
 .soon-box h3 { margin: 0; font-size: 18px; }
 .soon-badge { padding: 3px 10px; border: 1px solid var(--gold); border-radius: 999px; color: var(--gold); font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 .soon-box .btn[disabled] { opacity: .5; cursor: not-allowed; width: 100%; }
+
+/* "Continue your game" (a vs-computer game saved on this phone) */
+.continue { border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin: 0 0 14px; display: flex; flex-direction: column; gap: 10px; }
+.continue[hidden] { display: none; }
+.continue p { margin: 0; display: flex; flex-direction: column; gap: 2px; }
+.continue span { opacity: .8; font-size: 14px; }

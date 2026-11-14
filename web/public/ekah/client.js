@@ -719,6 +719,7 @@
     ctrl = null; view = null; lastSeq = null; lastTop = null; prevHand = new Set(); armed = false;
     celebrated = null; winnerPi = null; scoresBefore = null;
     show('home');
+    showContinue();
   }
   $('resHome').addEventListener('click', () => goHome());
   $('leaveGame').addEventListener('click', () => goHome());
@@ -759,11 +760,34 @@
     () => { $('lobbyErr').textContent = 'Enter a winning score from 50 to 1000.'; });
 
   // ---------- vs computer ----------
-  function LocalGame(name, bots, target) {
+  /* The game is saved on this phone after every move, so closing the app mid-game loses nothing; the home screen
+     then offers "Continue". Same format as the main site's saves (web/src/lib/localSave.ts): { v, at, data }. */
+  const SAVE_KEY = 'rc-ekah-save', SAVE_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+  function readSave() {
+    try {
+      const s = JSON.parse(store.get(SAVE_KEY) || 'null');
+      const g = s && s.data && s.data.game;
+      if (!s || s.v !== 1 || !(Date.now() - s.at <= SAVE_MAX_AGE) || !g || !Array.isArray(g.players) || !Array.isArray(g.deck)
+        || g.phase === 'matchOver' || g.phase === 'idle') { store.del(SAVE_KEY); return null; }
+      return g;
+    } catch (e) { return null; }
+  }
+  function writeSave(g) {
+    if (g.phase === 'matchOver') { store.del(SAVE_KEY); return; }
+    store.set(SAVE_KEY, JSON.stringify({ v: 1, at: Date.now(), data: { game: g } }));   // g.rnd (a function) is left out
+  }
+  function showContinue() {
+    const g = readSave();
+    $('continueLocal').hidden = !g;
+    if (g) $('continueInfo').textContent = 'You vs ' + (g.players.length - 1) + ' computer player' + (g.players.length > 2 ? 's' : '') +
+      ', first to ' + g.target + ' points. Saved on this phone.';
+  }
+  function LocalGame(name, bots, target, restored) {
     const names = BOT_NAMES.slice().sort(() => Math.random() - 0.5).slice(0, bots);
-    const g = E.createGame([{ name: name }].concat(names.map((n) => ({ name: n, isBot: true }))), { target: target });
+    const g = restored || E.createGame([{ name: name }].concat(names.map((n) => ({ name: n, isBot: true }))), { target: target });
+    if (typeof g.rnd !== 'function') g.rnd = Math.random;
     let t1 = null, t2 = null, live = true;
-    function push() { if (!live) return; render(E.viewFor(g, 0)); schedule(); }
+    function push() { if (!live) return; writeSave(g); render(E.viewFor(g, 0)); schedule(); }
     function schedule() {
       clearTimeout(t1); clearTimeout(t2);
       if (g.phase !== 'play') return;
@@ -1011,6 +1035,13 @@
     ctrl = LocalGame(playerName(), Number($('bots').value), target);
     ctrl.start();
   });
+  $('continueBtn').addEventListener('click', () => {
+    const g = readSave();
+    if (!g) { showContinue(); return; }
+    ctrl = LocalGame(null, 0, 0, g);
+    ctrl.start();
+  });
+  showContinue();
   if (OFFLINE_ONLY) {
     $('onlinePanel').hidden = true;
     $('offlineNote').hidden = false;

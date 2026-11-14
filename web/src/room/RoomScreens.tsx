@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import "./room.css";
 import { openAuth, useAccount } from "../auth/account";
+import { copyText, shareOnWhatsApp } from "../lib/share";
 
 /* The Royal Club room format, shared by every game (modelled on EKAH). Use these two screens for any new game:
 
@@ -114,7 +115,7 @@ export type WaitProps = {
   game: string;
   onBack: () => void;
   code: string; passcode: string;
-  /** Message copied by "Copy invite". */
+  /** Invite message for WhatsApp and "Copy invite" (code, passcode and a join link). */
   invite: string;
   seats: (WaitSeat | null)[];
   you: number; hostSeat?: number; isHost: boolean;
@@ -139,7 +140,10 @@ export function WaitingRoom(p: WaitProps) {
   const full = seated.length >= p.seats.length, anyBot = seated.some(s => s.bot);
   const [copied, setCopied] = useState(false);
   const copy = () => {
-    try { navigator.clipboard.writeText(p.invite).then(() => { setCopied(true); window.setTimeout(() => setCopied(false), 1800); }, () => p.onMsg(p.invite)); } catch { p.onMsg(p.invite); }
+    void copyText(p.invite).then(ok => {
+      if (ok) { setCopied(true); window.setTimeout(() => setCopied(false), 1800); }
+      else p.onMsg(p.invite);             // couldn't copy: show the message so it can be copied by hand
+    });
   };
   const hostSeat = p.hostSeat ?? (p.isHost ? p.you : undefined);
   return <section className={`mode-page rs-page rs-wait ${p.children ? "has-extra" : ""} ${p.className ?? ""}`}>
@@ -151,7 +155,10 @@ export function WaitingRoom(p: WaitProps) {
         <b className="rs-code">{p.code}</b>
         <p className="rs-pass">Passcode <b>{p.passcode}</b></p>
         <p className="rs-note">Share the code and passcode with friends.</p>
-        <button className="ghost-button" onClick={copy}>{copied ? "Invite copied ✓" : "Copy invite"}</button>
+        <div className="rs-share">
+          <button className="gold-button rs-wa" onClick={() => shareOnWhatsApp(p.invite)}>Share on WhatsApp</button>
+          <button className="ghost-button" onClick={copy}>{copied ? "Invite copied ✓" : "Copy invite"}</button>
+        </div>
       </div>
       <div className="rs-panel">
         <h2>Players <span className="rs-count">{seated.length} / {p.seats.length}</span></h2>

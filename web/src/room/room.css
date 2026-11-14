@@ -111,3 +111,8 @@
 .rs-soon-tag { padding: 2px 8px; border: 1px solid #c9a24a; border-radius: 999px; color: #8a6420; font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 .rs-soon-badge { padding: 3px 10px; border: 1px solid #c9a24a; border-radius: 999px; color: #8a6420; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 .rs-soon button[disabled] { cursor: not-allowed; opacity: .6; }
+
+/* Room invite: WhatsApp share + copy */
+.rs-share { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.rs-share > button { flex: 1 1 150px; min-height: 46px; }
+.rs-wa { background: #1f8f4e !important; color: #fff !important; border-color: #1f8f4e !important; }

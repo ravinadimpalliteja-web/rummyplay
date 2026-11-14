@@ -910,10 +910,35 @@
   $('addBot').addEventListener('click', () => { $('lobbyErr').textContent = ''; ctrl && ctrl.send({ t: 'addBot' }); });
   $('removeBot').addEventListener('click', () => { $('lobbyErr').textContent = ''; ctrl && ctrl.send({ t: 'removeBot' }); });
   $('startGame').addEventListener('click', () => { $('lobbyErr').textContent = ''; ctrl && ctrl.send({ t: 'start' }); });
-  $('copyLink').addEventListener('click', () => {
+  /* Invites: inside the Android app the page address is https://localhost (the games are bundled), useless to a
+     friend, so the link always points at the public site. WhatsApp: the app can't open new windows, so it navigates
+     to wa.me and Android hands that to WhatsApp; the website opens it in a new tab. Copy falls back to the old
+     textarea copy where the clipboard API is refused (some WebViews). */
+  const isApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  function siteUrl() {
+    const set = String(window.RC_PUBLIC_SITE_URL || '').replace(/\/+$/, '');
+    if (set) return set;
+    return isApp || /\/\/localhost(:\d+)?$/.test(location.origin) || !/^https?:/.test(location.origin) ? 'https://test.royalclubgames.com' : location.origin;
+  }
+  function inviteText() {
     const code = $('roomCode').textContent, pass = $('roomPass').textContent;
-    const text = 'Join my Royal Club EKAH room: code ' + code + ', passcode ' + pass + ' at ' + location.origin + '/ekah/?room=' + code;
-    try { navigator.clipboard.writeText(text).then(() => toast('Invite copied'), () => toast(text)); } catch (e) { toast(text); }
+    return 'Join my Royal Club EKAH room!\nRoom code: ' + code + '\nPasscode: ' + pass + '\nTap to join: ' + siteUrl() + '/ekah/?room=' + encodeURIComponent(code) + '&pass=' + encodeURIComponent(pass);
+  }
+  function copyText(text) {
+    const old = () => {
+      try {
+        const ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.left = '-9999px';
+        document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length); const ok = document.execCommand('copy'); ta.remove(); return ok;
+      } catch (e) { return false; }
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text).then(() => true, () => old());
+    return Promise.resolve(old());
+  }
+  $('copyLink').addEventListener('click', () => { const t = inviteText(); copyText(t).then((ok) => toast(ok ? 'Invite copied' : t)); });
+  $('shareWa').addEventListener('click', () => {
+    const url = 'https://wa.me/?text=' + encodeURIComponent(inviteText());
+    if (isApp) { location.href = url; return; }
+    const w = window.open(url, '_blank', 'noopener'); if (!w) location.href = url;
   });
 
   // ---------- Royal Club account (signed in on the main site; rooms need a username) ----------
@@ -1066,8 +1091,9 @@
     };
     $('joinRoom').addEventListener('click', joinNow);
     $('joinPass').addEventListener('keydown', (e) => { if (e.key === 'Enter') joinNow(); });
-    const q = new URLSearchParams(location.search).get('room');
+    const qs = new URLSearchParams(location.search), q = qs.get('room'), qp = (qs.get('pass') || '').replace(/\D/g, '').slice(0, 4);
     if (q) $('joinCode').value = q.toUpperCase().slice(0, 4);
+    if (q && qp) $('joinPass').value = qp;
     if (store.get(ROOM_KEY)) ctrl = OnlineGame(null);   // a refresh or dropped connection resumes the same seat
   }
 })();

@@ -12,6 +12,7 @@ import { ROOM_SIGNIN_MSG, markPlayed, onRoomAuthError, roomAccount, useSeatLabel
 import { DEFAULT_PIECES, PIECE_IDS, pieceById, pieceImage, pieceUrl, type PieceId } from "./tokens";
 import { gaitOf, rungPose, stepPose, voiceOf, type Gait } from "./motion";
 import { motionReduced, setMotionReduced } from "../lib/motion";
+import { inviteText } from "../lib/share";
 import { SAVE_KEYS, loadGame, saveGame, clearGame } from "../lib/localSave";
 import "./snakes.css";
 
@@ -109,7 +110,7 @@ const Crown = () => <svg className="sl-crown" viewBox="0 0 64 34" aria-hidden="t
 const SoundIcon = ({ on }: { on: boolean }) => <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10z"/>{on ? <path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/> : <path d="M17 9l5 6M22 9l-5 6"/>}</svg>;
 const Face = ({ v }: { v: number }) => <>{Array.from({ length: 9 }, (_, i) => <i key={i} className={PIPS[v].includes(i) ? "on" : ""} />)}</>;
 
-export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; joinCode?: string }) {
+export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () => void; joinCode?: string; joinPass?: string }) {
   type Sub = "lobby" | "tokens" | "room" | "table";
   const [sub, setSub] = useState<Sub>(joinCode ? "room" : "lobby");
   const [bots, setBots] = useState(1);
@@ -121,7 +122,7 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
   const [view, setView] = useState<SLView | null>(null);
   const [net, setNet] = useState<NetStatus>("idle");
   const label = useSeatLabel();
-  const [roomCode, setRoomCode] = useState(joinCode ?? ""), [roomPass, setRoomPass] = useState("");
+  const [roomCode, setRoomCode] = useState(joinCode ?? ""), [roomPass, setRoomPass] = useState(joinPass ?? "");
   const [roomMsg, setRoomMsg] = useState("");
   const [animating, setAnimating] = useState(false);
   /** While a roll is being shown, the player who rolled stays highlighted (the game has already moved the turn on). */
@@ -792,7 +793,7 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
     const inLobby = view.phase === "lobby", seatsWith = view.seats.filter(Boolean) as NonNullable<SeatInfo>[];
     return <WaitingRoom className="sl-mode" game="Snakes & Ladders" onBack={() => setSub("lobby")}
       code={view.code} passcode={view.passcode}
-      invite={`Join my Royal Club Snakes & Ladders room — code ${view.code}, passcode ${view.passcode} — at ${window.location.origin}`}
+      invite={inviteText("Snakes & Ladders", "snakes", view.code, view.passcode)}
       seats={view.seats} you={view.you} hostSeat={view.hostSeat} isHost={view.host} colors={COLORS}
       avatar={s => <img src={pieceUrl(seatsWith.find(p => p.seat === s.seat)?.piece ?? DEFAULT_PIECES[s.seat])} alt="" />}
       onAddBot={() => send({ t: "addBot" })} onRemoveBot={() => send({ t: "removeBot" })} onStart={() => send({ t: "start" })}

@@ -7,6 +7,7 @@ import {
 import { DICE, Face, Piece, PieceDefs, TOKEN_SETS, isUnlocked, setPips, unlockText, type DiceId, type Stats, type TokenSet } from "./pieces";
 import { celebrate } from "../snakes/confetti";
 import { motionReduced, setMotionReduced } from "../lib/motion";
+import { inviteText } from "../lib/share";
 import { SAVE_KEYS, loadGame, saveGame, clearGame } from "../lib/localSave";
 import "./ludo.css";
 import { PlayStart, WaitingRoom } from "../room/RoomScreens";
@@ -191,7 +192,7 @@ function StylePicker({ tokens, dice, stats, onTokens, onDice }: { tokens: TokenS
   </div>;
 }
 
-export default function LudoGame({ onHome, joinCode }: { onHome: () => void; joinCode?: string }) {
+export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () => void; joinCode?: string; joinPass?: string }) {
   type Sub = "lobby" | "room" | "table";
   const [sub, setSub] = useState<Sub>(joinCode ? "room" : "lobby");
   const [bots, setBots] = useState(3);
@@ -204,7 +205,7 @@ export default function LudoGame({ onHome, joinCode }: { onHome: () => void; joi
   const [view, setView] = useState<LView | null>(null);
   const [net, setNet] = useState<NetStatus>("idle");
   const label = useSeatLabel();
-  const [roomCode, setRoomCode] = useState(joinCode ?? ""), [roomPass, setRoomPass] = useState("");
+  const [roomCode, setRoomCode] = useState(joinCode ?? ""), [roomPass, setRoomPass] = useState(joinPass ?? "");
   const [roomMsg, setRoomMsg] = useState("");
   const [disp, setDisp] = useState<Record<number, Tok[]> | null>(null);
   const [animating, setAnimating] = useState(false);
@@ -507,7 +508,7 @@ export default function LudoGame({ onHome, joinCode }: { onHome: () => void; joi
     const inLobby = view.phase === "lobby";
     return <WaitingRoom className="ld-mode" game="Ludo" onBack={() => setSub("lobby")}
       code={view.code} passcode={view.passcode}
-      invite={`Ludo? Join my Royal Club room — code ${view.code}, passcode ${view.passcode} — at ${window.location.origin}`}
+      invite={inviteText("Ludo", "ludo", view.code, view.passcode)}
       seats={view.seats} you={view.you} hostSeat={view.hostSeat} isHost={view.host}
       onAddBot={() => send({ t: "addBot" })} onRemoveBot={() => send({ t: "removeBot" })} onStart={() => send({ t: "start" })}
       blocked={!inLobby ? <button className="gold-button rs-wide" onClick={() => setSub("table")}>Return to the board →</button> : undefined}

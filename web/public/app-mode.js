@@ -29,9 +29,19 @@
       var ms = 0;
       if (Array.isArray(p)) { for (var i = 0; i < p.length; i += 2) ms += Number(p[i]) || 0; }   // on-times only
       else ms = Number(p) || 0;
-      if (ms > 0) { try { H.vibrate({ duration: Math.min(ms, 1000) }); } catch (e) { /* no vibrator */ } }
+      var off = false;
+      try { off = window.localStorage.getItem('rc-vibrate') === 'off'; } catch (e) { /* storage off */ }   // Settings › Vibration
+      if (ms > 0 && !off) { try { H.vibrate({ duration: Math.min(ms, 1000) }); } catch (e) { /* no vibrator */ } }
       return true;
     };
     try { Object.defineProperty(navigator, 'vibrate', { value: vibrate, configurable: true }); } catch (e) { /* read-only: keep the WebView's own */ }
   }
+
+  /* Simple pages (Privacy, Terms, account deletion) mark <body data-app-back="page">: the Android back button goes back
+     a page, or to the Royal Club home screen. Game pages handle the back button themselves. */
+  document.addEventListener('DOMContentLoaded', function () {
+    var A = C.Plugins && C.Plugins.App;
+    if (!A || !document.body || document.body.getAttribute('data-app-back') !== 'page') return;
+    A.addListener('backButton', function () { if (window.history.length > 1) window.history.back(); else window.location.href = '/'; });
+  });
 })();

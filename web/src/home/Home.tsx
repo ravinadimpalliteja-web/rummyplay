@@ -10,11 +10,11 @@ import { GameArtDefs, EkahArt, LudoArt, SnakesArt, ChessArt, SudokuArt } from ".
    resume card, a room-code box and the free-to-play promise. All artwork is original. */
 
 type Mood = "friends" | "quick" | "classics" | "computer";
-type RoomGame = "ekah" | "ludo" | "snakes" | "sudoku";
+export type RoomGame = "ekah" | "ludo" | "snakes" | "sudoku";
 
 interface Tile { id: GameId; name: string; sub: string; moods: Mood[] }
 
-const TILES: Tile[] = [
+export const TILES: Tile[] = [
   { id: "ekah", name: "EKAH", sub: "Our own card game · Agni · Vayu · Prithvi · Jal", moods: ["friends", "quick", "computer"] },
   { id: "ludo", name: "Ludo", sub: "2–4 players · computer, one phone or a room", moods: ["friends", "classics", "computer"] },
   { id: "snakes", name: "Snakes & Ladders", sub: "Race to 100 · roll a six to start", moods: ["friends", "quick", "classics", "computer"] },
@@ -30,7 +30,7 @@ const MOODS: { id: Mood; label: string; note: string }[] = [
 ];
 
 /* Each game remembers this device's live room under its own key; finding one means there is a game to go back to. */
-const RESUME: { id: RoomGame; key: string; name: string }[] = [
+export const RESUME: { id: RoomGame; key: string; name: string }[] = [
   { id: "ekah", key: "rc-room-ekah", name: "EKAH" },
   { id: "ludo", key: "rc-ludo-room", name: "Ludo" },
   { id: "snakes", key: "rc-snakes-room", name: "Snakes & Ladders" },
@@ -44,7 +44,7 @@ const LOCAL_RESUME: { id: GameId; name: string; has: () => boolean }[] = [
   { id: "chess", name: "Chess", has: chessInProgress },
   { id: "sudoku", name: "Sudoku", has: sudokuInProgress },
 ];
-function findResume(): { id: GameId; name: string; code: string } | null {
+export function findResume(): { id: GameId; name: string; code: string } | null {
   for (const r of RESUME) {
     try {
       const v = window.localStorage.getItem(r.key);

@@ -18,7 +18,7 @@ const config: CapacitorConfig = {
     /* Capacitor 8 / Android 16 draw the app edge to edge. "css" keeps Capacitor's default: pages without
        viewport-fit=cover are padded natively between the status and navigation bars; pages with it
        (EKAH, Chess, Sudoku) get correct --safe-area-inset-* CSS variables. */
-    SystemBars: { insetsHandling: "css", style: "DEFAULT" }
+    SystemBars: { insetsHandling: "css", style: "LIGHT" }   // dark status-bar icons on the ivory background
   },
   ...(liveUrl ? { server: { url: liveUrl, cleartext: false } } : {})
 };

@@ -13,7 +13,8 @@ const URL_ = Deno.env.get("SUPABASE_URL")!;
 const ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const PRIVATE_DOMAIN = "@players.royalclubgames.com";
-const ALLOWED = [/^https:\/\/(www\.|test\.)?royalclubgames\.com$/, /^https:\/\/([a-z0-9-]+-)?rummyplay\.ravi-nadimpalli-teja\.workers\.dev$/, /^http:\/\/localhost(:\d+)?$/];
+// https://localhost is the Android app (Capacitor serves the bundled games from that address).
+const ALLOWED = [/^https:\/\/(www\.|test\.)?royalclubgames\.com$/, /^https:\/\/localhost$/, /^https:\/\/([a-z0-9-]+-)?rummyplay\.ravi-nadimpalli-teja\.workers\.dev$/, /^http:\/\/localhost(:\d+)?$/];
 
 function cors(origin: string | null) {
   const ok = origin && ALLOWED.some((r) => r.test(origin));

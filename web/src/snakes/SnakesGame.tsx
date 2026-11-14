@@ -12,6 +12,7 @@ import { ROOM_SIGNIN_MSG, markPlayed, onRoomAuthError, roomAccount, useSeatLabel
 import { DEFAULT_PIECES, PIECE_IDS, pieceById, pieceImage, pieceUrl, type PieceId } from "./tokens";
 import { gaitOf, rungPose, stepPose, voiceOf, type Gait } from "./motion";
 import { motionReduced, setMotionReduced } from "../lib/motion";
+import { SAVE_KEYS, loadGame, saveGame, clearGame } from "../lib/localSave";
 import "./snakes.css";
 
 const ROOM_KEY = "rc-snakes-room", PIECE_KEY = "rc-snakes-piece";
@@ -30,6 +31,12 @@ const keep = (key: string, v: string) => { try { window.localStorage.setItem(key
 const setPips = (face: Element | null, v: number) => { if (face) Array.from(face.children).forEach((p, i) => p.classList.toggle("on", PIPS[v].includes(i))); };
 const COLORS = ["#d23b45", "#2f6fd6", "#e3a21a", "#8a4fd0"];
 const BOTS = ["Maya", "Alex", "Jordan"];
+type SLSave = { game: SLGame; names: string[]; pieces: PieceId[] };
+const isSLSave = (d: unknown): d is SLSave => {
+  const s = d as SLSave;
+  return !!s && Array.isArray(s.names) && Array.isArray(s.pieces) && s.pieces.every(p => (PIECE_IDS as readonly string[]).includes(p)) && !!s.game
+    && Array.isArray(s.game.order) && s.game.order.length === s.names.length && typeof s.game.pos === "object" && s.game.phase === "playing";
+};
 const PIPS: Record<number, number[]> = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
 const PLACE = ["1st", "2nd", "3rd", "4th"], MEDAL = ["🥇", "🥈", "🥉", "🎖️"];
 let reduced = motionReduced();
@@ -108,6 +115,7 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
   const [bots, setBots] = useState(1);
   const [local, setLocal] = useState<SLGame | null>(null);
   const [localNames, setLocalNames] = useState<string[]>(["You", ...BOTS]);
+  const [saved, setSaved] = useState<SLSave | null>(() => loadGame(SAVE_KEYS.snakes, isSLSave));
   const [localPieces, setLocalPieces] = useState<PieceId[]>(() => { const mine = readKey<PieceId>(PIECE_KEY, PIECE_IDS, "pawn-gold"); return [mine, ...DEFAULT_PIECES.filter(p => p !== mine)]; });
   const [picking, setPicking] = useState(0);
   const [view, setView] = useState<SLView | null>(null);
@@ -269,6 +277,16 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
     setLocal(newGame(names.map((_, i) => i))); setMsg("You go first. Roll a 6 to enter the board.");
     setSub("table");
   };
+  /* A practice game is saved after every roll, so closing the app mid-game loses nothing. */
+  const resumePractice = (s: SLSave) => {
+    setLocalNames(s.names); setLocalPieces(s.pieces); animatedN.current = null; disp.current = {}; overlay.current = {}; setBanner(null); setPanel("none");
+    setLocal(s.game); setMsg("Welcome back! Your game carries on."); setSub("table");
+  };
+  useEffect(() => {
+    if (!local) return;
+    if (local.phase === "gameEnd") { clearGame(SAVE_KEYS.snakes); setSaved(null); return; }
+    saveGame(SAVE_KEYS.snakes, { game: local, names: localNames, pieces: localPieces });
+  }, [local, localNames, localPieces]);
   useEffect(() => {
     if (online || !local || local.phase !== "playing" || animating || turnOf(local) === 0) return;
     if (local.last && local.last.n !== animatedN.current) return;            // wait for the last move to be shown
@@ -748,12 +766,16 @@ export default function SnakesGame({ onHome, joinCode }: { onHome: () => void; j
   }, [panel]);
 
   /* ---------- screens ---------- */
+  const pending: SLSave | null = local && local.phase !== "gameEnd" ? { game: local, names: localNames, pieces: localPieces } : saved;
   const startScreen = <PlayStart className="sl-mode" game="Snakes & Ladders" tagline="Climb the ladders, dodge the snakes, first to 100 wins."
     onBack={onHome}
     vsComputer={{ count: bots, options: [1, 2, 3], onCount: setBots, onPlay: choosePracticeTokens, playLabel: "Choose tokens →" }}
     friends={{ onCreate: createRoom, code: roomCode, onCode: setRoomCode, pass: roomPass, onPass: setRoomPass, onJoin: joinRoom, busy: net === "connecting" }}
     msg={roomMsg}
-    extra={view ? <div className="rs-panel"><h2>Your room</h2><p className="rs-note">You are in room {view.code}.</p><button className="gold-button rs-wide" onClick={() => setSub("room")}>Return to the room →</button></div> : undefined}
+    extra={view ? <div className="rs-panel"><h2>Your room</h2><p className="rs-note">You are in room {view.code}.</p><button className="gold-button rs-wide" onClick={() => setSub("room")}>Return to the room →</button></div>
+      : pending ? <div className="rs-panel sl-continue"><h2>Continue your game</h2>
+        <p className="rs-note">You vs {pending.names.length - 1} computer player{pending.names.length > 2 ? "s" : ""}. Saved on this phone.</p>
+        <button className="gold-button rs-wide" onClick={() => resumePractice(pending)}>Continue →</button></div> : undefined}
     rules={<ul><li>Roll a 6 to enter the board; a 6 rolls again.</li><li>Three 6s in a row cancel the turn.</li><li>Land exactly on 100. Play goes on for 1st, 2nd and 3rd.</li></ul>} />;
   if (sub === "lobby" || (sub === "room" && !view)) return startScreen;
 

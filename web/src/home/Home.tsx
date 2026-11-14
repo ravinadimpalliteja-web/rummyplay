@@ -2,6 +2,7 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { isListed, type GameId } from "../domain/game";
 import "./home.css";
 import { pageHref } from "../lib/native";
+import { SAVE_KEYS, chessInProgress, hasSavedGame, sudokuInProgress } from "../lib/localSave";
 import elephantMark from "../brand/badge-logo-small.webp";
 import { GameArtDefs, EkahArt, LudoArt, SnakesArt, ChessArt, SudokuArt } from "./GameArt";
 
@@ -35,13 +36,22 @@ const RESUME: { id: RoomGame; key: string; name: string }[] = [
   { id: "snakes", key: "rc-snakes-room", name: "Snakes & Ladders" },
   { id: "sudoku", key: "rc-room-sudoku", name: "Sudoku race" },
 ];
-function findResume(): { id: RoomGame; name: string; code: string } | null {
+/* Games on this device (vs computer, pass & play, solo Sudoku) are saved as they go; a live room comes first. */
+const LOCAL_RESUME: { id: GameId; name: string; has: () => boolean }[] = [
+  { id: "ludo", name: "Ludo", has: () => hasSavedGame(SAVE_KEYS.ludo) },
+  { id: "ekah", name: "EKAH", has: () => hasSavedGame(SAVE_KEYS.ekah) },
+  { id: "snakes", name: "Snakes & Ladders", has: () => hasSavedGame(SAVE_KEYS.snakes) },
+  { id: "chess", name: "Chess", has: chessInProgress },
+  { id: "sudoku", name: "Sudoku", has: sudokuInProgress },
+];
+function findResume(): { id: GameId; name: string; code: string } | null {
   for (const r of RESUME) {
     try {
       const v = window.localStorage.getItem(r.key);
       if (v && /^[A-Za-z]{4}$/.test(v) && isListed(r.id)) return { id: r.id, name: r.name, code: v.toUpperCase() };
     } catch { return null; }
   }
+  for (const r of LOCAL_RESUME) if (isListed(r.id) && r.has()) return { id: r.id, name: r.name, code: "" };
   return null;
 }
 
@@ -103,8 +113,8 @@ export default function Home({ onOpen, onJoin }: HomeProps) {
 
       {resume && (
         <section className="rc-resume" aria-label="Continue playing">
-          <span className="rc-resume-art">{resume.id === "ludo" ? <LudoArt /> : resume.id === "snakes" ? <SnakesArt /> : resume.id === "sudoku" ? <SudokuArt /> : <EkahArt />}</span>
-          <span className="rc-resume-text"><small>CONTINUE PLAYING</small><strong>{resume.name} · room {resume.code}</strong></span>
+          <span className="rc-resume-art">{resume.id === "ludo" ? <LudoArt /> : resume.id === "snakes" ? <SnakesArt /> : resume.id === "sudoku" ? <SudokuArt /> : resume.id === "chess" ? <ChessArt /> : <EkahArt />}</span>
+          <span className="rc-resume-text"><small>CONTINUE PLAYING</small><strong>{resume.name} · {resume.code ? `room ${resume.code}` : "saved game"}</strong></span>
           <button type="button" className="rc-saffron rc-pill" onClick={() => onOpen(resume.id)}>Resume</button>
         </section>
       )}

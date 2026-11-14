@@ -7,6 +7,7 @@ import {
 import { DICE, Face, Piece, PieceDefs, TOKEN_SETS, isUnlocked, setPips, unlockText, type DiceId, type Stats, type TokenSet } from "./pieces";
 import { celebrate } from "../snakes/confetti";
 import { motionReduced, setMotionReduced } from "../lib/motion";
+import { SAVE_KEYS, loadGame, saveGame, clearGame } from "../lib/localSave";
 import "./ludo.css";
 import { PlayStart, WaitingRoom } from "../room/RoomScreens";
 import { ROOM_SIGNIN_MSG, markPlayed, onRoomAuthError, roomAccount, useSeatLabel } from "../auth/account";
@@ -28,6 +29,13 @@ const STATS_KEY = "rc-ludo-stats";
 const readStats = (): Stats => { try { const v = JSON.parse(window.localStorage.getItem(STATS_KEY) ?? "{}"); return { played: Number(v.played) || 0, wins: Number(v.wins) || 0 }; } catch { return { played: 0, wins: 0 }; } };
 const keep = (key: string, v: string) => { try { window.localStorage.setItem(key, v); } catch { /* storage off: still works for this visit */ } };
 const ORD = ["1st", "2nd", "3rd", "4th"];
+/* A game on this device (vs computer or pass & play), saved after every move so it survives closing the app. */
+type LudoSave = { game: Game; mode: "practice" | "pass"; names: string[] };
+const isLudoSave = (d: unknown): d is LudoSave => {
+  const s = d as LudoSave;
+  return !!s && (s.mode === "practice" || s.mode === "pass") && Array.isArray(s.names) && !!s.game && Array.isArray(s.game.order)
+    && s.game.order.length === s.names.length && typeof s.game.tokens === "object" && (s.game.phase === "roll" || s.game.phase === "move");
+};
 /* Rotate the board so the viewer's yard sits bottom-left (red is top-left in board coordinates). */
 const ROT: Record<Color, number> = { blue: 0, red: -90, green: 180, yellow: 90 };
 const CORNERS: [number, number][] = [[18, 15], [82, 15], [82, 85], [18, 85]];
@@ -192,6 +200,7 @@ export default function LudoGame({ onHome, joinCode }: { onHome: () => void; joi
   const [local, setLocal] = useState<Game | null>(null);
   const [localMode, setLocalMode] = useState<"practice" | "pass">("practice");
   const [localNames, setLocalNames] = useState<string[]>(["You", ...BOTS]);
+  const [saved, setSaved] = useState<LudoSave | null>(() => loadGame(SAVE_KEYS.ludo, isLudoSave));
   const [view, setView] = useState<LView | null>(null);
   const [net, setNet] = useState<NetStatus>("idle");
   const label = useSeatLabel();
@@ -292,6 +301,14 @@ export default function LudoGame({ onHome, joinCode }: { onHome: () => void; joi
     setLocal(newGame(names.map((_, i) => i), mode === "practice" ? 0 : Math.floor(Math.random() * names.length)));
     setSub("table");
   };
+  const resumeLocal = (s: LudoSave) => {
+    setLocalMode(s.mode); setLocalNames(s.names); animatedN.current = null; setDisp(null); setLocal(s.game); setSub("table");
+  };
+  useEffect(() => {                                     // auto-save; a finished game is forgotten
+    if (!local) return;
+    if (local.phase === "gameEnd") { clearGame(SAVE_KEYS.ludo); setSaved(null); return; }
+    saveGame(SAVE_KEYS.ludo, { game: local, mode: localMode, names: localNames });
+  }, [local, localMode, localNames]);
   useEffect(() => {
     if (online || !local || local.phase === "gameEnd" || animating) return;
     if (local.last && local.last.n !== animatedN.current) return;            // wait until the last event has been shown
@@ -461,12 +478,16 @@ export default function LudoGame({ onHome, joinCode }: { onHome: () => void; joi
   }, []);
 
   /* ---------- screens ---------- */
+  const pending: LudoSave | null = local && local.phase !== "gameEnd" ? { game: local, mode: localMode, names: localNames } : saved;
   if (sub === "lobby" || (sub === "room" && !view)) return <PlayStart className="ld-mode" game="Ludo" tagline="Race your four tokens home. Cut, block and roll sixes."
     onBack={onHome}
     vsComputer={{ count: bots, options: [1, 2, 3], onCount: setBots, onPlay: () => startLocal("practice") }}
     friends={{ onCreate: createRoom, code: roomCode, onCode: setRoomCode, pass: roomPass, onPass: setRoomPass, onJoin: joinRoom, busy: net === "connecting" }}
     msg={roomMsg}
-    extra={view && <div className="rs-panel"><h2>Your room</h2><p className="rs-note">You are in room {view.code}.</p><button className="gold-button rs-wide" onClick={() => setSub("room")}>Return to the room →</button></div>}
+    extra={view ? <div className="rs-panel"><h2>Your room</h2><p className="rs-note">You are in room {view.code}.</p><button className="gold-button rs-wide" onClick={() => setSub("room")}>Return to the room →</button></div>
+      : pending ? <div className="rs-panel ld-continue"><h2>Continue your game</h2>
+        <p className="rs-note">{pending.mode === "pass" ? `Pass & play: ${pending.names.join(", ")}` : `You vs ${pending.names.length - 1} computer player${pending.names.length > 2 ? "s" : ""}`}. Saved on this phone.</p>
+        <button className="gold-button rs-wide" onClick={() => resumeLocal(pending)}>Continue →</button></div> : undefined}
     passPlay={<>
       <div className="rs-panel ld-pass">
         <h2>Pass &amp; play</h2>

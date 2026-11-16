@@ -60,7 +60,7 @@ input:focus, select:focus, .btn:focus-visible, .card:focus-visible { outline: 3p
 .iconbtn.edit svg { width: 18px; height: 18px; }
 
 .modes { border-radius: 20px; background: var(--panel); border: 1px solid var(--line); overflow: hidden; }
-.tabs { display: grid; grid-template-columns: 1fr 1fr 1fr; padding: 6px; gap: 6px; background: rgba(0,0,0,.22); }
+.tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); padding: 6px; gap: 6px; background: rgba(0,0,0,.22); }
 .tabs button { border: 0; border-radius: 14px; min-height: 44px; background: transparent; color: var(--muted); font-weight: 800; font-size: 15px; }
 .tabs button[aria-selected="true"] { background: var(--gold); color: var(--gold-ink); box-shadow: 0 3px 0 #B8861A; }
 .tabs button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
@@ -123,7 +123,8 @@ details.rules ul { margin: 6px 0 0; padding-left: 18px; }
 /* ---------- game ---------- */
 /* Layout: you at the bottom with your cards in an arc; everyone else sits around the table like Royal Club Spades. */
 #game { display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; }
-.topbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; }
+.topbar { display: flex; align-items: center; gap: 8px; padding: 6px 12px; }
+.topbar .rc-bar-name strong { font-family: "Baloo 2", sans-serif; font-size: 20px; letter-spacing: .06em; }
 .topbar .title { font-size: 26px; color: #fff; -webkit-text-stroke: 4px var(--gold-ink); paint-order: stroke fill; }
 .topbar .meta { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .topbar .spacer { flex: 1; }
@@ -363,13 +364,9 @@ button.card { cursor: default; }
 .btn.wa { background: #1f8f4e; color: #fff; }
 
 /* Room turn timer */
-.turn-timer { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; font-size: 12px; font-weight: 800; color: var(--muted); font-variant-numeric: tabular-nums; }
-.turn-timer .track { width: 64px; height: 6px; border-radius: 999px; background: rgba(255,255,255,.14); overflow: hidden; }
-.turn-timer i { display: block; height: 100%; width: 100%; background: var(--muted); transition: width .25s linear; }
-.turn-timer.mine { color: var(--gold); }
-.turn-timer.mine i { background: var(--gold); }
-.turn-timer.low { color: #FF7A6B; }
-.turn-timer.low i { background: #FF7A6B; }
+.turn-timer { margin-left: auto; }
+.turn-timer:not(.mine) { opacity: .75; }
+.turn-timer.hidden { display: none; }
 
 /* Table themes (a personal choice on this device; other players keep their own) */
 :root[data-table="kesari"] { --bg: #3A1206; --felt: #8A3410; --felt-edge: #B8561A; --panel: #4A1A08; }

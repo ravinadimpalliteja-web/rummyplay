@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { GameBar, IconButton, PaletteIcon, RulesIcon, SoundIcon, TurnTimer } from "../ui/GameBar";
 import { RoomClient, deviceToken, randomPasscode, saveRoom, savedRoom, serverUrl, type NetStatus } from "../domain/online";
 import {
   ANIM, COLORS, LANE, SAFE, SPOTS, TRACK, YARD, bestMove, cellKey, move, newGame, pointOf, previewMove, roll, rollDie, turnOf,
@@ -13,11 +14,6 @@ import "./ludo.css";
 import { PlayStart, WaitingRoom } from "../room/RoomScreens";
 import { ROOM_SIGNIN_MSG, markPlayed, onRoomAuthError, roomAccount, useSeatLabel } from "../auth/account";
 
-/* Cinzel (design D headings) for the table; the rest of the site loads its own fonts. */
-if (typeof document !== "undefined" && !document.getElementById("rc-cinzel")) {
-  const l = document.createElement("link"); l.id = "rc-cinzel"; l.rel = "stylesheet";
-  l.href = "https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&display=swap"; document.head.appendChild(l);
-}
 
 const ROOM_KEY = "rc-ludo-room";
 const BOTS = ["Maya", "Alex", "Jordan"];
@@ -555,7 +551,7 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
         disabled={!mine} onClick={doRoll} aria-label={mine ? "Roll the dice" : `${t.names[seat]}'s dice${lastDie[seat] ? `, showing ${lastDie[seat]}` : ""}`}>
         <span className="ld-face"><Face v={lastDie[seat] ?? 0} /></span>
       </button>
-      {turn && secsLeft !== null && ready && seat === t.turn && <span className={`ld-seat-timer${secsLeft <= 5 ? " urgent" : ""}`}>{secsLeft}s</span>}
+      {turn && ready && seat === t.turn && <span className="ld-seat-timer"><TurnTimer secs={secsLeft} small /></span>}
     </div>;
   };
   const turnName = t.names[t.turn];
@@ -564,15 +560,11 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
     : holdsTurn && t.stage === "move" && !animating ? "Tap a glowing token" : animating ? "Moving…" : `${turnName}'s turn`;
   return <section className="ld-screen">
     <PieceDefs />
-    <div className="ld-toolbar">
-      <button className="back-link" onClick={() => setSub(online ? "room" : "lobby")}>{online ? "← Room" : "← Lobby"}</button>
-      <strong>LUDO<span>{online && view ? `ROOM ${view.code}` : t.mode === "pass" ? "PASS & PLAY" : "PRACTICE"}</span></strong>
-      <span className="ld-tools">
-        <button className="ld-icon" aria-pressed={sound} aria-label={sound ? "Sound on" : "Sound off"} onClick={() => { const v = !sound; setSound(v); try { window.localStorage.setItem("rc-ludo-sound", v ? "on" : "off"); } catch { /* ignore */ } }}>{sound ? "🔊" : "🔇"}</button>
-        <button className="ld-icon" onClick={() => setSheet(sheet === "style" ? "none" : "style")} aria-expanded={sheet === "style"}>Style</button>
-        <button className="ld-icon" onClick={() => setSheet(sheet === "rules" ? "none" : "rules")} aria-expanded={sheet === "rules"}>Rules</button>
-      </span>
-    </div>
+    <GameBar game="Ludo" where={online && view ? `Room ${view.code}` : t.mode === "pass" ? "Pass & Play" : "Practice"} onBack={() => setSub(online ? "room" : "lobby")} backLabel={online ? "Back to the room" : "Back to the lobby"} className="ld-bar">
+      <IconButton label={sound ? "Sound on" : "Sound off"} pressed={sound} onClick={() => { const v = !sound; setSound(v); try { window.localStorage.setItem("rc-ludo-sound", v ? "on" : "off"); } catch { /* ignore */ } }}><SoundIcon on={sound} /></IconButton>
+      <IconButton label="Board style" expanded={sheet === "style"} onClick={() => setSheet(sheet === "style" ? "none" : "style")}><PaletteIcon /></IconButton>
+      <IconButton label="Rules" expanded={sheet === "rules"} onClick={() => setSheet(sheet === "rules" ? "none" : "rules")}><RulesIcon /></IconButton>
+    </GameBar>
     <div className="ld-main">
       <div className="ld-seats top">{seatCard(0)}{seatCard(1)}</div>
       <div className="ld-stage">

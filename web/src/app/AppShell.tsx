@@ -7,6 +7,7 @@ import { useAccount } from "../auth/account";
 import AuthPanel from "../auth/AuthPanel";
 import { GameArtDefs, EkahArt, LudoArt, SnakesArt, ChessArt, SudokuArt } from "../home/GameArt";
 import { TILES, RESUME, findResume, type RoomGame } from "../home/Home";
+import LearnRow from "../home/LearnRow";
 import elephantMark from "../brand/badge-logo-small.webp";
 import "./app-shell.css";
 
@@ -106,6 +107,7 @@ function PlayTab({ onOpen, onTab }: { onOpen: (id: GameId) => void; onTab: (t: A
         </button>
       ))}
     </div>
+    <LearnRow id="ax-learn" className="ax-learn" />
     <p className="ax-promise">Free to play · No real money</p>
   </div>;
 }

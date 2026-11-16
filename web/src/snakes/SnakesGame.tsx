@@ -7,6 +7,7 @@ import { SnakeArt, type SnakeOverlay } from "./snake2d";
 import { setSound, sfx, soundOn, unlock } from "./sound";
 import { celebrate } from "./confetti";
 import TokenPicker from "./TokenPicker";
+import { GameBar, IconButton, TurnTimer } from "../ui/GameBar";
 import { ClubBar, PlayStart, WaitingRoom } from "../room/RoomScreens";
 import { ROOM_SIGNIN_MSG, markPlayed, onRoomAuthError, roomAccount, useSeatLabel } from "../auth/account";
 import { DEFAULT_PIECES, PIECE_IDS, pieceById, pieceImage, pieceUrl, type PieceId } from "./tokens";
@@ -844,16 +845,10 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
   const rollLabel = table.phase === "gameEnd" ? "Game over" : myTurn ? (table.streak > 0 ? "Roll again" : "Roll dice") : animating ? "Rolling…" : rankOf(table.you) ? "You've finished" : `${turnName}'s turn`;
   const where = online && view ? `Room ${view.code}` : "You vs Comp";
   return <section className={`sl-screen table-${tableColour} ${view3d === "flat" ? "flat" : ""}`}>
-    <header className="sl-head">
-      <button className="sl-icon-btn" onClick={() => setSub(online ? "room" : "lobby")} aria-label={online ? "Back to the room" : "Back to the lobby"}>←</button>
-      <div className="sl-crest" role="img" aria-label={`Royal Club Snakes and Ladders, ${where}`}>
-        <Crown /><b>ROYAL CLUB</b><span>SNAKES &amp; LADDERS</span>
-      </div>
-      <div className="sl-head-end">
-        <button className="sl-icon-btn" onClick={toggleSound} aria-label={sound ? "Turn sound off" : "Turn sound on"} aria-pressed={sound}><SoundIcon on={sound} /></button>
-        <button className="sl-icon-btn" onClick={() => togglePanel("settings")} aria-label="Settings" aria-expanded={panel === "settings"}><GearIcon /></button>
-      </div>
-    </header>
+    <GameBar game="Snakes & Ladders" where={online && view ? `Room ${view.code}` : "Vs Computer"} onBack={() => setSub(online ? "room" : "lobby")} backLabel={online ? "Back to the room" : "Back to the lobby"} dark className="sl-head">
+      <IconButton label={sound ? "Turn sound off" : "Turn sound on"} pressed={sound} onClick={toggleSound}><SoundIcon on={sound} /></IconButton>
+      <IconButton label="Settings" expanded={panel === "settings"} onClick={() => togglePanel("settings")}><GearIcon /></IconButton>
+    </GameBar>
 
     <aside className="sl-left" aria-label="Players">
       <div className="sl-side-title"><b>Players ({table.order.length})</b><small>{where}</small></div>
@@ -910,7 +905,7 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
         </div>
       </button>
       <span className={`sl-roll-hint ${myTurn ? "ready" : ""}`} aria-hidden="true">{myTurn ? (table.streak > 0 ? "Tap the dice to roll again" : "Tap the dice to roll") : rollLabel}</span>
-      {secsLeft !== null && myTurn && <span className={`timer-chip ${secsLeft <= 5 ? "urgent" : ""}`}>⏱ {secsLeft}s</span>}
+      {myTurn && <span className="timer-chip"><TurnTimer secs={secsLeft} onDark /></span>}
       <div className="sl-last">
         <b className="sl-last-title">{table.last ? "Last turn" : "Ready"}</b>
         {table.last && <div className="sl-last-roll"><span className={`sl-mini d-${dice}`}><span className="sl-face"><Face v={dieValue} /></span></span><strong>{animating ? "…" : dieValue}</strong></div>}

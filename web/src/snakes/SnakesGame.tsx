@@ -7,7 +7,7 @@ import { SnakeArt, type SnakeOverlay } from "./snake2d";
 import { setSound, sfx, soundOn, unlock } from "./sound";
 import { celebrate } from "./confetti";
 import TokenPicker from "./TokenPicker";
-import { PlayStart, WaitingRoom } from "../room/RoomScreens";
+import { ClubBar, PlayStart, WaitingRoom } from "../room/RoomScreens";
 import { ROOM_SIGNIN_MSG, markPlayed, onRoomAuthError, roomAccount, useSeatLabel } from "../auth/account";
 import { DEFAULT_PIECES, PIECE_IDS, pieceById, pieceImage, pieceUrl, type PieceId } from "./tokens";
 import { gaitOf, rungPose, stepPose, voiceOf, type Gait } from "./motion";
@@ -28,6 +28,18 @@ const DICE = [
 type DiceId = typeof DICE[number]["id"];
 const readKey = <T extends string>(key: string, ok: readonly string[], dflt: T): T => { try { const v = window.localStorage.getItem(key); return v && ok.includes(v) ? (v as T) : dflt; } catch { return dflt; } };
 const keep = (key: string, v: string) => { try { window.localStorage.setItem(key, v); } catch { /* storage off: still works for this visit */ } };
+const QUICK_KEY = "rc-snakes-quick";
+
+/** Start rule picker: Classic (need a 6) or Quick (any roll starts). */
+function RuleChoice({ quick, onQuick }: { quick: boolean; onQuick: (on: boolean) => void }) {
+  return <div className="sl-rule">
+    <b>Start rule</b>
+    <div className="sl-rule-opts" role="radiogroup" aria-label="Start rule">
+      <button type="button" role="radio" aria-checked={!quick} className={!quick ? "on" : ""} onClick={() => onQuick(false)}><strong>Classic</strong><small>Roll a 6 to start</small></button>
+      <button type="button" role="radio" aria-checked={quick} className={quick ? "on" : ""} onClick={() => onQuick(true)}><strong>Quick game</strong><small>Any roll starts</small></button>
+    </div>
+  </div>;
+}
 /** Shows value `v` on a die face drawn with nine pip slots (used while the 2D die tumbles, without re-rendering). */
 const setPips = (face: Element | null, v: number) => { if (face) Array.from(face.children).forEach((p, i) => p.classList.toggle("on", PIPS[v].includes(i))); };
 const COLORS = ["#d23b45", "#2f6fd6", "#e3a21a", "#8a4fd0"];
@@ -57,7 +69,7 @@ const SPARK_MS = 650, BURST_MS = 520;
 
 type SeatInfo = { seat: number; name: string; bot?: boolean; connected: boolean; away: boolean; piece?: PieceId } | null;
 type SLView = {
-  t: "state"; game: "snakes"; board?: number; code: string; passcode: string; now: number; you: number; host: boolean; hostSeat?: number;
+  t: "state"; game: "snakes"; board?: number; quick?: boolean; code: string; passcode: string; now: number; you: number; host: boolean; hostSeat?: number;
   phase: "lobby" | "playing" | "gameEnd"; seats: SeatInfo[];
   order?: number[]; players?: { seat: number; sq: number }[]; turn?: number; streak?: number;
   last?: LastRoll | null; winner?: number | null; deadline?: number | null; moving?: boolean; finished?: number[];
@@ -114,6 +126,9 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
   type Sub = "lobby" | "tokens" | "room" | "table";
   const [sub, setSub] = useState<Sub>(joinCode ? "room" : "lobby");
   const [bots, setBots] = useState(1);
+  /* Start rule: Classic (a 6 to enter) or Quick (any roll enters). Remembered on this device. */
+  const [quick, setQuickState] = useState(() => readKey<"on" | "off">(QUICK_KEY, ["on", "off"], "off") === "on");
+  const setQuick = (on: boolean) => { setQuickState(on); keep(QUICK_KEY, on ? "on" : "off"); };
   const [local, setLocal] = useState<SLGame | null>(null);
   const [localNames, setLocalNames] = useState<string[]>(["You", ...BOTS]);
   const [saved, setSaved] = useState<SLSave | null>(() => loadGame(SAVE_KEYS.snakes, isSLSave));
@@ -210,6 +225,13 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
 
   /* ---------- room connection (same server as Spades; its own saved room on this device) ---------- */
   const send = (o: object) => clientRef.current?.send(o);
+  /* A new room starts with the host's own start-rule choice. */
+  const ruleSynced = useRef<string | null>(null);
+  useEffect(() => {
+    if (!view || !view.host || view.phase !== "lobby" || ruleSynced.current === view.code) return;
+    ruleSynced.current = view.code;
+    if (!!view.quick !== quick) send({ t: "rule", quick });
+  }, [view?.code, view?.host, view?.phase]);
   const openRoom = (first: object) => {
     const url = serverUrl();
     if (!url) { setRoomMsg("The room server address is not set up yet, so rooms are not available."); return; }
@@ -275,7 +297,7 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
   const startPractice = () => {
     const names = localNames;
     setLocalNames(names); animatedN.current = null; disp.current = {}; overlay.current = {}; setBanner(null); setPanel("none");
-    setLocal(newGame(names.map((_, i) => i))); setMsg("You go first. Roll a 6 to enter the board.");
+    setLocal(newGame(names.map((_, i) => i), quick)); setMsg(quick ? "You go first. Quick game: any roll enters the board." : "You go first. Roll a 6 to enter the board.");
     setSub("table");
   };
   /* A practice game is saved after every roll, so closing the app mid-game loses nothing. */
@@ -726,7 +748,8 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
     const l = table.last;
     if (animatedN.current === null || !l || l.n < animatedN.current) {          // fresh table, resumed game, or new game
       animatedN.current = l?.n ?? 0; settle(); setBanner(null);
-      if (!l) setMsg(online ? `${table.names[table.turn]}${table.turn === table.you ? " go" : " goes"} first. Roll a 6 to enter the board.` : "You go first. Roll a 6 to enter the board.");
+      const enterHint = (online ? view?.quick : local?.quick) ? "Quick game: any roll enters the board." : "Roll a 6 to enter the board.";
+      if (!l) setMsg(online ? `${table.names[table.turn]}${table.turn === table.you ? " go" : " goes"} first. ${enterHint}` : `You go first. ${enterHint}`);
       else setMsg(describe(l, table));
       return;
     }
@@ -777,11 +800,12 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
       : pending ? <div className="rs-panel sl-continue"><h2>Continue your game</h2>
         <p className="rs-note">You vs {pending.names.length - 1} computer player{pending.names.length > 2 ? "s" : ""}. Saved on this phone.</p>
         <button className="gold-button rs-wide" onClick={() => resumePractice(pending)}>Continue →</button></div> : undefined}
-    rules={<ul><li>Roll a 6 to enter the board; a 6 rolls again.</li><li>Three 6s in a row cancel the turn.</li><li>Land exactly on 100. Play goes on for 1st, 2nd and 3rd.</li></ul>} />;
+    after={<div className="rs-panel"><RuleChoice quick={quick} onQuick={setQuick} /></div>}
+    rules={<ul><li>Classic: roll a 6 to enter the board. Quick game: any roll enters.</li><li>A 6 rolls again.</li><li>Three 6s in a row cancel the turn.</li><li>Land exactly on 100. Play goes on for 1st, 2nd and 3rd.</li></ul>} />;
   if (sub === "lobby" || (sub === "room" && !view)) return startScreen;
 
   if (sub === "tokens") return <section className="mode-page sl-mode sl-tokens-page">
-    <button className="back-link" onClick={() => setSub("lobby")}>← Back</button>
+    <ClubBar game="Snakes & Ladders" onBack={() => setSub("lobby")} />
     <div className="eyebrow">ROYAL CLUB · SNAKES &amp; LADDERS</div>
     <h1>Choose your tokens</h1>
     <TokenPicker players={localNames.map((n, i) => ({ key: i, name: label(n), piece: localPieces[i], color: COLORS[i], editable: true }))}
@@ -801,6 +825,10 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
         : view.board !== BOARD_VERSION ? <p className="room-note sl-warn" role="alert">This room server still runs the previous board layout, so online games are paused until it is updated. You vs Comp games use the new board now.</p> : undefined}
       msg={roomMsg} onMsg={setRoomMsg} onLeave={leaveRoom}
       note={inLobby ? "Up to four players. The host can fill empty seats with computer players." : "If you leave, the server rolls for you. You can rejoin from this device with the same code and passcode."}>
+      {inLobby && <div className="rs-panel sl-rule-room">
+        {view.host ? <RuleChoice quick={!!view.quick} onQuick={on => { setQuick(on); send({ t: "rule", quick: on }); }} />
+          : <p className="rs-note"><b>{view.quick ? "Quick game" : "Classic game"}</b> — {view.quick ? "any roll enters the board." : "a 6 is needed to enter the board."} The host chooses.</p>}
+      </div>}
       {inLobby ? <TokenPicker
         players={seatsWith.map(p => ({ key: p.seat, name: p.seat === view.you ? label("You") : p.name + (!p.connected ? " · offline" : ""), piece: p.piece ?? DEFAULT_PIECES[p.seat], color: COLORS[p.seat], editable: p.seat === view.you }))}
         active={view.you} onActive={() => undefined} onPick={(_, id) => { keep(PIECE_KEY, id); send({ t: "piece", id }); }}

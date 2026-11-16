@@ -28,11 +28,12 @@ export type LastRoll = {
 export type SLGame = {
   order: number[]; pos: Record<number, number>; turnIdx: number; streak: number; turnStart: number;
   phase: "playing" | "gameEnd"; winner: number | null; last: LastRoll | null; rolls: number; finished: number[];
+  quick?: boolean;                 // Quick game: any roll enters the board (classic needs a 6)
 };
 
-export const newGame = (order: number[]): SLGame => ({
+export const newGame = (order: number[], quick = false): SLGame => ({
   order: [...order], pos: Object.fromEntries(order.map(s => [s, 0])), turnIdx: 0, streak: 0, turnStart: 0,
-  phase: "playing", winner: null, last: null, rolls: 0, finished: [],
+  phase: "playing", winner: null, last: null, rolls: 0, finished: [], quick,
 });
 export const turnOf = (g: SLGame) => g.order[g.turnIdx];
 
@@ -45,7 +46,7 @@ export function roll(prev: SLGame, seat: number, value: number, lucky = false): 
   if (value === 6) g.streak++;
   let outcome: Outcome, landed = from, to = from, via: LastRoll["via"] = null;
   if (value === 6 && g.streak >= 3) { outcome = "three-sixes"; to = landed = g.turnStart; }
-  else if (from === 0 && value !== 6) outcome = "need-six";
+  else if (from === 0 && value !== 6 && !g.quick) outcome = "need-six";
   else if (from === 0) { outcome = "enter"; to = landed = 1; }
   else if (from + value > TARGET) outcome = "overshoot";
   else { outcome = "move"; to = landed = from + value; }

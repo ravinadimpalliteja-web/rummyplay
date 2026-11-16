@@ -157,7 +157,7 @@ function animMs(last) {
 }
 
 /* ---------- live room ---------- */
-const TURN_SECS = 15;              // time to roll, and again to choose a token, before the game plays for you
+const TURN_SECS = 20;              // time to roll, and again to choose a token, before the game plays for you
 const AWAY_DELAY_MS = 1500;        // a player who left / is offline / missed 2 turns is played for after this
 const AWAY_AFTER_MISSES = 2;
 

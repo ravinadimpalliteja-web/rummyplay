@@ -4,7 +4,7 @@
  *
  * Rules (owner-confirmed):
  *  - 2 to 4 real players; the host can start once two or more have joined.
- *  - A six is needed to enter the board (you enter on square 1).
+ *  - A six is needed to enter the board (you enter on square 1). In a Quick game (host's choice) any roll enters.
  *  - A six gives another roll. Three sixes in a row cancel that whole turn: the token goes back to where it was
  *    when the turn began, and play passes on.
  *  - You must land exactly on 100; a roll that would go past 100 does not move.
@@ -40,11 +40,11 @@ const PIECE_IDS = Object.freeze([
 const DEFAULT_PIECES = Object.freeze(['pawn-gold', 'pawn-green', 'pawn-red', 'pawn-blue']);
 
 /* ---------- pure rules ---------- */
-function newGame(order) {
+function newGame(order, opts = {}) {
   if (!Array.isArray(order) || order.length < 2 || order.length > 4) throw new Error('Snakes & Ladders needs 2 to 4 players');
   const pos = {};
   for (const s of order) pos[s] = 0;
-  return { order: order.slice(), pos, turnIdx: 0, streak: 0, turnStart: 0, phase: 'playing', winner: null, last: null, rolls: 0, finished: [] };
+  return { order: order.slice(), pos, turnIdx: 0, streak: 0, turnStart: 0, phase: 'playing', winner: null, last: null, rolls: 0, finished: [], quick: !!opts.quick };
 }
 const turnOf = (g) => g.order[g.turnIdx];
 function nextTurn(g) {
@@ -65,7 +65,7 @@ function roll(g, seat, value, lucky = false) {
 
   let outcome, landed = from, to = from, via = null;
   if (value === 6 && g.streak >= 3) { outcome = 'three-sixes'; to = landed = g.turnStart; }
-  else if (from === 0 && value !== 6) outcome = 'need-six';
+  else if (from === 0 && value !== 6 && !g.quick) outcome = 'need-six';
   else if (from === 0) { outcome = 'enter'; to = landed = 1; }
   else if (from + value > TARGET) outcome = 'overshoot';
   else { outcome = 'move'; to = landed = from + value; }
@@ -111,7 +111,7 @@ function animMs(last) {
 }
 
 /* ---------- live room ---------- */
-const ROLL_SECS = 15;              // time to roll before the server rolls for you
+const ROLL_SECS = 20;              // time to roll before the server rolls for you
 const AWAY_DELAY_MS = 1500;        // a player who left / is offline / missed 2 turns is rolled for after this
 const AWAY_AFTER_MISSES = 2;
 
@@ -148,6 +148,7 @@ class SnakesRoom {
       t: 'state', game: 'snakes', board: BOARD_VERSION, code: this.code, passcode: this.passcode, now: Date.now(), you: seat,
       host: this.hostSeat() === seat, hostSeat: this.hostSeat(),
       phase: g ? g.phase : 'lobby',
+      quick: g ? !!g.quick : !!this.quick,
       seats: this.seats.map((s, i) => (s ? { seat: i, name: s.name, bot: !!s.bot, connected: !!s.bot || s.connected, away: g ? this.isAway(i) : false, piece: s.piece } : null)),
     };
     if (!g) return base;
@@ -187,7 +188,7 @@ class SnakesRoom {
 
   newGame() {
     const order = this.seats.map((s, i) => (s ? i : -1)).filter((i) => i >= 0);
-    this.game = newGame(order);
+    this.game = newGame(order, { quick: this.quick });
     for (const s of this.humans()) s.missed = 0;
     this.pauseUntil = 0;
     this.schedule();
@@ -247,6 +248,11 @@ class SnakesRoom {
           this.hostSeat(); this.broadcast();
         }
         return;
+      case 'rule':
+        if (this.hostSeat() !== seat) throw new Error('Only the host can choose the start rule');
+        if (g) throw new Error('The game has already started');
+        this.quick = !!m.quick;
+        return this.broadcast();
       case 'piece': {
         if (g) throw new Error('Tokens are chosen before the match starts');
         const id = String(m.id || '');

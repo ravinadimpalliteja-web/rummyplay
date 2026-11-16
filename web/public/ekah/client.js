@@ -22,6 +22,23 @@
     set(k, v, s) { try { (s ? sessionStorage : localStorage).setItem(k, v); } catch (e) {} },
     del(k, s) { try { (s ? sessionStorage : localStorage).removeItem(k); } catch (e) {} }
   };
+  // ---------- table colour (this device only) ----------
+  function applyTable(name) {
+    const t = name === 'kesari' || name === 'emerald' ? name : 'royal';
+    if (t === 'royal') delete document.documentElement.dataset.table; else document.documentElement.dataset.table = t;
+    document.querySelectorAll('#tableThemes button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.table === t)));
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || meta.getAttribute('content'));
+    return t;
+  }
+  (function initTable() {
+    applyTable(store.get('ekahTable'));
+    const box = document.getElementById('tableThemes');
+    if (box) box.addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-table]'); if (!b) return;
+      store.set('ekahTable', applyTable(b.dataset.table));
+    });
+  })();
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   // ---------- card rendering ----------
@@ -242,6 +259,28 @@
     const chip = $('pile').querySelector('.colorchip');
     if (chip) chip.innerHTML = v.color ? '<i style="--c:' + SUIT_COLOR[v.color] + '"></i>' + SUIT_LABEL[v.color] : '<i style="--c:#888"></i>Any suit';
     $('direction').classList.toggle('rev', v.direction === -1);
+  }
+
+  /* Room turn timer (20 s): a draining bar with the seconds left. When it runs out the server discards your lowest
+     number card of the element, or draws for you (never Brahma, Mahakal or action cards; always draws on your last card). */
+  let clockEnd = 0, clockMine = false, clockTick = null, clockBuzzed = false;
+  function setTurnClock(end, mine) {
+    if (end !== clockEnd) clockBuzzed = false;
+    clockEnd = end; clockMine = mine;
+    if (!clockTick) clockTick = setInterval(paintTurnClock, 250);
+    paintTurnClock();
+  }
+  function paintTurnClock() {
+    const el = $('turnTimer'); if (!el) return;
+    const left = clockEnd ? Math.max(0, clockEnd - Date.now()) : 0;
+    el.classList.toggle('hidden', !left);
+    if (!left) return;
+    const secs = Math.ceil(left / 1000);
+    el.querySelector('b').textContent = secs + 's';
+    el.querySelector('i').style.width = Math.min(100, left / 200) + '%';
+    el.classList.toggle('mine', clockMine);
+    el.classList.toggle('low', secs <= 5);
+    if (clockMine && secs <= 5 && !clockBuzzed) { clockBuzzed = true; try { navigator.vibrate && navigator.vibrate(120); } catch (e) { /* not supported */ } }
   }
 
   function renderStatus(v) {
@@ -851,6 +890,7 @@
         let m; try { m = JSON.parse(e.data); } catch (x) { return; }
         if (m.t === 'state') {
           api.room = m; api.isHost = m.host;
+          setTurnClock(m.deadline && m.now ? Date.now() + (m.deadline - m.now) : 0, m.view && m.view.phase === 'play' && m.view.turn === m.view.you);
           store.set(ROOM_KEY, m.code);
           if (m.phase === 'lobby') lobby(m);
           else if (m.view) render(m.view);

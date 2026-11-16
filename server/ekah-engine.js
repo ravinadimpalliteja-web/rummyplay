@@ -380,6 +380,26 @@
     return bc > 0 ? best : SUITS[Math.floor(rnd() * 4)];
   }
 
+  /* When a player's turn timer runs out in a room (owner's rule):
+     - discard the lowest NUMBER card of the current element; the game never spends Brahma, Mahakal or an action
+       card (Maya, Chakra, Rin) for the player;
+     - no number card of that element, or it's the player's last card: draw instead (so nobody wins by running out
+       the clock); if the drawn card could be played, it is kept and the turn passes;
+     - EKAH is not called for them, so the others may catch a player left with one card. */
+  function timeoutAction(state, pi) {
+    if (state.phase !== 'play' || state.turn !== pi) return null;
+    if (state.pendingDrawn !== null) return { type: 'pass' };
+    const hand = state.players[pi].hand;
+    if (hand.length > 1) {
+      const nums = hand.filter(c => c.type === 'num' && (state.color === null || c.suit === state.color) && isLegal(state, c));
+      if (nums.length) {
+        nums.sort((a, b) => a.value - b.value || a.id - b.id);
+        return { type: 'play', cardId: nums[0].id };
+      }
+    }
+    return { type: 'draw' };
+  }
+
   function botAction(state, pi) {
     const rnd = state.rnd;
     const hand = state.players[pi].hand;
@@ -440,5 +460,5 @@
     return state.deck.length + state.discard.length + state.players.reduce((s, p) => s + p.hand.length, 0);
   }
 
-  return { SUITS, ACTIONS, WILDS, POWERS, TARGET, TARGET_MIN, TARGET_MAX, TARGET_STEP, cleanTarget, partnerOf, jodiCards, powerNeeds, buildDeck, createGame, startRound, applyAction, legalCards, isLegal, botAction, viewFor, cardName, cardPoints, nextIndex, totalCards };
+  return { SUITS, ACTIONS, WILDS, POWERS, TARGET, TARGET_MIN, TARGET_MAX, TARGET_STEP, cleanTarget, partnerOf, jodiCards, powerNeeds, buildDeck, createGame, startRound, applyAction, legalCards, isLegal, botAction, timeoutAction, viewFor, cardName, cardPoints, nextIndex, totalCards };
 });

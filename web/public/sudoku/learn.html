@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <script src="/app-mode.js"></script>
+<title>Learn Sudoku · Royal Club</title>
+<meta name="theme-color" content="#FBF7EE">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&family=Cinzel:wght@600;700&display=swap">
+<style>
+/* Royal Club Learn Sudoku. Same ivory look as Learn Chess and Royal Club Sudoku. */
+:root{--bg:#FBF7EE;--card:#FFFFFF;--ink:#1F2A24;--muted:#5C6862;--emerald:#0F4D3A;--emerald-2:#1a6b51;--gold:#D9B45A;--gold-text:#7A5A1C;--gold-light:#F0D99D;--line:#E6DAC0;--soft:#F3EEE2;--red:#B8352C;
+  --saffron:#F28C28;--peer:#EFE8D6;--pair:#D7EEDF;
+  --shadow:0 1px 2px rgba(60,40,10,.06),0 8px 24px rgba(60,40,10,.08);
+  --font-display:"Cinzel",Georgia,serif;--font-body:"DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:light}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 var(--font-body);-webkit-tap-highlight-color:transparent;overflow:hidden;
+  padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.app{height:100%;display:flex;flex-direction:column;max-width:1100px;margin:0 auto}
+.top{flex:none;height:56px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:env(safe-area-inset-top,0px)}
+.lead-group{display:flex;align-items:center;gap:10px;min-width:0}
+.back{flex:none;width:36px;height:36px;display:grid;place-items:center;border:1px solid #D8C9A6;border-radius:10px;background:var(--card);color:var(--emerald);text-decoration:none;font-size:18px;box-shadow:var(--shadow)}
+.brand{display:flex;align-items:center;gap:8px;min-width:0}
+.brand img{height:42px;width:auto;display:block}
+.brand strong{display:block;font:700 13px/1.1 var(--font-display);letter-spacing:.14em;color:var(--emerald);white-space:nowrap}
+.brand small{display:block;font-size:8.5px;letter-spacing:.26em;color:var(--gold-text);font-weight:700}
+.pill{font-size:12px;font-weight:800;color:var(--gold-text);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 11px;box-shadow:var(--shadow);white-space:nowrap}
+
+.home{flex:1;min-height:0;overflow-y:auto;padding:6px 0 28px}
+.home-inner{max-width:560px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+.eyebrow{font-size:10px;font-weight:800;letter-spacing:.25em;color:var(--gold-text);text-transform:uppercase;margin:0}
+.home h1{font:600 clamp(28px,8vw,40px)/1.08 var(--font-display);color:var(--emerald);margin:4px 0 0}
+.home .lead{margin:6px 0 0;color:var(--muted)}
+.progress{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:14px 16px;display:grid;gap:8px}
+.progress-row{display:flex;justify-content:space-between;align-items:baseline;font-weight:700}
+.progress-row span{color:var(--muted);font-weight:600;font-size:13px}
+.bar{height:8px;border-radius:99px;background:var(--soft);overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--emerald),var(--emerald-2));border-radius:99px;transition:width .4s}
+.level{min-width:0;background:var(--card);border-radius:18px;box-shadow:var(--shadow);overflow:hidden}
+.level-head{display:flex;gap:12px;align-items:center;padding:14px 16px 10px}
+.level-num{flex:none;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:var(--emerald);color:#FBF7EE;font:700 17px var(--font-display)}
+.level-head b{display:block;font:700 16px/1.2 var(--font-display);color:var(--emerald)}
+.level-head span{font-size:12.5px;color:var(--muted)}
+.level-head .level-num{color:#FBF7EE;font-size:17px}
+.tag{margin-left:auto;align-self:flex-start;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:3px 8px;white-space:nowrap}
+.tag.free{background:#E3F1E8;color:var(--emerald)}
+.tag.prem{background:#F6ECD3;color:var(--gold-text)}
+.classes{list-style:none;margin:0;padding:0 8px 8px}
+.cls{width:100%;display:flex;align-items:center;gap:12px;padding:10px 8px;border:0;border-top:1px solid var(--soft);background:none;text-align:left;min-height:52px}
+.classes li:first-child .cls{border-top:0}
+.cls .num{flex:none;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:13px;background:var(--soft);color:var(--emerald)}
+.cls.done .num{background:var(--emerald);color:#FBF7EE}
+.cls .txt{flex:1;min-width:0}
+.cls .txt b{display:block;font-size:14.5px;line-height:1.25}
+.cls .txt small{display:block;color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cls .end{flex:none;color:var(--gold-text);font-size:13px}
+.stars{letter-spacing:1px;color:var(--gold);font-size:14px}
+.stars .off{color:#E2D6B8}
+.note{color:var(--muted);font-size:12.5px;text-align:center;margin:2px 8px}
+
+.lesson{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;gap:10px;padding-bottom:max(10px,env(safe-area-inset-bottom,0px))}
+.lesson-head{width:100%;max-width:560px;display:flex;align-items:center;gap:10px}
+.lesson-head .t{flex:1;min-width:0}
+.lesson-head .t small{display:block;font-size:10px;font-weight:800;letter-spacing:.2em;color:var(--gold-text);text-transform:uppercase}
+.lesson-head .t b{display:block;font:700 16px/1.2 var(--font-display);color:var(--emerald);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.close{flex:none;width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--emerald);font-size:20px;line-height:1;box-shadow:var(--shadow)}
+.counter{font-size:12.5px;color:var(--muted);font-weight:700}
+.steps{width:100%;max-width:560px;display:flex;gap:4px}
+.steps i{flex:1;height:5px;border-radius:9px;background:#E6DAC0}
+.steps i.on{background:var(--emerald)}
+.steps i.cur{background:var(--gold)}
+.board-wrap{flex:none;width:min(100%,calc(100svh - 370px),480px);min-width:240px;aspect-ratio:1}
+.board{width:100%;height:100%;display:grid;grid-template:repeat(9,1fr)/repeat(9,1fr);background:var(--card);border:2.5px solid var(--emerald);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);container-type:inline-size;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.cell{position:relative;border:0;padding:0;margin:0;background:transparent;border-right:1px solid #E2D7BD;border-bottom:1px solid #E2D7BD;display:grid;place-items:center;font:700 6.6cqi var(--font-body);color:var(--ink)}
+.cell:nth-child(9n){border-right:0}
+.cell.c2,.cell.c5{border-right:2px solid var(--emerald)}
+.cell.r2,.cell.r5{border-bottom:2px solid var(--emerald)}
+.cell.r8{border-bottom:0}
+.cell.u{background:var(--peer)}
+.cell.m{background:#F6E7BF;color:var(--gold-text)}
+.cell.p{background:var(--pair)}
+.cell.f{background:#FFE2C2;box-shadow:inset 0 0 0 2.5px var(--saffron)}
+.cell.placed{color:#1E6FB8;animation:pop .28s ease}
+.cell.good{background:#D7EEDF;box-shadow:inset 0 0 0 2.5px #2f9d6a}
+.cell.wrong{background:#FBE9E7;animation:shake .35s}
+.cell.tap{cursor:pointer}
+@keyframes pop{from{transform:scale(.6);opacity:.4}}
+@keyframes shake{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+.notes{position:absolute;inset:1px;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);font:600 3cqi var(--font-body);color:var(--muted);line-height:1}
+.notes i{font-style:normal;display:grid;place-items:center}
+.notes i.x{color:var(--red);text-decoration:line-through}
+.notes i.k{color:var(--emerald);font-weight:800}
+.coach{width:100%;max-width:560px;background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:12px 14px;display:grid;gap:6px;min-height:0;overflow-y:auto}
+.coach p{margin:0;font-size:15.5px;line-height:1.45}
+.coach .fb{font-size:14px;font-weight:700}
+.coach .fb.good{color:#1f7a50}.coach .fb.bad{color:var(--red)}.coach .fb.info{color:var(--gold-text)}
+.opts{display:grid;gap:8px;margin-top:4px}
+.opts button{min-height:44px;border-radius:12px;border:1.5px solid var(--line);background:var(--soft);font-weight:700;text-align:left;padding:8px 12px}
+.opts button.right{border-color:#2f9d6a;background:#E3F1E8;color:#14583a}
+.opts button.wrong{border-color:var(--red);background:#FBE9E7;color:#8c2620}
+.pad{width:100%;max-width:480px;display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:5px}
+.pad button{min-height:46px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--emerald);font:700 20px var(--font-body);box-shadow:var(--shadow);padding:0}
+.pad button.wrong{border-color:var(--red);color:var(--red);background:#FBE9E7}
+.pad button:disabled{opacity:.35;cursor:default}
+.actions{width:100%;max-width:560px;display:flex;gap:8px}
+.actions button{min-height:46px;border-radius:12px;font-weight:800;font-size:15px}
+.ghost{flex:1;background:var(--card);border:1.5px solid var(--emerald);color:var(--emerald)}
+.gold{flex:2;border:0;background:var(--emerald);color:#FBF7EE;box-shadow:0 6px 16px rgba(15,77,58,.28)}
+.gold:disabled,.ghost:disabled{opacity:.4;box-shadow:none;cursor:default}
+
+.sheet{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:18px;background:rgba(31,42,36,.45);backdrop-filter:blur(6px)}
+.sheet .box{width:min(420px,100%);background:var(--bg);border-radius:20px;padding:22px 20px;box-shadow:0 24px 60px rgba(31,42,36,.3);display:grid;gap:12px;text-align:center}
+.sheet h2{margin:0;font:700 24px/1.15 var(--font-display);color:var(--emerald)}
+.sheet p{margin:0;color:var(--muted)}
+.big-stars{font-size:42px;letter-spacing:6px;color:var(--gold)}
+.big-stars .off{color:#E2D6B8}
+.sheet .row{display:flex;gap:8px}
+.sheet .row button{flex:1;min-height:46px;border-radius:12px;font-weight:800}
+
+@media (orientation:landscape) and (max-height:560px){
+  .lesson{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto auto 1fr auto;column-gap:16px;row-gap:8px;align-items:start}
+  .lesson-head,.steps,.coach,.pad,.actions{grid-column:2}
+  .board-wrap{grid-column:1;grid-row:1/span 5;width:calc(100svh - 70px)}
+}
+@media (prefers-reduced-motion:reduce){.cell.placed,.cell.wrong{animation:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <span class="lead-group">
+      <a class="back" href="./" aria-label="Back to Royal Club Sudoku">←</a>
+      <span class="brand"><img src="../brand/badge-logo-small.webp" alt="" width="320" height="224"><span><strong>ROYAL CLUB</strong><small>LEARN SUDOKU</small></span></span>
+    </span>
+    <span class="pill" id="starPill">★ 0</span>
+  </header>
+
+  <section class="home" id="home">
+    <div class="home-inner">
+      <div>
+        <p class="eyebrow">Royal Club · Learn Sudoku</p>
+        <h1>Learn Sudoku, one idea at a time.</h1>
+        <p class="lead">Short lessons on a real board: see the idea, then try it yourself. From the rules to the tricks strong players use. All lessons are free for now.</p>
+      </div>
+      <div class="progress"><div class="progress-row">Your progress <span id="progText"></span></div><div class="bar"><i id="progBar" style="width:0"></i></div></div>
+      <div id="levels"></div>
+      <p class="note">Progress is saved on this device.</p>
+    </div>
+  </section>
+
+  <section class="lesson" id="lesson" hidden>
+    <div class="lesson-head">
+      <div class="t"><small id="lsKicker">Lesson 1</small><b id="lsTitle">Title</b></div>
+      <span class="counter" id="lsCounter"></span>
+      <button class="close" id="lsClose" type="button" aria-label="Close lesson">×</button>
+    </div>
+    <div class="steps" id="lsSteps" aria-hidden="true"></div>
+    <div class="board-wrap"><div class="board" id="board" role="grid" aria-label="Sudoku board"></div></div>
+    <div class="coach" id="coach" aria-live="polite"></div>
+    <div class="pad" id="pad" hidden></div>
+    <div class="actions">
+      <button class="ghost" id="btnAlt" type="button">Hint</button>
+      <button class="gold" id="btnNext" type="button">Next →</button>
+    </div>
+  </section>
+</div>
+
+<div class="sheet" id="sheet" hidden><div class="box" id="sheetBox" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"></div></div>
+<script>
+/* Lesson positions. Each one was generated from a solved grid and checked by a script, so every answer here is the
+   true answer (the deduction the lesson teaches leads to exactly that number or cell). */
+const D = {"last": [{"g": "078541360000793800003008070504306090690050030300009600805400000402965187009012003", "cell": 64, "ans": 3, "unit": ["row", 7]}, {"g": "000051080000090621000273945072005090060940078900000214743500060020730009609020137", "cell": 70, "ans": 5, "unit": ["col", 7]}, {"g": "900000050000850007870109004006312000107984030283065009340691705700000941509200600", "cell": 48, "ans": 7, "unit": ["box", 4]}], "scan": [{"g": "097040000014007000250009060320005900005400000040930057400698072080002006560710090", "cell": 24, "digit": 7, "unit": ["box", 2], "marks": [2, 14, 53, 61, 75]}, {"g": "050900008000002654280000000000150000030009006010320705960008070008097463740610029", "cell": 6, "digit": 2, "unit": ["box", 2], "marks": [14, 18, 49, 79]}, {"g": "000908200030725006002000000070059380500800001003170502305607400090040600640090810", "cell": 26, "digit": 8, "unit": ["box", 2], "marks": [5, 34, 39, 78]}, {"g": "000046900020017034400000612000024001200900040048000006090032160600401000105089027", "cell": 11, "digit": 6, "unit": ["box", 0], "marks": [5, 24, 53, 61, 63]}], "naked": [{"g": "300900500860003000590080407006000000050000021008207350675009003200070040481005700", "cell": 20, "ans": 2}, {"g": "590300026000900000407100085346080000875200300900030804100050000000890040060420500", "cell": 22, "ans": 6}, {"g": "010000408900182500805000200450237000720800004030000007000003810500608740107000600", "cell": 45, "ans": 6}, {"g": "030080070196007205005010600048090560010000000000040312073100800500063040000020950", "cell": 61, "ans": 2}], "hidden": [{"g": "000000080000003026090000070009054867002090000000360040901406700006002094427039000", "cell": 62, "digit": 2, "unit": ["row", 6], "marks": [16, 38, 68, 73]}, {"g": "000380045040190020100000803510760000680000000279800361092010004000002000005000600", "cell": 19, "digit": 5, "unit": ["col", 1], "marks": [8, 27, 74]}, {"g": "090000528080050900562800010000000065000400091071560800000000200008000607937000000", "cell": 50, "digit": 9, "unit": ["row", 5], "marks": [1, 15, 43, 72]}, {"g": "000000507003500020528070349004908000001050004200300000000007000000060000847135900", "cell": 5, "digit": 3, "unit": ["col", 5], "marks": [11, 24, 48, 76]}], "pm": [{"g": "071850000803006050006100704029503000007400030604007190300000000410075029795300800", "cell": 49, "cands": [2, 8]}, {"g": "078400060130006079060017000001000830000058001857321906085100000720800010003700008", "cell": 8, "cands": [2, 3, 5]}], "npair": [{"g": "700000040014000600230008079009000050428005013070200890007001030090002060000090000", "unit": ["box", 0], "pair": [2, 20], "digits": [5, 6], "cell": 1, "ans": 8, "notes": {"1": [5, 6, 8], "2": [5, 6], "9": [5, 8, 9], "20": [5, 6]}}, {"g": "500008030268097005000021060009000000010983250000000080103009500000000108620005000", "unit": ["box", 1], "pair": [3, 4], "digits": [4, 6], "cell": 12, "ans": 3, "notes": {"3": [4, 6], "4": [4, 6], "12": [3, 4], "21": [3, 4, 5]}}], "pointing": [{"g": "807003601000570000100000020608090430000000009001005060910300874000000900000649003", "box": 7, "digit": 1, "spots": [66, 67, 68], "line": ["row", 7], "cell": 70, "ans": 5, "notes": {"64": [2, 3, 4, 5, 6, 7, 8], "65": [2, 3, 4, 5, 6], "66": [1, 2, 7, 8], "67": [1, 2, 5, 8], "68": [1, 2, 7, 8], "70": [1, 5], "71": [2, 5, 6], "58": [2, 5], "59": [2], "63": [2, 3, 4, 5, 7]}}, {"g": "050007300430620058006308014000090000509060000100000400004006007005974000800010000", "box": 4, "digit": 4, "spots": [30, 39], "line": ["col", 3], "cell": 3, "ans": 1, "notes": {"32": [1, 2, 3, 5], "3": [1, 4], "39": [1, 2, 4, 7, 8], "41": [1, 2, 3], "75": [2, 5], "48": [2, 5, 7, 8], "49": [3, 5, 8], "50": [2, 3, 5], "57": [2, 5, 8], "30": [1, 2, 4, 5, 7, 8]}}], "hpair": [{"g": "050091000240006903600047021005910006000700009000030004000003007000008000400000360", "unit": ["box", 4], "pair": [40, 48], "digits": [6, 8], "extra": [2, 5], "notes": {"32": [2, 4], "40": [2, 5, 6, 8], "41": [2, 4, 5], "48": [2, 5, 6, 8], "50": [2, 5]}}, {"g": "080060900000020010106085034408000001200050000000000400602010500005000160800500040", "unit": ["box", 2], "pair": [15, 17], "digits": [6, 8], "extra": [5, 7], "notes": {"7": [2, 5, 7], "8": [2, 5, 7], "15": [6, 7, 8], "17": [5, 6, 7, 8], "24": [2, 7]}}], "rules": {"g": "020710039671509042038060751305182090819070005200053008403827500180640973700001284"}};
+(function () {
+  'use strict';
+  // Every lesson is free for now. Lessons marked premium:true become Royal Club Premium once PREMIUM_ON is switched on.
+  const PREMIUM_ON = false;
+  const KEY = 'rc-sudoku-learn';
+  const $ = (id) => document.getElementById(id);
+  const store = { get() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }, set(v) { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (e) {} } };
+
+  // ---------- board helpers ----------
+  const R = (i) => Math.floor(i / 9), C = (i) => i % 9, B = (i) => Math.floor(i / 27) * 3 + Math.floor((i % 9) / 3);
+  const unitCells = (t, n) => [...Array(81).keys()].filter((i) => (t === 'row' ? R(i) : t === 'col' ? C(i) : B(i)) === n);
+  const peers = (i) => [...Array(81).keys()].filter((j) => j !== i && (R(j) === R(i) || C(j) === C(i) || B(j) === B(i)));
+  const grid = (s) => s.split('').map(Number);
+  const cands = (g, i) => { if (g[i]) return []; const used = new Set(peers(i).map((j) => g[j])); return [1, 2, 3, 4, 5, 6, 7, 8, 9].filter((d) => !used.has(d)); };
+  const UN = { row: 'row', col: 'column', box: 'box' };
+  const notesFor = (g, cells) => Object.fromEntries(cells.filter((i) => !g[i]).map((i) => [i, cands(g, i)]));
+  const allPeers = (i) => [...unitCells('row', R(i)), ...unitCells('col', C(i)), ...unitCells('box', B(i))];
+
+  // ---------- the lessons ----------
+  const L = [];
+  {
+    const g = D.rules.g;
+    L.push({ id: 'rules', title: 'How Sudoku works', sub: 'Rows, columns and boxes', steps: [
+      { k: 'info', g, u: unitCells('row', 4), text: 'A Sudoku board has 9 rows. Every <b>row</b> must hold the numbers 1 to 9, each exactly once.' },
+      { k: 'info', g, u: unitCells('col', 4), text: 'It also has 9 columns. Every <b>column</b> holds 1 to 9 once too.' },
+      { k: 'info', g, u: unitCells('box', 4), text: 'And there are 9 boxes of 3×3 squares. Every <b>box</b> holds 1 to 9 once as well. Those are all the rules.' },
+      { k: 'quiz', g, u: unitCells('box', 0), text: 'Can the same number appear twice in one box?', opts: ['Yes, if it is in different rows', 'No, each box has 1 to 9 exactly once'], ans: 1, why: 'Rows, columns and boxes all follow the same rule: each number once.' },
+      { k: 'quiz', g, text: 'How many squares does a finished puzzle fill?', opts: ['27', '81', '90'], ans: 1, why: '9 rows of 9 squares make 81.' },
+    ] });
+  }
+  {
+    const [a, b, c] = D.last;
+    const st = (p, intro) => ({ k: 'digit', g: p.g, cell: p.cell, ans: p.ans, u: unitCells(p.unit[0], p.unit[1]), text: intro, hint: `Count the numbers already in this ${UN[p.unit[0]]}. Which of 1 to 9 is missing?` });
+    L.push({ id: 'last', title: 'The last empty square', sub: 'The easiest place to start', steps: [
+      st(a, 'This row has eight numbers. Only one square is empty. Which number goes in the gold square?'),
+      st(b, 'Same idea in a column. Which number is missing?'),
+      st(c, 'And in a box. Which number completes it?'),
+    ] });
+  }
+  {
+    const s = D.scan, p0 = s[0];
+    const st = (p, text) => ({ k: 'cell', g: p.g, ans: p.cell, digit: p.digit, u: unitCells('box', p.unit[1]), m: p.marks, text, hint: `Each ${p.digit} already on the board blocks its whole row and column. Find the one square in the box that is not blocked.` });
+    L.push({ id: 'scan', title: 'Scanning a box', sub: 'Follow one number across the board', steps: [
+      { k: 'info', g: p0.g, u: unitCells('box', p0.unit[1]), m: p0.marks, text: `Pick a number, say <b>${p0.digit}</b>. The shaded box has no ${p0.digit} yet. The ${p0.digit}s shown in gold rule out their rows and columns in that box.` },
+      st(p0, `Tap the only square in the shaded box where the ${p0.digit} can go.`),
+      st(s[1], `Now find where the <b>${s[1].digit}</b> goes in the shaded box.`),
+      st(s[2], `Try another: where does the <b>${s[2].digit}</b> go in the shaded box?`),
+      { ...st(s[3], `On your own: where does the <b>${s[3].digit}</b> go in the shaded box?`), m: [], hm: s[3].marks },
+    ] });
+  }
+  {
+    const n = D.naked;
+    const st = (p, text, shade = true) => ({ k: 'digit', g: p.g, cell: p.cell, ans: p.ans, u: shade ? allPeers(p.cell) : [], hu: allPeers(p.cell), text, hint: 'List the numbers already in this square\'s row, column and box. Only one of 1 to 9 is not there.' });
+    L.push({ id: 'single', title: 'Only one number fits', sub: 'Check row, column and box together', steps: [
+      st(n[0], 'Look at the gold square. Its row, column and box are shaded. Between them, eight different numbers are already used. Which one is left?'),
+      st(n[1], 'Again: which is the only number that can go in the gold square?'),
+      st(n[2], 'One more with the shading on. Which number fits?'),
+      st(n[3], 'Now without the shading. Which number fits in the gold square?', false),
+    ] });
+  }
+  {
+    const h = D.hidden;
+    const st = (p, text, help = true) => ({ k: 'cell', g: p.g, ans: p.cell, digit: p.digit, u: unitCells(p.unit[0], p.unit[1]), m: help ? p.marks : [], hm: p.marks, text, hint: `Check each empty square in this ${UN[p.unit[0]]}: is there a ${p.digit} in its column, row or box already?` });
+    L.push({ id: 'hidden', title: 'Hidden singles', sub: 'A number with only one home', premium: true, steps: [
+      { k: 'info', g: h[0].g, u: unitCells(h[0].unit[0], h[0].unit[1]), m: h[0].marks, text: `Sometimes a square could take several numbers, but a number has only one square. This row needs a <b>${h[0].digit}</b>. The gold ${h[0].digit}s block every empty square except one.` },
+      st(h[0], `Tap the only square in the shaded row where the ${h[0].digit} can go.`),
+      st(h[1], `This column needs a <b>${h[1].digit}</b>. Where does it go?`),
+      st(h[2], `This row needs a <b>${h[2].digit}</b>. Find its square, this time without the gold marks.`, false),
+      st(h[3], `Last one: where does the <b>${h[3].digit}</b> go in the shaded column?`, false),
+    ] });
+  }
+  {
+    const [a, b] = D.pm;
+    const right = b.cands.join(', ');
+    const notIn = [1, 2, 3, 4, 5, 6, 7, 8, 9].filter((d) => !b.cands.includes(d));
+    const more = [...b.cands, notIn[0]].sort().join(', ');
+    const less = [...b.cands.slice(1), notIn[1]].sort().join(', ');
+    const opts = [more, right, less], n3 = D.naked[3];
+    L.push({ id: 'notes', title: 'Pencil marks', sub: 'Write down what could go where', premium: true, steps: [
+      { k: 'info', g: a.g, f: [a.cell], u: allPeers(a.cell), n: { [a.cell]: a.cands }, text: `When you are not sure, write small <b>notes</b>. The gold square could only be ${a.cands.join(' or ')}: every other number is already in its row, column or box. In a game, turn on <b>Notes</b> and tap numbers to write them.` },
+      { k: 'quiz', g: b.g, f: [b.cell], u: allPeers(b.cell), text: 'Which notes belong in the gold square?', opts, ans: 1, why: `Only ${right} are missing from its row, column and box.` },
+      { k: 'digit', g: n3.g, cell: n3.cell, ans: n3.ans, n: notesFor(grid(n3.g), unitCells('box', B(n3.cell))), u: unitCells('box', B(n3.cell)), text: 'Here every empty square in the box has its notes. When a square is left with just one note, that is its number. Which number goes in the gold square?', hint: 'The gold square has only one note.' },
+    ] });
+  }
+  {
+    const [p, q] = D.npair;
+    const lab = (x) => UN[x.unit[0]];
+    const noteMarks = (x) => { const o = {}; for (const [i, ds] of Object.entries(x.notes)) o[i] = ds; return o; };
+    const cross = (x) => { const o = {}; for (const [i, ds] of Object.entries(x.notes)) if (!x.pair.includes(+i)) o[i] = ds.filter((d) => x.digits.includes(d)); return o; };
+    L.push({ id: 'npair', title: 'Naked pairs', sub: 'Two squares, two numbers', premium: true, steps: [
+      { k: 'info', g: p.g, u: unitCells(p.unit[0], p.unit[1]), p: p.pair, n: noteMarks(p), text: `The two green squares in this ${lab(p)} can only be <b>${p.digits[0]}</b> or <b>${p.digits[1]}</b>. We don't know which is which yet, but between them they use up both numbers.` },
+      { k: 'quiz', g: p.g, u: unitCells(p.unit[0], p.unit[1]), p: p.pair, n: noteMarks(p), text: `So what does that mean for the other empty squares in this ${lab(p)}?`, opts: [`They must also be ${p.digits[0]} or ${p.digits[1]}`, `${p.digits[0]} and ${p.digits[1]} can be removed from their notes`, 'Nothing changes'], ans: 1, why: `Both ${p.digits[0]} and ${p.digits[1]} are taken by the green pair, so no other square in the ${lab(p)} can have them.` },
+      { k: 'digit', g: p.g, cell: p.cell, ans: p.ans, u: unitCells(p.unit[0], p.unit[1]), p: p.pair, n: noteMarks(p), x: cross(p), text: `With ${p.digits[0]} and ${p.digits[1]} crossed out, only one note is left in the gold square. Which number goes there?`, hint: `Ignore the crossed-out ${p.digits[0]} and ${p.digits[1]}.` },
+      { k: 'digit', g: q.g, cell: q.cell, ans: q.ans, u: unitCells(q.unit[0], q.unit[1]), n: noteMarks(q), hp: q.pair, text: `Find the naked pair in the shaded ${lab(q)} yourself, then use it. Which number goes in the gold square?`, hint: `The two squares with only ${q.digits.join(' and ')} form the pair.` },
+    ] });
+  }
+  {
+    const [p, q] = D.pointing;
+    const ln = (x) => UN[x.line[0]];
+    const line = (x) => unitCells(x.line[0], x.line[1]);
+    const cross = (x) => { const box = unitCells('box', x.box); const o = {}; for (const [i, ds] of Object.entries(x.notes)) if (!box.includes(+i) && line(x).includes(+i)) o[i] = ds.filter((d) => d === x.digit); return o; };
+    const only = (x) => { const keep = new Set([...unitCells('box', x.box), ...line(x)]); return Object.fromEntries(Object.entries(x.notes).filter(([i]) => keep.has(+i))); };
+    L.push({ id: 'pointing', title: 'Pointing pairs', sub: 'A box points along a line', premium: true, steps: [
+      { k: 'info', g: p.g, u: unitCells('box', p.box), p: p.spots, n: only(p), text: `In the shaded box, the <b>${p.digit}</b> can only go in the green squares, and they all sit in one ${ln(p)}.` },
+      { k: 'quiz', g: p.g, u: [...unitCells('box', p.box), ...line(p)], p: p.spots, n: only(p), text: `So can a ${p.digit} go anywhere else in that ${ln(p)}, outside the box?`, opts: [`No: the box's ${p.digit} will use that ${ln(p)}`, 'Yes, anywhere that is empty'], ans: 0, why: `Whichever green square gets the ${p.digit}, the ${ln(p)} has its ${p.digit}. Remove ${p.digit} from the rest of the ${ln(p)}.` },
+      { k: 'digit', g: p.g, cell: p.cell, ans: p.ans, u: [...unitCells('box', p.box), ...line(p)], p: p.spots, n: only(p), x: cross(p), text: `With the ${p.digit} crossed out, the gold square has one note left. Which number goes there?`, hint: `Ignore the crossed-out ${p.digit}.` },
+      { k: 'digit', g: q.g, cell: q.cell, ans: q.ans, u: [...unitCells('box', q.box), ...line(q)], n: only(q), hp: q.spots, text: `Your turn. Look for a number that is stuck on one ${ln(q)} inside the box, then use it. Which number goes in the gold square?`, hint: `In the box, the ${q.digit} can only go along one ${ln(q)}.` },
+    ] });
+  }
+  {
+    const [p, q] = D.hpair;
+    const lab = (x) => UN[x.unit[0]];
+    const keepOnly = (x) => { const o = {}; for (const i of x.pair) o[i] = x.notes[i].filter((d) => !x.digits.includes(d)); return o; };
+    const missing = [1, 2, 3, 4, 5, 6, 7, 8, 9].filter((d) => !unitCells(q.unit[0], q.unit[1]).some((i) => +q.g[i] === d));
+    const others = missing.filter((d) => !q.digits.includes(d));
+    const pairs = [q.digits.join(' and '), [q.digits[0], others[0]].join(' and '), [others[1] ?? others[0], q.digits[1]].sort().join(' and ')];
+    L.push({ id: 'hpair', title: 'Hidden pairs', sub: 'Two numbers that share two squares', premium: true, steps: [
+      { k: 'info', g: p.g, u: unitCells(p.unit[0], p.unit[1]), p: p.pair, n: p.notes, k2: p.digits, text: `In this ${lab(p)}, the numbers <b>${p.digits[0]}</b> and <b>${p.digits[1]}</b> appear in the notes of only the two green squares. So those two squares must be ${p.digits[0]} and ${p.digits[1]}.` },
+      { k: 'quiz', g: p.g, u: unitCells(p.unit[0], p.unit[1]), p: p.pair, n: p.notes, k2: p.digits, text: 'Which notes can stay in the two green squares?', opts: ['All of them', `Only ${p.extra.slice(0, 2).join(' and ')}`, `Only ${p.digits[0]} and ${p.digits[1]}`], ans: 2, why: `The green squares are taken by ${p.digits[0]} and ${p.digits[1]}, so their other notes (${p.extra.join(', ')}) can go.`, after: keepOnly(p) },
+      { k: 'quiz', g: q.g, u: unitCells(q.unit[0], q.unit[1]), n: q.notes, text: `Find the hidden pair in the shaded ${lab(q)}. Which two numbers is it?`, opts: [pairs[1], pairs[2], pairs[0]], ans: 2, why: `${q.digits[0]} and ${q.digits[1]} can only go in the same two squares.`, revealP: q.pair },
+    ] });
+  }
+  L.forEach((l, i) => { l.n = i + 1; });
+  const TOTAL = L.length;
+  const free = (l) => !PREMIUM_ON || !l.premium;
+
+  // ---------- home ----------
+  let prog = store.get();
+  function starsHtml(n) { return '<span class="stars">' + [1, 2, 3].map((k) => k <= n ? '★' : '<span class="off">★</span>').join('') + '</span>'; }
+  function renderHome() {
+    prog = store.get();
+    const done = L.filter((l) => prog[l.id]).length, stars = L.reduce((a, l) => a + (prog[l.id] || 0), 0);
+    $('progText').textContent = `${done} of ${TOTAL} lessons`;
+    $('progBar').style.width = (done / TOTAL * 100) + '%';
+    $('starPill').textContent = `★ ${stars}`;
+    const groups = [['Basics', 'Everything you need to start', L.slice(0, 4)], ['Strategies', 'Tricks for harder puzzles', L.slice(4)]];
+    $('levels').innerHTML = groups.map(([t, s, ls], gi) => `<div class="level"><div class="level-head"><span class="level-num">${gi + 1}</span><span><b>${t}</b><span>${s}</span></span><span class="tag ${ls.every(free) ? 'free' : 'prem'}">${ls.every(free) ? 'Free' : 'Premium'}</span></div>
+      <ul class="classes">${ls.map((l) => `<li><button class="cls ${prog[l.id] ? 'done' : ''}" type="button" data-id="${l.id}"><span class="num">${prog[l.id] ? '✓' : l.n}</span><span class="txt"><b>${l.title}</b><small>${l.sub}</small></span><span class="end">${prog[l.id] ? starsHtml(prog[l.id]) : free(l) ? '→' : '🔒'}</span></button></li>`).join('')}</ul></div>`).join('');
+  }
+  $('levels').addEventListener('click', (e) => { const b = e.target.closest('.cls'); if (b) open(L.find((l) => l.id === b.dataset.id)); });
+
+  // ---------- a lesson ----------
+  let les = null, si = 0, mistakes = 0, solved = false, picked = null, hinted = false;
+  function open(l) {
+    if (!free(l)) { sheet(`<h2 id="sheetTitle">Royal Club Premium</h2><p>${l.title} is part of Premium.</p><div class="row"><button class="gold" type="button" data-close>OK</button></div>`); return; }
+    les = l; si = 0; mistakes = 0;
+    $('home').hidden = true; $('lesson').hidden = false;
+    $('lsKicker').textContent = `Lesson ${l.n}`; $('lsTitle').textContent = l.title;
+    show();
+  }
+  function close() { les = null; $('lesson').hidden = true; $('home').hidden = false; renderHome(); }
+  $('lsClose').addEventListener('click', close);
+
+  function show() {
+    const st = les.steps[si];
+    solved = st.k === 'info'; picked = null; hinted = false;
+    $('lsCounter').textContent = `${si + 1}/${les.steps.length}`;
+    $('lsSteps').innerHTML = les.steps.map((_, i) => `<i class="${i < si ? 'on' : i === si ? 'cur' : ''}"></i>`).join('');
+    drawBoard(st);
+    const coach = [`<p>${st.text}</p>`];
+    if (st.k === 'quiz') coach.push(`<div class="opts">${st.opts.map((o, i) => `<button type="button" data-o="${i}">${o}</button>`).join('')}</div>`);
+    coach.push('<p class="fb" id="fb"></p>');
+    $('coach').innerHTML = coach.join('');
+    $('pad').hidden = st.k !== 'digit';
+    if (st.k === 'digit') $('pad').innerHTML = [1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => `<button type="button" data-d="${d}" aria-label="${d}">${d}</button>`).join('');
+    $('btnAlt').textContent = st.k === 'info' ? '← Back' : 'Hint';
+    $('btnAlt').disabled = st.k === 'info' ? si === 0 : false;
+    $('btnNext').disabled = !solved;
+    $('btnNext').textContent = si === les.steps.length - 1 ? 'Finish' : 'Next →';
+  }
+  function drawBoard(st, extra = {}) {
+    const g = grid(st.g);
+    const u = new Set(st.u || []), m = new Set(st.m || []), p = new Set([...(st.p || []), ...(extra.p || [])]);
+    const f = new Set(st.f || (st.k === 'digit' ? [st.cell] : []));
+    const notes = { ...(st.n || {}), ...(extra.n || {}) }, cross = st.x || {}, key = new Set(st.k2 || []);
+    const placed = extra.placed || {};
+    let h = '';
+    for (let i = 0; i < 81; i++) {
+      const cls = ['cell', 'r' + R(i), 'c' + C(i)];
+      if (u.has(i)) cls.push('u'); if (m.has(i)) cls.push('m'); if (p.has(i)) cls.push('p'); if (f.has(i)) cls.push('f');
+      if (extra.good === i) cls.push('good'); if (extra.wrong === i) cls.push('wrong');
+      if (st.k === 'cell' && !solved && !g[i]) cls.push('tap');
+      let inner = '';
+      if (g[i]) inner = String(g[i]);
+      else if (placed[i]) { inner = String(placed[i]); cls.push('placed'); }
+      else if (notes[i]) inner = `<span class="notes">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => notes[i].includes(d) ? `<i class="${(cross[i] || []).includes(d) ? 'x' : key.has(d) ? 'k' : ''}">${d}</i>` : '<i></i>').join('')}</span>`;
+      const label = `Row ${R(i) + 1}, column ${C(i) + 1}, ${g[i] || placed[i] ? (g[i] || placed[i]) : 'empty'}`;
+      h += `<button type="button" class="${cls.join(' ')}" data-i="${i}" aria-label="${label}" ${st.k === 'cell' && !g[i] ? '' : 'tabindex="-1"'}>${inner}</button>`;
+    }
+    $('board').innerHTML = h;
+  }
+  const fb = (cls, text) => { const e = $('fb'); if (e) { e.className = 'fb ' + cls; e.innerHTML = text; } };
+  const buzz = () => { try { navigator.vibrate && navigator.vibrate(60); } catch (e) {} };
+  function win(text, extra) { solved = true; $('btnNext').disabled = false; if (extra) drawBoard(les.steps[si], extra); fb('good', text); $('btnNext').focus(); }
+
+  $('board').addEventListener('click', (e) => {
+    const b = e.target.closest('.cell'); if (!b || !les) return;
+    const st = les.steps[si], i = +b.dataset.i;
+    if (st.k !== 'cell' || solved || grid(st.g)[i]) return;
+    if (i === st.ans) win(`Yes! The ${st.digit} goes there.`, { placed: { [i]: st.digit }, good: i });
+    else { mistakes++; buzz(); drawBoard(st, { wrong: i }); fb('bad', `Not there: a ${st.digit} in its row, column or box blocks it. Try again.`); }
+  });
+  $('pad').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-d]'); if (!b || !les) return;
+    const st = les.steps[si], d = +b.dataset.d;
+    if (st.k !== 'digit' || solved) return;
+    if (d === st.ans) { win(`Correct, it's ${d}.`, { placed: { [st.cell]: d }, good: st.cell }); $('pad').querySelectorAll('button').forEach((x) => { x.disabled = true; }); }
+    else { mistakes++; buzz(); b.classList.add('wrong'); b.disabled = true; fb('bad', `${d} doesn't fit. Try again.`); }
+  });
+  $('coach').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-o]'); if (!b || !les) return;
+    const st = les.steps[si], o = +b.dataset.o;
+    if (st.k !== 'quiz' || solved) return;
+    if (o === st.ans) {
+      b.classList.add('right'); $('coach').querySelectorAll('.opts button').forEach((x) => { x.disabled = true; });
+      const ex = {}; if (st.after) ex.n = st.after; if (st.revealP) ex.p = st.revealP;
+      if (st.after || st.revealP) drawBoard(st, ex);
+      solved = true; $('btnNext').disabled = false; fb('good', st.why); $('btnNext').focus();
+    } else { mistakes++; buzz(); b.classList.add('wrong'); b.disabled = true; fb('bad', 'Not quite. Have another look.'); }
+  });
+  $('btnAlt').addEventListener('click', () => {
+    const st = les.steps[si];
+    if (st.k === 'info') { if (si > 0) { si--; show(); } return; }
+    if (solved) return;
+    if (!hinted) mistakes++;   // a hint costs one star, once per step
+    hinted = true;
+    if (st.hm || st.hu || st.hp) drawBoard({ ...st, m: st.hm || st.m, u: st.hu || st.u, p: st.hp || st.p });
+    fb('info', st.hint || 'Read the question again and check each choice against the rules: 1 to 9 once in every row, column and box.');
+  });
+  $('btnNext').addEventListener('click', () => {
+    if (!solved) return;
+    if (si < les.steps.length - 1) { si++; show(); return; }
+    const stars = mistakes === 0 ? 3 : mistakes <= 2 ? 2 : 1;
+    prog = store.get(); prog[les.id] = Math.max(prog[les.id] || 0, stars); store.set(prog);
+    const next = L[les.n];
+    sheet(`<h2 id="sheetTitle">Lesson complete</h2><div class="big-stars">${starsHtml(stars).replace('class="stars"', '')}</div><p>${stars === 3 ? 'Perfect, no mistakes.' : 'Well done. Replay it any time for three stars.'}</p>
+      <div class="row"><button class="ghost" type="button" data-close data-home>All lessons</button>${next ? `<button class="gold" type="button" data-next="${next.id}">Next lesson →</button>` : ''}</div>`);
+  });
+  function sheet(html) { $('sheetBox').innerHTML = html; $('sheet').hidden = false; const b = $('sheetBox').querySelector('button'); if (b) b.focus(); }
+  $('sheet').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b && e.target !== $('sheet')) return;
+    $('sheet').hidden = true;
+    if (b && b.dataset.next) { open(L.find((l) => l.id === b.dataset.next)); return; }
+    if (les && (!b || b.dataset.home !== undefined)) close();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { if (!$('sheet').hidden) { $('sheet').hidden = true; if (les) close(); } else if (les) close(); return; }
+    if (!les || !$('sheet').hidden) return;
+    const st = les.steps[si];
+    if (st.k === 'digit' && /^[1-9]$/.test(e.key)) { const b = $('pad').querySelector(`[data-d="${e.key}"]`); if (b && !b.disabled) b.click(); }
+  });
+  renderHome();
+  const want = new URLSearchParams(location.search).get('lesson');
+  if (want) { const l = L.find((x) => x.id === want); if (l) open(l); }
+})();
+</script>
+</body>
+</html>

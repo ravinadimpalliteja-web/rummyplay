@@ -60,7 +60,7 @@
     const state = {
       players: players.map(p => ({ name: p.name, isBot: !!p.isBot, hand: [], score: 0 })),
       deck: [], discard: [], color: null, direction: 1, turn: 0, dealer: -1,
-      phase: 'idle', pendingDrawn: null, vulnerable: null,
+      phase: 'idle', pendingDrawn: null, vulnerable: null, pending: 0, attack: null,
       events: [], seq: 0, round: 0, target: cleanTarget(opts.target), peek: null,
       winner: null, roundPoints: 0, matchWinner: null
     };
@@ -111,6 +111,8 @@
     state.direction = 1;
     state.pendingDrawn = null;
     state.vulnerable = null;
+    state.pending = 0;
+    state.attack = null;
     state.winner = null;
     state.roundPoints = 0;
     state.peek = null;
@@ -134,15 +136,28 @@
       state.direction = -1;
       emit(state, { type: 'reverse' });
     } else if (top.type === 'rin') {
-      drawCards(state, first, 2);
-      emit(state, { type: 'draws', pi: first, n: 2 });
-      state.turn = nextIndex(state, first);
+      // the first player faces +2 and may answer it like any other Rin
+      state.pending = 2;
+      state.attack = 'rin';
     }
   }
 
   function top(state) { return state.discard[state.discard.length - 1]; }
 
+  /* Stacking: while a Rin (+2) or Mahakal (+4) is waiting, the player may only answer it with
+     - Mahakal (adds 4), always;
+     - a Rin (adds 2): any Rin after a Rin, or a Rin of the chosen element after a Mahakal;
+     - a Maya of the current element, which dodges: the waiting cards move on to the next player.
+     Otherwise they draw every waiting card and lose their turn. Brahma cannot answer. */
+  function answers(state, card) {
+    if (card.type === 'mahakal') return true;
+    if (card.type === 'rin') return state.attack === 'rin' || card.suit === state.color;
+    if (card.type === 'maya') return card.suit === state.color;
+    return false;
+  }
+
   function isLegal(state, card) {
+    if (state.pending > 0) return answers(state, card);
     if (WILDS.includes(card.type)) return true;
     if (state.color === null) return true;
     if (card.suit === state.color) return true;
@@ -159,7 +174,7 @@
 
   /** Cards the player may play as a Jodi right now (each card of a playable pair is listed). */
   function jodiCards(state, pi) {
-    if (state.phase !== 'play' || state.turn !== pi || state.pendingDrawn !== null) return [];
+    if (state.phase !== 'play' || state.turn !== pi || state.pendingDrawn !== null || state.pending > 0) return [];
     const hand = state.players[pi].hand;
     return hand.filter(c => c.type === 'num' && isLegal(state, c) && partnerOf(hand, c)).map(c => c.id);
   }
@@ -187,6 +202,8 @@
     state.roundPoints = pts;
     state.vulnerable = null;
     state.pendingDrawn = null;
+    state.pending = 0;
+    state.attack = null;
     if (state.players[w].score >= state.target) {
       state.phase = 'matchOver';
       state.matchWinner = w;
@@ -228,6 +245,15 @@
     if (a.type === 'draw') {
       if (state.pendingDrawn !== null) return { ok: false, error: 'Play the drawn card or pass' };
       state.vulnerable = null;
+      if (state.pending > 0) {                       // take every waiting card and lose the turn
+        const k = state.pending;
+        state.pending = 0;
+        state.attack = null;
+        drawCards(state, pi, k);
+        emit(state, { type: 'draws', pi, n: k });
+        state.turn = nextIndex(state, pi);
+        return { ok: true, drawn: null };
+      }
       const got = drawCards(state, pi, 1);
       emit(state, { type: 'draw', pi });
       if (got.length && isLegal(state, got[0])) {
@@ -252,7 +278,8 @@
       const card = me.hand[idx];
       if (state.pendingDrawn !== null && card.id !== state.pendingDrawn)
         return { ok: false, error: 'You can only play the card you just drew' };
-      if (!isLegal(state, card)) return { ok: false, error: 'That card does not match' };
+      if (!isLegal(state, card)) return { ok: false, error: state.pending > 0 ? 'Answer with Rin, Mahakal or a Maya of the element, or take the cards' : 'That card does not match' };
+      if (a.jodi && state.pending > 0) return { ok: false, error: 'No Jodi while cards are waiting' };
       const wild = WILDS.includes(card.type);
       if (wild && !SUITS.includes(a.color)) return { ok: false, error: 'Choose a suit' };
 
@@ -272,18 +299,26 @@
 
       let step = 1;
       const next = nextIndex(state, pi);
-      if (card.type === 'maya') { step = 2; emit(state, { type: 'skip', pi: next }); }
+      if (card.type === 'maya' && state.pending > 0) {
+        emit(state, { type: 'dodge', pi, to: next, n: state.pending });   // the waiting cards move on
+      } else if (card.type === 'maya') { step = 2; emit(state, { type: 'skip', pi: next }); }
       else if (card.type === 'chakra') {
         if (n === 2) { step = 2; emit(state, { type: 'skip', pi: next }); }
         else { state.direction *= -1; emit(state, { type: 'reverse' }); }
       } else if (card.type === 'rin' || card.type === 'mahakal') {
-        const k = card.type === 'rin' ? 2 : 4;
-        drawCards(state, next, k);
-        emit(state, { type: 'draws', pi: next, n: k });
-        step = 2;
+        state.pending = (state.pending || 0) + (card.type === 'rin' ? 2 : 4);   // || 0: games saved before stacking
+        state.attack = card.type;
+        emit(state, { type: 'stack', pi, to: next, n: state.pending });
       }
 
-      if (me.hand.length === 0) { endRound(state, pi); return { ok: true }; }
+      if (me.hand.length === 0) {
+        if (state.pending > 0) {                     // going out on a Rin, Mahakal or dodge: the next player still takes them
+          drawCards(state, next, state.pending);
+          emit(state, { type: 'draws', pi: next, n: state.pending });
+        }
+        endRound(state, pi);
+        return { ok: true };
+      }
       state.turn = nextIndex(state, pi, step);
       return { ok: true };
     }
@@ -413,6 +448,12 @@
       return { type: 'pass' };
     }
     if (!legal.length) return { type: 'draw' };
+    if (state.pending > 0) {                         // answer a waiting Rin or Mahakal: Rin first, then Maya, Mahakal last
+      const rank = c => (c.type === 'rin' ? 0 : c.type === 'maya' ? 1 : 2);
+      const c = legal.map(id => hand.find(x => x.id === id)).sort((x, y) => rank(x) - rank(y))[0];
+      const rest = hand.filter(x => x.id !== c.id);
+      return { type: 'play', cardId: c.id, color: c.type === 'mahakal' ? bestColor(rest, rnd) : undefined, ekah: hand.length === 2 && rnd() < 0.9 };
+    }
     const nextCount = state.players[nextIndex(state, pi)].hand.length;
     const suitCount = {};
     for (const c of hand) if (c.suit) suitCount[c.suit] = (suitCount[c.suit] || 0) + 1;
@@ -449,7 +490,7 @@
       top: top(state), color: state.color, direction: state.direction, turn: state.turn,
       phase: state.phase, deckCount: state.deck.length,
       pendingDrawn: state.turn === pi ? state.pendingDrawn : null,
-      vulnerable: state.vulnerable, legal: legalCards(state, pi), jodi: jodiCards(state, pi),
+      vulnerable: state.vulnerable, pending: state.pending, attack: state.attack, legal: legalCards(state, pi), jodi: jodiCards(state, pi),
       peek: state.peek && state.peek.by === pi ? state.peek : null,
       events: state.events.slice(), seq: state.seq, round: state.round, target: state.target,
       winner: state.winner, roundPoints: state.roundPoints, matchWinner: state.matchWinner

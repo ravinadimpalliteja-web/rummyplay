@@ -56,13 +56,13 @@
       inner = '<span class="disc"></span><span class="corner">' + c.value + '</span><span class="big">' + c.value + '</span><span class="pill">' + c.suit + '</span>';
     } else if (c.type === 'maya' || c.type === 'chakra') {
       cls += ' s-' + c.suit;
-      inner = '<span class="disc"></span>' + ICON[c.type] + '<span class="pill">' + c.type.toUpperCase() + '</span>';
+      inner = '<span class="disc"></span><span class="corner ci">' + ICON[c.type] + '</span>' + ICON[c.type] + '<span class="pill">' + c.type.toUpperCase() + '</span>';
     } else if (c.type === 'rin') {
       cls += ' s-' + c.suit;
       inner = '<span class="disc"></span><span class="corner">+2</span><span class="big sm">+2</span><span class="pill">RIN</span>';
     } else if (c.type === 'brahma') {
       cls += ' wild';
-      inner = '<span class="quad"></span><span class="big sm">W</span><span class="pill">BRAHMA</span>';
+      inner = '<span class="quad"></span><span class="corner">W</span><span class="big sm">W</span><span class="pill">BRAHMA</span>';
     } else {
       cls += ' wild';
       inner = '<span class="dia"><span style="background:var(--agni)"></span><span style="background:var(--jal)"></span><span style="background:var(--vayu)"></span><span style="background:var(--prithvi)"></span></span><span class="corner">+4</span><span class="big sm">+4</span><span class="pill">MAHAKAL</span>';
@@ -259,6 +259,15 @@
     const chip = $('pile').querySelector('.colorchip');
     if (chip) chip.innerHTML = v.color ? '<i style="--c:' + SUIT_COLOR[v.color] + '"></i>' + SUIT_LABEL[v.color] : '<i style="--c:#888"></i>Any suit';
     $('direction').classList.toggle('rev', v.direction === -1);
+    let badge = $('pile').querySelector('.stackbadge');
+    if (!badge) { badge = document.createElement('span'); badge.className = 'stackbadge'; $('pile').appendChild(badge); }
+    const pend = v.phase === 'play' ? (v.pending || 0) : 0;
+    badge.classList.toggle('hidden', !pend);
+    badge.setAttribute('aria-label', pend ? pend + ' cards waiting for ' + (v.turn === v.you ? 'you' : nm(v.turn, false)) : '');
+    if (pend) {
+      const txt = '+' + pend;
+      if (badge.textContent !== txt) { badge.textContent = txt; badge.classList.remove('pop'); void badge.offsetWidth; badge.classList.add('pop'); }
+    }
   }
 
   /* Room turn timer (20 s): a draining bar with the seconds left. When it runs out the server discards your lowest
@@ -291,6 +300,7 @@
     const msg = $('statusMsg');
     msg.classList.toggle('turn', myTurn);
     if (v.phase !== 'play') msg.textContent = '';
+    else if (myTurn && v.pending) msg.textContent = v.legal.length ? '+' + v.pending + ' coming! Answer it or take them' : '+' + v.pending + ' coming! No answer, take them';
     else if (myTurn && v.pendingDrawn !== null) msg.textContent = 'It fits! Play it or keep it';
     else if (myTurn) msg.textContent = v.legal.length ? 'Your turn' : 'No match: tap the deck to draw';
     else msg.textContent = nm(v.turn) + ' is thinking…';
@@ -302,12 +312,19 @@
     $('ekahBtn').classList.toggle('nudge', needEkah && !armed);
     $('ekahBtn').textContent = armed ? 'EKAH! ✓' : 'EKAH!';
     $('passBtn').classList.toggle('hidden', !(myTurn && v.pendingDrawn !== null));
+    $('takeBtn').classList.toggle('hidden', !(myTurn && v.pending));
+    if (myTurn && v.pending) $('takeBtn').textContent = 'Take ' + v.pending + ' cards';
   }
 
+  let handKey = '';
   function renderHand(v, first) {
     const myTurn = v.phase === 'play' && v.turn === v.you;
     const hand = sortHand(v.hand);
     const legal = new Set(v.legal), jodi = new Set(v.jodi || []);
+    /* the server sends a fresh state every move; leave the cards alone unless something about them changed */
+    const key = myTurn + '|' + hand.map((c) => c.id + (legal.has(c.id) ? 'p' : '') + (jodi.has(c.id) ? 'j' : '')).join(',');
+    if (!first && key === handKey) return;
+    handKey = key;
     const nowIds = new Set(hand.map((c) => c.id));
     $('hand').innerHTML = hand.map((c) => {
       const ok = legal.has(c.id);
@@ -324,29 +341,38 @@
     requestAnimationFrame(() => requestAnimationFrame(() => els.forEach((el) => { el.style.transition = ''; })));
   }
 
-  /* Your cards sit on a gentle arc that flattens as your hand grows, so large hands still fit. */
+  /* Your cards sit on a gentle arc that flattens as your hand grows. From 12 cards they split into two rows,
+     the back row raised, so every card shows its corner and stays big enough to tap. */
+  const TWO_ROWS_AT = 12;
   function arrangeHand() {
     const h = $('hand');
     const cards = Array.from(h.children);
     const n = cards.length;
     if (!n) return;
+    h.classList.toggle('two', n >= TWO_ROWS_AT);      // set first: two rows use slightly smaller cards
     const W = h.clientWidth, cw = cards[0].offsetWidth, ch = cards[0].offsetHeight;
-    /* leave room at both ends for the tilt of the outer cards, so none hangs off the screen */
-    let sp = n > 1 ? Math.min(cw * 0.62, (W - cw * 1.75 - 12) / (n - 1)) : 0;
-    sp = Math.max(sp, Math.min(12, cw * 0.2));
-    const R = Math.max(W * 1.15, 360) * (1 + Math.max(0, n - 8) * 0.1);
-    let maxSag = 0;
-    cards.forEach((el, i) => {
-      const x = (i - (n - 1) / 2) * sp;
-      const sag = R - Math.sqrt(Math.max(0, R * R - x * x));
-      const deg = Math.asin(Math.max(-1, Math.min(1, x / R))) * 180 / Math.PI;
-      maxSag = Math.max(maxSag, sag);
-      el.style.left = (W / 2 + x - cw / 2) + 'px';
-      el.style.top = (18 + sag) + 'px';
-      el.style.setProperty('--rot', deg.toFixed(2) + 'deg');
-      el.style.zIndex = String(i + 1);
+    const rows = n >= TWO_ROWS_AT ? [cards.slice(0, Math.ceil(n / 2)), cards.slice(Math.ceil(n / 2))] : [cards];
+    const rowGap = rows.length > 1 ? Math.round(ch * 0.46) : 0;
+    let bottom = 0, z = 1;
+    rows.forEach((row, r) => {
+      const m = row.length;
+      /* leave room at both ends for the tilt of the outer cards, so none hangs off the screen */
+      let sp = m > 1 ? Math.min(cw * 0.62, (W - cw * 1.75 - 12) / (m - 1)) : 0;
+      sp = Math.max(sp, Math.min(12, cw * 0.2));
+      const R = Math.max(W * 1.15, 360) * (1 + Math.max(0, m - 8) * 0.1) * (rows.length > 1 ? 1.4 : 1);
+      const y0 = 18 + r * rowGap;
+      row.forEach((el, i) => {
+        const x = (i - (m - 1) / 2) * sp;
+        const sag = R - Math.sqrt(Math.max(0, R * R - x * x));
+        const deg = Math.asin(Math.max(-1, Math.min(1, x / R))) * 180 / Math.PI;
+        el.style.left = (W / 2 + x - cw / 2) + 'px';
+        el.style.top = (y0 + sag) + 'px';
+        el.style.setProperty('--rot', deg.toFixed(2) + 'deg');
+        el.style.zIndex = String(z++);
+        bottom = Math.max(bottom, y0 + sag + ch);
+      });
     });
-    h.style.height = Math.ceil(18 + ch + maxSag + 6) + 'px';
+    h.style.height = Math.ceil(bottom + 6) + 'px';
   }
 
   /* Seats around the table like Royal Club Spades: you at the bottom, others from your left, over the top, to your right. */
@@ -458,9 +484,20 @@
           for (let j = 0; j < ev.n; j++) flyCard(backHTML(), $('deck'), ev.pi === v.you ? $('hand') : seatEl(ev.pi), feltCw, null, AFTER + j * 110, 0.6);
           for (let j = 0; j < Math.min(ev.n, 4); j++) Sound.play('draw', (AFTER + j * 110) / 1000);
           bubble(ev.pi, '+' + ev.n + (ev.n === 1 ? ' card' : ' cards'), 'bad', null, AFTER);
+          if (ev.n >= 2) cap = (ev.pi === v.you ? 'You took ' : nm(ev.pi) + ' took ') + ev.n + ' cards';
           break;
         case 'skip':
           bubble(ev.pi, 'Skipped', 'bad', null, AFTER);
+          break;
+        case 'stack':
+          bubble(ev.to, '+' + ev.n + ' coming!', 'bad', null, AFTER);
+          cap = (ev.pi === v.you ? 'You' : nm(ev.pi)) + ' made it +' + ev.n + ' for ' + (ev.to === v.you ? 'you' : nm(ev.to, false));
+          if (ev.to === v.you) Sound.play('turn', 0.3);
+          break;
+        case 'dodge':
+          bubble(ev.pi, 'Dodged!', 'gold', null, AFTER);
+          bubble(ev.to, '+' + ev.n + ' coming!', 'bad', null, AFTER + 250);
+          cap = (ev.pi === v.you ? 'You' : nm(ev.pi)) + ' dodged with Maya: +' + ev.n + ' moves to ' + (ev.to === v.you ? 'you' : nm(ev.to, false));
           break;
         case 'reverse':
           if (lastPlayPi !== null) bubble(lastPlayPi, 'Reversed', 'gold', null, AFTER);
@@ -638,6 +675,7 @@
   $('pickCancel').addEventListener('click', () => { pickFor = null; $('pickerOverlay').classList.add('hidden'); });
   $('deck').addEventListener('click', () => ctrl && ctrl.act({ type: 'draw' }));
   $('passBtn').addEventListener('click', () => ctrl && ctrl.act({ type: 'pass' }));
+  $('takeBtn').addEventListener('click', () => ctrl && ctrl.act({ type: 'draw' }));
   $('ekahBtn').addEventListener('click', () => {
     armed = !armed;
     if (armed) { Sound.play('ekah'); toast('EKAH! called. Now play your card'); }
@@ -731,12 +769,18 @@
       '<section><h3>Action cards</h3><div class="gcards">' +
         gcard({ type: 'maya', suit: 'VAYU' }, 'Maya · Skip', 'The next player misses their turn.') +
         gcard({ type: 'chakra', suit: 'JAL' }, 'Chakra · Reverse', 'Play changes direction. With two players it works like Maya.') +
-        gcard({ type: 'rin', suit: 'AGNI' }, 'Rin · Draw two', 'The next player takes 2 cards and misses their turn.') +
+        gcard({ type: 'rin', suit: 'AGNI' }, 'Rin · Draw two', 'The next player takes 2 cards and misses their turn, unless they answer it (see Stacking).') +
       '</div></section>' +
       '<section><h3>Wild cards</h3><div class="gcards">' +
         gcard({ type: 'brahma', suit: null }, 'Brahma · Wild', 'Play it on anything and choose the suit that comes next.') +
-        gcard({ type: 'mahakal', suit: null }, 'Mahakal · Wild draw four', 'Play it on anything, choose the suit, and the next player takes 4 cards and misses their turn.') +
+        gcard({ type: 'mahakal', suit: null }, 'Mahakal · Wild draw four', 'Play it on anything, choose the suit, and the next player takes 4 cards and misses their turn, unless they answer it.') +
       '</div></section>' +
+      '<section><h3>Stacking Rin and Mahakal</h3><p>When a Rin or Mahakal is played on you, a red <b>+2</b> or <b>+4</b> appears on the pile. Before you take the cards, you can answer with one of the glowing cards:</p><ul>' +
+        '<li><b>Rin</b> adds 2 and passes it on. Any Rin answers a Rin; after a Mahakal it must be a Rin of the chosen suit.</li>' +
+        '<li><b>Mahakal</b> adds 4 and passes it on. Choose the next suit.</li>' +
+        '<li><b>Maya of the same suit</b> dodges: the cards move on to the next player without growing.</li></ul>' +
+        '<p>No answer? Tap <b>Take cards</b> (or the deck): you take them all and miss your turn. Brahma cannot answer, and no Jodi while cards are waiting.</p>' +
+        '<div class="gcards">' + gcard({ type: 'rin', suit: 'JAL' }, 'Rin on Rin', '+2 becomes +4 for the next player.') + gcard({ type: 'maya', suit: 'JAL' }, 'Maya dodge', 'A Jal Maya on a Jal Rin sends the +2 on.') + '</div></section>' +
       '<section><h3>Calling EKAH!</h3><p>When you are down to one card, everyone must know. Tap <b>EKAH!</b> before you play. If you forget, any player can tap <b>Catch!</b> on your seat before the next move, and you take 2 cards.</p></section>' +
       '<section><h3>Scoring</h3><table class="gscore"><tr><td>Number cards</td><td>Face value (1 to 9)</td></tr><tr><td>Maya, Chakra, Rin</td><td>15 each</td></tr><tr><td>Brahma, Mahakal</td><td>40 each</td></tr></table>' +
         '<p style="margin-top:8px">Pick the winning score before you start: 100, 200, 250, 300, 500, or your own number from 50 to 1000.</p></section>';

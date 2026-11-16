@@ -1,5 +1,5 @@
 'use strict';
-process.env.SPEED = '50';        // shorten every timer and animation pause; the real roll timer is 15s
+process.env.SPEED = '50';        // shorten every timer and animation pause; the real roll timer is 20s
 const assert = require('assert');
 const { newGame, roll, turnOf, animMs, LADDERS, SNAKES, RARE_LADDERS, RARE_ODDS, BOARD_VERSION, TIMING, PIECE_IDS, DEFAULT_PIECES } = require('../snakes');
 

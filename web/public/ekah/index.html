@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <script src="/app-mode.js"></script>
+    <script>try{var t=localStorage.getItem("ekahTable");if(t==="kesari"||t==="emerald")document.documentElement.dataset.table=t}catch(e){}</script>
 <title>Royal Club EKAH</title>
 <meta name="description" content="EKAH, the Indian matching card game on Royal Club. Free to play against the computer or with friends.">
 <meta name="theme-color" content="#1C103A">
@@ -17,7 +18,8 @@
   <div class="rc-watermark" aria-hidden="true"></div>
   <div class="home-wrap">
     <div class="home-top">
-      <a class="club-back" href="/" aria-label="Back to Royal Club"><span aria-hidden="true">←</span><img class="club-el" src="../brand/badge-logo-small.webp" alt="" width="320" height="224"></a>
+      <span class="club-lead"><a class="club-back" href="/" aria-label="Back to Royal Club">←</a>
+      <span class="club-brand"><img class="club-el" src="../brand/badge-logo-small.webp" alt="" width="320" height="224"><span><strong>ROYAL CLUB</strong><small>EKAH</small></span></span></span>
       <span class="tag">FREE TO PLAY</span>
     </div>
     <div class="hero">
@@ -103,6 +105,15 @@
       <span class="learn-text"><b>How to play</b><span>Learn the cards, Jodi powers and scoring</span></span>
       <span class="learn-go" aria-hidden="true">→</span>
     </button>
+
+    <div class="table-pick">
+      <h2 id="tableLbl">Table colour</h2>
+      <div class="table-themes" id="tableThemes" role="group" aria-labelledby="tableLbl">
+        <button type="button" class="t-royal" data-table="royal" aria-pressed="true"><span aria-hidden="true"></span>Royal Purple</button>
+        <button type="button" class="t-kesari" data-table="kesari" aria-pressed="false"><span aria-hidden="true"></span>Kesari</button>
+        <button type="button" class="t-emerald" data-table="emerald" aria-pressed="false"><span aria-hidden="true"></span>Emerald</button>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -166,6 +177,7 @@
     <div class="mybar">
       <div class="meseat" id="meSeat"></div>
       <span class="msg" id="statusMsg"></span>
+      <span class="turn-timer hidden" id="turnTimer" role="timer" aria-live="off"><span class="track"><i></i></span><b></b></span>
       <button class="ekahbtn hidden" id="ekahBtn">EKAH!</button>
       <button class="btn small hidden" id="passBtn">Keep card &amp; pass</button>
     </div>

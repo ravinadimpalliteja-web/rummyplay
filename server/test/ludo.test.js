@@ -1,5 +1,5 @@
 'use strict';
-process.env.SPEED = '50';        // shorten every timer and animation pause; the real turn timer is 15s
+process.env.SPEED = '50';        // shorten every timer and animation pause; the real turn timer is 20s
 const assert = require('assert');
 const { newGame, roll, move, movable, turnOf, absOf, bestMove, START } = require('../ludo');
 

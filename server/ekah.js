@@ -15,7 +15,7 @@
 const Engine = require('./ekah-engine');
 
 const MAX_SEATS = 10;
-const TURN_SECS = 30;
+const TURN_SECS = 20;            // time to play before the timeout rule plays for you (Engine.timeoutAction)
 const BOT_DELAY_MS = 1800;          // computer players take 1.8 to 2.8 seconds, like a person thinking
 const BOT_DELAY_SPREAD_MS = 1000;
 const AWAY_DELAY_MS = 2000;
@@ -144,8 +144,16 @@ class EkahRoom {
       const pi = this.playerOf(seat);
       if (!g || g.phase !== 'play' || g.turn !== pi) return this.schedule();
       if (missed && this.seats[seat] && !this.seats[seat].bot) this.seats[seat].missed++;
-      const r = Engine.applyAction(g, pi, Engine.botAction(g, pi));
-      if (!r.ok) Engine.applyAction(g, pi, g.pendingDrawn !== null ? { type: 'pass' } : { type: 'draw' });
+      if (missed) {
+        // the player's own timer ran out: the cautious timeout rule (lowest number card of the element, else draw)
+        const r = Engine.applyAction(g, pi, Engine.timeoutAction(g, pi));
+        if (!r.ok) Engine.applyAction(g, pi, g.pendingDrawn !== null ? { type: 'pass' } : { type: 'draw' });
+        if (g.phase === 'play' && g.turn === pi && g.pendingDrawn !== null) Engine.applyAction(g, pi, { type: 'pass' });   // keep a playable drawn card
+      } else {
+        // computer players, and players who have left the room
+        const r = Engine.applyAction(g, pi, Engine.botAction(g, pi));
+        if (!r.ok) Engine.applyAction(g, pi, g.pendingDrawn !== null ? { type: 'pass' } : { type: 'draw' });
+      }
     } catch (e) { console.error('ekah autoAct', e); }
     this.schedule();
   }

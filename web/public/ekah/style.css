@@ -282,8 +282,13 @@ button.card { cursor: default; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 
 /* ---------- Royal Club site ---------- */
-.club-back { color: var(--muted); text-decoration: none; font-weight: 700; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 4px; border-radius: 10px; }
-.club-back:hover { color: var(--text); }
+.club-lead { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.club-back { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid rgba(243,217,138,.35); border-radius: 10px; background: rgba(255,255,255,.06); color: var(--gold); text-decoration: none; font-size: 18px; line-height: 1; }
+.club-back:hover { border-color: var(--gold); }
+.club-back:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.club-brand { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.club-brand strong { display: block; font: 700 13px/1.1 Cinzel, "Playfair Display", Georgia, serif; letter-spacing: .14em; color: var(--text); white-space: nowrap; }
+.club-brand small { display: block; font-size: 8.5px; letter-spacing: .26em; color: var(--gold); }
 .home-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: -8px; min-height: 44px; }
 .home-top .tag { font-size: 11px; letter-spacing: .14em; color: var(--gold); font-weight: 700; }
 .passline { text-align: center; font-size: 15px; color: var(--muted); margin: 0; }
@@ -335,8 +340,7 @@ button.card { cursor: default; }
 @media (max-width:760px){.rc-watermark{width:170vw;opacity:.11}}
 
 /* Royal Club crowned elephant in the back link */
-.club-el{display:block;height:44px;width:auto}
-.club-back{gap:8px}
+.club-el{display:block;height:40px;width:auto}
 .mode .err:empty { display: none; }
 @media (max-width: 419px) { .el-word { display: none; } .elements li { font-size: 12px; padding: 4px 10px 4px 6px; } }
 .chips.score button[data-v="custom"] { font-size: 12.5px; letter-spacing: -.01em; }
@@ -357,3 +361,27 @@ button.card { cursor: default; }
 
 /* WhatsApp invite */
 .btn.wa { background: #1f8f4e; color: #fff; }
+
+/* Room turn timer */
+.turn-timer { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; font-size: 12px; font-weight: 800; color: var(--muted); font-variant-numeric: tabular-nums; }
+.turn-timer .track { width: 64px; height: 6px; border-radius: 999px; background: rgba(255,255,255,.14); overflow: hidden; }
+.turn-timer i { display: block; height: 100%; width: 100%; background: var(--muted); transition: width .25s linear; }
+.turn-timer.mine { color: var(--gold); }
+.turn-timer.mine i { background: var(--gold); }
+.turn-timer.low { color: #FF7A6B; }
+.turn-timer.low i { background: #FF7A6B; }
+
+/* Table themes (a personal choice on this device; other players keep their own) */
+:root[data-table="kesari"] { --bg: #3A1206; --felt: #8A3410; --felt-edge: #B8561A; --panel: #4A1A08; }
+:root[data-table="kesari"] body { background: radial-gradient(ellipse at 50% 30%, #A8461A 0%, #6E2408 55%, #3A1206 100%) fixed; }
+:root[data-table="emerald"] { --bg: #062A1E; --felt: #0F4D3A; --felt-edge: #1A6A50; --panel: #0B3A2B; }
+:root[data-table="emerald"] body { background: radial-gradient(ellipse at 50% 30%, #1A6A50 0%, #0B3A2B 55%, #062A1E 100%) fixed; }
+.table-pick { margin-top: 18px; }
+.table-pick h2 { margin: 0 0 10px; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+.table-themes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.table-themes button { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 6px 10px; border-radius: 14px; border: 2px solid var(--line); background: rgba(0,0,0,.2); color: var(--text); font-weight: 700; font-size: 13px; }
+.table-themes button[aria-pressed="true"] { border-color: var(--gold); }
+.table-themes span { width: 100%; aspect-ratio: 1.6; border-radius: 9px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.15); }
+.table-themes .t-royal span { background: radial-gradient(circle at 50% 35%, #4B2A8A, #2A1A55 60%, #1C103A); }
+.table-themes .t-kesari span { background: radial-gradient(circle at 50% 35%, #C2621F, #8A3410 60%, #3A1206); }
+.table-themes .t-emerald span { background: radial-gradient(circle at 50% 35%, #1D7A59, #0F4D3A 60%, #062A1E); }

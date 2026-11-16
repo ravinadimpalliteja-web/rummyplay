@@ -47,6 +47,14 @@ export function RoomAccountLine() {
     <button type="button" className="text-button" onClick={() => openAuth(a.session && !a.guest ? "username" : "rooms")}>{a.session && !a.guest ? "Pick username" : "Sign in"}</button></p>;
 }
 
+/** The top row used by Chess and Sudoku: a square ← button, then the Royal Club badge and the game's name. */
+export function ClubBar({ game, onBack }: { game: string; onBack: () => void }) {
+  return <div className="rs-clubbar">
+    <button type="button" className="rs-club-back" onClick={onBack} aria-label="Back">←</button>
+    <span className="rs-brand"><img src="/brand/badge-logo-small.webp" alt="" width="320" height="224" /><span><strong>ROYAL CLUB</strong><small>{game.toUpperCase()}</small></span></span>
+  </div>;
+}
+
 type Tab = "computer" | "friends" | "online";
 const TAB_KEY = (game: string) => `rc-tab-${game.toLowerCase().replace(/[^a-z]+/g, "-")}`;
 
@@ -61,7 +69,7 @@ export function PlayStart(p: StartProps) {
   const tabs: [Tab, ReactNode][] = [["computer", "Vs Computer"], ["friends", "With Friends"], ["online", <>Online <small className="rs-soon-tag">Soon</small></>]];
   return <section className={`mode-page rs-page ${p.className ?? ""}`}>
     <div className="rs-watermark" aria-hidden="true" />
-    <button className="back-link" onClick={p.onBack}>← Back</button>
+    <ClubBar game={p.game} onBack={p.onBack} />
     <div className="rs-head">
       <div className="eyebrow">ROYAL CLUB · {p.game.toUpperCase()}</div>
       <h1>{p.game}</h1>
@@ -148,7 +156,7 @@ export function WaitingRoom(p: WaitProps) {
   const hostSeat = p.hostSeat ?? (p.isHost ? p.you : undefined);
   return <section className={`mode-page rs-page rs-wait ${p.children ? "has-extra" : ""} ${p.className ?? ""}`}>
     <div className="rs-watermark" aria-hidden="true" />
-    <button className="back-link" onClick={p.onBack}>← Back</button>
+    <ClubBar game={p.game} onBack={p.onBack} />
     <div className="rs-stack">
       <div className="rs-panel rs-code-card">
         <small>ROOM CODE</small>

@@ -1,3 +1,4 @@
+import { reportGame } from "../lib/report";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { RoomClient, deviceToken, randomPasscode, saveRoom, savedRoom, serverUrl, type NetStatus } from "../domain/online";
 import { BOARD_VERSION, CHAT_EMOJIS, CHAT_PHRASES, RARE_LADDERS, SNAKES, TIMING, newGame, roll, rollDie, rollLucky, rungsOf, snakeSlideMs, turnOf, type LastRoll, type SLGame } from "./engine";
@@ -777,6 +778,14 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
   });
   const secsLeft = online && view?.deadline != null && table?.turn === table?.you ? Math.max(0, Math.ceil((view.deadline - (Date.now() + skew.current)) / 1000)) : null;
   const showEnd = !!table && table.phase === "gameEnd" && !animating;
+  /* Coins and XP: report each finished game once (src/lib/report.ts). */
+  const reported = useRef(false);
+  useEffect(() => {
+    if (!table || table.phase !== "gameEnd") { reported.current = false; return; }
+    if (!showEnd || reported.current) return;
+    reported.current = true;
+    reportGame("snakes", table.finished[0] === table.you ? "win" : "lose");
+  }, [showEnd, table?.phase]);
   const chooseModel = (m: ModelId) => { setModel(m); keep(MODEL_KEY, m); };
   const chooseTheme = (t: ThemeId) => { setTheme(t); keep(THEME_KEY, t); };
   const chooseTable = (t: TableId) => { setTableColour(t); keep(TABLE_KEY, t); };

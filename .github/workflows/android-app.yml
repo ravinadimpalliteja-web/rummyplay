@@ -36,6 +36,9 @@ jobs:
       VITE_ROOM_SERVER_URL: ${{ vars.VITE_ROOM_SERVER_URL || 'wss://royal-club-rooms.onrender.com' }}
       TEST_SITE_URL: ${{ vars.TEST_SITE_URL || 'https://test.royalclubgames.com' }}
       HAS_UPLOAD_KEY: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_B64 != '' }}
+      # Crash reports (Firebase Crashlytics) are added only when the GOOGLE_SERVICES_JSON secret holds the
+      # google-services.json file from the Firebase project (Android app id com.royalclubgames.app).
+      HAS_FIREBASE: ${{ secrets.GOOGLE_SERVICES_JSON != '' }}
     steps:
       - uses: actions/checkout@v5
 
@@ -51,11 +54,23 @@ jobs:
       - name: Install and build the website
         run: |
           npm install
-          npm run build
+          # The commit this code comes from: live updates compare it with the published version.
+          BUNDLE_VERSION="${GITHUB_SHA::7}" npm run build
 
       - name: Create the Android project
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
         run: |
+          if [ "$HAS_FIREBASE" = "true" ]; then npm install --no-save @capacitor-firebase/crashlytics@^8; fi
           npx cap add android
+          if [ "$HAS_FIREBASE" = "true" ]; then
+            printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+            # Crashlytics Gradle plugin (the Google Services plugin is already in Capacitor's project and is applied
+            # automatically when google-services.json exists).
+            sed -i "/com.google.gms:google-services/a\\        classpath 'com.google.firebase:firebase-crashlytics-gradle:3.0.2'" android/build.gradle
+            echo "apply plugin: 'com.google.firebase.crashlytics'" >> android/app/build.gradle
+            grep -n "crashlytics\|google-services" android/build.gradle android/app/build.gradle
+          fi
           # App icon and splash screen from web/assets/
           npx --yes @capacitor/assets@3 generate --android \
             --iconBackgroundColor '#0F4D3A' --iconBackgroundColorDark '#0F4D3A' \

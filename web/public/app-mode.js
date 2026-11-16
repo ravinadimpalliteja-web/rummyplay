@@ -55,4 +55,25 @@ window.rcReport = function (game, result) {
     if (!A || !document.body || document.body.getAttribute('data-app-back') !== 'page') return;
     A.addListener('backButton', function () { if (window.history.length > 1) window.history.back(); else window.location.href = '/'; });
   });
+
+  /* Crash reports (Firebase Crashlytics): only in app builds made with a Firebase project (the workflow adds the
+     plugin when the GOOGLE_SERVICES_JSON secret exists). App crashes are caught natively; this also sends
+     JavaScript errors from the games, with the page and line, so we can fix them. No names, coins or game data
+     are sent. At most 20 reports per page load. */
+  var FC = C.Plugins && C.Plugins.FirebaseCrashlytics;
+  if (FC && typeof C.isPluginAvailable === 'function' && C.isPluginAvailable('FirebaseCrashlytics')) {
+    var sent = 0;
+    var report = function (msg) {
+      if (sent++ >= 20) return;
+      try { FC.recordException({ message: String(msg).slice(0, 1000) }).catch(function () {}); } catch (e) { /* plugin off */ }
+    };
+    window.addEventListener('error', function (e) {
+      var where = (e.filename || location.pathname).replace(location.origin, '') + ':' + (e.lineno || 0);
+      report((e.message || 'Error') + ' @ ' + where);
+    });
+    window.addEventListener('unhandledrejection', function (e) {
+      var r = e.reason;
+      report('Unhandled: ' + (r && r.message ? r.message : String(r)) + ' @ ' + location.pathname);
+    });
+  }
 })();

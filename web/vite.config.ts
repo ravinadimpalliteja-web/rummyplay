@@ -26,8 +26,12 @@ function ekahConfig(): Plugin {
   };
 }
 
+declare const process: { env: Record<string, string | undefined> };
+
 export default defineConfig({
   plugins: [react(), ekahConfig()],
+  /* Which code this bundle holds (the git commit), so the app's live updates can tell if it is up to date. */
+  define: { __BUNDLE_VERSION__: JSON.stringify((process.env.BUNDLE_VERSION ?? "").trim() || "dev") },
   server: { host: "0.0.0.0" },
   build: { outDir: "dist", sourcemap: true }
 });

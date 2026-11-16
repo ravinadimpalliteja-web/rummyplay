@@ -1,0 +1,86 @@
+name: Publish live update
+
+# Sends the current games (main branch) to everyone who has the Play Store app, without a Play Store update.
+# Run it by hand: Actions → "Publish live update" → Run workflow.
+# The app checks https://github.com/<owner>/<repo>/releases/download/live-update/manifest.json when it starts,
+# downloads the new version in the background and uses it from the next app start (src/lib/liveUpdate.ts).
+# If the new version fails to start, the app goes back to the previous one by itself.
+#
+# Changes that need a new Play Store build instead: the app name or icon, new Capacitor plugins
+# (for example ads or notifications), and Android settings. For those, set "min_native" to the
+# versionCode of the first Play Store build that has them, so older apps keep their current version.
+
+on:
+  workflow_dispatch:
+    inputs:
+      min_native:
+        description: "Only for apps with at least this versionCode (0 = every app)"
+        required: false
+        default: "0"
+      note:
+        description: "What changed (shown on the release page)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write   # to publish the update on the "live-update" release page
+
+concurrency:
+  group: live-update
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    env:
+      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || 'https://cveqalxcpenkncahnexd.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_o89SjkD_5i4ay4JdKhVydw_VzNWbi8G' }}
+      VITE_ROOM_SERVER_URL: ${{ vars.VITE_ROOM_SERVER_URL || 'wss://royal-club-rooms.onrender.com' }}
+      MIN_NATIVE: ${{ inputs.min_native }}
+      NOTE: ${{ inputs.note }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Build the games
+        run: |
+          npm install
+          echo "VERSION=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+          BUNDLE_VERSION="${GITHUB_SHA::7}" npm run build
+
+      - name: Zip the games and write manifest.json
+        run: |
+          mkdir -p ../live
+          # Source maps stay out of the download (smaller update, nothing players need).
+          (cd dist && zip -qr -9 "../../live/bundle-$VERSION.zip" . -x '*.map')
+          ls -la ../live
+          URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/live-update/bundle-$VERSION.zip"
+          node -e '
+            const [version, url, minNative] = process.argv.slice(1);
+            const m = { version, url, minNative: Number(minNative) || 0, publishedAt: new Date().toISOString() };
+            require("fs").writeFileSync("../live/manifest.json", JSON.stringify(m, null, 2) + "\n");
+            console.log(m);
+          ' "$VERSION" "$URL" "${MIN_NATIVE:-0}"
+
+      - name: Publish to the "live-update" release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view live-update >/dev/null 2>&1 || gh release create live-update --prerelease \
+            --title "Royal Club live update" \
+            --notes "Games sent to the Play Store app as a live update. Do not delete: the app reads manifest.json from here."
+          # Zip first, manifest last, so the app never sees a manifest pointing to a zip that is not there yet.
+          gh release upload live-update "../live/bundle-$VERSION.zip" --clobber
+          gh release upload live-update ../live/manifest.json --clobber
+          if [ -n "$NOTE" ]; then
+            gh release edit live-update --notes "Latest live update: $VERSION ($(date -u +%Y-%m-%d)). $NOTE"
+          fi
+          # Keep the 5 newest zips (apps that are mid-download still find theirs).
+          gh release view live-update --json assets --jq '[.assets[] | select(.name | startswith("bundle-"))] | sort_by(.createdAt) | reverse | .[5:] | .[].name' \
+            | while read -r old; do [ -n "$old" ] && gh release delete-asset live-update "$old" --yes; done

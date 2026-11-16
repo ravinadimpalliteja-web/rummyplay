@@ -529,3 +529,4 @@
   14%,38%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(34%,var(--lift)) rotate(0) scale(1)}
   52%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(70%,calc(var(--lift) - 60%)) rotate(180deg) scale(1)}
   100%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(220%,calc(var(--lift) - 150%)) rotate(540deg) scale(.4);opacity:0}}
+.ld-unlock-rule{margin:-4px 0 2px;text-align:left}

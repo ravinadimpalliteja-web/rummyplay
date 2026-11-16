@@ -6,7 +6,8 @@ import {
   ANIM, COLORS, LANE, SAFE, SPOTS, TRACK, YARD, absOf, bestMove, cellKey, move, newGame, pointOf, previewMove, roll, rollDie, turnOf,
   type Color, type LudoEvent, type LudoGame as Game, type Tok,
 } from "./engine";
-import { DICE, Face, Piece, PieceDefs, TOKEN_SETS, isUnlocked, setPips, unlockText, type DiceId, type Stats, type TokenSet } from "./pieces";
+import { DICE, Face, Piece, PieceDefs, TOKEN_SETS, isUnlocked, setPips, unlockText, type DiceId, type TokenSet } from "./pieces";
+import { useRealWins } from "./realWins";
 import { celebrate } from "../snakes/confetti";
 import { motionReduced, setMotionReduced } from "../lib/motion";
 import { inviteText } from "../lib/share";
@@ -23,8 +24,6 @@ const PHRASES = ["Nice move! 👍", "Good luck 🍀", "Well played 👏", "Oops!
 const VICTIM = [3, 6], HUNTER = [0];
 const TOKEN_KEY = "rc-ludo-tokens", DICE_KEY = "rc-ludo-dice";
 const readKey = <T extends string>(key: string, ok: readonly string[], dflt: T): T => { try { const v = window.localStorage.getItem(key); return v && ok.includes(v) ? (v as T) : dflt; } catch { return dflt; } };
-const STATS_KEY = "rc-ludo-stats";
-const readStats = (): Stats => { try { const v = JSON.parse(window.localStorage.getItem(STATS_KEY) ?? "{}"); return { played: Number(v.played) || 0, wins: Number(v.wins) || 0 }; } catch { return { played: 0, wins: 0 }; } };
 const keep = (key: string, v: string) => { try { window.localStorage.setItem(key, v); } catch { /* storage off: still works for this visit */ } };
 const ORD = ["1st", "2nd", "3rd", "4th"];
 /* A game on this device (vs computer or pass & play), saved after every move so it survives closing the app. */
@@ -49,6 +48,7 @@ type LView = {
   phase: "lobby" | "playing" | "gameEnd"; seats: SeatInfo[];
   order?: number[]; colors?: Record<number, Color>; tokens?: Record<number, Tok[]>; turn?: number; stage?: "roll" | "move" | "gameEnd";
   dice?: number; sixes?: number; moves?: number[]; ranks?: number[]; last?: LudoEvent | null; deadline?: number | null; moving?: boolean;
+  winCounts?: boolean;   // set once someone finishes 1st: whether that 1st place counts toward token unlocks
 };
 type Mode = "practice" | "pass" | "online";
 /** One shape for the table, whether the game runs here (Practice, Pass & play) or on the room server (Room). */
@@ -198,14 +198,15 @@ function BoardArt() {
 }
 
 /** Previews of every token set (all four colours) and every dice finish, for the lobby and the in-game Style sheet. */
-function StylePicker({ tokens, dice, stats, onTokens, onDice }: { tokens: TokenSet; dice: DiceId; stats: Stats; onTokens: (t: TokenSet) => void; onDice: (d: DiceId) => void }) {
+function StylePicker({ tokens, dice, wins, signedIn, onTokens, onDice }: { tokens: TokenSet; dice: DiceId; wins: number; signedIn: boolean; onTokens: (t: TokenSet) => void; onDice: (d: DiceId) => void }) {
   return <div className="ld-style">
     <b className="ld-style-title">Tokens</b>
+    <p className="ld-small ld-unlock-rule">New tokens unlock as you win: finish 1st in a room with at least one real player.</p>
     <div className="ld-token-grid">{TOKEN_SETS.map(s => {
-      const open = isUnlocked(s.id, stats);
+      const open = isUnlocked(s.id, wins);
       return <button key={s.id} className={`${tokens === s.id ? "on" : ""}${open ? "" : " locked"}`} aria-pressed={tokens === s.id} aria-disabled={!open} onClick={() => open && onTokens(s.id)}>
         <span className="ld-token-row">{COLORS.map(c => <Piece key={c} set={s.id} color={c} />)}</span>
-        <strong>{open ? s.name : `🔒 ${s.name}`}</strong><small>{open ? s.note : unlockText(s.id, stats)}</small>
+        <strong>{open ? s.name : `🔒 ${s.name}`}</strong><small>{open ? s.note : unlockText(s.id, wins, signedIn)}</small>
       </button>;
     })}</div>
     <b className="ld-style-title">Dice</b>
@@ -241,12 +242,13 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
   const [tokenSet, setTokenSet] = useState<TokenSet>(() => readKey(TOKEN_KEY, TOKEN_SETS.map(x => x.id), "sentry"));
   const [dice, setDice] = useState<DiceId>(() => readKey(DICE_KEY, DICE.map(x => x.id), "ivory"));
   const chooseTokens = (v: TokenSet) => { setTokenSet(v); keep(TOKEN_KEY, v); };
-  const [stats, setStats] = useState<Stats>(readStats);
-  const shownSet: TokenSet = isUnlocked(tokenSet, stats) ? tokenSet : "sentry";
+  const realWins = useRealWins("ludo");
+  const shownSet: TokenSet = isUnlocked(tokenSet, realWins.wins) ? tokenSet : "sentry";
   const shownSetRef = useRef(shownSet); shownSetRef.current = shownSet;
   const [banner, setBanner] = useState<{ id: number; text: string; big: boolean } | null>(null);
   const [homeFx, setHomeFx] = useState(0);
   const [unlockedNow, setUnlockedNow] = useState<string[]>([]);
+  const [winCounted, setWinCounted] = useState(false);
   const showBanner = (text: string, big = false) => { const id = Date.now(); setBanner({ id, text, big }); window.setTimeout(() => setBanner(b => (b && b.id === id ? null : b)), big ? 2600 : 1800); };
   const chooseDice = (v: DiceId) => { setDice(v); keep(DICE_KEY, v); };
   const dieEls = useRef<Record<number, HTMLElement | null>>({});
@@ -465,8 +467,8 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
   const secsLeft = online && view?.deadline != null && holdsTurn ? Math.max(0, Math.ceil((view.deadline - (Date.now() + skew.current)) / 1000)) : null;
   const showEnd = !!t && t.stage === "gameEnd" && !animating;
 
-  /* Each finished game counts once on this device: games played, and wins (1st place for you). New token sets
-     that this unlocks are announced on the finish screen. Pass & play counts games but not wins. */
+  /* Each finished game is reported once. When you finished 1st in a room against a real player, the room server
+     adds the win to your account: read the new count and announce any token sets it unlocks on the finish screen. */
   const counted = useRef(false);
   useEffect(() => {
     if (!t) return;
@@ -474,15 +476,20 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
     if (!showEnd || counted.current) return;
     counted.current = true;
     if (t.mode === "online" && t.you == null) return;
-    const before = readStats();
     const won = t.mode !== "pass" && t.ranks[0] === (t.mode === "online" ? t.you : 0);
     reportGame("ludo", t.mode === "pass" ? "done" : won ? "win" : "lose");
-    const after = { played: before.played + 1, wins: before.wins + (won ? 1 : 0) };
-    try { window.localStorage.setItem(STATS_KEY, JSON.stringify(after)); } catch { /* storage off */ }
-    setStats(after);
-    setUnlockedNow(TOKEN_SETS.filter(x => !isUnlocked(x.id, before) && isUnlocked(x.id, after)).map(x => x.name));
+    if (t.mode === "online" && won && view?.winCounts) {
+      const before = realWins.wins;
+      setWinCounted(true);
+      window.setTimeout(() => {          // give the room server a moment to save the win
+        void realWins.refresh().then(after => {
+          if (after == null) return;
+          setUnlockedNow(TOKEN_SETS.filter(x => !isUnlocked(x.id, before) && isUnlocked(x.id, after)).map(x => x.name));
+        });
+      }, 1500);
+    }
   }, [showEnd, t?.stage]);
-  useEffect(() => { if (t && t.stage !== "gameEnd") setUnlockedNow([]); }, [t?.stage]);
+  useEffect(() => { if (t && t.stage !== "gameEnd") { setUnlockedNow([]); setWinCounted(false); } }, [t?.stage]);
 
   /* "Your turn" alert: a chime when the die becomes yours; in a room also a short buzz, and the tab title
      changes while the phone is on another app until you come back. */
@@ -527,7 +534,7 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
         <button className="ghost-button rs-wide" onClick={() => startLocal("pass")}>Start pass &amp; play</button>
       </div>
     </>}
-    after={<details className="ld-style-box rs-panel"><summary>Token and dice style</summary><PieceDefs /><StylePicker tokens={shownSet} dice={dice} stats={stats} onTokens={chooseTokens} onDice={chooseDice} /></details>}
+    after={<details className="ld-style-box rs-panel"><summary>Token and dice style</summary><PieceDefs /><StylePicker tokens={shownSet} dice={dice} wins={realWins.wins} signedIn={realWins.signedIn} onTokens={chooseTokens} onDice={chooseDice} /></details>}
     rules={<ul><li>A 6 brings a token out.</li><li>A 6, a cut or reaching home rolls again; three 6s in a row end the turn.</li><li>Starred and start squares are safe. You need the exact roll to finish.</li></ul>} />;
 
   if (sub === "room" && view) {
@@ -632,7 +639,8 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
             <span className="eyebrow">ROYAL CLUB · LUDO</span>
             <h2>{t.ranks[0] === t.you ? "You take the crown!" : `${t.names[t.ranks[0]]} wins`}</h2>
             <ol className="ld-podium">{t.ranks.map((s, i) => <li key={s}><b>{ORD[i]}</b><span className={`ld-dot ld-bg-${t.colors[s]}`} />{label(t.names[s])}</li>)}</ol>
-            {unlockedNow.length > 0 && <p className="ld-unlocked">🔓 New tokens unlocked: <b>{unlockedNow.join(", ")}</b>. Try them from Style.</p>}
+            {unlockedNow.length > 0 ? <p className="ld-unlocked">🔓 New tokens unlocked: <b>{unlockedNow.join(", ")}</b>. Try them from Style.</p>
+              : winCounted && <p className="ld-unlocked">🏆 This win counts toward new tokens · {realWins.wins} room win{realWins.wins === 1 ? "" : "s"} so far.</p>}
             <div className="ld-win-actions">
               {online ? (view?.host ? <button className="gold-button" onClick={() => send({ t: "again" })}>Play again</button> : <p className="ld-small">Waiting for the host to start a new game.</p>)
                 : <button className="gold-button" onClick={() => startLocal(t.mode === "pass" ? "pass" : "practice")}>Play again</button>}
@@ -662,7 +670,7 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
       <button className="gold-button" onClick={() => setSheet("none")}>Close</button>
     </div>}
     {sheet === "style" && <div className="ld-sheet" role="dialog" aria-label="Token and dice style">
-      <StylePicker tokens={shownSet} dice={dice} stats={stats} onTokens={chooseTokens} onDice={chooseDice} />
+      <StylePicker tokens={shownSet} dice={dice} wins={realWins.wins} signedIn={realWins.signedIn} onTokens={chooseTokens} onDice={chooseDice} />
       <label className="ld-motion"><input type="checkbox" checked={lessMotion} onChange={e => { setReduced(e.target.checked); setLessMotion(e.target.checked); }} /> Reduce animations <small>(shorter moves, no capture duel)</small></label>
       <p className="ld-small">Your choice is saved on this device. In a room, everyone sees their own style.</p>
       <button className="gold-button" onClick={() => setSheet("none")}>Done</button>

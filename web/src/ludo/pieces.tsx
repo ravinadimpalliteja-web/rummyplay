@@ -11,16 +11,13 @@ export const TOKEN_SETS = [
 ] as const;
 export type TokenSet = typeof TOKEN_SETS[number]["id"];
 
-/* Token sets unlock as you play (counted on this device; no money involved). Indian sentries are free. */
-export type Stats = { played: number; wins: number };
-export const UNLOCK: Record<TokenSet, { played?: number; wins?: number } | null> = {
-  sentry: null, horse: { played: 1 }, elephant: { wins: 1 }, tiger: { played: 5 }, peacock: { wins: 3 }, chariot: { played: 10 },
-};
-export const isUnlocked = (set: TokenSet, st: Stats) => { const u = UNLOCK[set]; return !u || ((u.played ?? 0) <= st.played && (u.wins ?? 0) <= st.wins); };
-export const unlockText = (set: TokenSet, st: Stats) => {
-  const u = UNLOCK[set]; if (!u) return "";
-  if (u.wins) return `Win ${u.wins} game${u.wins > 1 ? "s" : ""} to unlock · ${Math.min(st.wins, u.wins)} of ${u.wins}`;
-  return `Play ${u.played} game${(u.played ?? 0) > 1 ? "s" : ""} to unlock · ${Math.min(st.played, u.played ?? 0)} of ${u.played}`;
+/* Token sets unlock with room wins against real players: finishing 1st in a room game where at least one other
+   real, signed-in player was seated. The room server records these wins on the player's account. Sentries are free. */
+export const UNLOCK: Record<TokenSet, number> = { sentry: 0, horse: 1, elephant: 5, tiger: 10, peacock: 15, chariot: 20 };
+export const isUnlocked = (set: TokenSet, wins: number) => wins >= UNLOCK[set];
+export const unlockText = (set: TokenSet, wins: number, signedIn: boolean) => {
+  const n = UNLOCK[set], what = `${n} room win${n > 1 ? "s" : ""} against real players`;
+  return signedIn ? `Unlocks after ${what} · ${Math.min(wins, n)} of ${n}` : `Sign in · unlocks after ${what}`;
 };
 
 /* Same finishes as the Snakes & Ladders die. */

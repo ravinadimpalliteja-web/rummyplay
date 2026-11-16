@@ -14,6 +14,7 @@
  * The server rolls the die. Clients only send intents: 'start', 'roll', 'move', 'react', 'again', 'leave'.
  */
 const crypto = require('crypto');
+const { recordWin } = require('./results');
 const { BOT_DELAY_MS, addBot, removeBot } = require('./room-bots');
 
 const COLORS = ['red', 'green', 'yellow', 'blue'];
@@ -202,6 +203,7 @@ class LudoRoom {
       ...base,
       order: g.order, colors: g.colors, tokens: g.tokens, turn: turnOf(g), stage: g.phase, dice: g.dice, sixes: g.sixes,
       moves: g.moves, ranks: g.ranks, last: g.last, deadline: this.deadline, moving: Date.now() < this.pauseUntil,
+      winCounts: this.resultSaved ? !!this.winCounts : undefined,   // the 1st place counts toward token unlocks
     };
   }
 
@@ -225,6 +227,10 @@ class LudoRoom {
     this.game = newGame(order);
     this.game.turnIdx = crypto.randomInt(order.length);
     for (const s of this.humans()) s.missed = 0;
+    // who was a real, signed-in player when the game started (a seat a bot later takes over still counts as real)
+    this.realAtStart = this.seats.map((s) => (s && !s.bot && s.uid ? s.uid : null));
+    this.winCounts = false;
+    this.resultSaved = false;
     this.pauseUntil = 0;
     this.schedule();
   }
@@ -254,7 +260,19 @@ class LudoRoom {
 
   after() { this.pauseUntil = Date.now() + this.ms(animMs(this.game.last)); this.schedule(); }
   doRoll(seat) { roll(this.game, seat, crypto.randomInt(1, 7)); this.after(); }
-  doMove(seat, i) { move(this.game, seat, i); this.after(); }
+  doMove(seat, i) { move(this.game, seat, i); this.saveResult(); this.after(); }
+
+  /** As soon as someone finishes 1st: a 1st place against at least one other real player counts as a win on the
+      winner's account (play goes on for 2nd and 3rd). */
+  saveResult() {
+    const g = this.game;
+    if (!g || !g.ranks.length || this.resultSaved) return;
+    this.resultSaved = true;
+    const winner = g.ranks[0], uid = (this.realAtStart || [])[winner];
+    const others = (this.realAtStart || []).filter((u, i) => u && i !== winner && u !== uid);
+    this.winCounts = !!uid && others.length > 0;
+    if (this.winCounts) recordWin(uid, 'ludo');
+  }
 
   autoRoll(seat, missed) {
     try {

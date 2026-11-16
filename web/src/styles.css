@@ -743,3 +743,8 @@ main>.hero .hero-ornament{font-size:90px;top:50%;right:34%;opacity:.12}
   .account-user .account-trigger>span:not(.account-avatar){display:none}
   .account-user .account-trigger{padding:4px;border-radius:50%}
 }
+
+/* Footer links: About · Contact · Privacy · Terms */
+.rc-foot-links{display:flex;flex-wrap:wrap;gap:4px 18px}
+.rc-foot-links a{color:inherit;font-weight:700;text-decoration:none;padding:6px 0}
+.rc-foot-links a:hover{text-decoration:underline;text-decoration-color:#C9A24A;text-underline-offset:4px}

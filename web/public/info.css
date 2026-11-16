@@ -1,0 +1,26 @@
+/* Royal Club information pages: About, Contact, Privacy, Terms, Delete account */
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:#FBF7EE;color:#1F2A24;font:16px/1.65 "DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-text-size-adjust:100%}
+.lg-wrap{max-width:760px;margin:0 auto;padding:max(8px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+.lg-bar{border-bottom:1.5px solid #C9A24A;margin-bottom:8px}
+.lg-main{padding:8px 0 24px}
+.lg-main h1{font:700 clamp(28px,6vw,40px)/1.15 "Cinzel",Georgia,serif;color:#0F4D3A;margin:18px 0 8px}
+.lg-main h2{font:700 20px/1.3 "Cinzel",Georgia,serif;color:#0F4D3A;margin:28px 0 8px}
+.lg-card h2{margin-top:0}
+.lg-lead{font-size:18px;color:#3c4741}
+.lg-updated{margin:0 0 8px;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#7A5A1C}
+.lg-main ul,.lg-main ol{padding-left:22px}
+.lg-main li{margin:6px 0}
+.lg-main b{color:#16231d}
+.lg-main a{color:#0F4D3A;font-weight:700;text-decoration-color:#C9A24A;text-underline-offset:3px}
+.lg-main a:hover{text-decoration-thickness:2px}
+.lg-main a:focus-visible,.lg-foot a:focus-visible{outline:2px solid #C9A24A;outline-offset:2px;border-radius:3px}
+.lg-card{background:#fff;border-radius:16px;padding:18px 20px;margin:20px 0;box-shadow:0 1px 2px rgba(60,40,10,.06),0 8px 24px rgba(60,40,10,.08)}
+.lg-mail{font-size:19px;word-break:break-all}
+.lg-note{font-size:14px;color:#5C6862;margin:0}
+.lg-foot{border-top:1px solid #E6DAC0;padding-top:16px;text-align:center;font-size:14px;color:#5C6862}
+.lg-foot nav{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 14px}
+.lg-foot a{color:#0F4D3A;font-weight:700;text-decoration:none;padding:6px 2px;display:inline-block}
+.lg-foot a[aria-current="page"]{text-decoration:underline;text-decoration-color:#C9A24A;text-underline-offset:4px}
+.lg-foot p{margin:8px 0 0}

@@ -193,6 +193,8 @@ function SettingsTab() {
     <p className="ax-note">Sound is set inside each game.</p>
     <h2 className="ax-kicker">ABOUT</h2>
     <section className="ax-card ax-list" aria-label="About">
+      <LinkRow label="About Royal Club" href="/about/" />
+      <LinkRow label="Contact us" href="/contact/" />
       <LinkRow label="Privacy Policy" href="/privacy/" />
       <LinkRow label="Terms of Service" href="/terms/" />
       <LinkRow label="Delete my account" href="/delete-account/" />

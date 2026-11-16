@@ -182,6 +182,9 @@ export default function Home({ onOpen, onJoin, onProfile }: HomeProps) {
           <span className="rc-promise-mark"><img src={elephantMark} alt="" width={320} height={224} /></span>
           <span><strong>Free to play. Always.</strong><small>No real money, no betting, no deposits. Royal Club for Android is coming soon.</small></span>
         </div>
+        <nav className="rc-info-links" aria-label="About Royal Club">
+          <a href={pageHref("/about/")}>About</a><a href={pageHref("/contact/")}>Contact</a><a href={pageHref("/privacy/")}>Privacy</a><a href={pageHref("/terms/")}>Terms</a>
+        </nav>
       </section>
 
       <nav className="rc-bottom" aria-label="Quick links">

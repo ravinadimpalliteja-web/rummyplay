@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { GameBar, IconButton, PaletteIcon, RulesIcon, SoundIcon, TurnTimer } from "../ui/GameBar";
 import { RoomClient, deviceToken, randomPasscode, saveRoom, savedRoom, serverUrl, type NetStatus } from "../domain/online";
 import {
-  ANIM, COLORS, LANE, SAFE, SPOTS, TRACK, YARD, bestMove, cellKey, move, newGame, pointOf, previewMove, roll, rollDie, turnOf,
+  ANIM, COLORS, LANE, SAFE, SPOTS, TRACK, YARD, absOf, bestMove, cellKey, move, newGame, pointOf, previewMove, roll, rollDie, turnOf,
   type Color, type LudoEvent, type LudoGame as Game, type Tok,
 } from "./engine";
 import { DICE, Face, Piece, PieceDefs, TOKEN_SETS, isUnlocked, setPips, unlockText, type DiceId, type Stats, type TokenSet } from "./pieces";
@@ -121,13 +121,39 @@ function hiss(dur: number, freq: number, vol = .08, when = 0, endFreq?: number, 
     src.connect(f).connect(g).connect(ac.destination); src.start(t0); src.stop(t0 + dur + .02);
   } catch { /* no audio */ }
 }
-/** The capture duel: wind-up, a spear whoosh, a metal clash with a thud, and the captured token flying off with a falling cry. */
-const sDuel = (spear: boolean) => {
-  hiss(.22, 900, .05, .12, 2600);                                         // wind-up swish
-  if (spear) { hiss(.16, 3200, .09, .34, 6000, 2); tone(2350, .28, "triangle", .05, .38); tone(3130, .22, "sine", .03, .4); }   // clash of steel
-  tone(140, .18, "sine", .14, .38, 60); hiss(.08, 400, .1, .38);          // thud of the hit
-  tone(660, .5, "triangle", .05, .46, 180);                               // the captured token's falling "whoaa"
+/** The capture duel, a sound for each token set: the attacker's move (spear clash, hooves and a neigh, a trumpet and
+    stomp, a growl and claw swipe, a peacock call, a rumbling ram), then the thud of the hit and the captured token's
+    falling "whoaa". The hit lands about 0.38s in, when the attacker strikes. */
+const sDuel = (set: TokenSet) => {
+  hiss(.22, 900, .05, .12, 2600);                                                        // wind-up swish
+  switch (set) {
+    case "sentry": hiss(.16, 3200, .09, .34, 6000, 2); tone(2350, .28, "triangle", .05, .38); tone(3130, .22, "sine", .03, .4); break;   // clash of steel
+    case "horse":
+      [0, .08, .2, .28].forEach(w => tone(110, .06, "sine", .12, .02 + w, 70));          // hooves
+      tone(980, .1, "triangle", .05, .16, 1500); tone(1500, .22, "triangle", .045, .26, 760);   // neigh
+      break;
+    case "elephant":
+      tone(320, .34, "sawtooth", .045, .1, 760); tone(330, .34, "sawtooth", .035, .11, 780);    // trumpet
+      tone(62, .3, "sine", .2, .38, 40); hiss(.24, 220, .09, .38, 120, .8);                     // heavy stomp
+      break;
+    case "tiger":
+      hiss(.42, 160, .12, .02, 120, 6); tone(82, .4, "sawtooth", .05, .02, 70);                // growl
+      hiss(.1, 4200, .08, .36, 7000, 2); hiss(.1, 3800, .06, .42, 6400, 2);                   // claw swipes
+      break;
+    case "peacock":
+      tone(1250, .14, "triangle", .05, .12, 1750); tone(1750, .22, "triangle", .05, .26, 1100); // "may-awe" call
+      hiss(.3, 1800, .06, .36, 900);                                                          // gust of the fan
+      break;
+    case "chariot":
+      hiss(.36, 140, .1, .02, 260, 1.5); tone(70, .36, "square", .025, .02, 90);              // wheels rumbling
+      hiss(.14, 900, .1, .38, 300, 1); tone(200, .14, "square", .04, .38, 120);               // wooden crash
+      break;
+  }
+  tone(140, .18, "sine", .14, .38, 60); hiss(.08, 400, .1, .38);                         // thud of the hit
+  tone(660, .5, "triangle", .05, .46, 180);                                              // the captured token's falling "whoaa"
 };
+/** Landing on a safe square (a starred square or a start square): a small, low "shield" buzz with a soft chime on top. */
+const sSafe = () => { tone(196, .11, "square", .022, 0, 220); tone(784, .16, "sine", .045, .04); tone(1175, .2, "sine", .03, .09); };
 const sHome = () => [523, 659, 784, 1047].forEach((f, i) => tone(f, .18, "triangle", .06, i * .08));
 const sWin = () => [392, 523, 659, 784, 659, 1047].forEach((f, i) => tone(f, .26, "triangle", .07, i * .13));
 
@@ -360,6 +386,8 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
     if (base[l.seat]) base[l.seat][l.token] = { ...l.from };
     setMoving(`${l.seat}-${l.token}`);
     for (const st of l.steps) { base[l.seat][l.token] = st; setDisp(copyTokens(base)); sStep(); await wait(ANIM.step); }
+    const end = l.steps[l.steps.length - 1];
+    if (end && end.s === "track" && SAFE.has(absOf(t.colors[l.seat], end.r))) { sSafe(); try { navigator.vibrate?.(22); } catch { /* not supported */ } }
     setMoving(null);
     if (l.cuts.length) {
       const vic = l.cuts.map(c => `${c.seat}-${c.token}`);
@@ -372,7 +400,7 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
       } else {
         /* the duel: the two tokens step apart, the attacker winds up and strikes (sentries thrust their spear),
            the captured token is knocked flying off the square, then drops back into its yard */
-        setDuel({ atk: `${l.seat}-${l.token}`, vic }); sDuel(shownSetRef.current === "sentry");
+        setDuel({ atk: `${l.seat}-${l.token}`, vic }); sDuel(shownSetRef.current);
         try { navigator.vibrate?.([0, 380, 40]); } catch { /* not supported */ }
         await wait(1050);
         for (const c of l.cuts) base[c.seat][c.token] = { s: "base", r: 0, l: 0 };
@@ -499,7 +527,7 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
         <button className="ghost-button rs-wide" onClick={() => startLocal("pass")}>Start pass &amp; play</button>
       </div>
     </>}
-    after={<details className="ld-style-box rs-panel"><summary>Token and dice style</summary><StylePicker tokens={shownSet} dice={dice} stats={stats} onTokens={chooseTokens} onDice={chooseDice} /></details>}
+    after={<details className="ld-style-box rs-panel"><summary>Token and dice style</summary><PieceDefs /><StylePicker tokens={shownSet} dice={dice} stats={stats} onTokens={chooseTokens} onDice={chooseDice} /></details>}
     rules={<ul><li>A 6 brings a token out.</li><li>A 6, a cut or reaching home rolls again; three 6s in a row end the turn.</li><li>Starred and start squares are safe. You need the exact roll to finish.</li></ul>} />;
 
   if (sub === "room" && view) {

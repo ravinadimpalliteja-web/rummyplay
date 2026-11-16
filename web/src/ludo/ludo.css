@@ -69,7 +69,6 @@
 .ld-token{--s:1;--lift:-18%;position:absolute;width:calc(100% / 15 * 1.04);aspect-ratio:1;padding:0;border:0;background:none;
   transform:translate(-50%,-50%) scale(var(--s));cursor:default;z-index:2;-webkit-tap-highlight-color:transparent;
   transition:left .14s ease-out,top .14s ease-out,transform .2s ease}
-.ld-set-gem .ld-token,.ld-set-chakra .ld-token,.ld-set-disc .ld-token{--lift:-4%}
 .ld-piece{display:block;width:100%;height:100%;overflow:visible}
 .ld-token .ld-piece{transform:rotate(calc(-1 * var(--rot,0deg))) translateY(var(--lift));filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
 .ld-token.movable{cursor:pointer;z-index:5}
@@ -419,3 +418,114 @@
 @keyframes ldSpark{0%,38%{opacity:0;scale:.2}44%{opacity:1;scale:1}62%{opacity:0;scale:1.6}100%{opacity:0}}
 @keyframes ldBack{0%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(0%,calc(var(--lift) + -60%)) rotate(0deg) scale(0.4);opacity:0}60%{opacity:1}100%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(0%,calc(var(--lift) + 0%)) rotate(0deg) scale(1);opacity:1}}
 .ld-motion{display:flex;align-items:center;gap:8px;margin:10px 0 0;font-size:13px;font-weight:600}.ld-motion small{font-weight:400;opacity:.75}.ld-motion input{width:18px;height:18px;accent-color:#0f4d3a}
+
+/* ===================================================================================================================
+   Animal and chariot sets: size, a walk of their own while moving, and their own capture duel.
+   Duel moves keep the board's counter-rotation first, so they read the same on screen whichever way the board turns.
+   Parts inside a piece (.ld-art, .ld-wheel, .ld-tail) move in the piece's own upright drawing.
+   =================================================================================================================== */
+.ld-set-horse .ld-token,.ld-set-elephant .ld-token,.ld-set-tiger .ld-token,.ld-set-peacock .ld-token,.ld-set-chariot .ld-token{--lift:-14%;width:calc(100% / 15 * 1.34)}
+.ld-art,.ld-wheel,.ld-tail,.ld-trunk{transform-box:fill-box}
+.ld-art{transform-origin:50% 100%}
+.ld-wheel{transform-origin:50% 50%}
+
+/* walks */
+.ld-set-horse .ld-token.moving .ld-art{animation:ldGallop .3s ease-in-out infinite}
+.ld-set-elephant .ld-token.moving .ld-art{animation:ldLumber .48s ease-in-out infinite}
+.ld-set-tiger .ld-token.moving .ld-art{animation:ldProwl .3s ease-in-out infinite}
+.ld-set-tiger .ld-token.moving .ld-tail{transform-origin:100% 100%;animation:ldSwish .3s ease-in-out infinite}
+.ld-set-peacock .ld-token.moving .ld-art{animation:ldHop .28s ease-out infinite}
+.ld-set-chariot .ld-token.moving .ld-wheel{animation:ldSpin .32s linear infinite}
+.ld-set-chariot .ld-token.moving .ld-art{animation:ldRumble .16s linear infinite}
+@keyframes ldGallop{0%,100%{transform:rotate(0) translateY(0)}35%{transform:rotate(-7deg) translateY(-12%)}70%{transform:rotate(4deg) translateY(-4%)}}
+@keyframes ldLumber{0%,100%{transform:rotate(-2.5deg)}50%{transform:rotate(2.5deg) translateY(-3%)}}
+@keyframes ldProwl{0%,100%{transform:scale(1,1)}50%{transform:scale(1.07,.93) translateY(2%)}}
+@keyframes ldSwish{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(14deg)}}
+@keyframes ldHop{0%,100%{transform:translateY(0) scale(1,1)}20%{transform:translateY(0) scale(1.06,.92)}55%{transform:translateY(-16%) scale(.97,1.04)}}
+@keyframes ldSpin{to{transform:rotate(360deg)}}
+@keyframes ldRumble{0%,100%{transform:translateY(0)}50%{transform:translateY(-2%)}}
+
+/* the cut when animations are reduced: animals keel over, the chariot tips */
+.ld-set-horse .ld-token.hit,.ld-set-elephant .ld-token.hit,.ld-set-tiger .ld-token.hit,.ld-set-peacock .ld-token.hit,.ld-set-chariot .ld-token.hit{animation:none}
+.ld-set-horse .ld-token.hit .ld-art,.ld-set-elephant .ld-token.hit .ld-art,.ld-set-tiger .ld-token.hit .ld-art,.ld-set-peacock .ld-token.hit .ld-art,.ld-set-chariot .ld-token.hit .ld-art{animation:ldKeel .34s ease-in forwards}
+@keyframes ldKeel{to{transform:rotate(80deg) translate(6%,4%)}}
+
+/* --- duels: the attacker's move (whole piece) plus a part animation, and how the captured token goes --- */
+/* horse: rears up, then charges in with a kick; the captured token is kicked high */
+.ld-set-horse .ld-token.duel-atk .ld-piece{animation:ldAtkHorse 1s cubic-bezier(.3,.7,.3,1) forwards}
+.ld-set-horse .ld-token.duel-atk .ld-art{animation:ldRear 1s ease-in-out forwards}
+.ld-set-horse .ld-token.duel-vic .ld-piece{animation:ldVicHigh 1s ease-in forwards}
+@keyframes ldAtkHorse{
+  0%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(0%,var(--lift))}
+  14%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(-40%,var(--lift))}
+  32%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(-46%,var(--lift))}
+  42%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(4%,var(--lift))}
+  60%,78%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(-8%,var(--lift))}
+  100%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(0%,var(--lift))}}
+@keyframes ldRear{0%,14%{transform:rotate(0)}30%{transform:rotate(-28deg)}38%{transform:rotate(-22deg)}44%{transform:rotate(8deg)}56%,100%{transform:rotate(0)}}
+@keyframes ldVicHigh{
+  0%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(0%,var(--lift)) rotate(0) scale(1);opacity:1}
+  14%,34%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(34%,var(--lift)) rotate(0) scale(1)}
+  44%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(48%,calc(var(--lift) - 30%)) rotate(40deg) scale(1.05);filter:brightness(1.7)}
+  100%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(160%,calc(var(--lift) - 300%)) rotate(720deg) scale(.4);opacity:0;filter:brightness(1)}}
+
+/* elephant: rises on its back legs and stomps (dust shockwave); the captured token is squashed flat, then pops away */
+.ld-set-elephant .ld-token.duel-atk .ld-art{animation:ldStomp 1s ease-in-out forwards}
+.ld-set-elephant .ld-token.duel-atk .ld-trunk{transform-origin:0% 0%;animation:ldTrumpet 1s ease-in-out forwards}
+.ld-set-elephant .ld-token.duel-vic .ld-piece{animation:ldVicSquash 1s ease-in forwards}
+.ld-set-elephant .ld-token.duel-atk::before{content:"";position:absolute;left:50%;top:78%;width:190%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;
+  border:3px solid rgba(160,130,90,.75);box-shadow:0 0 10px rgba(200,170,120,.8);opacity:0;animation:ldShock 1s ease-out forwards}
+@keyframes ldStomp{0%,14%{transform:rotate(0)}32%{transform:rotate(-16deg) translateY(-4%)}42%{transform:rotate(3deg) scale(1.06,.92)}50%{transform:rotate(0) scale(1,1)}100%{transform:rotate(0)}}
+@keyframes ldTrumpet{0%,14%{transform:rotate(0)}32%{transform:rotate(-55deg)}46%{transform:rotate(-20deg)}70%,100%{transform:rotate(0)}}
+@keyframes ldShock{0%,38%{opacity:0;scale:.2}46%{opacity:1;scale:.6}80%{opacity:0;scale:1.4}100%{opacity:0}}
+@keyframes ldVicSquash{
+  0%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(0%,var(--lift)) scale(1,1);opacity:1}
+  14%,38%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(30%,var(--lift)) scale(1,1)}
+  44%,62%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(30%,calc(var(--lift) + 26%)) scale(1.35,.3)}
+  70%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(40%,calc(var(--lift) - 40%)) scale(.9,1.1) rotate(30deg);opacity:1}
+  100%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(200%,calc(var(--lift) - 170%)) scale(.4) rotate(540deg);opacity:0}}
+
+/* tiger: crouches, pounces over in an arc and lands on the captured token, which is claw-slashed and spins away */
+.ld-set-tiger .ld-token.duel-atk .ld-piece{animation:ldPounce 1s cubic-bezier(.3,.7,.3,1) forwards}
+.ld-set-tiger .ld-token.duel-vic::after{background:repeating-linear-gradient(-55deg,transparent 0 16%,rgba(255,255,255,.95) 16% 19%,rgba(170,20,30,.9) 19% 24%,transparent 24% 32%);
+  -webkit-mask:radial-gradient(circle,#000 45%,transparent 70%);mask:radial-gradient(circle,#000 45%,transparent 70%);animation:ldClaw 1s linear forwards}
+@keyframes ldPounce{
+  0%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(0%,var(--lift)) scale(1,1)}
+  14%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(-38%,var(--lift)) scale(1,1)}
+  28%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(-42%,calc(var(--lift) + 6%)) scale(1.08,.86)}
+  36%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(-10%,calc(var(--lift) - 46%)) rotate(-12deg) scale(1)}
+  44%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(14%,calc(var(--lift) + 2%)) rotate(6deg) scale(1.06,.92)}
+  70%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(6%,var(--lift)) rotate(0) scale(1)}
+  100%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(0%,var(--lift)) scale(1)}}
+@keyframes ldClaw{0%,40%{opacity:0;scale:.6}46%{opacity:1;scale:1}66%{opacity:1}84%,100%{opacity:0}}
+
+/* peacock: fans out its tail in a flash of colour; the captured token is blown away in a burst of feathers */
+.ld-set-peacock .ld-token.duel-atk .ld-art{animation:ldFan 1s ease-in-out forwards}
+.ld-set-peacock .ld-token.duel-vic .ld-piece{animation:ldVicBlown 1s ease-in forwards}
+.ld-set-peacock .ld-token.duel-vic::after{background:radial-gradient(circle at 30% 30%,#2fb7a0 0 7%,transparent 8%),radial-gradient(circle at 70% 25%,#e6bd5f 0 6%,transparent 7%),
+  radial-gradient(circle at 60% 70%,#2f63c4 0 7%,transparent 8%),radial-gradient(circle at 25% 68%,#1f9a5c 0 6%,transparent 7%),radial-gradient(circle at 48% 48%,#fff4c2 0 9%,transparent 10%);
+  animation:ldFeathers 1s ease-out forwards}
+@keyframes ldFan{0%,14%{transform:scale(1);filter:none}30%{transform:scale(1.22) rotate(-4deg);filter:brightness(1.25) saturate(1.3)}44%{transform:scale(1.14) rotate(5deg);filter:brightness(1.5)}62%{transform:scale(1.06)}100%{transform:scale(1);filter:none}}
+@keyframes ldFeathers{0%,40%{opacity:0;scale:.3;rotate:0deg}48%{opacity:1;scale:1}100%{opacity:0;scale:2.2;rotate:120deg}}
+@keyframes ldVicBlown{
+  0%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(0%,var(--lift)) rotate(0) scale(1);opacity:1}
+  14%,40%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(34%,var(--lift)) rotate(0) scale(1)}
+  52%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(90%,calc(var(--lift) - 14%)) rotate(-90deg) scale(.95)}
+  100%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(320%,calc(var(--lift) - 70%)) rotate(-540deg) scale(.4);opacity:0}}
+
+/* chariot: backs up and rams in at speed, wheel spinning; the captured token is flipped over and thrown */
+.ld-set-chariot .ld-token.duel-atk .ld-piece{animation:ldRam 1s cubic-bezier(.4,.1,.2,1) forwards}
+.ld-set-chariot .ld-token.duel-atk .ld-wheel{animation:ldSpin .22s linear 4}
+.ld-set-chariot .ld-token.duel-vic .ld-piece{animation:ldVicFlip 1s ease-in forwards}
+@keyframes ldRam{
+  0%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(0%,var(--lift)) skewX(0)}
+  26%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(-62%,var(--lift)) skewX(6deg)}
+  40%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(12%,var(--lift)) skewX(-14deg)}
+  50%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(4%,var(--lift)) skewX(4deg)}
+  70%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(-6%,var(--lift)) skewX(0)}
+  100%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(0%,var(--lift)) skewX(0)}}
+@keyframes ldVicFlip{
+  0%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(0%,var(--lift)) rotate(0) scale(1);opacity:1}
+  14%,38%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(34%,var(--lift)) rotate(0) scale(1)}
+  52%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(70%,calc(var(--lift) - 60%)) rotate(180deg) scale(1)}
+  100%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(220%,calc(var(--lift) - 150%)) rotate(540deg) scale(.4);opacity:0}}

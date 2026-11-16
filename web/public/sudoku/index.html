@@ -657,6 +657,7 @@ html body .brand .rc-el + span strong{display:none}
       streakLine = `<p>🔥 ${st.streak} day streak — come back tomorrow for a new puzzle.</p>`;
     }
     store.set(STATS_KEY, st);
+    if (window.rcReport) window.rcReport('sudoku', game.daily ? 'daily' : 'win');
     sound.play('win'); buzz([30, 60, 30]); confetti();
     setTimeout(() => sheet(`
       <h2>${game.daily ? 'Daily puzzle solved!' : 'Puzzle solved!'}</h2>
@@ -667,7 +668,7 @@ html body .brand .rc-el + span strong{display:none}
       <button class="btn ghost" type="button" data-act="menu">Back to menu</button>`), reduced ? 0 : 900);
   }
   function lose() {
-    game.elapsed = elapsed(); game.lost = true; stopTimer(); store.set(GAME_KEY, game);
+    game.elapsed = elapsed(); game.lost = true; stopTimer(); store.set(GAME_KEY, game); if (window.rcReport) window.rcReport('sudoku', 'lose');
     sound.play('lose'); buzz([60, 40, 60]);
     /* One second chance per game. Monetization hook: this is where a rewarded ad can go. */
     sheet(`
@@ -919,7 +920,7 @@ html body .brand .rc-el + span strong{display:none}
     else if (room.phase === 'playing' && room.endAt && $('msg').textContent === '') say('Someone has finished — the race ends soon!');
   }
   function raceOut() {
-    outShown = true; game.lost = true; sound.play('lose'); buzz([60, 40, 60]);
+    outShown = true; game.lost = true; if (window.rcReport) window.rcReport('sudoku', 'lose'); sound.play('lose'); buzz([60, 40, 60]);
     sheet(`<h2>You're out</h2><p>Three mistakes ends your race. Stay to watch the others finish.</p>
       <button class="btn primary" type="button" data-act="race-watch">Watch the race</button>
       <button class="btn ghost" type="button" data-act="race-leave">Leave the room</button>`);

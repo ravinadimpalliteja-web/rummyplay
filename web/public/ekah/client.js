@@ -545,6 +545,7 @@
     }
     celebrated = key;
     winnerPi = v.winner;
+    if (v.phase === 'matchOver' && !first && window.rcReport) window.rcReport('ekah', v.winner === v.you ? 'win' : 'lose');
     renderSeats(v); renderMe(v); layout();
     if (first || !prev || prev.phase !== 'play') { showResults(v, false); return; }
     celebrateTimers.push(setTimeout(() => celebrate(v), 500));

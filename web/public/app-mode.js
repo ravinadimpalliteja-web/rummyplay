@@ -3,6 +3,17 @@
    - html.rc-app class for app-only styles (no website footer or top-bar links, no text selection or long-press
      menus, no tap flash, no overscroll bounce)
    - navigator.vibrate goes through the Haptics plugin, so the games' existing buzzes work on Android phones */
+/* Finished games, for coins and XP: every game calls rcReport(game, result) once when a game ends
+   (result: "win", "lose", "draw" or "done" for pass & play). The app's Rewards (src/economy) collects the list
+   when the home screen opens. Kept on this device in localStorage rc-game-events, newest 50. */
+window.rcReport = function (game, result) {
+  try {
+    var k = 'rc-game-events', list = JSON.parse(window.localStorage.getItem(k) || '[]');
+    if (!Array.isArray(list)) list = [];
+    list.push({ g: String(game), r: String(result), at: Date.now() });
+    window.localStorage.setItem(k, JSON.stringify(list.slice(-50)));
+  } catch (e) { /* storage off */ }
+};
 (function () {
   var C = window.Capacitor;
   if (!C || typeof C.isNativePlatform !== 'function' || !C.isNativePlatform()) return;

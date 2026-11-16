@@ -1,3 +1,4 @@
+import { reportGame } from "../lib/report";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { GameBar, IconButton, PaletteIcon, RulesIcon, SoundIcon, TurnTimer } from "../ui/GameBar";
 import { RoomClient, deviceToken, randomPasscode, saveRoom, savedRoom, serverUrl, type NetStatus } from "../domain/online";
@@ -447,6 +448,7 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
     if (t.mode === "online" && t.you == null) return;
     const before = readStats();
     const won = t.mode !== "pass" && t.ranks[0] === (t.mode === "online" ? t.you : 0);
+    reportGame("ludo", t.mode === "pass" ? "done" : won ? "win" : "lose");
     const after = { played: before.played + 1, wins: before.wins + (won ? 1 : 0) };
     try { window.localStorage.setItem(STATS_KEY, JSON.stringify(after)); } catch { /* storage off */ }
     setStats(after);

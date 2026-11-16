@@ -6,8 +6,11 @@
      ?server=wss://... may override it for testing (never on the live site), as in the rest of Royal Club. */
   function serverUrl() {
     const host = location.hostname;
-    const testing = host === 'localhost' || host === '127.0.0.1' || host.startsWith('deploy-preview-') || host.includes('--');
-    const q = testing ? new URLSearchParams(location.search).get('server') : null;
+    const testing = host === 'localhost' || host === '127.0.0.1' || host.startsWith('deploy-preview-') || host.includes('--') || host.startsWith('test.');
+    let q = testing ? new URLSearchParams(location.search).get('server') : null;
+    try {   // remembered for the browser session, like the rest of Royal Club (?server=off goes back to normal)
+      if (testing) { if (q === 'off') { sessionStorage.removeItem('rc-server'); q = null; } else if (q) sessionStorage.setItem('rc-server', q); else q = sessionStorage.getItem('rc-server'); }
+    } catch (e) { /* storage off */ }
     const url = String(q || window.RC_ROOM_SERVER_URL || '').trim();
     return /^wss?:\/\//.test(url) ? url : '';
   }
@@ -940,6 +943,7 @@
       };
       ws.onmessage = (e) => {
         let m; try { m = JSON.parse(e.data); } catch (x) { return; }
+        if (m && m.t === 'ping') { ws.send('{"t":"pong"}'); return; }   // the room server checking the connection
         if (m.t === 'state') {
           api.room = m; api.isHost = m.host;
           setTurnClock(m.deadline && m.now ? Date.now() + (m.deadline - m.now) : 0, m.view && m.view.phase === 'play' && m.view.turn === m.view.you);

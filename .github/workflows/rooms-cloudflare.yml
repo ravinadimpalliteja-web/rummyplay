@@ -1,0 +1,62 @@
+name: Room server on Cloudflare
+
+# Deploys the room server (server/) to Cloudflare Workers + Durable Objects (server/cloudflare/).
+# - Pull requests: runs the room tests and builds the Worker without deploying (checks it bundles).
+# - main: deploys when the CLOUDFLARE_API_TOKEN secret exists (and CLOUDFLARE_ACCOUNT_ID, if the token can see
+#   more than one account). Until then it only builds.
+# The Render server keeps running from render.yaml; the games use whichever address VITE_ROOM_SERVER_URL holds.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "server/**"
+      - ".github/workflows/rooms-cloudflare.yml"
+  pull_request:
+    paths:
+      - "server/**"
+      - ".github/workflows/rooms-cloudflare.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: rooms-cloudflare-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  rooms:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    env:
+      HAS_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Room tests (every game, Node and Cloudflare versions)
+        run: npm test
+
+      - name: Build the Worker (no deploy)
+        working-directory: server/cloudflare
+        run: npx --yes wrangler@4 deploy --dry-run --outdir "$RUNNER_TEMP/worker"
+
+      - name: Deploy to Cloudflare
+        if: github.event_name != 'pull_request' && env.HAS_TOKEN == 'true'
+        working-directory: server/cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npx --yes wrangler@4 deploy 2>&1 | tee "$RUNNER_TEMP/deploy.log"
+          URL=$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' "$RUNNER_TEMP/deploy.log" | head -1)
+          if [ -n "$URL" ]; then
+            WSS="wss://${URL#https://}"
+            curl -fsS "$URL/healthz" && echo
+            echo "### Room server deployed" >> "$GITHUB_STEP_SUMMARY"
+            echo "Address for the games: \`$WSS\`" >> "$GITHUB_STEP_SUMMARY"
+            echo "Try it on the test site: \`https://test.royalclubgames.com/?server=$WSS\`" >> "$GITHUB_STEP_SUMMARY"
+          fi

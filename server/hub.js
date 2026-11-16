@@ -1,0 +1,345 @@
+'use strict';
+/**
+ * Royal Club rooms: the part every room server shares (Render/Node in server.js, Cloudflare in cloudflare/worker.mjs).
+ * It keeps the rooms in memory and runs them; the host only has to pass in sockets with this shape:
+ *   ws.open (bool), ws.send(text), ws.ping(), ws.terminate()
+ * and call connected(ws), message(ws, text) and closed(ws), plus heartbeat() every 20 s and sweep() every minute.
+ *
+ * Rules built in: four REAL players per Spades room (no computer players), room code + 4-digit passcode,
+ * the server is the only authority (clients send intents; the engines validate everything), and a player
+ * who runs out of time or leaves is played by each game's timeout rules.
+ */
+const crypto = require('crypto');
+const { Game, CONFIG, timeoutCard } = require('./engine');
+const { SnakesRoom } = require('./snakes');
+const { LudoRoom } = require('./ludo');
+const { EkahRoom } = require('./ekah');
+const { SudokuRoom } = require('./sudoku');
+const { playerFor, AuthError } = require('./auth');
+
+const SPEED = Number(typeof process !== 'undefined' && process.env && process.env.SPEED) || 1;
+const AWAY_DELAY_MS = 3000;       // a player who left / is offline / missed 2 turns in a row is auto-played after this
+const NEXT_ROUND_SECS = 5;        // after the 15s scoreboard (or everyone pressing Continue)
+const TRICK_PAUSE_MS = 1700;
+const AWAY_AFTER_MISSES = 2;
+const ROOM_IDLE_MS = 30 * 60 * 1000;
+const TOKEN_RE = /^[A-Za-z0-9_-]{8,64}$/;
+const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+const MAX_FAILED_JOINS = 8;
+
+const rooms = new Map();
+const ms = (n) => n / SPEED;
+const sameSecret = (a, b) => { const x = Buffer.from(String(a)), y = Buffer.from(String(b)); return x.length === y.length && crypto.timingSafeEqual(x, y); };
+
+class Room {
+  constructor(code, passcode) {
+    this.kind = 'spades';
+    this.code = code;
+    this.passcode = passcode;
+    this.seats = [null, null, null, null]; // { token, name, connected, ws, missed }
+    this.hostToken = null;
+    this.game = null;
+    this.stage = 'review';                 // between rounds: 'review' (scoreboard) then 'starting' (5s)
+    this.timer = null;
+    this.deadline = null;
+    this.lastActive = Date.now();
+  }
+
+  humans() { return this.seats.filter(Boolean); }
+  connectedHumans() { return this.humans().filter((s) => s.connected); }
+  seatOf(token) { return this.seats.findIndex((s) => s && s.token === token); }
+  hostSeat() {
+    let i = this.seatOf(this.hostToken);
+    if (i < 0) { i = this.seats.findIndex(Boolean); this.hostToken = i >= 0 ? this.seats[i].token : null; }
+    return i;
+  }
+  isAway(seat) { const s = this.seats[seat]; return !s.connected || s.missed >= AWAY_AFTER_MISSES; }
+
+  view(seat) {
+    const base = {
+      t: 'state', code: this.code, passcode: this.passcode, now: Date.now(), you: seat,
+      host: this.hostSeat() === seat,
+      phase: this.game ? this.game.phase : 'lobby',
+      seats: this.seats.map((s, i) => (s ? { seat: i, name: s.name, connected: s.connected, away: this.game ? this.isAway(i) : false } : null)),
+    };
+    const g = this.game;
+    if (!g) return base;
+    const me = g.players[seat];
+    return {
+      ...base,
+      round: g.round, rounds: g.cfg.rounds, cards: g.cards, dealer: g.dealer, turn: g.turn,
+      trick: g.trick, trickWinner: g.trickWinner, ledSuit: g.ledSuit, spadesBroken: g.spadesBroken,
+      deadline: this.deadline, stage: this.stage,
+      players: g.players.map((p, i) => ({ seat: i, bid: p.bid, blind: p.blind, tricks: p.tricks, total: p.total, bags: p.bags, handCount: p.hand.length })),
+      hand: me.seen ? me.hand : null,
+      legal: g.phase === 'playing' && g.turn === seat ? g.legal(seat) : [],
+      bidStage: g.phase === 'bidding' && g.turn === seat && me.bid === null
+        ? { max: g.cards, canBlind: g.round === g.blindRound && !me.seen } : null,
+      history: g.history, final: g.final,
+      continued: [...g.continued],
+    };
+  }
+
+  broadcast() {
+    for (let i = 0; i < 4; i++) {
+      const s = this.seats[i];
+      if (s && s.ws && s.ws.open) s.ws.send(JSON.stringify(this.view(i)));
+    }
+  }
+
+  start() {
+    if (this.game) return;
+    if (this.seats.some((s) => !s || !s.connected)) throw new Error('All four players must be in the room');
+    this.newGame();
+  }
+
+  newGame() {
+    this.game = new Game();
+    for (const s of this.seats) s.missed = 0;
+    this.game.startRound();
+    this.stage = 'review';
+    this.schedule();
+  }
+
+  clearTimer() { if (this.timer) clearTimeout(this.timer); this.timer = null; this.deadline = null; }
+
+  schedule() {
+    this.clearTimer();
+    const g = this.game;
+    if (!g) return this.broadcast();
+    if (this.connectedHumans().length === 0) return;            // nobody here: the game pauses
+    const at = (delay, fn) => { this.timer = setTimeout(() => { this.timer = null; fn(); }, delay); };
+
+    if (g.phase === 'bidding' || g.phase === 'playing') {
+      const seat = g.turn;
+      if (this.isAway(seat)) {
+        at(ms(AWAY_DELAY_MS), () => this.autoAct(seat, false));
+      } else {
+        const limit = ms((g.phase === 'bidding' ? g.cfg.bidTime : g.cfg.playTime) * 1000);
+        this.deadline = Date.now() + limit;
+        at(limit, () => this.autoAct(seat, true));
+      }
+    } else if (g.phase === 'trickPause') {
+      at(ms(TRICK_PAUSE_MS), () => { g.finishTrick(); this.schedule(); });
+    } else if (g.phase === 'roundEnd') {
+      if (this.stage === 'review') {
+        this.humans().forEach((s, _i) => { const i = this.seats.indexOf(s); if (!s.connected) g.continued.add(i); });
+        if (this.allContinued()) return this.beginStarting();
+        this.deadline = Date.now() + ms(g.cfg.scoreTime * 1000);
+        at(ms(g.cfg.scoreTime * 1000), () => this.beginStarting());
+      } else {
+        this.deadline = Date.now() + ms(NEXT_ROUND_SECS * 1000);
+        at(ms(NEXT_ROUND_SECS * 1000), () => this.nextRound());
+      }
+    }
+    this.broadcast();
+  }
+
+  allContinued() {
+    const g = this.game;
+    return this.connectedHumans().every((s) => g.continued.has(this.seats.indexOf(s)));
+  }
+  beginStarting() { if (this.game && this.game.phase === 'roundEnd') { this.stage = 'starting'; this.schedule(); } }
+  nextRound() { if (this.game && this.game.phase === 'roundEnd') { this.game.startRound(); this.stage = 'review'; this.schedule(); } }
+
+  /** The timeout policy: bid 0 / lowest-card rules. `missed` is true when the player's own timer ran out. */
+  autoAct(seat, missed) {
+    const g = this.game;
+    try {
+      if (missed) this.seats[seat].missed++;
+      if (g.phase === 'bidding' && g.turn === seat) {
+        if (g.round === g.blindRound && !g.players[seat].seen) g.seeCards(seat);
+        g.placeBid(seat, 0);
+      } else if (g.phase === 'playing' && g.turn === seat) {
+        g.play(seat, timeoutCard(g, seat));
+      }
+    } catch (e) { console.error('autoAct', e); }
+    this.schedule();
+  }
+
+  act(seat, m) {
+    const g = this.game;
+    if (!g) throw new Error('The game has not started');
+    switch (m.t) {
+      case 'see': g.seeCards(seat); break;
+      case 'blind': g.placeBlind(seat); break;
+      case 'bid': g.placeBid(seat, m.value); break;
+      case 'play': if (typeof m.card !== 'string') throw new Error('Bad card'); g.play(seat, m.card); break;
+      case 'continue':
+        if (g.phase !== 'roundEnd' || this.stage !== 'review') return;
+        g.continued.add(seat);
+        if (this.allContinued()) return this.beginStarting();
+        return this.broadcast();
+      default: return;
+    }
+    this.seats[seat].missed = 0;
+    this.schedule();
+  }
+
+  destroy() { this.clearTimer(); for (const s of this.seats) if (s && s.ws) s.ws.terminate(); }
+}
+
+const { botSeatForJoin } = require('./room-bots');
+const send = (ws, o) => ws.open && ws.send(JSON.stringify(o));
+const gameKind = (m) => (m && (m.game === 'snakes' || m.game === 'ludo' || m.game === 'ekah' || m.game === 'sudoku') ? m.game : 'spades');
+const GAME_NAME = { spades: 'Spades', snakes: 'Snakes & Ladders', ludo: 'Ludo', ekah: 'EKAH', sudoku: 'Sudoku' };
+const cleanName = (n) => String(n || '').replace(/[^\p{L}\p{N} _.'-]/gu, '').trim().slice(0, 16) || 'Player';
+
+function attach(ws, room, seat) {
+  const s = room.seats[seat];
+  if (s.ws && s.ws !== ws && s.ws.open) { s.ws.ctx = null; s.ws.terminate(); }
+  s.ws = ws; s.connected = true; s.missed = 0;
+  ws.ctx = { room, seat };
+  room.lastActive = Date.now();
+  if (room.game && !room.timer && room.game.phase !== 'gameEnd') room.schedule(); else room.broadcast();
+}
+
+function detach(ws) {
+  const c = ws.ctx; ws.ctx = null;
+  if (!c) return;
+  const { room, seat } = c;
+  const s = room.seats[seat];
+  if (!s || s.ws !== ws) return;
+  s.ws = null; s.connected = false;
+  room.lastActive = Date.now();
+  if (room.kind !== 'spades') return room.onDetach(seat);
+  const g = room.game;
+  if (!g) { room.broadcast(); return; }
+  if (g.phase === 'bidding' || g.phase === 'playing') {
+    if (g.turn === seat) room.schedule(); else room.broadcast();
+  } else if (g.phase === 'roundEnd' && room.stage === 'review' && room.allContinued()) room.beginStarting();
+  else room.broadcast();
+}
+
+function handle(ws, m) {
+  const tokenOk = (t) => typeof t === 'string' && TOKEN_RE.test(t);
+  const failJoin = (msg) => { ws.fails = (ws.fails || 0) + 1; if (ws.fails >= MAX_FAILED_JOINS) ws.terminate(); throw new Error(msg); };
+  switch (m.t) {
+    case 'hello': {
+      const room = rooms.get(String(m.code || '').toUpperCase());
+      const seat = room && room.kind === gameKind(m) && tokenOk(m.token) ? room.seatOf(m.token) : -1;
+      if (seat < 0) return send(ws, { t: 'none' });
+      return attach(ws, room, seat);
+    }
+    case 'create': {
+      if (ws.ctx) throw new Error('You are already in a room');
+      if (!tokenOk(m.token)) throw new Error('Bad session');
+      if (!/^\d{4}$/.test(String(m.passcode))) throw new Error('The passcode must be 4 digits');
+      if (rooms.size >= 500) throw new Error('The server is busy - try again soon');
+      let code;
+      do { code = Array.from({ length: 4 }, () => CODE_ALPHABET[crypto.randomInt(CODE_ALPHABET.length)]).join(''); } while (rooms.has(code));
+      const kind = gameKind(m);
+      const room = kind === 'snakes' ? new SnakesRoom(code, String(m.passcode), SPEED)
+        : kind === 'ludo' ? new LudoRoom(code, String(m.passcode), SPEED)
+        : kind === 'ekah' ? new EkahRoom(code, String(m.passcode), SPEED)
+        : kind === 'sudoku' ? new SudokuRoom(code, String(m.passcode), SPEED) : new Room(code, String(m.passcode));
+      rooms.set(code, room);
+      const who = m._player;
+      room.seats[0] = { token: m.token, uid: who ? who.id : null, name: who ? who.username : cleanName(m.name), connected: false, ws: null, missed: 0 };
+      room.hostToken = m.token;
+      return attach(ws, room, 0);
+    }
+    case 'join': {
+      if (ws.ctx) throw new Error('You are already in a room');
+      if (!tokenOk(m.token)) throw new Error('Bad session');
+      const room = rooms.get(String(m.code || '').toUpperCase().trim());
+      if (!room || !sameSecret(room.passcode, m.passcode)) return failJoin('Room not found, or the passcode is wrong');
+      if (room.kind !== gameKind(m)) throw new Error(`That room code is for a ${GAME_NAME[room.kind]} game`);
+      const who = m._player;
+      let seat = room.seatOf(m.token);
+      if (seat < 0 && who) {                    // the same account on another device takes back its own seat
+        seat = room.seats.findIndex((s) => s && s.uid === who.id);
+        if (seat >= 0) room.seats[seat].token = m.token;
+      }
+      if (seat < 0) {
+        if (room.game) throw new Error('That game has already started');
+        seat = room.seats.findIndex((s) => !s);
+        if (seat < 0 && room.kind !== 'spades') seat = botSeatForJoin(room);   // a friend takes a computer player's seat
+        if (seat < 0) throw new Error('That room is full');
+        room.seats[seat] = { token: m.token, uid: who ? who.id : null, name: who ? who.username : cleanName(m.name), connected: false, ws: null, missed: 0 };
+      }
+      return attach(ws, room, seat);
+    }
+  }
+  const c = ws.ctx;
+  if (!c) throw new Error('Join a room first');
+  const { room, seat } = c;
+  room.lastActive = Date.now();
+  if (room.kind !== 'spades') {
+    const left = room.handle(seat, m);
+    if (left) { ws.ctx = null; if (room.dead) rooms.delete(room.code); send(ws, { t: 'left' }); }
+    return;
+  }
+  switch (m.t) {
+    case 'start':
+      if (room.hostSeat() !== seat) throw new Error('Only the host can start the game');
+      room.start(); return;
+    case 'again':
+      if (room.hostSeat() !== seat) throw new Error('Only the host can start a new game');
+      if (room.game && room.game.phase === 'gameEnd') room.newGame();
+      return;
+    case 'leave': {
+      const s = room.seats[seat];
+      ws.ctx = null;
+      if (!room.game) {                       // lobby: free the seat
+        room.seats[seat] = null; s.ws = null;
+        if (room.humans().length === 0) { room.destroy(); rooms.delete(room.code); } else room.broadcast();
+      } else {                                // in a game: the timeout rules play for them; they may rejoin with the same device
+        s.ws = null; s.connected = false;
+        if (room.connectedHumans().length === 0) room.clearTimer();
+        else if (room.game.phase === 'bidding' || room.game.phase === 'playing') { if (room.game.turn === seat) room.schedule(); else room.broadcast(); }
+        else if (room.game.phase === 'roundEnd' && room.stage === 'review' && room.allContinued()) room.beginStarting();
+        else room.broadcast();
+      }
+      return send(ws, { t: 'left' });
+    }
+    default:
+      return room.act(seat, m);
+  }
+}
+
+/* ---------- what the host calls ---------- */
+const sockets = new Set();
+
+function connected(ws) { ws.alive = true; ws.ctx = null; sockets.add(ws); }
+
+function message(ws, raw) {
+  ws.alive = true;                                  // any message shows the connection is alive
+  let m;
+  try { m = JSON.parse(raw); } catch { return; }
+  if (!m || typeof m.t !== 'string') return;
+  if (m.t === 'pong') return;                       // answer to our {t:"ping"} (see heartbeat)
+  delete m._player;
+  if (m.t === 'create' || m.t === 'join') {         // these need the player's sign-in checked first
+    if (ws.checking) return;
+    ws.checking = true;
+    playerFor(m)
+      .then((who) => { m._player = who; handle(ws, m); })
+      .catch((e) => send(ws, { t: 'err', msg: e instanceof AuthError ? e.message : (e && e.message) || 'Error', ...(e instanceof AuthError ? { auth: true } : {}) }))
+      .finally(() => { ws.checking = false; });
+    return;
+  }
+  try { handle(ws, m); } catch (e) { send(ws, { t: 'err', msg: e.message || 'Error' }); }
+}
+
+function closed(ws) { if (!sockets.delete(ws)) return; ws.open = false; detach(ws); }
+
+/** Every 20 s: a socket that has not answered since the last check is closed (the player shows as offline). */
+function heartbeat() {
+  for (const ws of [...sockets]) {
+    if (!ws.open) { closed(ws); continue; }
+    if (!ws.alive) { ws.terminate(); closed(ws); continue; }
+    ws.alive = false;
+    try { ws.ping(); } catch { /* closing */ }
+  }
+}
+
+/** Every minute: rooms nobody has been in for 30 minutes are removed. */
+function sweep(now = Date.now()) {
+  for (const [code, room] of rooms) if (room.connectedHumans().length === 0 && now - room.lastActive > ROOM_IDLE_MS) { room.destroy(); rooms.delete(code); }
+}
+
+/** True while anything needs the server to stay awake (open sockets or rooms that still exist). */
+const busy = () => sockets.size > 0 || rooms.size > 0;
+
+module.exports = { rooms, sockets, connected, message, closed, heartbeat, sweep, busy, CONFIG, SPEED };

@@ -1,7 +1,7 @@
 import { reportGame } from "../lib/report";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { RoomClient, deviceToken, randomPasscode, saveRoom, savedRoom, serverUrl, type NetStatus } from "../domain/online";
-import { BOARD_VERSION, CHAT_EMOJIS, CHAT_PHRASES, RARE_LADDERS, SNAKES, TIMING, newGame, roll, rollDie, rollLucky, rungsOf, snakeSlideMs, turnOf, type LastRoll, type SLGame } from "./engine";
+import { BOARD_VERSION, CHAT_EMOJIS, CHAT_PHRASES, RARE_LADDERS, SNAKES, TIMING, newGame, roll, rollDie, rungsOf, snakeSlideMs, turnOf, type LastRoll, type SLGame } from "./engine";
 import { MODELS, MODEL_IDS, NUM_FONT, OFF, PIECE_H, SHARED, SHARED3D, THEMES, THEME_IDS, W, center, layoutIssues, numberAt, paintBase, paintBoard, paintNumberLayer, paintPiece, S, spot, spot3D, type Look, type ModelId, type Pt, type ThemeId } from "./board";
 import { fitView, planeStyle, project, squash, type View } from "./view3d";
 import { SnakeArt, type SnakeOverlay } from "./snake2d";
@@ -110,7 +110,7 @@ function describe(l: LastRoll, t: Table): string {
     default: {
       if (l.win) return `${who} ${you ? "finish" : "finishes"} ${PLACE[(l.rank ?? 1) - 1]}!${l.ended ? " Game over." : " The game goes on."}`;
       const base = `${who} rolled ${l.value}: ${l.from} → ${l.landed}.`;
-      if (l.via === "ladder") return `${base} ${RARE_LADDERS[l.landed] ? "The golden ladder — 1 in 1000! " : ""}Climbed up to ${l.to}!${again}`;
+      if (l.via === "ladder") return `${base} ${RARE_LADDERS[l.landed] ? "The golden ladder, a 1-in-100 climb! " : ""}Climbed up to ${l.to}!${again}`;
       if (l.via === "snake") return `${base} Swallowed by a snake — down to ${l.to}.${again}`;
       return base + again;
     }
@@ -170,6 +170,8 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
   /* the 3D board whenever the player chose it and the device can draw it; it is never swapped out for being slow
      (only if WebGL fails, for that visit) */
   const useGL = view3d === "3d" && glState !== "off" && canWebGL();
+  /** The 3D board is still getting ready: practice games wait for it, so nothing moves before it is shown. */
+  const glBusy = useGL && glState !== "ready";
   const glMode = useRef(false); glMode.current = useGL;
   /** Where a token stands on square n: the 3D board and the flat/tilted board lay squares out differently. */
   const spotOf = (n: number) => (glMode.current ? spot3D(n) : spot(n));
@@ -196,6 +198,13 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
   }, [view]);
   const table = useMemo<Table | null>(() => (online && view ? fromView(view) : local ? fromLocal(local, localNames, localPieces) : null), [online, view, local, localNames, localPieces]);
   const tableRef = useRef<Table | null>(table); tableRef.current = table;
+  /** The tokens as the 3D board draws them (where each one is shown right now). */
+  const pieces3D = (t: Table) => {
+    const turn = rollingRef.current ?? (t.phase === "playing" ? t.turn : -1);
+    return t.order.flatMap(s => { const p = disp.current[s]; return p ? [{ seat: s, piece: t.pieces[s], color: COLORS[s], x: p.x, y: p.y, h: p.h ?? 0, s: p.s ?? 1, active: s === turn, lean: p.lean, sway: p.sway, dir: p.dir }] : []; });
+  };
+  /** When the 3D board was first shown (its slow-device check waits a moment after that). */
+  const glShownAt = useRef(0);
 
   /* sound can only start after a tap */
   useEffect(() => { const u = () => unlock(); window.addEventListener("pointerdown", u); return () => window.removeEventListener("pointerdown", u); }, []);
@@ -313,11 +322,11 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
     saveGame(SAVE_KEYS.snakes, { game: local, names: localNames, pieces: localPieces });
   }, [local, localNames, localPieces]);
   useEffect(() => {
-    if (online || !local || local.phase !== "playing" || animating || turnOf(local) === 0) return;
+    if (online || !local || local.phase !== "playing" || animating || glBusy || turnOf(local) === 0) return;
     if (local.last && local.last.n !== animatedN.current) return;            // wait for the last move to be shown
-    const id = window.setTimeout(() => { const v = rollDie(), lucky = rollLucky(); setLocal(g => (g && turnOf(g) !== 0 ? roll(g, turnOf(g), v, lucky) : g)); }, 700 * pace);
+    const id = window.setTimeout(() => { setLocal(g => (g && turnOf(g) !== 0 ? roll(g, turnOf(g), rollDie(g.pos[turnOf(g)])) : g)); }, 700 * pace);
     return () => window.clearTimeout(id);
-  }, [online, local, animating]);
+  }, [online, local, animating, glBusy]);
 
   /* ---------- board drawing ---------- */
   const restPoint = (t: Table, seat: number): Disp | null => {
@@ -364,15 +373,23 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
     setGlState("loading");
     const lost = (e: Event) => { e.preventDefault(); setGlState("off"); };
     canvas.addEventListener("webglcontextlost", lost);
-    import("./scene3d").then(m => {
+    let built: Scene3D | null = null;
+    import("./scene3d").then(async m => {
       if (!live) return;
       const sc = new m.BoardScene(canvas, look, lowPower(), { testLite: DEBUG && /[?&]gllite\b/.test(location.search) });
-      sceneRef.current = sc;
+      built = sc;
       const fit = () => { const w = stage.clientWidth, h = stage.clientHeight; if (w > 40 && h > 40) { sc.resize(w, h, window.devicePixelRatio || 1); dirty.current = true; } };
-      fit(); setGlState("ready");
+      fit();
+      // get every texture and shader ready while the board is still hidden, then fade it in (no stalls once it shows)
+      const t = tableRef.current;
+      // every seat's figure is built and compiled now (tokens not yet on the board stand in for this one hidden draw)
+      const warmPieces = t ? t.order.map(s => pieces3D(t).find(p => p.seat === s) ?? { seat: s, piece: t.pieces[s], color: COLORS[s], x: 30 + s * 60, y: 570, h: 0, s: 1, active: false }) : [];
+      await sc.warm(warmPieces, { ...overlay.current, tokens: t ? t.order.map(s => t.pos[s] ?? 0) : [], motion: false }).catch(() => undefined);
+      if (!live) return;
+      sceneRef.current = sc; dirty.current = true; glShownAt.current = performance.now(); setGlState("ready");
       ro = new ResizeObserver(() => { window.clearTimeout(timer); timer = window.setTimeout(fit, 80); }); ro.observe(stage);
     }).catch(() => { if (live) setGlState("off"); });
-    return () => { live = false; ro?.disconnect(); window.clearTimeout(timer); canvas.removeEventListener("webglcontextlost", lost); sceneRef.current?.dispose(); sceneRef.current = null; };
+    return () => { live = false; ro?.disconnect(); window.clearTimeout(timer); canvas.removeEventListener("webglcontextlost", lost); built?.dispose(); sceneRef.current = null; };
   }, [sub, !!table, useGL]);
   useEffect(() => { sceneRef.current?.setLook(look); dirty.current = true; }, [look]);
   useEffect(() => { if (!animating) settle(); }, [useGL]);
@@ -420,7 +437,7 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
   const glGaps = useRef<number[]>([]);
   useEffect(() => {
     if (sub !== "table") return;
-    let raf = 0, lastSnakes = 0, snakesBusy = true, paintMs = 6, lastRaf = 0, frameEma = 16, backoff = 0, drewLast = false;
+    let raf = 0, lastSnakes = 0, snakesBusy = true, paintMs = 6, lastRaf = 0, frameEma = 16, backoff = 0, drewLast = false, slowChecks = 0;
     const reduce = matchMedia("(prefers-reduced-motion: reduce)");
     // the snakes slither at about 30 fps (20 on slower phones); if painting them is slow on this device, less often, so
     // they never take more than about a quarter of the time and the rest of the page stays smooth
@@ -436,13 +453,15 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
       // the 3D board's slow-device watchdog: it measures how long the frame after a draw took to come (the real cost of
       // drawing), not the time between draws, which the snakes' own redraw throttle sets on purpose
       const sc0 = sceneRef.current;
-      if (sc0 && drewLast && tick < 1500 && !document.hidden && !(DEBUG && /[?&]keep3d\b/.test(location.search))) {
+      // (it waits 3 s after the board first shows, so start-up work never counts, and needs two slow checks in a row)
+      if (sc0 && drewLast && tick < 1500 && !document.hidden && now - glShownAt.current > 3000 && !(DEBUG && /[?&]keep3d\b/.test(location.search))) {
         glGaps.current.push(tick);
         if (glGaps.current.length >= 24) {
           const med = [...glGaps.current].sort((a, b) => a - b)[12]; glGaps.current = [];
           if (DEBUG) { const w = window as unknown as { __slGlMeds?: number[] }; w.__slGlMeds = [...(w.__slGlMeds ?? []), Math.round(med)]; }
           // a slow device loses its shadows; the 3D board (and its 3D tokens) is never swapped for the flat one
-          if (med > 42) sc0.degrade();
+          slowChecks = med > 42 ? slowChecks + 1 : 0;
+          if (slowChecks >= 2) { sc0.degrade(); slowChecks = 0; }
         }
       }
       drewLast = false;
@@ -462,9 +481,9 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
         // the watchdog judges the 3D board by frames where the board itself changed; if the snakes' redraw is what costs
         // time, they simply redraw less often (the back-off above) rather than the 3D board being switched off
         drewLast = sceneChanged;
-        const turn = rollingRef.current ?? (t.phase === "playing" ? t.turn : -1), fx3 = liveEffects();
+        const fx3 = liveEffects();
         const fT0 = performance.now();
-        snakesBusy = sc.frame(t.order.flatMap(s => { const p = disp.current[s]; return p ? [{ seat: s, piece: t.pieces[s], color: COLORS[s], x: p.x, y: p.y, h: p.h ?? 0, s: p.s ?? 1, active: s === turn, lean: p.lean, sway: p.sway, dir: p.dir }] : []; }), { ...overlay.current, ...fx3, tokens: tokens(), motion }, snakesDue);
+        snakesBusy = sc.frame(pieces3D(t), { ...overlay.current, ...fx3, tokens: tokens(), motion }, snakesDue);
         if (DEBUG) { const w = window as unknown as { __slFrameMs?: number[] }; (w.__slFrameMs ??= []).push(Math.round((performance.now() - fT0) * 10) / 10); if (w.__slFrameMs.length > 400) w.__slFrameMs.shift(); }
         if (snakesDue) { lastSnakes = now; if (DEBUG) (window as unknown as { __slSnakeFrames?: number }).__slSnakeFrames = ((window as unknown as { __slSnakeFrames?: number }).__slSnakeFrames ?? 0) + 1; }
         return;
@@ -766,11 +785,11 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
   }, [table, sub]);
 
   /* ---------- actions ---------- */
-  const myTurn = !!table && table.phase === "playing" && table.turn === table.you && !animating && !(online && view?.moving) && (!table.last || table.last.n === animatedN.current);
+  const myTurn = !!table && table.phase === "playing" && table.turn === table.you && !animating && !glBusy && !(online && view?.moving) && (!table.last || table.last.n === animatedN.current);
   const doRoll = () => {
     if (!myTurn) return;
     unlock();
-    if (online) send({ t: "roll" }); else { const v = rollDie(), lucky = rollLucky(); setLocal(g => (g ? roll(g, 0, v, lucky) : g)); }
+    if (online) send({ t: "roll" }); else setLocal(g => (g ? roll(g, 0, rollDie(g.pos[0])) : g));
   };
   useEffect(() => {
     if (sub !== "table") return;
@@ -879,7 +898,7 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
 
     <div className="sl-stage" ref={stageRef} role="img" aria-label={`Snakes and ladders board. ${table.order.map(s => `${table.names[s]} on ${table.pos[s] || "start"}`).join(", ")}.`}>
       {useGL ? <>
-        <canvas key="gl" className="sl-gl" ref={glRef} />
+        <canvas key="gl" className={`sl-gl ${glState === "ready" ? "on" : ""}`} ref={glRef} />
         {glState !== "ready" && <p className="sl-gl-wait">Setting up the 3D board…</p>}
       </> : <>
         <canvas key="base" className="sl-base" ref={baseRef} style={geo ? { width: geo.sw + "px", height: geo.sh + "px" } : undefined} />

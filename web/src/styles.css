@@ -722,11 +722,19 @@ main>.hero .hero-ornament{font-size:90px;top:50%;right:34%;opacity:.12}
 .seat-timer{position:absolute;top:-14px;right:-10px;line-height:0;z-index:3}
 .mode-grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
 
-/* Header: one short menu (Home · Games · Learn · Friends), the current section underlined in gold */
-.topbar nav{display:flex;gap:clamp(18px,2.4vw,32px)}
-.topbar nav button{position:relative;padding:8px 0}
-.topbar nav button.nav-active::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;border-radius:2px;background:#C9A24A}
-.topbar nav button:focus-visible{outline:2px solid #C9A24A;outline-offset:4px;border-radius:4px}
+/* Header: one short menu (Home · Games · Learn · Friends). Bold emerald words; the current section sits in a soft
+   gold pill and the others show a faint pill on hover. A thin gold line underlines the header, which lifts with a soft
+   shadow once the page scrolls. */
+.app-shell .topbar nav.rc-nav{display:flex;align-items:center;gap:6px}
+.app-shell .topbar nav.rc-nav button.rc-nav-item{position:relative;padding:9px 18px;border:0;border-radius:999px;background:transparent;color:#1F4A3A;font:700 15px/1 'DM Sans',system-ui,sans-serif;letter-spacing:.01em;transition:background .15s,color .15s}
+.app-shell .topbar nav.rc-nav button.rc-nav-item:hover{background:rgba(201,162,74,.14);color:#0F4D3A}
+.app-shell .topbar nav.rc-nav button.rc-nav-item.nav-active{background:linear-gradient(180deg,#F6E7BF,#EED79A);color:#0F4D3A;box-shadow:inset 0 0 0 1px rgba(184,150,63,.55),0 2px 6px rgba(122,90,28,.15)}
+.app-shell .topbar nav.rc-nav button.rc-nav-item:focus-visible{outline:2px solid #C9A24A;outline-offset:2px}
+.app-shell.theme-ivory .topbar{border-bottom:0;box-shadow:inset 0 -1.5px 0 #C9A24A;transition:box-shadow .2s}
+.app-shell.theme-ivory .topbar.scrolled{box-shadow:inset 0 -1.5px 0 #C9A24A,0 6px 18px rgba(60,40,10,.12)}
+.app-shell:not(.theme-ivory) .topbar nav.rc-nav button.rc-nav-item{color:#F1E6D2}
+.app-shell:not(.theme-ivory) .topbar nav.rc-nav button.rc-nav-item.nav-active{color:#0F4D3A}
+@media (prefers-reduced-motion:reduce){.app-shell .topbar nav.rc-nav button.rc-nav-item,.app-shell.theme-ivory .topbar{transition:none}}
 @media(max-width:760px){
   /* Game lobbies have their own back bar with the Royal Club badge, so the site header steps aside on phones */
   .app-shell:has(.rs-page, .sl-tokens-page) .topbar{display:none}

@@ -16,7 +16,7 @@ assert.strictEqual(
 const card = (id, type, suit, value) => ({ id, type, suit: suit || null, value: value || null });
 function table(n, top, hands) {
   const s = E.createGame(Array.from({ length: n }, (_, i) => ({ name: 'P' + i })));
-  s.discard = [top]; s.color = top.suit; s.direction = 1; s.turn = 0; s.vulnerable = null; s.pendingDrawn = null;
+  s.discard = [top]; s.color = top.suit; s.direction = 1; s.turn = 0; s.vulnerable = null; s.pendingDrawn = null; s.pending = 0; s.attack = null;
   s.players.forEach((p, i) => { p.hand = hands[i] || [card(900 + i, 'num', 'VAYU', 9), card(950 + i, 'num', 'VAYU', 8)]; });
   return s;
 }
@@ -52,14 +52,58 @@ function table(n, top, hands) {
   assert.strictEqual(t.turn, 0, 'two players: you play again');
 }
 {
-  // Rin: next player draws 2 and is skipped. Mahakal needs a suit and gives 4.
-  const s = table(3, card(1, 'num', 'AGNI', 7), [[card(2, 'rin', 'AGNI'), card(3, 'mahakal'), card(4, 'num', 'JAL', 1)]]);
+  // Rin: the next player faces +2. With no answer they take 2 and lose the turn.
+  const s = table(3, card(1, 'num', 'AGNI', 7), [[card(2, 'rin', 'AGNI'), card(3, 'num', 'JAL', 1)], [card(10, 'num', 'VAYU', 3), card(11, 'brahma')]]);
+  assert(E.applyAction(s, 0, { type: 'play', cardId: 2 }).ok);
+  assert.strictEqual(s.turn, 1); assert.strictEqual(s.pending, 2);
+  assert.deepStrictEqual(E.legalCards(s, 1), [], 'Brahma cannot answer a Rin');
+  assert(!E.applyAction(s, 1, { type: 'play', cardId: 11, color: 'JAL' }).ok);
+  assert(E.applyAction(s, 1, { type: 'draw' }).ok);
+  assert.strictEqual(s.players[1].hand.length, 4); assert.strictEqual(s.turn, 2); assert.strictEqual(s.pending, 0);
+}
+{
+  // Stacking: Rin on Rin (any element), then Mahakal adds 4; the next player takes all 8.
+  const s = table(4, card(1, 'num', 'AGNI', 7), [[card(2, 'rin', 'AGNI'), card(9, 'num', 'JAL', 1)], [card(3, 'rin', 'VAYU'), card(8, 'num', 'JAL', 2)], [card(4, 'mahakal'), card(7, 'num', 'JAL', 3)], [card(5, 'num', 'AGNI', 4)]]);
   E.applyAction(s, 0, { type: 'play', cardId: 2 });
-  assert.strictEqual(s.players[1].hand.length, 4); assert.strictEqual(s.turn, 2);
-  s.turn = 0;
-  assert(!E.applyAction(s, 0, { type: 'play', cardId: 3 }).ok, 'a wild needs a suit');
-  E.applyAction(s, 0, { type: 'play', cardId: 3, color: 'JAL' });
-  assert.strictEqual(s.color, 'JAL'); assert.strictEqual(s.players[1].hand.length, 8); assert.strictEqual(s.turn, 2);
+  assert.deepStrictEqual(E.legalCards(s, 1), [3]);
+  assert(E.applyAction(s, 1, { type: 'play', cardId: 3 }).ok); assert.strictEqual(s.pending, 4); assert.strictEqual(s.turn, 2);
+  assert(!E.applyAction(s, 2, { type: 'play', cardId: 4 }).ok, 'Mahakal still needs an element');
+  assert(E.applyAction(s, 2, { type: 'play', cardId: 4, color: 'JAL' }).ok); assert.strictEqual(s.pending, 8); assert.strictEqual(s.attack, 'mahakal');
+  assert.deepStrictEqual(E.legalCards(s, 3), [], 'an Agni card does not answer');
+  E.applyAction(s, 3, { type: 'draw' });
+  assert.strictEqual(s.players[3].hand.length, 9); assert.strictEqual(s.turn, 0); assert.strictEqual(s.pending, 0);
+}
+{
+  // After Mahakal only a Rin of the chosen element (or Mahakal, or that element's Maya) answers.
+  const s = table(3, card(1, 'num', 'AGNI', 7), [[card(2, 'mahakal'), card(9, 'num', 'JAL', 1)], [card(3, 'rin', 'AGNI'), card(4, 'rin', 'JAL'), card(5, 'maya', 'JAL'), card(6, 'maya', 'AGNI'), card(12, 'mahakal')]]);
+  E.applyAction(s, 0, { type: 'play', cardId: 2, color: 'JAL' });
+  assert.deepStrictEqual(E.legalCards(s, 1).sort((a, b) => a - b), [4, 5, 12]);
+  assert.deepStrictEqual(E.jodiCards(s, 1), []);
+}
+{
+  // Maya of the element dodges: the waiting cards move on to the next player, nobody is skipped.
+  const s = table(3, card(1, 'num', 'AGNI', 7), [[card(2, 'rin', 'AGNI'), card(9, 'num', 'JAL', 1)], [card(3, 'maya', 'AGNI'), card(4, 'maya', 'JAL'), card(8, 'num', 'JAL', 2)]]);
+  E.applyAction(s, 0, { type: 'play', cardId: 2 });
+  assert.deepStrictEqual(E.legalCards(s, 1), [3], 'only the Agni Maya');
+  assert(E.applyAction(s, 1, { type: 'play', cardId: 3 }).ok);
+  assert.strictEqual(s.turn, 2); assert.strictEqual(s.pending, 2);
+  assert(s.events.some((e) => e.type === 'dodge' && e.pi === 1 && e.to === 2));
+  E.applyAction(s, 2, { type: 'draw' });
+  assert.strictEqual(s.players[2].hand.length, 4); assert.strictEqual(s.turn, 0);
+}
+{
+  // Going out on a Rin: the next player still takes the cards before the score is counted.
+  const s = table(3, card(1, 'num', 'AGNI', 7), [[card(2, 'rin', 'AGNI')], [card(3, 'num', 'JAL', 1)]]);
+  E.applyAction(s, 0, { type: 'play', cardId: 2 });
+  assert.strictEqual(s.phase, 'roundOver'); assert.strictEqual(s.players[1].hand.length, 3);
+}
+{
+  // A computer answers when it can, and takes the cards when it can't.
+  const s = table(3, card(1, 'num', 'AGNI', 7), [[card(2, 'rin', 'AGNI'), card(9, 'num', 'JAL', 1)], [card(3, 'rin', 'VAYU'), card(4, 'mahakal'), card(8, 'num', 'AGNI', 2)]]);
+  E.applyAction(s, 0, { type: 'play', cardId: 2 });
+  assert.deepStrictEqual(E.botAction(s, 1), { type: 'play', cardId: 3, color: undefined, ekah: false });
+  assert.deepStrictEqual(E.timeoutAction(s, 1), { type: 'draw' }, 'a timed-out player takes the cards');
+  const v = E.viewFor(s, 1); assert.strictEqual(v.pending, 2); assert.strictEqual(v.attack, 'rin');
 }
 {
   // Forgetting EKAH: anyone can catch you for 2 until the next player acts. Calling it protects you.

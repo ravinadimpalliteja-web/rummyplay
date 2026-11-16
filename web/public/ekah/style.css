@@ -382,3 +382,17 @@ button.card { cursor: default; }
 .table-themes .t-royal span { background: radial-gradient(circle at 50% 35%, #4B2A8A, #2A1A55 60%, #1C103A); }
 .table-themes .t-kesari span { background: radial-gradient(circle at 50% 35%, #C2621F, #8A3410 60%, #3A1206); }
 .table-themes .t-emerald span { background: radial-gradient(circle at 50% 35%, #1D7A59, #0F4D3A 60%, #062A1E); }
+
+/* ---------- stacking: +N waiting on the pile, Take cards button ---------- */
+.stackbadge { position: absolute; top: -14px; right: -16px; z-index: 3; min-width: 40px; text-align: center; background: #E5383B; color: #fff; font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 20px; line-height: 1; padding: 7px 10px 4px; border-radius: 999px; white-space: nowrap; box-shadow: 0 0 0 2px #fff, 0 6px 14px rgba(0,0,0,.45); pointer-events: none; }
+.stackbadge.hidden { display: none; }
+.stackbadge.pop { animation: stackpop .45s cubic-bezier(.3,1.6,.5,1); }
+@keyframes stackpop { 0% { transform: scale(.4); } 100% { transform: scale(1); } }
+.mybar .btn.take { background: #E5383B; border-color: #E5383B; color: #fff; font-weight: 800; }
+/* small symbol in the corner of Maya, Chakra and Brahma, readable when cards overlap */
+.card .corner.ci { width: calc(var(--cw) * .22); height: calc(var(--cw) * .22); top: calc(var(--cw) * .06); left: calc(var(--cw) * .06); }
+.card .corner.ci .icon { position: static; transform: none; width: 100%; height: 100%; filter: drop-shadow(0 0 calc(var(--cw) * .015) var(--ink)); }
+/* two rows of cards from 12 cards: a little smaller so both rows fit */
+.hand.two { --cw: calc(var(--hand-cw) * .9); }
+.hand.two .card.playable { --lift: -10px; }
+@media (prefers-reduced-motion: reduce) { .stackbadge.pop { animation: none; } }

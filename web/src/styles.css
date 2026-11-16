@@ -721,3 +721,17 @@ main>.hero .hero-ornament{font-size:90px;top:50%;right:34%;opacity:.12}
 .sp-bar{flex:0 0 auto;position:relative;z-index:4;border-bottom:1px solid #d5bd7650;min-height:50px}
 .seat-timer{position:absolute;top:-14px;right:-10px;line-height:0;z-index:3}
 .mode-grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+
+/* Header: one short menu (Home · Games · Learn · Friends), the current section underlined in gold */
+.topbar nav{display:flex;gap:clamp(18px,2.4vw,32px)}
+.topbar nav button{position:relative;padding:8px 0}
+.topbar nav button.nav-active::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;border-radius:2px;background:#C9A24A}
+.topbar nav button:focus-visible{outline:2px solid #C9A24A;outline-offset:4px;border-radius:4px}
+@media(max-width:760px){
+  /* Game lobbies have their own back bar with the Royal Club badge, so the site header steps aside on phones */
+  .app-shell:has(.rs-page, .sl-tokens-page) .topbar{display:none}
+  .app-shell:has(.rs-page, .sl-tokens-page) .rs-clubbar{padding-top:max(8px,env(safe-area-inset-top,0px))}
+  /* signed in: just the round avatar on a phone */
+  .account-user .account-trigger>span:not(.account-avatar){display:none}
+  .account-user .account-trigger{padding:4px;border-radius:50%}
+}

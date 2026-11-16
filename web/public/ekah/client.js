@@ -264,23 +264,26 @@
   /* Room turn timer (20 s): a draining bar with the seconds left. When it runs out the server discards your lowest
      number card of the element, or draws for you (never Brahma, Mahakal or action cards; always draws on your last card). */
   let clockEnd = 0, clockMine = false, clockTick = null, clockBuzzed = false;
+  let clockTotal = 0;
   function setTurnClock(end, mine) {
-    if (end !== clockEnd) clockBuzzed = false;
+    if (end !== clockEnd) { clockBuzzed = false; clockTotal = end ? Math.max(1000, end - Date.now()) : 0; }
     clockEnd = end; clockMine = mine;
     if (!clockTick) clockTick = setInterval(paintTurnClock, 250);
     paintTurnClock();
   }
+  // The shared Royal Club turn timer (rc-ui.css): a ring that empties, saffron and pulsing in the last 5 seconds.
   function paintTurnClock() {
     const el = $('turnTimer'); if (!el) return;
     const left = clockEnd ? Math.max(0, clockEnd - Date.now()) : 0;
     el.classList.toggle('hidden', !left);
     if (!left) return;
     const secs = Math.ceil(left / 1000);
-    el.querySelector('b').textContent = secs + 's';
-    el.querySelector('i').style.width = Math.min(100, left / 200) + '%';
+    el.querySelector('b').textContent = secs;
+    el.style.setProperty('--p', String(Math.min(1, left / (clockTotal || 20000))));
+    el.setAttribute('aria-label', secs + ' seconds left' + (clockMine ? '' : ' for this player'));
     el.classList.toggle('mine', clockMine);
     el.classList.toggle('low', secs <= 5);
-    if (clockMine && secs <= 5 && !clockBuzzed) { clockBuzzed = true; try { navigator.vibrate && navigator.vibrate(120); } catch (e) { /* not supported */ } }
+    if (clockMine && secs <= 5 && !clockBuzzed) { clockBuzzed = true; try { navigator.vibrate && navigator.vibrate(80); } catch (e) { /* not supported */ } }
   }
 
   function renderStatus(v) {
@@ -762,7 +765,11 @@
     showContinue();
   }
   $('resHome').addEventListener('click', () => goHome());
-  $('leaveGame').addEventListener('click', () => goHome());
+  $('leaveGame').addEventListener('click', () => {
+    // the back arrow is small and easy to tap by mistake, so a game still in play asks first
+    if (view && view.phase === 'play' && !window.confirm('Leave this game?')) return;
+    goHome();
+  });
   $('leaveLobby').addEventListener('click', () => goHome());
 
   // ---------- winning score ----------
@@ -1027,35 +1034,36 @@
   // ---------- home ----------
   function playerName() {
     const n = $('name').value.trim().slice(0, 16) || 'Player';
-    store.set('ekahName', n); store.set('rc-player-name', n);
+    if (!roomUser()) { store.set('ekahName', n); store.set('rc-player-name', n); }
     return n;
   }
-  /* Signed-in players start with their Royal Club username; an edit is remembered for that account. */
+  /* One name everywhere: signed-in players play as their Royal Club username (the same name Ludo, Snakes & Ladders
+     and the rooms use) and it is not edited here; guests type a name, kept on this device. */
   function savedName() {
-    const user = roomUser();
-    if (user) {
-      let edit = null;
-      try { edit = JSON.parse(store.get('ekahNameFor') || 'null'); } catch (e) {}
-      return edit && edit.user === user && edit.name ? edit.name : user;
-    }
-    return store.get('rc-player-name') || store.get('ekahName') || '';
+    return roomUser() || store.get('rc-player-name') || store.get('ekahName') || '';
   }
   function paintAvatar() {
     const n = $('name').value.trim() || 'Player';
     $('meAvatar').textContent = n.charAt(0).toUpperCase();
   }
+  function paintName() {
+    const user = roomUser();
+    if (user) $('name').value = user;
+    else if ($('name').readOnly) $('name').value = savedName();
+    $('name').readOnly = !!user;
+    $('editName').hidden = !!user;
+    $('name').title = user ? 'Your Royal Club username' : '';
+    paintAvatar();
+  }
   $('name').value = savedName();
-  paintAvatar();
+  paintName();
+  window.addEventListener('storage', (e) => { if (!e.key || e.key === 'rc-username' || /auth-token/.test(e.key)) paintName(); });
   $('name').addEventListener('input', paintAvatar);
-  $('name').addEventListener('change', () => {
-    const user = roomUser(), n = $('name').value.trim().slice(0, 16);
-    if (user) store.set('ekahNameFor', JSON.stringify({ user: user, name: n || user }));
-    if (!n && user) { $('name').value = user; paintAvatar(); }
-  });
   $('editName').addEventListener('click', () => { const i = $('name'); i.focus(); i.select(); });
 
-  // tabs: Vs Computer / With Friends / Online (online play with random players is coming soon)
-  const TABS = [['local', 'tabLocal', 'panelLocal'], ['friends', 'tabFriends', 'panelFriends'], ['online', 'tabOnline', 'panelOnline']];
+  // tabs: Vs Computer / With Friends. Online (matchmaking with other players) joins them when it is ready:
+  // add ['online', 'tabOnline', 'panelOnline'] here and remove `hidden` from #tabOnline.
+  const TABS = [['local', 'tabLocal', 'panelLocal'], ['friends', 'tabFriends', 'panelFriends']];
   function pickTab(which) {
     const pick = TABS.some((t) => t[0] === which) ? which : 'local';
     for (const [id, tab, panel] of TABS) {
@@ -1073,6 +1081,8 @@
     });
   });
   pickTab(new URLSearchParams(location.search).get('room') ? 'friends' : store.get('ekahTab'));
+  // /ekah/?guide=1 (the home page's Learn row) opens straight into How to play
+  if (new URLSearchParams(location.search).get('guide') === '1') { try { history.replaceState(null, '', location.pathname); } catch (e) { /* ignore */ } openGuide(); }
 
   // tap-to-pick chips for computer players and the winning score (they drive the hidden selects)
   function chipGroup(box, items, current, onPick) {

@@ -10,6 +10,7 @@
 <meta name="theme-color" content="#1C103A">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Inter:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="/rc-ui.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -48,7 +49,7 @@
       <div class="tabs" role="tablist" aria-label="How to play">
         <button role="tab" id="tabLocal" aria-controls="panelLocal" aria-selected="true">Vs Computer</button>
         <button role="tab" id="tabFriends" aria-controls="panelFriends" aria-selected="false" tabindex="-1">With Friends</button>
-        <button role="tab" id="tabOnline" aria-controls="panelOnline" aria-selected="false" tabindex="-1">Online <small class="soon-tag">Soon</small></button>
+        <button role="tab" id="tabOnline" aria-controls="panelOnline" aria-selected="false" tabindex="-1" hidden>Online</button>
       </div>
 
       <div class="mode" role="tabpanel" id="panelLocal" aria-labelledby="tabLocal">
@@ -152,13 +153,13 @@
 </section>
 
 <section id="game" class="screen hidden">
-  <div class="topbar">
-    <span class="title display">EKAH</span>
-    <span class="meta" id="meta"></span>
-    <span class="spacer"></span>
-    <button class="iconbtn" id="helpBtn" aria-label="How to play">?</button>
-    <button class="iconbtn" id="muteBtn" aria-label="Sound" aria-pressed="true"></button>
-    <button class="btn small ghost" id="leaveGame">Leave</button>
+  <div class="topbar rc-bar dark">
+    <button class="rc-bar-back" id="leaveGame" type="button" aria-label="Leave the game">←</button>
+    <span class="rc-bar-brand"><img src="../brand/badge-logo-small.webp" alt="" width="320" height="224"><span class="rc-bar-name"><strong>EKAH</strong><small id="meta"></small></span></span>
+    <span class="rc-bar-tools">
+      <button class="rc-ibtn" id="helpBtn" type="button" aria-label="How to play" title="How to play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.2a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.7"/><path d="M12 17h.01"/></svg></button>
+      <button class="rc-ibtn" id="muteBtn" type="button" aria-label="Sound" aria-pressed="true"></button>
+    </span>
   </div>
   <div class="arena" id="arena">
     <div class="felt" id="felt">
@@ -177,7 +178,7 @@
     <div class="mybar">
       <div class="meseat" id="meSeat"></div>
       <span class="msg" id="statusMsg"></span>
-      <span class="turn-timer hidden" id="turnTimer" role="timer" aria-live="off"><span class="track"><i></i></span><b></b></span>
+      <span class="turn-timer rc-timer sm on-dark hidden" id="turnTimer" role="timer" aria-live="off"><b></b></span>
       <button class="ekahbtn hidden" id="ekahBtn">EKAH!</button>
       <button class="btn small hidden" id="passBtn">Keep card &amp; pass</button>
     </div>

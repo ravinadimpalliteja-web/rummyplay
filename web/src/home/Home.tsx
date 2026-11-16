@@ -5,6 +5,7 @@ import { pageHref } from "../lib/native";
 import { SAVE_KEYS, chessInProgress, hasSavedGame, sudokuInProgress } from "../lib/localSave";
 import elephantMark from "../brand/badge-logo-small.webp";
 import { GameArtDefs, EkahArt, LudoArt, SnakesArt, ChessArt, SudokuArt } from "./GameArt";
+import LearnRow from "./LearnRow";
 
 /* Royal Club home ("FINAL" design): mood shortcuts, a featured EKAH tile, full-art game tiles,
    resume card, a room-code box and the free-to-play promise. All artwork is original. */
@@ -72,9 +73,10 @@ const ART: Partial<Record<GameId, () => ReactNode>> = { ludo: () => <LudoArt />,
 export interface HomeProps {
   onOpen: (id: GameId) => void;
   onJoin: (id: "ludo" | "snakes", code: string) => void;
+  onProfile: () => void;
 }
 
-export default function Home({ onOpen, onJoin }: HomeProps) {
+export default function Home({ onOpen, onJoin, onProfile }: HomeProps) {
   const [mood, setMood] = useState<Mood | null>(null);
   const [resume] = useState(findResume);
   const [code, setCode] = useState("");
@@ -143,11 +145,13 @@ export default function Home({ onOpen, onJoin }: HomeProps) {
           {!mood && (
             <div className="rc-tile rc-soon">
               <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#7A5A1C" strokeWidth="1.8" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
-              <span><strong>Coming soon</strong><small>Spades · Business · more</small></span>
+              <span><strong>More games coming</strong><small>Spades, Business and more are on the way</small></span>
             </div>
           )}
         </div>
       </section>
+
+      <LearnRow />
 
       <section id="rc-friends" className="rc-friends" aria-labelledby="rc-friends-title">
         <div className="rc-card rc-join">
@@ -178,12 +182,17 @@ export default function Home({ onOpen, onJoin }: HomeProps) {
           <span className="rc-promise-mark"><img src={elephantMark} alt="" width={320} height={224} /></span>
           <span><strong>Free to play. Always.</strong><small>No real money, no betting, no deposits. Royal Club for Android is coming soon.</small></span>
         </div>
+        <nav className="rc-info-links" aria-label="About Royal Club">
+          <a href={pageHref("/about/")}>About</a><a href={pageHref("/contact/")}>Contact</a><a href={pageHref("/privacy/")}>Privacy</a><a href={pageHref("/terms/")}>Terms</a>
+        </nav>
       </section>
 
       <nav className="rc-bottom" aria-label="Quick links">
         <button type="button" onClick={() => scrollTo("rc-top")}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /></svg>Home</button>
         <button type="button" onClick={() => { setMood(null); scrollTo("rc-games"); }}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></svg>Games</button>
         <button type="button" onClick={() => scrollTo("rc-friends")}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="9" cy="8" r="3.5" /><circle cx="17" cy="9" r="2.5" /><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5M15.5 14.6c2.6.1 4.6 1.9 5.2 4.9" /></svg>Friends</button>
+        <button type="button" onClick={() => scrollTo("rc-learn")}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 6.5C5.5 5 8.5 5 12 7c3.5-2 6.5-2 9-.5V19c-2.5-1.5-5.5-1.5-9 .5-3.5-2-6.5-2-9-.5z" /><path d="M12 7v12.5" /></svg>Learn</button>
+        <button type="button" onClick={onProfile}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21c1-4.2 4.2-6.5 8-6.5s7 2.3 8 6.5" /></svg>Profile</button>
       </nav>
     </div>
   );

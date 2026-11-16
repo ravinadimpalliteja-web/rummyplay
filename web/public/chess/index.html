@@ -317,7 +317,7 @@ html body .club-back{flex:none}
     <div class="modes">
       <button class="mode" type="button" data-mode="ai" aria-pressed="true"><span class="ico">♚</span><b>Play vs Computer</b><span>Easy, Medium or Hard.</span></button>
       <button class="mode" type="button" data-mode="local" aria-pressed="false"><span class="ico">♙</span><b>Pass &amp; Play</b><span>Two players on this phone.</span></button>
-      <button class="mode mode-wide" type="button" data-mode="multiplayer" aria-pressed="false"><span class="ico">♟</span><b>Multiplayer <small class="coming-soon-label">Coming Soon</small></b><span>Private rooms and online matches are coming soon.</span></button>
+      <button class="mode mode-wide" type="button" data-mode="multiplayer" aria-pressed="false" hidden><span class="ico">♟</span><b>Multiplayer <small class="coming-soon-label">Coming Soon</small></b><span>Private rooms and online matches are coming soon.</span></button>
     </div>
     <a class="learn-card" href="learn.html" id="learnLink"><span class="learn-ico" aria-hidden="true">♔</span><span class="learn-txt"><b>Learn Chess</b><span>32 interactive classes, from first moves to tournaments. First 3 free.</span></span><span class="learn-go" aria-hidden="true">→</span></a>
     <section class="multiplayer-panel" id="multiplayerPanel" hidden aria-labelledby="multiplayerTitle">
@@ -597,6 +597,8 @@ html body .club-back{flex:none}
   });
   $('resumeBtn').addEventListener('click', () => { const s = store.get(SAVE_KEY); if (s) startGame(s); });
   $('homeBtn').addEventListener('click', showSetup);
+  // In a game, ← goes back to the Chess menu (the game is saved there), like Sudoku; on the menu it goes to Royal Club.
+  $('clubLink').addEventListener('click', (e) => { if (!$('game').hidden) { e.preventDefault(); showSetup(); } });
   $('topAction').addEventListener('click', showSetup);
   const cap = (s) => s[0].toUpperCase() + s.slice(1);
 
@@ -604,6 +606,7 @@ html body .club-back{flex:none}
     if (game && game.clock && !isOver() && !paused) { if (clockOn()) game.clock[g.turn()] = left(g.turn()); paused = true; save(); }   // a timed game waits
     hint = null; hintBusy = false;
     $('setup').hidden = false; $('game').hidden = true; $('topAction').hidden = true;
+    $('clubLink').setAttribute('aria-label', 'Back to Royal Club');
     const s = store.get(SAVE_KEY);
     $('resumeBtn').hidden = !(s && s.sans && s.sans.length && !s.result);
   }
@@ -618,6 +621,7 @@ html body .club-back{flex:none}
     orient = game.mode === 'ai' ? game.human : 'w';
     selected = null; overInfo = null; promoPending = null; overlayHidden = false; lastAnimated = g.history().length;
     $('setup').hidden = true; $('game').hidden = false; $('topAction').hidden = false;
+    $('clubLink').setAttribute('aria-label', 'Back to the Chess menu');
     save(); render(); maybeComputer();
     if (!game.sans.length) sound.play('start');
   }

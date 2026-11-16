@@ -447,6 +447,8 @@ function SettingsTab() {
     <p className="rx-note">Sound is set inside each game.</p>
     <h2 className="rx-kicker">ABOUT</h2>
     <section className="rx-card-box rx-list" aria-label="About">
+      <LinkRow label="About Royal Club" href="/about/" />
+      <LinkRow label="Contact us" href="/contact/" />
       <LinkRow label="Privacy Policy" href="/privacy/" />
       <LinkRow label="Terms of Service" href="/terms/" />
       <LinkRow label="Delete my account" href="/delete-account/" />

@@ -58,7 +58,7 @@ export function ClubBar({ game, onBack }: { game: string; onBack: () => void }) 
 type Tab = "computer" | "friends" | "online";
 const TAB_KEY = (game: string) => `rc-tab-${game.toLowerCase().replace(/[^a-z]+/g, "-")}`;
 
-/** The start screen, laid out like EKAH's: three tabs (Vs Computer / With Friends / Online), one panel at a time. */
+/** The start screen, laid out like EKAH's: tabs (Vs Computer / With Friends; Online once it is ready), one panel at a time. */
 export function PlayStart(p: StartProps) {
   const f = p.friends;
   const [tab, setTabState] = useState<Tab>(() => {
@@ -66,7 +66,9 @@ export function PlayStart(p: StartProps) {
     try { const t = window.localStorage.getItem(TAB_KEY(p.game)); return t === "friends" ? "friends" : "computer"; } catch { return "computer"; }
   });
   const setTab = (t: Tab) => { setTabState(t); if (t !== "online") try { window.localStorage.setItem(TAB_KEY(p.game), t); } catch { /* storage off */ } };
-  const tabs: [Tab, ReactNode][] = [["computer", "Vs Computer"], ["friends", "With Friends"], ["online", <>Online <small className="rs-soon-tag">Soon</small></>]];
+  // An "Online" tab joins these when matchmaking with other players is ready (the panel below is kept for then).
+  const ONLINE_READY = false;
+  const tabs: [Tab, ReactNode][] = [["computer", "Vs Computer"], ["friends", "With Friends"], ...(ONLINE_READY ? [["online", "Online"] as [Tab, ReactNode]] : [])];
   return <section className={`mode-page rs-page ${p.className ?? ""}`}>
     <div className="rs-watermark" aria-hidden="true" />
     <ClubBar game={p.game} onBack={p.onBack} />
@@ -80,7 +82,7 @@ export function PlayStart(p: StartProps) {
       <div className="rs-modes">
         <div className="rs-tabs" role="tablist" aria-label="How to play">
           {tabs.map(([id, label]) => <button key={id} role="tab" type="button" id={`rs-tab-${id}`} aria-controls={`rs-panel-${id}`} aria-selected={tab === id} tabIndex={tab === id ? 0 : -1} className={tab === id ? "on" : ""} onClick={() => setTab(id)}
-            onKeyDown={e => { if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return; const i = tabs.findIndex(t => t[0] === id), to = tabs[(i + (e.key === "ArrowRight" ? 1 : 2)) % 3][0]; setTab(to); document.getElementById(`rs-tab-${to}`)?.focus(); }}>{label}</button>)}
+            onKeyDown={e => { if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return; const i = tabs.findIndex(t => t[0] === id), to = tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length][0]; setTab(to); document.getElementById(`rs-tab-${to}`)?.focus(); }}>{label}</button>)}
         </div>
 
         {tab === "computer" && <div className="rs-panel rs-tabpanel" role="tabpanel" id="rs-panel-computer" aria-labelledby="rs-tab-computer">
@@ -104,7 +106,7 @@ export function PlayStart(p: StartProps) {
           {p.passPlay && <div className="rs-pass">{p.passPlay}</div>}
         </div>}
 
-        {tab === "online" && <div className="rs-panel rs-tabpanel rs-soon" role="tabpanel" id="rs-panel-online" aria-labelledby="rs-tab-online">
+        {ONLINE_READY && tab === "online" && <div className="rs-panel rs-tabpanel rs-soon" role="tabpanel" id="rs-panel-online" aria-labelledby="rs-tab-online">
           <span className="rs-soon-badge">Coming soon</span>
           <h3>Play online</h3>
           <p className="rs-note">Get matched with players from around the world. Until then, create a room and play with your friends.</p>

@@ -157,8 +157,8 @@
 .sl-msg .sl-dot{margin-right:6px;vertical-align:1px}
 .sl-small{margin:0;text-align:center;color:var(--sl-gold);font-size:12px}
 .sl-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
-.timer-chip{position:absolute;top:0;right:0;padding:2px 9px;border:1px solid #987b42;border-radius:999px;background:rgba(3,28,19,.8);color:#f1dfb4;font-size:11px;font-weight:700}
-.timer-chip.urgent{border-color:#f08f7f;color:#ffd2c9}
+.timer-chip{position:absolute;top:0;right:0;line-height:0}
+.sl-head.rc-bar{display:flex;padding:0;min-height:44px}
 
 /* sheets: settings, rules and chat open over the game */
 .sl-backdrop{position:fixed;inset:0;z-index:40;background:rgba(0,10,6,.5)}

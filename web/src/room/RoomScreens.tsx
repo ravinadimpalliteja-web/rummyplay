@@ -2,6 +2,8 @@ import { useState, type ReactNode } from "react";
 import "./room.css";
 import { openAuth, useAccount } from "../auth/account";
 import { copyText, shareOnWhatsApp } from "../lib/share";
+import { isNativeApp } from "../lib/native";
+import AppLobby from "../app/AppLobby";
 
 /* The Royal Club room format, shared by every game (modelled on EKAH). Use these two screens for any new game:
 
@@ -37,6 +39,10 @@ export type StartProps = {
   after?: ReactNode;                    // below the boxes (for example style choices)
   rules?: ReactNode;                    // shown under "How to play"
   className?: string;
+  /* Used by the Android app's lobby (src/app/AppLobby.tsx): */
+  art?: ReactNode;                      // the game's artwork for the top of the lobby
+  meta?: string;                        // short line under the name, e.g. "2–4 players · about 15 min"
+  passStart?: () => void;               // starts pass & play (shows the Pass & Play mode card with `passPlay` as its options)
 };
 
 /** Who you'll be in rooms: your username, or a prompt to sign in. */
@@ -58,8 +64,13 @@ export function ClubBar({ game, onBack }: { game: string; onBack: () => void }) 
 type Tab = "computer" | "friends" | "online";
 const TAB_KEY = (game: string) => `rc-tab-${game.toLowerCase().replace(/[^a-z]+/g, "-")}`;
 
-/** The start screen, laid out like EKAH's: tabs (Vs Computer / With Friends; Online once it is ready), one panel at a time. */
+/** The start screen. In the Android app: the app-style lobby (AppLobby). On the website: laid out like EKAH's, with tabs
+    (Vs Computer / With Friends; Online once it is ready), one panel at a time. */
+const NATIVE = isNativeApp();
 export function PlayStart(p: StartProps) {
+  return NATIVE ? <AppLobby {...p} /> : <WebPlayStart {...p} />;
+}
+function WebPlayStart(p: StartProps) {
   const f = p.friends;
   const [tab, setTabState] = useState<Tab>(() => {
     if (p.msg) return "friends";

@@ -63,6 +63,11 @@ jobs:
         run: |
           if [ "$HAS_FIREBASE" = "true" ]; then npm install --no-save @capacitor-firebase/crashlytics@^8; fi
           npx cap add android
+          # Dark night-green behind the status and navigation bars (the app keeps every screen between them),
+          # instead of the default white window.
+          printf '%s\n' '<?xml version="1.0" encoding="utf-8"?>' '<resources><color name="rc_bars">#06140F</color></resources>' > android/app/src/main/res/values/rc_colors.xml
+          sed -i 's#<item name="windowNoTitle">true</item>#<item name="windowNoTitle">true</item>\n        <item name="android:windowBackground">@color/rc_bars</item>#' android/app/src/main/res/values/styles.xml
+          grep -n "windowBackground" android/app/src/main/res/values/styles.xml || echo "note: windowBackground not added (template changed)"
           if [ "$HAS_FIREBASE" = "true" ]; then
             printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
             # Crashlytics Gradle plugin (the Google Services plugin is already in Capacitor's project and is applied

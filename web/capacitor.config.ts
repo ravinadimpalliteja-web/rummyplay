@@ -11,14 +11,16 @@ const config: CapacitorConfig = {
   appId: "com.royalclubgames.app",
   appName: "Royal Club",
   webDir: "dist",
-  backgroundColor: "#FAF5E9",
+  /* Shown behind the status and navigation bars (and while a page loads): the app's dark night-green. */
+  backgroundColor: "#06140F",
   android: { allowMixedContent: false },
   plugins: {
     SplashScreen: { launchShowDuration: 1200, backgroundColor: "#FAF5E9", showSpinner: false },
-    /* Capacitor 8 / Android 16 draw the app edge to edge. "css" keeps Capacitor's default: pages without
-       viewport-fit=cover are padded natively between the status and navigation bars; pages with it
-       (EKAH, Chess, Sudoku) get correct --safe-area-inset-* CSS variables. */
-    SystemBars: { insetsHandling: "css", style: "LIGHT" },  // dark status-bar icons on the ivory background
+    /* No page asks for viewport-fit=cover, so Capacitor keeps every screen between the status bar and the
+       navigation bar (native padding): nothing is ever drawn under the time, network or battery icons.
+       style DARK = light icons, readable on the dark bars. During a game the status bar is hidden for a
+       full-screen board (app-mode.js); a swipe down from the top shows it for a moment. */
+    SystemBars: { insetsHandling: "css", style: "DARK" },
     /* Live updates (src/lib/liveUpdate.ts) decide themselves when to download; the plugin only installs and,
        if a new version does not start within 10 s, goes back to the previous one. A new app from the
        Play Store drops downloaded updates, so it always starts on its own packaged code. */

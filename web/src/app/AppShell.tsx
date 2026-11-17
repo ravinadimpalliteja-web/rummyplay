@@ -65,8 +65,22 @@ function useNow(ms = 1000) {
 const left = (ms: number) => { const s = Math.max(0, Math.ceil(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60); return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m ${String(s % 60).padStart(2, "0")}s`; };
 const buzz = (ms: number) => { try { navigator.vibrate?.(ms); } catch { /* no vibrator */ } };
 
-/** Game-style dialog (leave a game, close the app). */
-export function RxDialog({ title, text, yes, no, onYes, onNo }: { title: string; text: string; yes: string; no: string; onYes: () => void; onNo: () => void }) {
+/** Game-style dialog. tone "leave" (leave a game, close the app): an ivory card that stands out on any screen, with a
+    big gold STAY (the safe choice, focused first) and a smaller red button to leave. Default: the green dialog. */
+export function RxDialog({ title, text, yes, no, onYes, onNo, tone }: { title: string; text: string; yes: string; no: string; onYes: () => void; onNo: () => void; tone?: "leave" }) {
+  if (tone === "leave") return <div className="rx-scrim rx-scrim-dark" role="presentation" onClick={onNo}>
+    <div className="rx-leave" role="alertdialog" aria-modal="true" aria-labelledby="rx-dlg-t" aria-describedby="rx-dlg-p" onClick={e => e.stopPropagation()}>
+      <span className="rx-leave-badge" aria-hidden="true">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M15 4h4v16h-4" /><path d="M10 8l-4 4 4 4" /><path d="M6 12h10" /></svg>
+      </span>
+      <h2 id="rx-dlg-t">{title}</h2>
+      <p id="rx-dlg-p">{text}</p>
+      <div className="rx-leave-btns">
+        <button type="button" className="rx-btn rx-stay" onClick={onNo} autoFocus>{no}</button>
+        <button type="button" className="rx-btn rx-red" onClick={onYes}>{yes}</button>
+      </div>
+    </div>
+  </div>;
   return <div className="rx-scrim" role="presentation" onClick={onNo}>
     <div className="rx-dialog" role="alertdialog" aria-modal="true" aria-labelledby="rx-dlg-t" onClick={e => e.stopPropagation()}>
       <h2 id="rx-dlg-t">{title}</h2>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { App as NativeApp } from "@capacitor/app";
 import { isListed, type GameId } from "../domain/game";
 import { pageHref } from "../lib/native";
@@ -10,6 +10,7 @@ import { TILES, RESUME, findResume, type RoomGame } from "../home/Home";
 import * as R from "../economy/rules";
 import { claimChest, claimDaily, claimMission, collectGames, refreshDay, unlockLook, useWallet, useWalletReady, type Earned } from "../economy/wallet";
 import { BGS, bgVars, setBg, useBg } from "./theme";
+import Glider from "./Glider";
 import "./app-shell.css";
 
 /* The Android app's own layout, "Royal Durbar" (design: Royal Club app — screen designs, page "Final choice"):
@@ -65,8 +66,22 @@ function useNow(ms = 1000) {
 const left = (ms: number) => { const s = Math.max(0, Math.ceil(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60); return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m ${String(s % 60).padStart(2, "0")}s`; };
 const buzz = (ms: number) => { try { navigator.vibrate?.(ms); } catch { /* no vibrator */ } };
 
-/** Game-style dialog (leave a game, close the app). */
-export function RxDialog({ title, text, yes, no, onYes, onNo }: { title: string; text: string; yes: string; no: string; onYes: () => void; onNo: () => void }) {
+/** Game-style dialog. tone "leave" (leave a game, close the app): an ivory card that stands out on any screen, with a
+    big gold STAY (the safe choice, focused first) and a smaller red button to leave. Default: the green dialog. */
+export function RxDialog({ title, text, yes, no, onYes, onNo, tone }: { title: string; text: string; yes: string; no: string; onYes: () => void; onNo: () => void; tone?: "leave" }) {
+  if (tone === "leave") return <div className="rx-scrim rx-scrim-dark" role="presentation" onClick={onNo}>
+    <div className="rx-leave" role="alertdialog" aria-modal="true" aria-labelledby="rx-dlg-t" aria-describedby="rx-dlg-p" onClick={e => e.stopPropagation()}>
+      <span className="rx-leave-badge" aria-hidden="true">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M15 4h4v16h-4" /><path d="M10 8l-4 4 4 4" /><path d="M6 12h10" /></svg>
+      </span>
+      <h2 id="rx-dlg-t">{title}</h2>
+      <p id="rx-dlg-p">{text}</p>
+      <div className="rx-leave-btns">
+        <button type="button" className="rx-btn rx-stay" onClick={onNo} autoFocus>{no}</button>
+        <button type="button" className="rx-btn rx-red" onClick={onYes}>{yes}</button>
+      </div>
+    </div>
+  </div>;
   return <div className="rx-scrim" role="presentation" onClick={onNo}>
     <div className="rx-dialog" role="alertdialog" aria-modal="true" aria-labelledby="rx-dlg-t" onClick={e => e.stopPropagation()}>
       <h2 id="rx-dlg-t">{title}</h2>
@@ -169,16 +184,12 @@ function HomeStage({ games, game, onPick, onOpen, onTab, onFriends }: {
   games: GameId[]; game: GameId; onPick: (id: GameId) => void; onOpen: (id: GameId) => void; onTab: (t: AppTab) => void; onFriends: (g: RoomGame) => void;
 }) {
   const w = useWallet(), now = useNow();
-  const i = Math.max(0, games.indexOf(game)), n = games.length;
-  const at = (k: number) => games[(i + k + n) % n];
   const tile = TILES.find(t => t.id === game)!;
   const resume = findResume();
   const room = resume && resume.code && resume.id === game ? resume : null;
   const saved = !room && (SAVED[game]?.() ?? false);
   const chest = R.chestStatus(w, now), daily = R.dailyStatus(w, now), missions = R.missionView(w, now);
   const done = missions.list.filter(m => m.claimed).length;
-  const drag = useRef<number | null>(null), swiped = useRef(false);
-  const go = (k: number) => { onPick(at(k)); buzz(8); };
   const roomGame = RESUME.some(r => r.id === game && isListed(r.id)) ? (game as RoomGame) : null;
 
   return <div className="rx-page rx-home">
@@ -197,33 +208,37 @@ function HomeStage({ games, game, onPick, onOpen, onTab, onFriends }: {
       </button>
     </div>
 
-    <div className="rx-stage"
-      onPointerDown={e => { drag.current = e.clientX; swiped.current = false; }}
-      onPointerUp={e => { if (drag.current === null) return; const dx = e.clientX - drag.current; drag.current = null; if (Math.abs(dx) > 40) { swiped.current = true; go(dx < 0 ? 1 : -1); } }}
-      onClickCapture={e => { if (swiped.current) { swiped.current = false; e.stopPropagation(); e.preventDefault(); } }}
-      onPointerCancel={() => { drag.current = null; }}>
-      <div className="rx-glow" aria-hidden="true" />
-      {n > 1 && <button type="button" className="rx-peek left" aria-label={`Previous game: ${TILES.find(t => t.id === at(-1))?.name}`} onClick={() => go(-1)}>{ART[at(-1)]()}</button>}
-      {n > 1 && <button type="button" className="rx-peek right" aria-label={`Next game: ${TILES.find(t => t.id === at(1))?.name}`} onClick={() => go(1)}>{ART[at(1)]()}</button>}
-      <button key={game} type="button" className="rx-card" onClick={() => onOpen(game)} aria-label={`Open ${tile.name}`}>
-        <span className="rx-card-art">{ART[game]()}</span>
-        <span className="rx-card-shade" aria-hidden="true" />
-        {(room || saved) && <span className="rx-badge green">● {room ? `Room ${room.code}` : "Saved game"}</span>}
-        <span className="rx-badge dark">{PLAYERS[game]}</span>
-        <span className="rx-ribbon"><span>{tile.name}</span></span>
-      </button>
-    </div>
+    <Glider items={games} selected={game} label={id => TILES.find(t => t.id === id)?.name ?? id}
+      onSelect={id => { onPick(id); buzz(8); }} onOpen={onOpen}
+      render={id => {
+        const name = TILES.find(t => t.id === id)?.name ?? id;
+        const r = resume && resume.code && resume.id === id ? resume : null;
+        const sv = !r && (SAVED[id]?.() ?? false);
+        return <>
+          <span className="rx-card-art">{ART[id]()}</span>
+          <span className="rx-card-shade" aria-hidden="true" />
+          {(r || sv) && <span className="rx-badge green">● {r ? `Room ${r.code}` : "Saved game"}</span>}
+          <span className="rx-badge dark">{PLAYERS[id]}</span>
+          <span className="rx-ribbon"><span>{name}</span></span>
+        </>;
+      }} />
     <div className="rx-medals" role="tablist" aria-label="Games">
       {games.map(g => <button key={g} type="button" role="tab" aria-selected={g === game} aria-label={TILES.find(t => t.id === g)?.name} className={`rx-medal${g === game ? " on" : ""}`} onClick={() => { onPick(g); buzz(8); }}>{ART[g]()}</button>)}
     </div>
 
     <div className="rx-actions">
-      <button type="button" className="rx-btn rx-saffron rx-big" onClick={() => onOpen(game)}>
-        {room ? "BACK TO ROOM" : saved ? "CONTINUE" : `PLAY ${tile.name.toUpperCase()}`}{saved && <small>· saved game</small>}
+      <button type="button" className="rx-go" onClick={() => onOpen(game)}>
+        <span className="rx-go-shine" aria-hidden="true" />
+        <span className="rx-go-thumb" aria-hidden="true">{ART[game]()}</span>
+        <span className="rx-go-text">
+          <strong>{room ? "BACK TO ROOM" : saved ? `CONTINUE ${tile.name.toUpperCase()}` : `PLAY ${tile.name.toUpperCase()}`}</strong>
+          <small>{room ? `Room ${room.code} · tap to return` : saved ? "Saved game · pick up where you left" : "Tap the card or here to start"}</small>
+        </span>
+        <span className="rx-go-play" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor" /></svg></span>
       </button>
       <div className="rx-two">
-        <button type="button" className="rx-btn rx-green" onClick={() => onOpen(game)}><Icon name="bot" size={21} />{SOLO[game] ?? "vs Computer"}</button>
-        <button type="button" className="rx-btn rx-blue" disabled={!roomGame} onClick={() => roomGame && onFriends(roomGame)}><Icon name="friends" size={21} />With Friends</button>
+        <button type="button" className="rx-btn rx-green" onClick={() => onOpen(game)}><Icon name="bot" size={20} />{SOLO[game] ?? "vs Computer"}</button>
+        <button type="button" className="rx-btn rx-blue" disabled={!roomGame} onClick={() => roomGame && onFriends(roomGame)}><Icon name="friends" size={20} />With Friends</button>
       </div>
     </div>
     <p className="rx-promise">Free to play · Coins are for fun only, never real money</p>

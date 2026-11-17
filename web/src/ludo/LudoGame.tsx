@@ -13,6 +13,7 @@ import { motionReduced, setMotionReduced } from "../lib/motion";
 import { inviteText } from "../lib/share";
 import { SAVE_KEYS, loadGame, saveGame, clearGame } from "../lib/localSave";
 import "./ludo.css";
+import { LudoArt } from "../home/GameArt";
 import { PlayStart, WaitingRoom } from "../room/RoomScreens";
 import { ROOM_SIGNIN_MSG, markPlayed, onRoomAuthError, roomAccount, useSeatLabel } from "../auth/account";
 
@@ -514,6 +515,7 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
   /* ---------- screens ---------- */
   const pending: LudoSave | null = local && local.phase !== "gameEnd" ? { game: local, mode: localMode, names: localNames } : saved;
   if (sub === "lobby" || (sub === "room" && !view)) return <PlayStart className="ld-mode" game="Ludo" tagline="Race your four tokens home. Cut, block and roll sixes."
+    art={<LudoArt />} meta="2–4 players · about 15 min" passStart={() => startLocal("pass")}
     onBack={onHome}
     vsComputer={{ count: bots, options: [1, 2, 3], onCount: setBots, onPlay: () => startLocal("practice") }}
     friends={{ onCreate: createRoom, code: roomCode, onCode: setRoomCode, pass: roomPass, onPass: setRoomPass, onJoin: joinRoom, busy: net === "connecting" }}

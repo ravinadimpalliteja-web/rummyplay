@@ -814,10 +814,22 @@
   $('resHome').addEventListener('click', () => goHome());
   $('leaveGame').addEventListener('click', () => {
     // the back arrow is small and easy to tap by mistake, so a game still in play asks first
-    if (view && view.phase === 'play' && !window.confirm('Leave this game?')) return;
-    goHome();
+    // (in the Android app with the app's own "Leave this game?" dialog, see app-mode.js)
+    if (!(view && view.phase === 'play')) { goHome(); return; }
+    if (typeof window.rcConfirm === 'function') {
+      window.rcConfirm({ title: 'Leave this game?', text: 'Games against the computer are saved, so you can continue later.' }).then((ok) => { if (ok) goHome(); });
+      return;
+    }
+    if (window.confirm('Leave this game?')) goHome();
   });
   $('leaveLobby').addEventListener('click', () => goHome());
+  // Android app back button (app-mode.js): from the lobby back to EKAH's home; after "Leave this game?" back home
+  window.rcAppBack = () => {
+    if (!$('lobby').classList.contains('hidden')) { goHome(); return true; }
+    if (!$('game').classList.contains('hidden') && !(view && view.phase === 'play')) { goHome(); return true; }
+    return false;
+  };
+  window.rcLeaveGame = () => goHome();
 
   // ---------- winning score ----------
   function readTarget(sel, custom) {

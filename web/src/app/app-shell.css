@@ -187,7 +187,22 @@
 .rx-switch.on{background:#3FA34D}
 .rx-switch.on span{transform:translateX(22px);background:#fff}
 
-/* dialogs and toast */
+/* dialogs and toast. Dialogs can open outside .rx (over a game), so they carry the colour variables themselves. */
+.rx-scrim{--rx-gold:#E9C46A;--rx-gold-dark:#B8862B;--rx-saffron:#F28C28;--rx-saffron-dark:#B85D0B;--rx-ink:#2A1605;--rx-ivory:#FFF8EA;
+  --rx-line:rgba(233,196,106,.38);--rx-glass:rgba(0,0,0,.28);font-family:'Baloo 2',system-ui,sans-serif}
+.rx-scrim.rx-scrim-dark{background:rgba(5,12,9,.74)}
+/* Leave a game / close the app: ivory card, big gold STAY, smaller red leave button. */
+.rx-leave{position:relative;width:min(100%,350px);margin-top:28px;padding:44px 20px 20px;border-radius:28px;text-align:center;color:#3A1F0A;
+  background:linear-gradient(180deg,#FFFBF2,#F6E9CF);border:4px solid #E9C46A;box-shadow:0 10px 0 #6E4E12,0 30px 60px rgba(0,0,0,.6);
+  animation:rx-pop .22s cubic-bezier(.2,1.4,.4,1)}
+.rx-leave-badge{position:absolute;left:50%;top:-34px;transform:translateX(-50%);display:flex;width:64px;height:64px;border-radius:32px;
+  align-items:center;justify-content:center;color:#fff;background:radial-gradient(circle at 35% 30%,#FF8A7A,#B3261E 60%,#6E120D);
+  border:4px solid #FFFBF2;box-shadow:0 6px 0 #6E120D}
+.rx-leave h2{margin:0;font:700 25px/1.2 'Cinzel',Georgia,serif;color:#5A1A0E}
+.rx-leave p{margin:8px 0 0;font-size:16px;font-weight:600;line-height:1.38;color:#5B4632}
+.rx-leave-btns{display:flex;flex-direction:column;gap:12px;margin-top:18px}
+.rx-stay{--edge:#B8862B;height:58px;font-size:21px;letter-spacing:.06em;background:linear-gradient(180deg,#FFE29A,#F5C542 55%,#D9A72C);color:#2A1605}
+.rx-red{--edge:#7A1A10;height:48px;font-size:17px;background:linear-gradient(180deg,#E25A4C,#C0392B 60%,#A12A1E);color:#fff}
 .rx-scrim{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,.6);animation:rx-fade .15s ease-out}
 @keyframes rx-fade{from{opacity:0}}
 .rx-dialog{position:relative;width:min(100%,360px);padding:22px 20px 20px;border-radius:26px;text-align:center;color:var(--rx-ivory);font-family:'Baloo 2',sans-serif;overflow:hidden;

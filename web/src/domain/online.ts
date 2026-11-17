@@ -17,13 +17,15 @@ export type View={
 
 /* ---------- server address ---------- */
 type Env={env?:Record<string,string|undefined>};
-/** The room server's address comes from the VITE_ROOM_SERVER_URL build setting. For local and preview testing only,
-    ?server=wss://... may override it (never on the live site). */
+/** The room server's address comes from the VITE_ROOM_SERVER_URL build setting. For testing only (local, previews and
+    test.royalclubgames.com, never the live site), ?server=wss://... may override it; it is remembered for the rest of the
+    browser session so every game page uses it (?server=off goes back to the normal one). */
 export const serverUrl=():string=>{
   const fromEnv=((import.meta as unknown as Env).env?.VITE_ROOM_SERVER_URL??"").trim();
   const host=window.location.hostname;
-  const testing=host==="localhost"||host==="127.0.0.1"||host.startsWith("deploy-preview-")||host.includes("--");
-  const q=testing?new URLSearchParams(window.location.search).get("server"):null;
+  const testing=host==="localhost"||host==="127.0.0.1"||host.startsWith("deploy-preview-")||host.includes("--")||host.startsWith("test.");
+  let q=testing?new URLSearchParams(window.location.search).get("server"):null;
+  try{if(testing){if(q==="off"){window.sessionStorage.removeItem("rc-server");q=null}else if(q)window.sessionStorage.setItem("rc-server",q);else q=window.sessionStorage.getItem("rc-server")}}catch{/* storage off */}
   const url=(q||fromEnv).trim();
   return /^wss?:\/\//.test(url)?url:"";
 };
@@ -48,7 +50,8 @@ export class RoomClient{
     this.onStatus("connecting");
     const ws=new WebSocket(this.url);this.ws=ws;
     ws.onopen=()=>{this.retries=0;this.onStatus("open");const code=savedRoom(this.opts.roomKey);ws.send(JSON.stringify(code?{t:"hello",code,token:deviceToken(),...(this.opts.game?{game:this.opts.game}:{})}:this.first))};
-    ws.onmessage=e=>{try{this.onMessage(JSON.parse(String(e.data)))}catch{/* ignore malformed */}};
+    /* {t:"ping"}: the room server checking this connection is alive (Cloudflare has no WebSocket ping), so answer it. */
+    ws.onmessage=e=>{try{const m=JSON.parse(String(e.data));if(m&&m.t==="ping"){ws.send('{"t":"pong"}');return}this.onMessage(m)}catch{/* ignore malformed */}};
     ws.onclose=()=>{if(this.closed||this.ws!==ws)return;this.ws=null;if(!savedRoom(this.opts.roomKey)){this.onStatus("idle");return}this.onStatus("down");this.timer=window.setTimeout(()=>this.connect(),Math.min(8000,700*2**this.retries++))};
   }
   send(o:object){if(this.ws&&this.ws.readyState===WebSocket.OPEN)this.ws.send(JSON.stringify(o))}

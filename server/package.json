@@ -5,6 +5,11 @@
   "description": "Royal Club live room server: Spades (4 real players), Snakes & Ladders and Ludo (2 to 4 real players) and EKAH (2 to 10 players, computer seats allowed). Zero dependencies.",
   "main": "server.js",
   "type": "commonjs",
-  "scripts": { "start": "node server.js", "test": "node test/auth.test.js && ROOM_AUTH=off sh -c 'node test/engine.test.js && node test/room.test.js && node test/snakes.test.js && node test/snakes-view.test.js && node test/ludo.test.js && node test/ekah.test.js && node test/room-bots.test.js && node test/sudoku.test.js && node test/timeout-rules.test.js'" },
-  "engines": { "node": ">=18" }
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/auth.test.js && ROOM_AUTH=off sh -c 'node test/engine.test.js && node test/room.test.js && node test/snakes.test.js && node test/snakes-view.test.js && node test/ludo.test.js && node test/ekah.test.js && node test/room-bots.test.js && node test/sudoku.test.js && node test/timeout-rules.test.js && node --import ./test/cf-register.mjs test/cloudflare.test.mjs'"
+  },
+  "engines": {
+    "node": ">=18"
+  }
 }

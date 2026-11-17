@@ -58,5 +58,15 @@ Zero dependencies (Node 18+). Rooms live in memory, so a restart ends any game i
 - A player who leaves or goes offline mid-race keeps their progress and can rejoin. The host sends `again` for a new race.
 
 ## Connect the website
-Set the Netlify build variable `VITE_ROOM_SERVER_URL` to the server's WebSocket address (for example
+Set the website build variable `VITE_ROOM_SERVER_URL` to the server's WebSocket address (for example
 `wss://royal-club-rooms.onrender.com`) and redeploy. For testing a preview, `?server=wss://...` can be added to the URL.
+
+## Running on Cloudflare (Workers + Durable Objects)
+The same rooms and game rules also run on Cloudflare (`cloudflare/worker.mjs`, shared logic in `hub.js`):
+no sleeping when idle, and the free Workers plan covers a lot of games.
+- `.github/workflows/rooms-cloudflare.yml` tests every pull request and deploys `main` once the repository secrets
+  `CLOUDFLARE_API_TOKEN` (template "Edit Cloudflare Workers") and, if needed, `CLOUDFLARE_ACCOUNT_ID` exist.
+- All rooms live in one Durable Object placed in Asia-Pacific. Cloudflare has no server WebSocket ping, so the
+  heartbeat sends `{"t":"ping"}` and the games reply `{"t":"pong"}`.
+- To try it before switching: open the test site with `?server=wss://royal-club-rooms.<account>.workers.dev`.
+  To switch everyone: set `VITE_ROOM_SERVER_URL` to that address (website build and the app workflows) and redeploy.

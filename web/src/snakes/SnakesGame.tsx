@@ -17,6 +17,7 @@ import { motionReduced, setMotionReduced } from "../lib/motion";
 import { inviteText } from "../lib/share";
 import { SAVE_KEYS, loadGame, saveGame, clearGame } from "../lib/localSave";
 import "./snakes.css";
+import { SnakesArt } from "../home/GameArt";
 
 const ROOM_KEY = "rc-snakes-room", PIECE_KEY = "rc-snakes-piece";
 const MODEL_KEY = "rc-snakes-board", THEME_KEY = "rc-snakes-theme", DICE_KEY = "rc-snakes-dice", VIEW_KEY = "rc-snakes-view", TABLE_KEY = "rc-snakes-table";
@@ -821,6 +822,7 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
   /* ---------- screens ---------- */
   const pending: SLSave | null = local && local.phase !== "gameEnd" ? { game: local, names: localNames, pieces: localPieces } : saved;
   const startScreen = <PlayStart className="sl-mode" game="Snakes & Ladders" tagline="Climb the ladders, dodge the snakes, first to 100 wins."
+    art={<SnakesArt />} meta="2–4 players · about 10 min"
     onBack={onHome}
     vsComputer={{ count: bots, options: [1, 2, 3], onCount: setBots, onPlay: choosePracticeTokens, playLabel: "Choose tokens →" }}
     friends={{ onCreate: createRoom, code: roomCode, onCode: setRoomCode, pass: roomPass, onPass: setRoomPass, onJoin: joinRoom, busy: net === "connecting" }}

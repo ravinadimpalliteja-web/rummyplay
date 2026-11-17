@@ -3,10 +3,11 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { GameBar, IconButton, PaletteIcon, RulesIcon, SoundIcon, TurnTimer } from "../ui/GameBar";
 import { RoomClient, deviceToken, randomPasscode, saveRoom, savedRoom, serverUrl, type NetStatus } from "../domain/online";
 import {
-  ANIM, COLORS, LANE, SAFE, SPOTS, TRACK, YARD, bestMove, cellKey, move, newGame, pointOf, previewMove, roll, rollDie, turnOf,
+  ANIM, COLORS, LANE, SAFE, SPOTS, TRACK, YARD, absOf, bestMove, cellKey, move, newGame, pointOf, previewMove, roll, rollDie, turnOf,
   type Color, type LudoEvent, type LudoGame as Game, type Tok,
 } from "./engine";
-import { DICE, Face, Piece, PieceDefs, TOKEN_SETS, isUnlocked, setPips, unlockText, type DiceId, type Stats, type TokenSet } from "./pieces";
+import { DICE, Face, Piece, PieceDefs, TOKEN_SETS, isUnlocked, setPips, unlockText, type DiceId, type TokenSet } from "./pieces";
+import { useRealWins } from "./realWins";
 import { celebrate } from "../snakes/confetti";
 import { motionReduced, setMotionReduced } from "../lib/motion";
 import { inviteText } from "../lib/share";
@@ -24,8 +25,6 @@ const PHRASES = ["Nice move! 👍", "Good luck 🍀", "Well played 👏", "Oops!
 const VICTIM = [3, 6], HUNTER = [0];
 const TOKEN_KEY = "rc-ludo-tokens", DICE_KEY = "rc-ludo-dice";
 const readKey = <T extends string>(key: string, ok: readonly string[], dflt: T): T => { try { const v = window.localStorage.getItem(key); return v && ok.includes(v) ? (v as T) : dflt; } catch { return dflt; } };
-const STATS_KEY = "rc-ludo-stats";
-const readStats = (): Stats => { try { const v = JSON.parse(window.localStorage.getItem(STATS_KEY) ?? "{}"); return { played: Number(v.played) || 0, wins: Number(v.wins) || 0 }; } catch { return { played: 0, wins: 0 }; } };
 const keep = (key: string, v: string) => { try { window.localStorage.setItem(key, v); } catch { /* storage off: still works for this visit */ } };
 const ORD = ["1st", "2nd", "3rd", "4th"];
 /* A game on this device (vs computer or pass & play), saved after every move so it survives closing the app. */
@@ -50,6 +49,7 @@ type LView = {
   phase: "lobby" | "playing" | "gameEnd"; seats: SeatInfo[];
   order?: number[]; colors?: Record<number, Color>; tokens?: Record<number, Tok[]>; turn?: number; stage?: "roll" | "move" | "gameEnd";
   dice?: number; sixes?: number; moves?: number[]; ranks?: number[]; last?: LudoEvent | null; deadline?: number | null; moving?: boolean;
+  winCounts?: boolean;   // set once someone finishes 1st: whether that 1st place counts toward token unlocks
 };
 type Mode = "practice" | "pass" | "online";
 /** One shape for the table, whether the game runs here (Practice, Pass & play) or on the room server (Room). */
@@ -122,13 +122,39 @@ function hiss(dur: number, freq: number, vol = .08, when = 0, endFreq?: number, 
     src.connect(f).connect(g).connect(ac.destination); src.start(t0); src.stop(t0 + dur + .02);
   } catch { /* no audio */ }
 }
-/** The capture duel: wind-up, a spear whoosh, a metal clash with a thud, and the captured token flying off with a falling cry. */
-const sDuel = (spear: boolean) => {
-  hiss(.22, 900, .05, .12, 2600);                                         // wind-up swish
-  if (spear) { hiss(.16, 3200, .09, .34, 6000, 2); tone(2350, .28, "triangle", .05, .38); tone(3130, .22, "sine", .03, .4); }   // clash of steel
-  tone(140, .18, "sine", .14, .38, 60); hiss(.08, 400, .1, .38);          // thud of the hit
-  tone(660, .5, "triangle", .05, .46, 180);                               // the captured token's falling "whoaa"
+/** The capture duel, a sound for each token set: the attacker's move (spear clash, hooves and a neigh, a trumpet and
+    stomp, a growl and claw swipe, a peacock call, a rumbling ram), then the thud of the hit and the captured token's
+    falling "whoaa". The hit lands about 0.38s in, when the attacker strikes. */
+const sDuel = (set: TokenSet) => {
+  hiss(.22, 900, .05, .12, 2600);                                                        // wind-up swish
+  switch (set) {
+    case "sentry": hiss(.16, 3200, .09, .34, 6000, 2); tone(2350, .28, "triangle", .05, .38); tone(3130, .22, "sine", .03, .4); break;   // clash of steel
+    case "horse":
+      [0, .08, .2, .28].forEach(w => tone(110, .06, "sine", .12, .02 + w, 70));          // hooves
+      tone(980, .1, "triangle", .05, .16, 1500); tone(1500, .22, "triangle", .045, .26, 760);   // neigh
+      break;
+    case "elephant":
+      tone(320, .34, "sawtooth", .045, .1, 760); tone(330, .34, "sawtooth", .035, .11, 780);    // trumpet
+      tone(62, .3, "sine", .2, .38, 40); hiss(.24, 220, .09, .38, 120, .8);                     // heavy stomp
+      break;
+    case "tiger":
+      hiss(.42, 160, .12, .02, 120, 6); tone(82, .4, "sawtooth", .05, .02, 70);                // growl
+      hiss(.1, 4200, .08, .36, 7000, 2); hiss(.1, 3800, .06, .42, 6400, 2);                   // claw swipes
+      break;
+    case "peacock":
+      tone(1250, .14, "triangle", .05, .12, 1750); tone(1750, .22, "triangle", .05, .26, 1100); // "may-awe" call
+      hiss(.3, 1800, .06, .36, 900);                                                          // gust of the fan
+      break;
+    case "chariot":
+      hiss(.36, 140, .1, .02, 260, 1.5); tone(70, .36, "square", .025, .02, 90);              // wheels rumbling
+      hiss(.14, 900, .1, .38, 300, 1); tone(200, .14, "square", .04, .38, 120);               // wooden crash
+      break;
+  }
+  tone(140, .18, "sine", .14, .38, 60); hiss(.08, 400, .1, .38);                         // thud of the hit
+  tone(660, .5, "triangle", .05, .46, 180);                                              // the captured token's falling "whoaa"
 };
+/** Landing on a safe square (a starred square or a start square): a small, low "shield" buzz with a soft chime on top. */
+const sSafe = () => { tone(196, .11, "square", .022, 0, 220); tone(784, .16, "sine", .045, .04); tone(1175, .2, "sine", .03, .09); };
 const sHome = () => [523, 659, 784, 1047].forEach((f, i) => tone(f, .18, "triangle", .06, i * .08));
 const sWin = () => [392, 523, 659, 784, 659, 1047].forEach((f, i) => tone(f, .26, "triangle", .07, i * .13));
 
@@ -173,14 +199,15 @@ function BoardArt() {
 }
 
 /** Previews of every token set (all four colours) and every dice finish, for the lobby and the in-game Style sheet. */
-function StylePicker({ tokens, dice, stats, onTokens, onDice }: { tokens: TokenSet; dice: DiceId; stats: Stats; onTokens: (t: TokenSet) => void; onDice: (d: DiceId) => void }) {
+function StylePicker({ tokens, dice, wins, signedIn, onTokens, onDice }: { tokens: TokenSet; dice: DiceId; wins: number; signedIn: boolean; onTokens: (t: TokenSet) => void; onDice: (d: DiceId) => void }) {
   return <div className="ld-style">
     <b className="ld-style-title">Tokens</b>
+    <p className="ld-small ld-unlock-rule">New tokens unlock as you win: finish 1st in a room with at least one real player.</p>
     <div className="ld-token-grid">{TOKEN_SETS.map(s => {
-      const open = isUnlocked(s.id, stats);
+      const open = isUnlocked(s.id, wins);
       return <button key={s.id} className={`${tokens === s.id ? "on" : ""}${open ? "" : " locked"}`} aria-pressed={tokens === s.id} aria-disabled={!open} onClick={() => open && onTokens(s.id)}>
         <span className="ld-token-row">{COLORS.map(c => <Piece key={c} set={s.id} color={c} />)}</span>
-        <strong>{open ? s.name : `🔒 ${s.name}`}</strong><small>{open ? s.note : unlockText(s.id, stats)}</small>
+        <strong>{open ? s.name : `🔒 ${s.name}`}</strong><small>{open ? s.note : unlockText(s.id, wins, signedIn)}</small>
       </button>;
     })}</div>
     <b className="ld-style-title">Dice</b>
@@ -216,12 +243,13 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
   const [tokenSet, setTokenSet] = useState<TokenSet>(() => readKey(TOKEN_KEY, TOKEN_SETS.map(x => x.id), "sentry"));
   const [dice, setDice] = useState<DiceId>(() => readKey(DICE_KEY, DICE.map(x => x.id), "ivory"));
   const chooseTokens = (v: TokenSet) => { setTokenSet(v); keep(TOKEN_KEY, v); };
-  const [stats, setStats] = useState<Stats>(readStats);
-  const shownSet: TokenSet = isUnlocked(tokenSet, stats) ? tokenSet : "sentry";
+  const realWins = useRealWins("ludo");
+  const shownSet: TokenSet = isUnlocked(tokenSet, realWins.wins) ? tokenSet : "sentry";
   const shownSetRef = useRef(shownSet); shownSetRef.current = shownSet;
   const [banner, setBanner] = useState<{ id: number; text: string; big: boolean } | null>(null);
   const [homeFx, setHomeFx] = useState(0);
   const [unlockedNow, setUnlockedNow] = useState<string[]>([]);
+  const [winCounted, setWinCounted] = useState(false);
   const showBanner = (text: string, big = false) => { const id = Date.now(); setBanner({ id, text, big }); window.setTimeout(() => setBanner(b => (b && b.id === id ? null : b)), big ? 2600 : 1800); };
   const chooseDice = (v: DiceId) => { setDice(v); keep(DICE_KEY, v); };
   const dieEls = useRef<Record<number, HTMLElement | null>>({});
@@ -361,6 +389,8 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
     if (base[l.seat]) base[l.seat][l.token] = { ...l.from };
     setMoving(`${l.seat}-${l.token}`);
     for (const st of l.steps) { base[l.seat][l.token] = st; setDisp(copyTokens(base)); sStep(); await wait(ANIM.step); }
+    const end = l.steps[l.steps.length - 1];
+    if (end && end.s === "track" && SAFE.has(absOf(t.colors[l.seat], end.r))) { sSafe(); try { navigator.vibrate?.(22); } catch { /* not supported */ } }
     setMoving(null);
     if (l.cuts.length) {
       const vic = l.cuts.map(c => `${c.seat}-${c.token}`);
@@ -373,7 +403,7 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
       } else {
         /* the duel: the two tokens step apart, the attacker winds up and strikes (sentries thrust their spear),
            the captured token is knocked flying off the square, then drops back into its yard */
-        setDuel({ atk: `${l.seat}-${l.token}`, vic }); sDuel(shownSetRef.current === "sentry");
+        setDuel({ atk: `${l.seat}-${l.token}`, vic }); sDuel(shownSetRef.current);
         try { navigator.vibrate?.([0, 380, 40]); } catch { /* not supported */ }
         await wait(1050);
         for (const c of l.cuts) base[c.seat][c.token] = { s: "base", r: 0, l: 0 };
@@ -438,8 +468,8 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
   const secsLeft = online && view?.deadline != null && holdsTurn ? Math.max(0, Math.ceil((view.deadline - (Date.now() + skew.current)) / 1000)) : null;
   const showEnd = !!t && t.stage === "gameEnd" && !animating;
 
-  /* Each finished game counts once on this device: games played, and wins (1st place for you). New token sets
-     that this unlocks are announced on the finish screen. Pass & play counts games but not wins. */
+  /* Each finished game is reported once. When you finished 1st in a room against a real player, the room server
+     adds the win to your account: read the new count and announce any token sets it unlocks on the finish screen. */
   const counted = useRef(false);
   useEffect(() => {
     if (!t) return;
@@ -447,15 +477,20 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
     if (!showEnd || counted.current) return;
     counted.current = true;
     if (t.mode === "online" && t.you == null) return;
-    const before = readStats();
     const won = t.mode !== "pass" && t.ranks[0] === (t.mode === "online" ? t.you : 0);
     reportGame("ludo", t.mode === "pass" ? "done" : won ? "win" : "lose");
-    const after = { played: before.played + 1, wins: before.wins + (won ? 1 : 0) };
-    try { window.localStorage.setItem(STATS_KEY, JSON.stringify(after)); } catch { /* storage off */ }
-    setStats(after);
-    setUnlockedNow(TOKEN_SETS.filter(x => !isUnlocked(x.id, before) && isUnlocked(x.id, after)).map(x => x.name));
+    if (t.mode === "online" && won && view?.winCounts) {
+      const before = realWins.wins;
+      setWinCounted(true);
+      window.setTimeout(() => {          // give the room server a moment to save the win
+        void realWins.refresh().then(after => {
+          if (after == null) return;
+          setUnlockedNow(TOKEN_SETS.filter(x => !isUnlocked(x.id, before) && isUnlocked(x.id, after)).map(x => x.name));
+        });
+      }, 1500);
+    }
   }, [showEnd, t?.stage]);
-  useEffect(() => { if (t && t.stage !== "gameEnd") setUnlockedNow([]); }, [t?.stage]);
+  useEffect(() => { if (t && t.stage !== "gameEnd") { setUnlockedNow([]); setWinCounted(false); } }, [t?.stage]);
 
   /* "Your turn" alert: a chime when the die becomes yours; in a room also a short buzz, and the tab title
      changes while the phone is on another app until you come back. */
@@ -501,7 +536,7 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
         <button className="ghost-button rs-wide" onClick={() => startLocal("pass")}>Start pass &amp; play</button>
       </div>
     </>}
-    after={<details className="ld-style-box rs-panel"><summary>Token and dice style</summary><StylePicker tokens={shownSet} dice={dice} stats={stats} onTokens={chooseTokens} onDice={chooseDice} /></details>}
+    after={<details className="ld-style-box rs-panel"><summary>Token and dice style</summary><PieceDefs /><StylePicker tokens={shownSet} dice={dice} wins={realWins.wins} signedIn={realWins.signedIn} onTokens={chooseTokens} onDice={chooseDice} /></details>}
     rules={<ul><li>A 6 brings a token out.</li><li>A 6, a cut or reaching home rolls again; three 6s in a row end the turn.</li><li>Starred and start squares are safe. You need the exact roll to finish.</li></ul>} />;
 
   if (sub === "room" && view) {
@@ -606,7 +641,8 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
             <span className="eyebrow">ROYAL CLUB · LUDO</span>
             <h2>{t.ranks[0] === t.you ? "You take the crown!" : `${t.names[t.ranks[0]]} wins`}</h2>
             <ol className="ld-podium">{t.ranks.map((s, i) => <li key={s}><b>{ORD[i]}</b><span className={`ld-dot ld-bg-${t.colors[s]}`} />{label(t.names[s])}</li>)}</ol>
-            {unlockedNow.length > 0 && <p className="ld-unlocked">🔓 New tokens unlocked: <b>{unlockedNow.join(", ")}</b>. Try them from Style.</p>}
+            {unlockedNow.length > 0 ? <p className="ld-unlocked">🔓 New tokens unlocked: <b>{unlockedNow.join(", ")}</b>. Try them from Style.</p>
+              : winCounted && <p className="ld-unlocked">🏆 This win counts toward new tokens · {realWins.wins} room win{realWins.wins === 1 ? "" : "s"} so far.</p>}
             <div className="ld-win-actions">
               {online ? (view?.host ? <button className="gold-button" onClick={() => send({ t: "again" })}>Play again</button> : <p className="ld-small">Waiting for the host to start a new game.</p>)
                 : <button className="gold-button" onClick={() => startLocal(t.mode === "pass" ? "pass" : "practice")}>Play again</button>}
@@ -636,7 +672,7 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
       <button className="gold-button" onClick={() => setSheet("none")}>Close</button>
     </div>}
     {sheet === "style" && <div className="ld-sheet" role="dialog" aria-label="Token and dice style">
-      <StylePicker tokens={shownSet} dice={dice} stats={stats} onTokens={chooseTokens} onDice={chooseDice} />
+      <StylePicker tokens={shownSet} dice={dice} wins={realWins.wins} signedIn={realWins.signedIn} onTokens={chooseTokens} onDice={chooseDice} />
       <label className="ld-motion"><input type="checkbox" checked={lessMotion} onChange={e => { setReduced(e.target.checked); setLessMotion(e.target.checked); }} /> Reduce animations <small>(shorter moves, no capture duel)</small></label>
       <p className="ld-small">Your choice is saved on this device. In a room, everyone sees their own style.</p>
       <button className="gold-button" onClick={() => setSheet("none")}>Done</button>

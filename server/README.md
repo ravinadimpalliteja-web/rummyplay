@@ -37,6 +37,11 @@ Zero dependencies (Node 18+). Rooms live in memory, so a restart ends any game i
   finishing moves and safe squares first). When every legal choice is the same token move, it is played automatically.
   A player who left or is offline is played for after 1.5 seconds. The server waits for each animation before the next step.
 - Quick phrases: clients send `{t:"react", i}`; everyone in the room receives `{t:"react", game:"ludo", seat, i}`.
+- Wins for token unlocks (`results.js`): when someone finishes 1st and at least one other real, signed-in player was
+  seated at the start, the server adds one to that account's Ludo wins (Supabase function `record_game_win`, table
+  `player_game_wins`). This needs the project's secret key in `SUPABASE_SECRET_KEY` on whichever server runs the rooms:
+  on Render, add it under Environment; on Cloudflare, run `npx wrangler secret put SUPABASE_SECRET_KEY` in
+  `server/cloudflare` (or add it as a Secret in the Worker's settings). Without the key, games work and wins aren't saved.
 
 ## EKAH rooms
 - Same server, same code + passcode flow, with `game: "ekah"` on `create`, `join` and `hello`. Codes are not shared between games.

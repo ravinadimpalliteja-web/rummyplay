@@ -37,6 +37,11 @@ Zero dependencies (Node 18+). Rooms live in memory, so a restart ends any game i
   finishing moves and safe squares first). When every legal choice is the same token move, it is played automatically.
   A player who left or is offline is played for after 1.5 seconds. The server waits for each animation before the next step.
 - Quick phrases: clients send `{t:"react", i}`; everyone in the room receives `{t:"react", game:"ludo", seat, i}`.
+- Wins for token unlocks (`results.js`): when someone finishes 1st and at least one other real, signed-in player was
+  seated at the start, the server adds one to that account's Ludo wins (Supabase function `record_game_win`, table
+  `player_game_wins`). This needs the project's secret key in `SUPABASE_SECRET_KEY` on whichever server runs the rooms:
+  on Render, add it under Environment; on Cloudflare, run `npx wrangler secret put SUPABASE_SECRET_KEY` in
+  `server/cloudflare` (or add it as a Secret in the Worker's settings). Without the key, games work and wins aren't saved.
 
 ## EKAH rooms
 - Same server, same code + passcode flow, with `game: "ekah"` on `create`, `join` and `hello`. Codes are not shared between games.
@@ -58,5 +63,15 @@ Zero dependencies (Node 18+). Rooms live in memory, so a restart ends any game i
 - A player who leaves or goes offline mid-race keeps their progress and can rejoin. The host sends `again` for a new race.
 
 ## Connect the website
-Set the Netlify build variable `VITE_ROOM_SERVER_URL` to the server's WebSocket address (for example
+Set the website build variable `VITE_ROOM_SERVER_URL` to the server's WebSocket address (for example
 `wss://royal-club-rooms.onrender.com`) and redeploy. For testing a preview, `?server=wss://...` can be added to the URL.
+
+## Running on Cloudflare (Workers + Durable Objects)
+The same rooms and game rules also run on Cloudflare (`cloudflare/worker.mjs`, shared logic in `hub.js`):
+no sleeping when idle, and the free Workers plan covers a lot of games.
+- `.github/workflows/rooms-cloudflare.yml` tests every pull request and deploys `main` once the repository secrets
+  `CLOUDFLARE_API_TOKEN` (template "Edit Cloudflare Workers") and, if needed, `CLOUDFLARE_ACCOUNT_ID` exist.
+- All rooms live in one Durable Object placed in Asia-Pacific. Cloudflare has no server WebSocket ping, so the
+  heartbeat sends `{"t":"ping"}` and the games reply `{"t":"pong"}`.
+- To try it before switching: open the test site with `?server=wss://royal-club-rooms.<account>.workers.dev`.
+  To switch everyone: set `VITE_ROOM_SERVER_URL` to that address (website build and the app workflows) and redeploy.

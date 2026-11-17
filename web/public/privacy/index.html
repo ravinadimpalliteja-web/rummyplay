@@ -12,7 +12,7 @@
 <main>
 <a class="brand" href="/"><span>ROYAL CLUB GAMES</span></a>
 <h1>Privacy Policy</h1>
-<p class="updated">Last updated: 14 November 2026</p>
+<p class="updated">Last updated: 16 November 2026</p>
 
 <p>This policy explains what information Royal Club Games collects when you use our games, the Royal Club website at royalclubgames.com and our Android app (together, "the service"), why we collect it, and the choices you have. Royal Club Games is run by Nadimpalli Ravi Teja, an individual developer in India. You can reach us at <a href="mailto:info@royalclubgames.com">info@royalclubgames.com</a>.</p>
 
@@ -25,9 +25,12 @@
 <li>your <strong>username</strong> and display name, which other players in your rooms can see;</li>
 <li>your <strong>password</strong>, which is stored only in hashed form by our sign-in provider; we cannot read it;</li>
 <li>a <strong>recovery email address</strong>, only if you choose to add one. We use it to let you reset your password and to contact you about your account. It is never shown to other players.</li>
+<li>a backup of your <strong>coins, level, unlocked colours and daily rewards</strong>, so they are not lost if you change or reset your phone. Coins are virtual, cannot be bought, sold or cashed out, and have no money value.</li>
 </ul>
 <p><strong>When you play online rooms</strong>, our room server processes the room code, the usernames of the players in the room and the moves of the game, so that everyone sees the same game. This information is kept in memory while the room is active and is not used for anything else.</p>
 <p><strong>Technical information.</strong> Like any website or app that connects to the internet, our hosting providers automatically process technical data such as your IP address, device and browser type, and the time of requests. This is used to deliver the service, keep it secure and fix problems.</p>
+<p><strong>Crash reports (Android app).</strong> If the app crashes or a game hits an error, the app sends a crash report to Google Firebase Crashlytics: what went wrong and where in the app, your device model and Android version, the app version, and a random installation ID. Crash reports do not include your name, username, email or game data. We use them only to find and fix bugs.</p>
+<p><strong>App updates (Android app).</strong> The app checks our update page on GitHub for new versions of the games and downloads them, so you get fixes and new features without a Play Store update. This request contains only technical data such as your IP address.</p>
 <p>We do not collect your contacts, photos, location, microphone or camera data.</p>
 
 <h2>How we use information</h2>
@@ -49,7 +52,9 @@
 
 <h2>Services that process information for us</h2>
 <ul>
-<li><strong>Supabase</strong>: player accounts and sign-in;</li>
+<li><strong>Supabase</strong>: player accounts, sign-in and the backup of coins and rewards;</li>
+<li><strong>Google Firebase Crashlytics</strong>: crash reports from the Android app;</li>
+<li><strong>GitHub</strong>: hosting app updates for the Android app;</li>
 <li><strong>Render</strong>: the online room server;</li>
 <li><strong>Cloudflare</strong>: hosting the website and game files;</li>
 <li><strong>Google</strong>: app distribution through Google Play, and later ads (AdMob) and purchases (Google Play billing).</li>

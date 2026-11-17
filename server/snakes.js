@@ -18,10 +18,25 @@ const { BOT_DELAY_MS, addBot, removeBot } = require('./room-bots');
 /* Nine ladders and seven snakes spread over the board. Must match web/src/snakes/engine.ts (a test checks this). */
 const LADDERS = Object.freeze({ 3: 24, 8: 30, 20: 41, 33: 52, 37: 64, 45: 66, 59: 80, 68: 89, 71: 91 });
 const SNAKES = Object.freeze({ 23: 2, 27: 7, 36: 5, 70: 49, 87: 47, 95: 65, 97: 39 });
-/* The golden ladder: landing on 82 climbs to 99 only once in RARE_ODDS landings (a separate draw with every roll),
-   the rarest event in the game. */
+/* The golden ladder (82 -> 99), the rarest event in the game: landing on 82 always climbs it, but a player within a die
+   roll of 82 lands on it only RARE_PER_1000 times in 1000 (rareDie). Must match web/src/snakes/engine.ts. */
 const RARE_LADDERS = Object.freeze({ 82: 99 });
-const RARE_ODDS = 10000;
+const RARE_PER_1000 = 10;
+
+/** The die face that would land a player on `from` exactly on a golden ladder's foot (0 if none is within reach). */
+function goldenFace(from) {
+  if (from <= 0) return 0;
+  for (const foot of Object.keys(RARE_LADDERS).map(Number)) { const d = foot - from; if (d >= 1 && d <= 6) return d; }
+  return 0;
+}
+/** One die roll for a player on `from`: fair, except that the face landing exactly on a golden ladder's foot comes up
+    only RARE_PER_1000 times in 1000; the other faces share the rest equally. rand(n) -> 0..n-1. */
+function rareDie(from, rand = (n) => crypto.randomInt(0, n)) {
+  const hit = goldenFace(from);
+  if (!hit) return 1 + rand(6);
+  if (rand(1000) < RARE_PER_1000) return hit;
+  return [1, 2, 3, 4, 5, 6].filter((v) => v !== hit)[rand(5)];
+}
 const BOARD_VERSION = 7;          // must match web/src/snakes/engine.ts; clients won't start a room game on another board
 const TARGET = 100;
 
@@ -55,7 +70,7 @@ function nextTurn(g) {
 }
 
 /** Applies one roll for `seat`. Mutates and returns the game; `g.last` describes what happened. */
-function roll(g, seat, value, lucky = false) {
+function roll(g, seat, value) {
   if (g.phase !== 'playing') throw new Error('The game is over');
   if (seat !== turnOf(g)) throw new Error('It is not your turn');
   if (!Number.isInteger(value) || value < 1 || value > 6) throw new Error('Bad roll');
@@ -71,7 +86,7 @@ function roll(g, seat, value, lucky = false) {
   else { outcome = 'move'; to = landed = from + value; }
   if (outcome === 'move' || outcome === 'enter') {
     if (LADDERS[landed]) { via = 'ladder'; to = LADDERS[landed]; }
-    else if (RARE_LADDERS[landed] && lucky) { via = 'ladder'; to = RARE_LADDERS[landed]; }
+    else if (RARE_LADDERS[landed]) { via = 'ladder'; to = RARE_LADDERS[landed]; }
     else if (SNAKES[landed]) { via = 'snake'; to = SNAKES[landed]; }
   }
   g.pos[seat] = to;
@@ -216,7 +231,7 @@ class SnakesRoom {
   }
 
   doRoll(seat) {
-    roll(this.game, seat, crypto.randomInt(1, 7), crypto.randomInt(0, RARE_ODDS) === 0);
+    roll(this.game, seat, rareDie(this.game.pos[seat]));
     this.pauseUntil = Date.now() + this.ms(animMs(this.game.last));
     this.schedule();
   }
@@ -309,4 +324,4 @@ class SnakesRoom {
   destroy() { this.clearTimer(); this.dead = true; for (const s of this.seats) if (s && s.ws) s.ws.terminate(); }
 }
 
-module.exports = { LADDERS, SNAKES, RARE_LADDERS, RARE_ODDS, BOARD_VERSION, TARGET, ROLL_SECS, TIMING, CHAT_PHRASES, CHAT_EMOJIS, PIECE_IDS, DEFAULT_PIECES, newGame, roll, animMs, turnOf, rungsOf, SnakesRoom };
+module.exports = { LADDERS, SNAKES, RARE_LADDERS, RARE_PER_1000, goldenFace, rareDie, BOARD_VERSION, TARGET, ROLL_SECS, TIMING, CHAT_PHRASES, CHAT_EMOJIS, PIECE_IDS, DEFAULT_PIECES, newGame, roll, animMs, turnOf, rungsOf, SnakesRoom };

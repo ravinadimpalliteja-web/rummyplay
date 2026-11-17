@@ -1,7 +1,7 @@
 'use strict';
 process.env.SPEED = '50';        // shorten every timer and animation pause; the real roll timer is 20s
 const assert = require('assert');
-const { newGame, roll, turnOf, animMs, LADDERS, SNAKES, RARE_LADDERS, RARE_ODDS, BOARD_VERSION, TIMING, PIECE_IDS, DEFAULT_PIECES } = require('../snakes');
+const { newGame, roll, turnOf, animMs, LADDERS, SNAKES, RARE_LADDERS, RARE_PER_1000, goldenFace, rareDie, BOARD_VERSION, TIMING, PIECE_IDS, DEFAULT_PIECES } = require('../snakes');
 
 /* ---------- rules ---------- */
 {
@@ -75,7 +75,7 @@ const { newGame, roll, turnOf, animMs, LADDERS, SNAKES, RARE_LADDERS, RARE_ODDS,
   assert.deepStrictEqual(grab('LADDERS'), Object.fromEntries(Object.entries(LADDERS)), 'ladders match the web client');
   assert.deepStrictEqual(grab('SNAKES'), Object.fromEntries(Object.entries(SNAKES)), 'snakes match the web client');
   assert.deepStrictEqual(grab('RARE_LADDERS'), Object.fromEntries(Object.entries(RARE_LADDERS)), 'golden ladder matches the web client');
-  assert.strictEqual(+src.match(/export const RARE_ODDS = (\d+)/)[1], RARE_ODDS, 'golden ladder odds match the web client');
+  assert.strictEqual(+src.match(/export const RARE_PER_1000 = (\d+)/)[1], RARE_PER_1000, 'golden ladder odds match the web client');
   assert.deepStrictEqual(grab('TIMING'), { ...TIMING }, 'animation timing matches the web client');
   assert.strictEqual(+src.match(/export const BOARD_VERSION = (\d+)/)[1], BOARD_VERSION, 'board version matches the web client');
   // Tokens: same ids on both sides (4 pawns, 8 people, 9 animals), and the same default pawns.
@@ -96,16 +96,34 @@ const { newGame, roll, turnOf, animMs, LADDERS, SNAKES, RARE_LADDERS, RARE_ODDS,
   assert.throws(() => newGame([0]), /2 to 4/);
 }
 {
-  // The golden ladder (82 -> 99): only on a lucky draw; otherwise 82 is an ordinary square.
-  assert.deepStrictEqual({ ...RARE_LADDERS }, { 82: 99 }); assert.strictEqual(RARE_ODDS, 10000);
+  // The golden ladder (82 -> 99): landing on 82 always climbs; landing there is rare (RARE_PER_1000 in 1000 when in reach).
+  assert.deepStrictEqual({ ...RARE_LADDERS }, { 82: 99 }); assert.strictEqual(RARE_PER_1000, 10);
   assert.strictEqual(Object.keys(LADDERS).length, 9); assert.strictEqual(Object.keys(SNAKES).length, 7);
   assert.strictEqual(SNAKES[97], 39); assert.strictEqual(SNAKES[23], 2); assert.strictEqual(SNAKES[58], undefined); assert.strictEqual(SNAKES[19], undefined);
-  const a = newGame([0, 1]); a.pos[0] = 78; roll(a, 0, 4);
-  assert.strictEqual(a.pos[0], 82); assert.strictEqual(a.last.via, null);
-  const b = newGame([0, 1]); b.pos[0] = 78; roll(b, 0, 4, true);
+  const b = newGame([0, 1]); b.pos[0] = 78; roll(b, 0, 4);
   assert.strictEqual(b.pos[0], 99); assert.strictEqual(b.last.via, 'ladder'); assert.strictEqual(b.last.landed, 82);
-  const c = newGame([0, 1]); c.pos[0] = 91; roll(c, 0, 4, true);           // a lucky draw does nothing elsewhere
+  const c = newGame([0, 1]); c.pos[0] = 91; roll(c, 0, 4);
   assert.strictEqual(c.pos[0], 65); assert.strictEqual(c.last.via, 'snake');
+  // which face reaches 82
+  assert.strictEqual(goldenFace(76), 6); assert.strictEqual(goldenFace(81), 1); assert.strictEqual(goldenFace(75), 0);
+  assert.strictEqual(goldenFace(82), 0); assert.strictEqual(goldenFace(0), 0); assert.strictEqual(goldenFace(30), 0);
+  // the die: 10 in 1000 for the golden face, the rest shared by the other five; fair when 82 is out of reach
+  let seq = [], rnd = (n) => { const v = seq.shift(); assert(v !== undefined && v < n); return v; };
+  seq = [9]; assert.strictEqual(rareDie(78, rnd), 4);                       // 0..9 of 1000 -> the golden face
+  seq = [10, 0]; assert.strictEqual(rareDie(78, rnd), 1);                   // otherwise one of 1, 2, 3, 5, 6
+  seq = [999, 3]; assert.strictEqual(rareDie(78, rnd), 5);
+  seq = [2]; assert.strictEqual(rareDie(40, rnd), 3);                       // out of reach: a plain fair die
+  const counts = { hit: 0, n: 0 }, faces = [0, 0, 0, 0, 0, 0, 0];
+  for (let i = 0; i < 200000; i++) { const v = rareDie(79); faces[v]++; counts.n++; if (v === 3) counts.hit++; }
+  const rate = counts.hit / counts.n; assert(rate > .008 && rate < .012, 'golden face rate ' + rate);
+  for (const v of [1, 2, 4, 5, 6]) assert(Math.abs(faces[v] / counts.n - .198) < .006, 'face ' + v);
+  // over many whole games, a token in reach of 82 lands there about 1% of the time
+  let near = 0, landed = 0;
+  for (let k = 0; k < 4000; k++) {
+    const g = newGame([0, 1]);
+    while (g.phase === 'playing') { const s = turnOf(g), f = g.pos[s]; const inReach = goldenFace(f) > 0; roll(g, s, rareDie(f)); if (inReach && g.last.outcome === 'move') { near++; if (g.last.landed === 82) landed++; } }
+  }
+  assert(landed / near < .02, `landed on 82 in ${landed} of ${near} rolls in reach`);
 }
 console.log('snakes rules: ok');
 

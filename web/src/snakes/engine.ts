@@ -12,10 +12,10 @@
    ladder and every other snake (board.ts, SNAKE_WAYPOINTS; checked by a server test). */
 export const LADDERS: Record<number, number> = { 3: 24, 8: 30, 20: 41, 33: 52, 37: 64, 45: 66, 59: 80, 68: 89, 71: 91 };
 export const SNAKES: Record<number, number> = { 23: 2, 27: 7, 36: 5, 70: 49, 87: 47, 95: 65, 97: 39 };
-/** The golden ladder: landing on its foot climbs it only once in RARE_ODDS landings; every other time the square is
-    an ordinary square. */
+/** The golden ladder, the rarest event in the game: landing on its foot always climbs it, but a player within a die
+    roll of the foot lands on it only RARE_PER_1000 times in 1000 (see rareDie). */
 export const RARE_LADDERS: Record<number, number> = { 82: 99 };
-export const RARE_ODDS = 10000;
+export const RARE_PER_1000 = 10;
 /** Bumped when the board layout changes, so a client can tell if a room server still runs an older board. */
 export const BOARD_VERSION = 7;
 export const TARGET = 100;
@@ -37,8 +37,7 @@ export const newGame = (order: number[], quick = false): SLGame => ({
 });
 export const turnOf = (g: SLGame) => g.order[g.turnIdx];
 
-/** `lucky` is a separate 1-in-RARE_ODDS draw made with every roll (rollLucky); it only matters on a golden ladder's foot. */
-export function roll(prev: SLGame, seat: number, value: number, lucky = false): SLGame {
+export function roll(prev: SLGame, seat: number, value: number): SLGame {
   if (prev.phase !== "playing" || seat !== turnOf(prev)) return prev;
   const g: SLGame = { ...prev, pos: { ...prev.pos }, finished: [...prev.finished] };
   const from = g.pos[seat];
@@ -52,7 +51,7 @@ export function roll(prev: SLGame, seat: number, value: number, lucky = false): 
   else { outcome = "move"; to = landed = from + value; }
   if (outcome === "move" || outcome === "enter") {
     if (LADDERS[landed]) { via = "ladder"; to = LADDERS[landed]; }
-    else if (RARE_LADDERS[landed] && lucky) { via = "ladder"; to = RARE_LADDERS[landed]; }
+    else if (RARE_LADDERS[landed]) { via = "ladder"; to = RARE_LADDERS[landed]; }
     else if (SNAKES[landed]) { via = "snake"; to = SNAKES[landed]; }
   }
   g.pos[seat] = to;
@@ -71,9 +70,24 @@ export function roll(prev: SLGame, seat: number, value: number, lucky = false): 
   return g;
 }
 
-export const rollDie = () => { const b = new Uint32Array(1); crypto.getRandomValues(b); return 1 + (b[0] % 6); };
-/** True once in RARE_ODDS: whether a golden ladder works on this roll. */
-export const rollLucky = () => { const b = new Uint32Array(1); crypto.getRandomValues(b); return b[0] % RARE_ODDS === 0; };
+/** The die face that would land a player on `from` exactly on a golden ladder's foot (0 if none is within reach). */
+export function goldenFace(from: number): number {
+  if (from <= 0) return 0;
+  for (const foot of Object.keys(RARE_LADDERS).map(Number)) { const d = foot - from; if (d >= 1 && d <= 6) return d; }
+  return 0;
+}
+/** One die roll for a player on `from`. A fair die, except that the face which would land exactly on a golden ladder's
+    foot comes up only RARE_PER_1000 times in 1000; the other five faces share the rest equally. `rand(n)` gives a random
+    whole number from 0 to n - 1. Shared with the room server (server/snakes.js). */
+export function rareDie(from: number, rand: (n: number) => number): number {
+  const hit = goldenFace(from);
+  if (!hit) return 1 + rand(6);
+  if (rand(1000) < RARE_PER_1000) return hit;
+  return [1, 2, 3, 4, 5, 6].filter(v => v !== hit)[rand(5)];
+}
+const cryptoRand = (n: number) => { const b = new Uint32Array(1); crypto.getRandomValues(b); return b[0] % n; };
+/** A roll for the player on `from` (see rareDie). */
+export const rollDie = (from = 0) => rareDie(from, cryptoRand);
 
 /* Animation timing, shared with the server, which waits this long before the next roll. */
 export const TIMING = { die: 1100, settle: 120, step: 230, enter: 300, ret: 800, rung: 120, ladderBase: 150, mouth: 380, slideBase: 500, slidePerSquare: 230, pop: 320, finish1: 3200, finishN: 1700, gap: 250 };

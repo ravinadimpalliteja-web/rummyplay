@@ -97,7 +97,8 @@ export class BoardScene {
     this.low = low; this.look = look; this.ratioCap = opts.testLite ? .75 : 2;                     // sharp on phones too
     const r = new THREE.WebGLRenderer({ canvas, antialias: !opts.testLite, alpha: true, powerPreference: "high-performance" });
     r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.NeutralToneMapping; r.toneMappingExposure = 1;
-    r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFShadowMap; r.shadowMap.autoUpdate = false;
+    // slower phones start without shadows (switching them off later recompiles every material, a visible hitch)
+    r.shadowMap.enabled = !low; r.shadowMap.type = THREE.PCFShadowMap; r.shadowMap.autoUpdate = false;
     r.autoClear = false;
     this.renderer = r; this.aniso = Math.min(8, r.capabilities.getMaxAnisotropy());
     const scene = new THREE.Scene(); this.scene = scene;
@@ -241,12 +242,15 @@ export class BoardScene {
     for (const [s, e] of Object.entries(RARE_LADDERS)) this.ladder(+s, e, goldRail, goldRung, metal);
     // snakes: painted in 2D on a transparent layer just above the squares (and the inlay's brass strips), under the
     // ladders, the numbers and the tokens; it catches the tokens' and ladders' shadows like the board does
-    const spx = this.low ? 768 : 1536; this.snakeCanvas.width = this.snakeCanvas.height = spx;
-    const stex = T(this.snakeCanvas); stex.anisotropy = Math.min(4, this.aniso); this.snakeTex = stex;
+    // the snake layer is sent to the graphics chip again on every slither frame, so keep it modest on phones and skip
+    // mipmaps (rebuilding them each time was the costliest part of a frame)
+    const phone = Math.min(screen.width, screen.height) < 700;
+    const spx = this.low ? 768 : phone ? 1024 : 1536; this.snakeCanvas.width = this.snakeCanvas.height = spx;
+    const stex = T(this.snakeCanvas); stex.anisotropy = Math.min(4, this.aniso); stex.generateMipmaps = false; stex.minFilter = THREE.LinearFilter; this.snakeTex = stex;
     const sm = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshStandardMaterial({ map: stex, transparent: true, depthWrite: false, roughness: .55, metalness: 0, alphaTest: .01 }));
     sm.rotation.x = -Math.PI / 2; sm.position.y = TILE_TOP + .026; sm.receiveShadow = true; sm.renderOrder = 2; B.add(sm);
     B.traverse((o: Obj) => { if (o.layers.mask === 1) o.layers.set(L_BOARD); });
-    this.renderer.shadowMap.needsUpdate = true;
+    this.shadowDirty = true;
   }
   /** The wooden rim: four planks with grain running along them and a rounded top edge. */
   private woodRim(B: Obj, rimTex: Obj, hgt: number) {
@@ -315,14 +319,14 @@ export class BoardScene {
     // upright phones: the width is the limit, so stretch the picture a little taller to use the spare height
     this.stretch = narrow ? Math.max(1, Math.min(STRETCH_MAX, 1.98 / (e.y1 - e.y0))) : 1;
     if (this.stretch > 1) { cam.projectionMatrix.premultiply(new THREE.Matrix4().makeScale(1, this.stretch, 1)); cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert(); }
-    this.renderer.shadowMap.needsUpdate = true;
+    this.shadowDirty = true;
   }
 
   /** One step lighter when frames are slow: shadows off. The resolution is never lowered (that made the board blurry on
       phones). Returns false when there is nothing left to drop. */
   degrade() {
     this.level++;
-    if (this.renderer.shadowMap.enabled) { this.renderer.shadowMap.enabled = false; this.scene.traverse((o: Obj) => { if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach((m: Obj) => { m.needsUpdate = true; }); }); return true; }
+    if (this.renderer.shadowMap.enabled) { this.renderer.shadowMap.enabled = false; this.shadowDirty = true; this.scene.traverse((o: Obj) => { if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach((m: Obj) => { m.needsUpdate = true; }); }); return true; }
     return false;
   }
   /** Screen position (CSS px within the canvas) of a world point. */
@@ -331,7 +335,7 @@ export class BoardScene {
   /* ----- per frame: tokens and swallow effects, then draw ----- */
   /** Draws a frame. `snakes` false reuses the snake layer as it is (only tokens or effects moved), which saves
       repainting it and sending it to the graphics chip again. */
-  frame(pieces: Piece3D[], ov: Overlay3D, snakes = true): boolean {
+  frame(pieces: Piece3D[], ov: Overlay3D, snakes = true, draw = true): boolean {
     const seen = new Set<number>();
     for (const p of pieces) {
       seen.add(p.seat);
@@ -371,7 +375,7 @@ export class BoardScene {
     // the snakes: slithering, heads turning, the swallow
     const busy = snakes ? this.paintSnakes(ov) : this.snakesBusy;
     this.snakesBusy = busy;
-    this.render();
+    if (draw) this.render();
     return busy;
   }
   /** For tests: the snake heads' angles. */
@@ -384,9 +388,32 @@ export class BoardScene {
     if (this.snakeTex) this.snakeTex.needsUpdate = true;
     return busy;
   }
+  /** Prepares everything before the board is first shown: builds the tokens, sends every texture to the graphics chip
+      a frame at a time and compiles every shader (in the background where the browser can), then draws once. Doing this
+      while the board is still hidden keeps the first seconds of play smooth instead of stalling on the first frames. */
+  async warm(pieces: Piece3D[], ov: Overlay3D) {
+    const r = this.renderer, cam = this.camera, nextFrame = () => new Promise<void>(res => requestAnimationFrame(() => res()));
+    this.frame(pieces, ov, true, false);
+    for (const t of this.texes) { r.initTexture(t); await nextFrame(); }
+    for (const l of [L_BOARD, L_NUMBERS, L_TOKENS]) {
+      cam.layers.set(l);
+      try { await r.compileAsync(this.scene, cam); } catch { /* compiled on first draw instead */ }
+    }
+    cam.layers.enableAll();
+    this.render(); await nextFrame();
+  }
+  /** Shadows are redrawn only when something that casts one moved (a token) or the view changed, not every frame. */
+  private shadowDirty = true; private shadowSig = "";
+  private shadowKey() {
+    let k = "";
+    for (const f of this.figures.values()) { const p = f.grp.position, q = f.tilt.quaternion; k += f.grp.visible ? `${p.x.toFixed(3)},${p.y.toFixed(3)},${p.z.toFixed(3)},${f.grp.scale.x.toFixed(3)},${q.x.toFixed(3)},${q.z.toFixed(3)};` : "-;"; }
+    return k;
+  }
   render() {
     const r = this.renderer, cam = this.camera;
-    r.shadowMap.needsUpdate = true;
+    const key = this.shadowKey();
+    r.shadowMap.needsUpdate = r.shadowMap.enabled && (this.shadowDirty || key !== this.shadowSig);
+    this.shadowDirty = false; this.shadowSig = key;
     r.clear();
     cam.layers.set(L_BOARD); r.render(this.scene, cam);
     r.shadowMap.needsUpdate = false;

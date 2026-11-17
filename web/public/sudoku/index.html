@@ -362,15 +362,14 @@ html body .brand .rc-el + span strong{display:none}
   /* ---------- sound (made in the browser, no files) ---------- */
   const sound = (() => {
     let ctx = null, on = store.get(SOUND_KEY, true);
-    const ac = () => { if (!ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch { ctx = null; } } if (ctx && ctx.state === 'suspended') ctx.resume(); return ctx; };
+    const ac = () => { if (!ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' }); } catch { ctx = null; } if (ctx) paper(ctx); } if (ctx && ctx.state === 'suspended') ctx.resume(); return ctx; };
     function tone(c, t, f, dur, vol, type = 'sine') {
       const o = c.createOscillator(), g = c.createGain();
       o.type = type; o.frequency.value = f;
       g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .012); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
       o.connect(g).connect(c.destination); o.start(t); o.stop(t + dur + .02);
     }
-    /* A click made from a tiny burst of filtered noise instead of a pure tone, so it sounds like a tap
-       or a pencil touching paper rather than an electronic beep. */
+    /* A click made from a tiny burst of filtered noise, used for the race countdown tick. */
     function click(c, t, freq, q, dur, vol, type = 'bandpass') {
       const len = Math.ceil(c.sampleRate * dur), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
       for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
@@ -378,13 +377,39 @@ html body .brand .rc-el + span strong{display:none}
       src.buffer = buf; f.type = type; f.frequency.value = freq; f.Q.value = q; g.gain.value = vol;
       src.connect(f).connect(g).connect(c.destination); src.start(t);
     }
+    /* Pencil on paper. One second of "paper grain" noise is made once (rough, crackly texture: noise whose loudness
+       jumps every ~1.5 ms like graphite catching the paper fibres). Each stroke plays a short random slice of it
+       through a band filter, so no two strokes sound exactly alike and nothing heavy is built on a tap. */
+    let grain = null;
+    function paper(c) {
+      if (grain) return grain;
+      const len = c.sampleRate, buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+      const step = Math.max(1, Math.round(c.sampleRate * .0015));
+      let amp = 1;
+      for (let i = 0; i < len; i++) {
+        if (i % step === 0) amp = .25 + Math.random() * .75 * (Math.random() < .18 ? 1.6 : 1);
+        d[i] = (Math.random() * 2 - 1) * amp;
+      }
+      return (grain = buf);
+    }
+    function stroke(c, t, dur, vol, freq) {
+      const src = c.createBufferSource(), hp = c.createBiquadFilter(), bp = c.createBiquadFilter(), g = c.createGain();
+      src.buffer = paper(c); src.playbackRate.value = .9 + Math.random() * .25;
+      hp.type = 'highpass'; hp.frequency.value = 1400;
+      bp.type = 'bandpass'; bp.frequency.setValueAtTime(freq * (.92 + Math.random() * .16), t); bp.frequency.linearRampToValueAtTime(freq * (.8 + Math.random() * .1), t + dur); bp.Q.value = .9;
+      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .008);
+      g.gain.setValueAtTime(vol * (.75 + Math.random() * .2), t + dur * .55); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+      src.connect(hp).connect(bp).connect(g).connect(c.destination);
+      src.start(t, Math.random() * .8, dur + .02);
+    }
     function play(name) {
-      if (!on) return; const c = ac(); if (!c) return; const t = c.currentTime + .01;
-      /* Number placed: a soft wooden tap. Pencil note: a light, crisp pencil tick. */
-      if (name === 'place') { click(c, t, 1100, 1.2, .05, .18); click(c, t, 2400, 2, .025, .05); }
-      else if (name === 'note') { click(c, t, 4200, 1.4, .035, .085, 'highpass'); click(c, t + .012, 3000, 2, .03, .045); }
+      if (!on) return; const c = ac(); if (!c) return; const t = c.currentTime + .005;
+      /* Number placed: a quick two-part pencil scratch, like writing a digit. Pencil note: one light, short stroke. */
+      if (name === 'place') { stroke(c, t, .075 + Math.random() * .02, .34, 3200); stroke(c, t + .085 + Math.random() * .02, .05, .22, 3700); }
+      else if (name === 'note') stroke(c, t, .045 + Math.random() * .015, .16, 4300);
+      else if (name === 'tick') { click(c, t, 4200, 1.4, .035, .085, 'highpass'); click(c, t + .012, 3000, 2, .03, .045); }
       else if (name === 'wrong') { tone(c, t, 220, .16, .1, 'square'); tone(c, t + .08, 180, .2, .08, 'square'); }
-      else if (name === 'unit') [659, 784, 988].forEach((f, i) => tone(c, t + i * .07, f, .16, .035, 'sine'));
+      else if (name === 'unit') { stroke(c, t, .08, .3, 3200); [659, 784, 988].forEach((f, i) => tone(c, t + .1 + i * .07, f, .16, .035, 'sine')); }
       else if (name === 'hint') { tone(c, t, 660, .15, .07); tone(c, t + .1, 990, .25, .07); }
       else if (name === 'win') [523, 659, 784, 1047, 1319].forEach((f, i) => tone(c, t + .1 + i * .11, f, .6, .12, 'triangle'));
       else if (name === 'lose') [392, 311, 262].forEach((f, i) => tone(c, t + .1 + i * .17, f, .6, .11, 'triangle'));
@@ -907,7 +932,7 @@ html body .brand .rc-el + span strong{display:none}
     const now = Date.now() + skew;
     const left = Math.ceil((room.startAt - now) / 1000);
     $('countdown').hidden = !(room.phase === 'countdown' && left > 0);
-    if (!$('countdown').hidden && $('countNum').textContent !== String(left)) { $('countNum').textContent = left; sound.play('note'); }
+    if (!$('countdown').hidden && $('countNum').textContent !== String(left)) { $('countNum').textContent = left; sound.play('tick'); }
     if (room.phase === 'playing' && game.locked) { game.locked = false; }
     $('raceStrip').innerHTML = (room.players || []).map((x) => {
       const seat = room.seats[x.seat], name = seat ? seat.name : 'Player', mine = x.seat === room.you;

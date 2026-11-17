@@ -166,7 +166,7 @@ html body .brand .rc-el + span strong{display:none}
         <h1>Learn chess, one class at a time.</h1>
         <p class="lead">Short interactive classes on a real board: learn an idea, try it yourself, then solve puzzles. The first three classes are free.</p>
       </div>
-      <div class="progress"><div class="progress-row">Your progress <span id="progText">0 of 32 classes</span></div><div class="bar"><i id="progBar" style="width:0"></i></div></div>
+      <div class="progress"><div class="progress-row">Your progress <span id="progText">0 of 52 classes</span></div><div class="bar"><i id="progBar" style="width:0"></i></div></div>
       <div id="levels"></div>
       <p class="note">Progress is saved on this device.</p>
     </div>
@@ -256,8 +256,8 @@ html body .brand .rc-el + span strong{display:none}
   });
   function showPremium(c) {
     showSheet(`<p class="eyebrow">Learn Chess Premium</p><h2>Unlock every class</h2>
-      <p>${c ? `“${c.title}” is a premium class.` : ''} Premium opens all 32 classes, from pawns and special moves to tactics, openings and endgames.</p>
-      <ul class="perks"><li>Level 1: classes 4–8</li><li>Levels 2–4: tactics, strategy, endgames</li><li>Puzzles and practice games against the computer</li></ul>
+      <p>${c ? `“${c.title}” is a premium class.` : ''} Premium opens all ${ALL.length} classes, from pawns and special moves to tactics, openings, endgames and master classes.</p>
+      <ul class="perks"><li>Level 1: classes 4–8</li><li>Levels 2–6: tactics, strategy, endgames and master classes</li><li>Puzzles and practice games against the computer</li></ul>
       <p><b>Purchases are coming soon.</b> No payment is taken today.</p>
       <div class="row"><button class="gold" type="button" data-close>OK</button></div>`);
   }

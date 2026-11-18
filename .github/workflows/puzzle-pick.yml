@@ -1,0 +1,20 @@
+# Builds the Learn Chess practice puzzles from the Lichess puzzle database (CC0) and checks each
+# solution with Stockfish. Stockfish is only used here, at build time; it is not shipped in the app.
+name: puzzle-pick
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/chess-puzzles-pilot]
+    paths: [tools/puzzles/**, .github/workflows/puzzle-pick.yml]
+jobs:
+  pick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update -q && sudo apt-get install -y -q stockfish zstd
+      - run: pip install chess==1.11.1
+      - run: curl -sSfL -o puzzles.csv.zst https://database.lichess.org/lichess_db_puzzle.csv.zst
+      - run: python tools/puzzles/pick.py puzzles.csv.zst
+      - uses: actions/upload-artifact@v4
+        with: { name: puzzles, path: puzzles.json }

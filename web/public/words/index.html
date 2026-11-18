@@ -702,6 +702,15 @@ a.iconbtn{text-decoration:none}
   $('lenPick').addEventListener('click', (e) => { const b = e.target.closest('[data-len]'); if (!b) return; practiceLen = +b.dataset.len; setMode('practice'); });
   /* Android back button / the ← link: close a sheet first. */
   window.addEventListener('popstate', () => { const s = document.querySelector('.scrim.show'); if (s) s.classList.remove('show'); });
+  /* In the Android app (app-mode.js): back closes an open sheet (results, Word Book, Family Board, stats, help);
+     otherwise it goes straight to the Royal Club home. Word Puzzle is saved as you play, so it never asks
+     "Leave this game?". */
+  window.rcAppBack = () => {
+    const s = document.querySelector('.scrim.show');
+    if (s) { s.classList.remove('show'); return true; }
+    window.location.href = $('backBtn').getAttribute('href') || '/';
+    return true;
+  };
 
   function updChips(bump) {
     $('streakChip').textContent = mode === 'practice' ? liveStreakFor('classic') : liveStreak();

@@ -25,7 +25,7 @@ export default function App(){const[navSection,setNavSection]=useState<"home"|"g
 const[joinCode,setJoinCode]=useState<string|undefined>(undefined),[joinPass,setJoinPass]=useState<string|undefined>(undefined);
 /* Opened from a friend's invite link (?join=ludo&room=K7QM&pass=4821): go straight to that game's room screen with the code and passcode filled in. */
 useEffect(()=>{const j=takeJoinLink();if(j){setJoinCode(j.code);setJoinPass(j.pass||undefined);setScreen(j.game)}},[]);
-const openGame=(id:GameId)=>{if(id==="chess"){window.location.href=pageHref("/chess/");return}if(id==="ekah"){window.location.href=pageHref("/ekah/");return}if(id==="sudoku"){window.location.href=pageHref("/sudoku/");return}setJoinCode(undefined);setScreen(id==="snakes"?"snakes":id==="ludo"?"ludo":"lobby")};
+const openGame=(id:GameId)=>{if(id==="chess"){window.location.href=pageHref("/chess/");return}if(id==="ekah"){window.location.href=pageHref("/ekah/");return}if(id==="sudoku"){window.location.href=pageHref("/sudoku/");return}if(id==="words"){window.location.href=pageHref("/words/");return}setJoinCode(undefined);setScreen(id==="snakes"?"snakes":id==="ludo"?"ludo":"lobby")};
 /* App only: the Android back button returns to the previous screen instead of closing the app; leaving a game in progress asks first. */
 const screenRef=useRef<Screen>("home");screenRef.current=screen;
 const[ask,setAsk]=useState<null|"exit"|"leave">(null),askRef=useRef(ask);askRef.current=ask;

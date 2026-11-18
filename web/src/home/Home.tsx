@@ -4,7 +4,7 @@ import "./home.css";
 import { pageHref } from "../lib/native";
 import { SAVE_KEYS, chessInProgress, hasSavedGame, sudokuInProgress } from "../lib/localSave";
 import elephantMark from "../brand/badge-logo-small.webp";
-import { GameArtDefs, EkahArt, LudoArt, SnakesArt, ChessArt, SudokuArt } from "./GameArt";
+import { GameArtDefs, EkahArt, LudoArt, SnakesArt, ChessArt, SudokuArt, WordArt } from "./GameArt";
 import LearnRow from "./LearnRow";
 
 /* Royal Club home ("FINAL" design): mood shortcuts, a featured EKAH tile, full-art game tiles,
@@ -21,6 +21,7 @@ export const TILES: Tile[] = [
   { id: "snakes", name: "Snakes & Ladders", sub: "Race to 100 · roll a six to start", moods: ["friends", "quick", "classics", "computer"] },
   { id: "chess", name: "Chess", sub: "A friend on one phone, or the computer", moods: ["classics", "computer"] },
   { id: "sudoku", name: "Sudoku", sub: "Daily puzzle · race your friends", moods: ["friends", "quick", "classics", "computer"] },
+  { id: "words", name: "Word Puzzle", sub: "A new word every day · learn as you play", moods: ["quick", "classics"] },
 ];
 
 const MOODS: { id: Mood; label: string; note: string }[] = [
@@ -68,7 +69,7 @@ const MoodIcon = ({ mood }: { mood: Mood }) => {
   return <svg {...p}><rect x="4" y="7" width="16" height="12" rx="3" /><path d="M12 7V4M9 12h.01M15 12h.01M9 16h6" /></svg>;
 };
 
-const ART: Partial<Record<GameId, () => ReactNode>> = { ludo: () => <LudoArt />, snakes: () => <SnakesArt />, chess: () => <ChessArt />, sudoku: () => <SudokuArt /> };
+const ART: Partial<Record<GameId, () => ReactNode>> = { ludo: () => <LudoArt />, snakes: () => <SnakesArt />, chess: () => <ChessArt />, sudoku: () => <SudokuArt />, words: () => <WordArt /> };
 
 export interface HomeProps {
   onOpen: (id: GameId) => void;

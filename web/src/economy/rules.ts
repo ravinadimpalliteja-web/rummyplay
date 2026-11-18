@@ -118,14 +118,19 @@ export function claimChest(w: Wallet, now: number): { w: Wallet; coins: number }
 }
 
 /* ---------- finished games ---------- */
-export interface GameEvent { g: string; r: string; at: number }
-const GAMES = ["ekah", "ludo", "snakes", "chess", "sudoku"];
-export function applyGames(w: Wallet, events: GameEvent[], now: number): { w: Wallet; coins: number; xp: number; games: number; wins: number } {
+export interface GameEvent { g: string; r: string; at: number; c?: number }   // c: coins, only on "spend"
+const GAMES = ["ekah", "ludo", "snakes", "chess", "sudoku", "words"];
+export const MAX_SPEND = 100;                                          // one in-game purchase (Word Puzzle hints cost 15 or 25)
+export function applyGames(w: Wallet, events: GameEvent[], now: number): { w: Wallet; coins: number; xp: number; games: number; wins: number; spent: number } {
   w = newDay(w, now);
-  let coins = 0, xp = 0, games = 0, wins = 0;
+  let coins = 0, xp = 0, games = 0, wins = 0, spent = 0;
   const today = { ...w.today, played: { ...w.today.played }, wins: { ...w.today.wins } };
   const life = { ...w.life, games: { ...w.life.games } };
   for (const e of events) {
+    if (e.r === "spend") {                                     // coins a game took for a hint; never more than the wallet holds
+      if (GAMES.includes(e.g) && e.at <= now + 60_000 && now - e.at <= 7 * 86_400_000) spent += Math.max(0, Math.min(MAX_SPEND, Math.floor(Number(e.c) || 0)));
+      continue;
+    }
     const pay = GAME_PAY[e.r];
     if (!pay || !GAMES.includes(e.g) || e.at > now + 60_000 || now - e.at > 7 * 86_400_000) continue;
     const win = e.r === "win" || e.r === "daily";
@@ -141,8 +146,9 @@ export function applyGames(w: Wallet, events: GameEvent[], now: number): { w: Wa
     life.games[e.g] = { p: g.p + 1, w: g.w + (win ? 1 : 0) };
     life.played++; if (win) life.wins++;
   }
-  if (!games) return { w, coins: 0, xp: 0, games: 0, wins: 0 };
-  return { w: touch({ ...w, coins: w.coins + coins, xp: w.xp + xp, today, life }, now), coins, xp, games, wins };
+  if (!games && !spent) return { w, coins: 0, xp: 0, games: 0, wins: 0, spent: 0 };
+  const balance = Math.max(0, w.coins + coins - spent);
+  return { w: touch(games ? { ...w, coins: balance, xp: w.xp + xp, today, life } : { ...w, coins: balance }, now), coins, xp, games, wins, spent };
 }
 
 /* ---------- daily missions: three a day, the same for everyone that day ---------- */

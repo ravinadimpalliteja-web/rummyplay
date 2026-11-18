@@ -5,7 +5,7 @@ import { pageHref } from "../lib/native";
 import { motionReduced, setMotionReduced } from "../lib/motion";
 import { SAVE_KEYS, chessInProgress, hasSavedGame, sudokuInProgress } from "../lib/localSave";
 import { useAccount } from "../auth/account";
-import { GameArtDefs, EkahArt, LudoArt, SnakesArt, ChessArt, SudokuArt } from "../home/GameArt";
+import { GameArtDefs, EkahArt, LudoArt, SnakesArt, ChessArt, SudokuArt, WordArt } from "../home/GameArt";
 import { TILES, RESUME, findResume, type RoomGame } from "../home/Home";
 import * as R from "../economy/rules";
 import { claimChest, claimDaily, claimMission, collectGames, refreshDay, unlockLook, useWallet, useWalletReady, type Earned } from "../economy/wallet";
@@ -22,11 +22,11 @@ import "./app-shell.css";
 export type AppTab = "home" | "friends" | "rewards" | "profile" | "settings";
 
 const ART: Record<GameId, () => ReactNode> = {
-  ekah: () => <EkahArt />, ludo: () => <LudoArt />, snakes: () => <SnakesArt />, chess: () => <ChessArt />, sudoku: () => <SudokuArt />,
+  ekah: () => <EkahArt />, ludo: () => <LudoArt />, snakes: () => <SnakesArt />, chess: () => <ChessArt />, sudoku: () => <SudokuArt />, words: () => <WordArt />,
   spades: () => <EkahArt />, rummy: () => <EkahArt />,
 };
-const PLAYERS: Partial<Record<GameId, string>> = { ekah: "2–6 players", ludo: "2–4 players", snakes: "2–4 players", chess: "2 players", sudoku: "Solo or race" };
-const SOLO: Partial<Record<GameId, string>> = { sudoku: "Play solo", chess: "vs Computer" };
+const PLAYERS: Partial<Record<GameId, string>> = { ekah: "2–6 players", ludo: "2–4 players", snakes: "2–4 players", chess: "2 players", sudoku: "Solo or race", words: "Daily word" };
+const SOLO: Partial<Record<GameId, string>> = { sudoku: "Play solo", chess: "vs Computer", words: "Play today's word" };
 const SAVED: Partial<Record<GameId, () => boolean>> = {
   ludo: () => hasSavedGame(SAVE_KEYS.ludo), ekah: () => hasSavedGame(SAVE_KEYS.ekah), snakes: () => hasSavedGame(SAVE_KEYS.snakes),
   chess: chessInProgress, sudoku: sudokuInProgress,
@@ -357,7 +357,7 @@ function LookPicker() {
 function ProfileTab({ profile }: { profile: ReactNode }) {
   const w = useWallet();
   const lv = R.levelOf(w.xp);
-  const NAMES: Record<string, string> = { ekah: "EKAH", ludo: "Ludo", snakes: "Snakes & Ladders", chess: "Chess", sudoku: "Sudoku" };
+  const NAMES: Record<string, string> = { ekah: "EKAH", ludo: "Ludo", snakes: "Snakes & Ladders", chess: "Chess", sudoku: "Sudoku", words: "Word Puzzle" };
   return <div className="rx-page rx-profile">
     <h1 className="rx-title">Profile</h1>
     <section className="rx-stats" aria-label="Your stats">

@@ -1,4 +1,4 @@
-export type GameId = "spades" | "ekah" | "snakes" | "chess" | "rummy" | "ludo" | "sudoku";
+export type GameId = "spades" | "ekah" | "snakes" | "chess" | "rummy" | "ludo" | "sudoku" | "words";
 export type PlayMode = "practice" | "online";
 
 export interface GameDefinition {
@@ -18,6 +18,7 @@ export const GAMES: GameDefinition[] = [
   { id: "chess", name: "Chess", description: "Play a friend on one phone or the computer.", status: "available", category: "board" },
   { id: "ludo", name: "Ludo", description: "Race all four tokens home. Play the computer, friends on one phone, or a room.", status: "available", category: "board" },
   { id: "sudoku", name: "Sudoku", description: "A fresh daily puzzle plus Easy to Expert levels. Solo, any time.", status: "available", category: "board" },
+  { id: "words", name: "Word Puzzle", description: "A new word every day: guess it in 6 tries, learn its meaning, compare with family.", status: "available", category: "board" },
   { id: "rummy", name: "Indian Rummy", description: "Build sequences, sets and outplay the table.", status: "coming-soon", category: "card", hidden: true }
 ];
 

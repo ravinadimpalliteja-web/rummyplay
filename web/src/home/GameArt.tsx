@@ -1,5 +1,6 @@
 /* Royal Club game art — "Royal Gold, jewel colours" set (polished lineup).
-   One jewel colour per game (EKAH ruby, Ludo emerald, Snakes & Ladders sapphire, Sudoku amethyst, Chess onyx),
+   One jewel colour per game (EKAH ruby, Ludo emerald, Snakes & Ladders sapphire, Sudoku amethyst, Chess onyx,
+   Word Puzzle citrine),
    shared gold, crowns and a soft sunburst so the five read as one family. All artwork is original.
    <GameArtDefs /> must be rendered once on the page; every art piece below points at its gradients and filters. */
 import type { ReactNode } from "react";
@@ -26,6 +27,7 @@ export const GameArtDefs = () => (
       <radialGradient id="rcg-emerald" cx="0.5" cy="0.4" r="0.8"><stop offset="0" stopColor="#2FBF7A" /><stop offset="1" stopColor="#053A24" /></radialGradient>
       <radialGradient id="rcg-sapphire" cx="0.5" cy="0.4" r="0.8"><stop offset="0" stopColor="#3E7BFF" /><stop offset="1" stopColor="#0A1D5C" /></radialGradient>
       <radialGradient id="rcg-amethyst" cx="0.5" cy="0.4" r="0.8"><stop offset="0" stopColor="#A65BEA" /><stop offset="1" stopColor="#2A0A4A" /></radialGradient>
+      <radialGradient id="rcg-citrine" cx="0.5" cy="0.4" r="0.8"><stop offset="0" stopColor="#F59A2E" /><stop offset="1" stopColor="#4A1A04" /></radialGradient>
       <radialGradient id="rcg-onyx" cx="0.5" cy="0.4" r="0.8"><stop offset="0" stopColor="#4E4757" /><stop offset="1" stopColor="#0B090D" /></radialGradient>
       <linearGradient id="rcg-ivory" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#FFFDF6" /><stop offset="1" stopColor="#F0E2BF" /></linearGradient>
       <linearGradient id="rcg-snake" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#8CF0B4" /><stop offset="1" stopColor="#14894A" /></linearGradient>
@@ -268,6 +270,31 @@ export const ChessArt = () => (
     <Bishop x={52} y={230} s={0.8} />
     <Rook x={190} y={230} s={0.64} />
     <Knight x={118} y={238} s={0.98} />
+    <Vignette />
+  </Frame>
+);
+
+/* Word Puzzle: four letter tiles spelling WORD — two solved in emerald, one gold, one ivory — under a crown. */
+const WORD_TILES: { x: number; y: number; ch: string; fill: string; ink: string; rot: number }[] = [
+  { x: -58, y: -58, ch: "W", fill: "#1FA36C", ink: "#FFFDF6", rot: -6 },
+  { x: 58, y: -58, ch: "O", fill: "url(#rcg-gold)", ink: "#4A2A02", rot: 5 },
+  { x: -58, y: 58, ch: "R", fill: "url(#rcg-ivory)", ink: "#4A1A04", rot: 4 },
+  { x: 58, y: 58, ch: "D", fill: "#1FA36C", ink: "#FFFDF6", rot: -5 },
+];
+export const WordArt = () => (
+  <Frame>
+    <Backdrop jewel="citrine" />
+    <circle cx="120" cy="128" r="70" fill="#FFD36B" opacity="0.4" filter="url(#rcg-glow)" />
+    <g transform="translate(120 132) scale(0.92)">
+      {WORD_TILES.map(t => (
+        <g key={t.ch} transform={`translate(${t.x} ${t.y}) rotate(${t.rot})`} filter="url(#rcg-shadow)">
+          <rect x="-48" y="-42" width="96" height="96" rx="18" fill="#2A0E02" opacity="0.55" />
+          <rect x="-48" y="-48" width="96" height="96" rx="18" fill={t.fill} stroke="url(#rcg-gold)" strokeWidth="5" />
+          <text x="0" y="20" textAnchor="middle" fontFamily="Cinzel, serif" fontWeight="700" fontSize="58" fill={t.ink}>{t.ch}</text>
+        </g>
+      ))}
+    </g>
+    <use href="#rcg-crown" filter="url(#rcg-shadow)" transform="translate(120 26) scale(0.8)" />
     <Vignette />
   </Frame>
 );

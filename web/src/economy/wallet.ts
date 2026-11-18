@@ -1,6 +1,6 @@
 /* The player's wallet (coins, XP, daily rewards, unlocked looks): kept on this phone in localStorage and, for a
-   signed-in player, backed up to Supabase (table player_wallets, one row per account, readable and writable only by
-   its owner) so it follows them to a new phone. Rules: ./rules.ts. Finished games arrive through src/lib/report.ts. */
+   signed-in player, backed up to Supabase (table player_wallets, one row per account, readable only by its owner and
+   written only through the server-checked save_wallet() function) so it follows them to a new phone. Rules: ./rules.ts. Finished games arrive through src/lib/report.ts. */
 import { useSyncExternalStore } from "react";
 import { supabase } from "../lib/supabase";
 import { getAccount, subscribe as onAccount } from "../auth/account";
@@ -22,16 +22,25 @@ export const subscribeWallet = (f: () => void) => { subs.add(f); return () => { 
 export const getWallet = () => wallet;
 export const useWallet = () => useSyncExternalStore(subscribeWallet, getWallet, getWallet);
 
-/* ---------- cloud backup (signed-in players) ---------- */
+/* ---------- cloud backup (signed-in players) ----------
+   The cloud copy only changes through the save_wallet() function in Supabase, which checks the new copy against the
+   stored one (coins and XP within what can be earned, looks paid for) and sends back what it kept. This phone then
+   takes the server's copy, so the balance is the same on every phone and can't be raised by editing this one. */
 let saveTimer = 0;
+const same = (a: R.Wallet, b: R.Wallet) => a.coins === b.coins && a.xp === b.xp && a.owned.length === b.owned.length && a.owned.every(x => b.owned.includes(x));
 function scheduleCloudSave() {
   const c = supabase;
   if (!c || owner === GUEST) return;
   window.clearTimeout(saveTimer);
   const who = owner, state = wallet;
   saveTimer = window.setTimeout(() => {
-    void c.from("player_wallets").upsert({ user_id: who, state, updated_at: new Date().toISOString() }, { onConflict: "user_id" })
-      .then(({ error }) => { if (error) console.warn("Wallet backup failed:", error.message); });
+    void c.rpc("save_wallet", { p_state: state }).then(({ data, error }) => {
+      if (error) { console.warn("Wallet backup failed:", error.message); return; }
+      if (owner !== who || wallet !== state || !data) return;          // changed meanwhile: the next save settles it
+      const kept = R.readWallet(data, Date.now());
+      if (same(kept, state)) return;
+      wallet = kept; writeLocal(who, kept); emit();                    // the server's copy wins (no new save needed)
+    });
   }, 1500);
 }
 async function loadCloud(who: string): Promise<R.Wallet | null> {

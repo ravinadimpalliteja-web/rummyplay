@@ -5,38 +5,47 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <script src="/app-mode.js"></script>
 <title>Royal Club Word Puzzle</title>
-<meta name="theme-color" content="#063b2b">
+<meta name="theme-color" content="#5c2a08">
 <meta name="description" content="A new word every day: guess it in 6 tries, learn its meaning, and compare with your family.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* Royal Club Word Puzzle — Game Stage look: deep emerald, gold tiles, saffron only on what you tap. */
+/* Royal Club Word Puzzle — Citrine look: deep amber, gold tiles, saffron only on what you tap. */
 :root{
-  --bg1:#063b2b; --bg2:#021f17;
+  --bg1:#5c2a08; --bg2:#2a1003;
   --gold:#e3b54a; --gold2:#f6d77e; --goldDeep:#a67a1c;
   --saffron:#ff9933; --saffronDeep:#e0761a;
   --hit:#13a36e; --hitDeep:#0a6d48; --miss:#2f3d39; --missDeep:#1d2826;
-  --ink:#fdf6e3; --muted:#a9c7bb;
+  --ink:#fdf6e3; --muted:#e6c9a3;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%}
 body{font-family:Poppins,system-ui,sans-serif;color:var(--ink);
-  background:radial-gradient(120% 80% at 50% 0%,#0d6b4d 0%,var(--bg1) 45%,var(--bg2) 100%);
+  background:radial-gradient(120% 80% at 50% 0%,#9a4e12 0%,var(--bg1) 45%,var(--bg2) 100%);
   display:flex;justify-content:center;overflow:hidden;
   padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
 body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.07;
   background-image:radial-gradient(circle at 25% 25%,var(--gold) 1.5px,transparent 2px),radial-gradient(circle at 75% 75%,var(--gold) 1.5px,transparent 2px);background-size:28px 28px}
 button{font-family:inherit}
 .app{width:100%;max-width:520px;height:100%;display:flex;flex-direction:column;position:relative}
-.top{display:flex;align-items:center;gap:6px;padding:10px 12px 4px}
-.iconbtn{width:40px;height:40px;border-radius:12px;border:1px solid rgba(227,181,74,.35);flex:none;
-  background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(0,0,0,.15));color:var(--gold2);display:grid;place-items:center;cursor:pointer;font-size:17px;font-weight:700}
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px 4px}
+/* Back button and brand: the same as EKAH, Sudoku and Chess (36px, gold arrow, Royal Club badge, game name below). */
+.club-lead{display:flex;align-items:center;gap:10px;min-width:0}
+.club-back{flex:none;width:36px;height:36px;display:grid;place-items:center;border:1px solid rgba(243,217,138,.35);border-radius:10px;background:rgba(255,255,255,.06);color:var(--gold);text-decoration:none;font-size:18px;line-height:1}
+.club-back:hover{border-color:var(--gold)}
+.club-back:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.brand{display:flex;align-items:center;gap:8px;min-width:0}
+.brand-mark{width:46px;height:34px;display:grid;place-items:center;flex:none}
+.brand-mark img{width:46px;height:auto;display:block}
+.brand-text{line-height:1.1;min-width:0}
+.brand-text strong{display:block;font:700 14px/1.1 Cinzel,serif;letter-spacing:.14em;color:var(--gold2);white-space:nowrap}
+.brand-text small{display:block;font-size:9px;font-weight:700;letter-spacing:.26em;color:var(--muted);white-space:nowrap;margin-top:2px}
+.tools-top{display:flex;gap:6px;flex:none}
+.iconbtn{width:36px;height:36px;border-radius:10px;border:1px solid rgba(227,181,74,.35);flex:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(0,0,0,.15));color:var(--gold2);display:grid;place-items:center;cursor:pointer;font-size:16px;font-weight:700}
 .iconbtn:active{transform:scale(.94)}
-.brand{flex:1;text-align:center;line-height:1}
-.brand h1{font-family:Cinzel,serif;font-weight:800;margin:0;font-size:21px;letter-spacing:2px;white-space:nowrap;
-  background:linear-gradient(180deg,var(--gold2),var(--gold) 55%,var(--goldDeep));-webkit-background-clip:text;background-clip:text;color:transparent}
-.brand small{display:block;font-size:9.5px;letter-spacing:2.5px;color:var(--muted);margin-top:4px;text-transform:uppercase}
+.sheet .iconbtn.x{position:absolute;right:12px;top:12px}
 .strip{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:6px 12px 2px}
 .tabs{display:flex;background:rgba(0,0,0,.25);border:1px solid rgba(227,181,74,.25);border-radius:999px;padding:3px}
 .tab{border:0;background:none;color:var(--muted);font:600 12px Poppins;padding:6px 11px;border-radius:999px;cursor:pointer;white-space:nowrap}
@@ -84,21 +93,21 @@ button{font-family:inherit}
 .kb{padding:4px 5px 10px;display:flex;flex-direction:column;gap:6px;user-select:none}
 .kr{display:flex;gap:5px;justify-content:center}
 .key{flex:1;max-width:44px;height:52px;border-radius:10px;border:0;cursor:pointer;font:600 15px Poppins;color:var(--ink);text-transform:uppercase;
-  background:linear-gradient(180deg,#1a6b52,#0e4d3a);box-shadow:0 3px 0 #052c20,inset 0 1px 0 rgba(255,255,255,.12)}
-.key:active{transform:translateY(2px);box-shadow:0 1px 0 #052c20}
+  background:linear-gradient(180deg,#8a4a18,#5e2e0a);box-shadow:0 3px 0 #2e1303,inset 0 1px 0 rgba(255,255,255,.12)}
+.key:active{transform:translateY(2px);box-shadow:0 1px 0 #2e1303}
 .key.wide{max-width:70px;flex:1.5;font-size:12px}
 .key.enter{background:linear-gradient(180deg,#ffb15c,var(--saffron) 55%,var(--saffronDeep));color:#3a1d00;box-shadow:0 3px 0 #8a4508}
 .key.hit{background:linear-gradient(180deg,#22c487,var(--hitDeep));box-shadow:0 3px 0 #06402b}
 .key.near{background:linear-gradient(180deg,var(--gold2),var(--goldDeep));color:#3b2a05;box-shadow:0 3px 0 #6b4c0e}
-.key.miss{background:#26322f;color:#7f938c;box-shadow:0 3px 0 #121a18}
+.key.miss{background:#3d2a1e;color:#a08672;box-shadow:0 3px 0 #121a18}
 .toast{position:absolute;top:150px;left:50%;transform:translateX(-50%) translateY(-10px);opacity:0;pointer-events:none;
   background:var(--ink);color:#1b2a24;font:600 14px Poppins;padding:10px 16px;border-radius:12px;transition:.2s;z-index:60;white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 /* sheets */
-.scrim{position:fixed;inset:0;background:rgba(0,10,6,.72);display:none;align-items:flex-end;justify-content:center;z-index:40}
+.scrim{position:fixed;inset:0;background:rgba(24,8,0,.74);display:none;align-items:flex-end;justify-content:center;z-index:40}
 .scrim.show{display:flex}
 @media(min-width:600px){.scrim{align-items:center}}
-.sheet{width:100%;max-width:440px;max-height:92vh;overflow:auto;background:linear-gradient(180deg,#0f5a43,#083a2b);
+.sheet{width:100%;max-width:440px;max-height:92vh;overflow:auto;background:linear-gradient(180deg,#6e3510,#3c1a05);
   border:1px solid rgba(227,181,74,.45);border-radius:22px 22px 0 0;padding:20px 18px 24px;position:relative;animation:up .25s ease}
 @media(min-width:600px){.sheet{border-radius:22px}}
 .sheet h2{font-family:Cinzel,serif;color:var(--gold2);text-align:center;margin:4px 0 6px;letter-spacing:2px;font-size:22px}
@@ -170,8 +179,8 @@ button{font-family:inherit}
 .lenpick.show{display:flex}
 .lenpick button{border:1px solid rgba(227,181,74,.35);background:rgba(0,0,0,.2);color:var(--muted);border-radius:8px;padding:4px 8px;font:600 11px Poppins;cursor:pointer}
 .lenpick button.on{background:var(--gold);color:#3b2a05}
-@media(max-width:380px){.brand h1{font-size:17px;letter-spacing:1px}.top{gap:4px;padding:8px 8px 4px}.iconbtn{width:36px;height:36px}.brand small{font-size:8px;letter-spacing:1.5px}}
-@media(max-height:700px){.key{height:44px}.cluebar{padding:6px 8px}.brand small{display:none}}
+@media(max-width:380px){.top{gap:4px;padding:8px 8px 4px}.brand-mark{display:none}.tools-top{gap:4px}}
+@media(max-height:700px){.key{height:44px}.cluebar{padding:6px 8px}}
 
 a.iconbtn{text-decoration:none}
 [hidden]{display:none!important}
@@ -184,15 +193,22 @@ a.iconbtn{text-decoration:none}
 </head>
 <body>
 <div class="app">
-  <div class="top">
-    <a class="iconbtn" id="backBtn" href="/" aria-label="Back to Royal Club">←</a>
-    <button class="iconbtn" id="bookBtn" aria-label="Word Book" title="Word Book">📖</button>
-    <div class="brand"><h1>WORD PUZZLE</h1><small>Play daily · Learn daily</small></div>
-    <button class="iconbtn" id="lbBtn" aria-label="Family Board" title="Family Board">👑</button>
-    <button class="iconbtn" id="statsBtn" aria-label="Stats and help" title="Stats">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="6" width="4" height="15" rx="1"/><rect x="17" y="9" width="4" height="12" rx="1"/></svg>
-    </button>
-  </div>
+  <header class="top">
+    <span class="club-lead">
+      <a class="club-back" id="backBtn" href="/" aria-label="Back to Royal Club">←</a>
+      <span class="brand">
+        <span class="brand-mark"><img src="../brand/badge-logo-small.webp" alt="" width="320" height="224"></span>
+        <span class="brand-text"><strong>ROYAL CLUB</strong><small>WORD PUZZLE</small></span>
+      </span>
+    </span>
+    <span class="tools-top">
+      <button class="iconbtn" id="bookBtn" aria-label="Word Book" title="Word Book">📖</button>
+      <button class="iconbtn" id="lbBtn" aria-label="Family Board" title="Family Board">👑</button>
+      <button class="iconbtn" id="statsBtn" aria-label="Stats and help" title="Stats">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="6" width="4" height="15" rx="1"/><rect x="17" y="9" width="4" height="12" rx="1"/></svg>
+      </button>
+    </span>
+  </header>
   <div class="strip">
     <div class="tabs">
       <button class="tab" data-mode="easy">Easy · 4</button>

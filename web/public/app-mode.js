@@ -48,6 +48,17 @@ window.rcReport = function (game, result) {
     try { Object.defineProperty(navigator, 'vibrate', { value: vibrate, configurable: true }); } catch (e) { /* read-only: keep the WebView's own */ }
   }
 
+  /* App skin (app-skin.css + app-skin.js): the app lobby look for EKAH, Chess, Sudoku and Word Puzzle. */
+  if (/^\/(ekah|chess|sudoku|words)\/(index\.html)?$/.test(location.pathname)) {
+    var skinCss = document.createElement('link');
+    skinCss.rel = 'stylesheet';
+    skinCss.href = '/app-skin.css';
+    document.head.appendChild(skinCss);
+    var skinJs = document.createElement('script');
+    skinJs.src = '/app-skin.js';
+    document.head.appendChild(skinJs);
+  }
+
   var A = C.Plugins && C.Plugins.App;
   var goBack = function () { if (window.history.length > 1) window.history.back(); else window.location.href = '/'; };
 

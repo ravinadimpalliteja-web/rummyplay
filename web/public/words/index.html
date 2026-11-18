@@ -5,24 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <script src="/app-mode.js"></script>
 <title>Royal Club Word Puzzle</title>
-<meta name="theme-color" content="#063b2b">
+<meta name="theme-color" content="#5c2a08">
 <meta name="description" content="A new word every day: guess it in 6 tries, learn its meaning, and compare with your family.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* Royal Club Word Puzzle — Game Stage look: deep emerald, gold tiles, saffron only on what you tap. */
+/* Royal Club Word Puzzle — Citrine look: deep amber, gold tiles, saffron only on what you tap. */
 :root{
-  --bg1:#063b2b; --bg2:#021f17;
+  --bg1:#5c2a08; --bg2:#2a1003;
   --gold:#e3b54a; --gold2:#f6d77e; --goldDeep:#a67a1c;
   --saffron:#ff9933; --saffronDeep:#e0761a;
   --hit:#13a36e; --hitDeep:#0a6d48; --miss:#2f3d39; --missDeep:#1d2826;
-  --ink:#fdf6e3; --muted:#a9c7bb;
+  --ink:#fdf6e3; --muted:#e6c9a3;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%}
 body{font-family:Poppins,system-ui,sans-serif;color:var(--ink);
-  background:radial-gradient(120% 80% at 50% 0%,#0d6b4d 0%,var(--bg1) 45%,var(--bg2) 100%);
+  background:radial-gradient(120% 80% at 50% 0%,#9a4e12 0%,var(--bg1) 45%,var(--bg2) 100%);
   display:flex;justify-content:center;overflow:hidden;
   padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
 body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.07;
@@ -84,21 +84,21 @@ button{font-family:inherit}
 .kb{padding:4px 5px 10px;display:flex;flex-direction:column;gap:6px;user-select:none}
 .kr{display:flex;gap:5px;justify-content:center}
 .key{flex:1;max-width:44px;height:52px;border-radius:10px;border:0;cursor:pointer;font:600 15px Poppins;color:var(--ink);text-transform:uppercase;
-  background:linear-gradient(180deg,#1a6b52,#0e4d3a);box-shadow:0 3px 0 #052c20,inset 0 1px 0 rgba(255,255,255,.12)}
-.key:active{transform:translateY(2px);box-shadow:0 1px 0 #052c20}
+  background:linear-gradient(180deg,#8a4a18,#5e2e0a);box-shadow:0 3px 0 #2e1303,inset 0 1px 0 rgba(255,255,255,.12)}
+.key:active{transform:translateY(2px);box-shadow:0 1px 0 #2e1303}
 .key.wide{max-width:70px;flex:1.5;font-size:12px}
 .key.enter{background:linear-gradient(180deg,#ffb15c,var(--saffron) 55%,var(--saffronDeep));color:#3a1d00;box-shadow:0 3px 0 #8a4508}
 .key.hit{background:linear-gradient(180deg,#22c487,var(--hitDeep));box-shadow:0 3px 0 #06402b}
 .key.near{background:linear-gradient(180deg,var(--gold2),var(--goldDeep));color:#3b2a05;box-shadow:0 3px 0 #6b4c0e}
-.key.miss{background:#26322f;color:#7f938c;box-shadow:0 3px 0 #121a18}
+.key.miss{background:#3d2a1e;color:#a08672;box-shadow:0 3px 0 #121a18}
 .toast{position:absolute;top:150px;left:50%;transform:translateX(-50%) translateY(-10px);opacity:0;pointer-events:none;
   background:var(--ink);color:#1b2a24;font:600 14px Poppins;padding:10px 16px;border-radius:12px;transition:.2s;z-index:60;white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 /* sheets */
-.scrim{position:fixed;inset:0;background:rgba(0,10,6,.72);display:none;align-items:flex-end;justify-content:center;z-index:40}
+.scrim{position:fixed;inset:0;background:rgba(24,8,0,.74);display:none;align-items:flex-end;justify-content:center;z-index:40}
 .scrim.show{display:flex}
 @media(min-width:600px){.scrim{align-items:center}}
-.sheet{width:100%;max-width:440px;max-height:92vh;overflow:auto;background:linear-gradient(180deg,#0f5a43,#083a2b);
+.sheet{width:100%;max-width:440px;max-height:92vh;overflow:auto;background:linear-gradient(180deg,#6e3510,#3c1a05);
   border:1px solid rgba(227,181,74,.45);border-radius:22px 22px 0 0;padding:20px 18px 24px;position:relative;animation:up .25s ease}
 @media(min-width:600px){.sheet{border-radius:22px}}
 .sheet h2{font-family:Cinzel,serif;color:var(--gold2);text-align:center;margin:4px 0 6px;letter-spacing:2px;font-size:22px}

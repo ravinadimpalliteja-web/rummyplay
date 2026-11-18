@@ -104,6 +104,13 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 @keyframes twinkle{50%{transform:scale(.9)}}
 .pc{position:relative;width:92%;height:92%;pointer-events:none;filter:drop-shadow(0 2px 1.5px rgba(0,0,0,.35));z-index:1}
 .pc.pop{animation:pop .25s ease-out}
+.sheet .wide{width:100%;min-height:46px;border-radius:12px;font-weight:800}
+.tag.pz{background:#EAF3EE;color:#1E6B4E}
+.coach .meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:0 0 6px}
+.coach .tier{font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:3px 8px;border-radius:99px;background:#EAF3EE;color:#1E6B4E}
+.coach .tier.standard{background:#FFF3D6;color:#8A5A00}.coach .tier.hard{background:#FBE3E0;color:#9B2C22}
+.coach .rating{font-size:12px;font-weight:700;color:#6B6A5E}
+.coach .src{font-size:12px;color:#6B6A5E}.coach .src a{color:#1E6B4E;font-weight:700}
 @keyframes pop{from{transform:scale(.6);opacity:.4}}
 .arrows{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:4}
 .coach{width:100%;max-width:560px;background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:12px 14px;display:grid;gap:6px;min-height:0;overflow-y:auto}
@@ -194,6 +201,7 @@ html body .brand .rc-el + span strong{display:none}
 <script src="ai.js"></script>
 <script src="learn-core.js"></script>
 <script src="lessons.js"></script>
+<script src="puzzles.js"></script>
 <script>
 (function () {
   'use strict';
@@ -205,6 +213,10 @@ html body .brand .rc-el + span strong{display:none}
   };
   const PROGRESS_KEY = 'rc-learn-chess-progress';
   let progress = store.get(PROGRESS_KEY) || {};
+  // Practice puzzles from real games (Lichess puzzle database, CC0). practice[classId] = ids solved first try.
+  const PUZ = (self.RoyalChessPuzzles && self.RoyalChessPuzzles.byClass) || {};
+  const PRACTICE_KEY = 'rc-learn-chess-practice';
+  let practice = store.get(PRACTICE_KEY) || {};
   /* Premium classes are locked until payments are switched on. ?unlock opens them for testing on this visit only. */
   const unlocked = new URLSearchParams(location.search).has('unlock');
   const theme = store.get('rc-chess-board-theme'); if (theme) document.body.dataset.boardTheme = theme;
@@ -242,7 +254,8 @@ html body .brand .rc-el + span strong{display:none}
       return `<section class="level" aria-label="Level ${lv.n}"><div class="level-head"><span class="level-num">${lv.n}</span><div><b>${lv.title}</b><span>${lv.goal}</span></div>${tag}</div>
         <ul class="classes">${lv.classes.map((c) => {
           const st = progress[c.id], open = isOpen(c);
-          const end = c.soon ? '<span class="tag soon">Soon</span>' : !open ? `<span class="tag prem">Premium</span>${LOCK}` : st ? `<span class="stars">${starsHTML(st)}</span>` : c.free ? '<span class="tag free">Free</span>' : '';
+          const pz = PUZ[c.id] ? `<span class="tag pz" title="Practice puzzles from real games">🧩 ${(practice[c.id] || []).length}/${PUZ[c.id].length}</span>` : '';
+          const end = c.soon ? '<span class="tag soon">Soon</span>' : !open ? `<span class="tag prem">Premium</span>${LOCK}` : (st ? `<span class="stars">${starsHTML(st)}</span>` : c.free ? '<span class="tag free">Free</span>' : '') + pz;
           return `<li><button class="cls ${st ? 'done' : ''} ${open ? '' : 'locked'}" type="button" data-id="${c.id}"><span class="num">${st ? '✓' : c.n}</span><span class="txt"><b>${c.title}</b><small>${c.sub}</small></span><span class="end">${end}</span></button></li>`;
         }).join('')}</ul></section>`;
     }).join('');
@@ -252,12 +265,14 @@ html body .brand .rc-el + span strong{display:none}
     const c = ALL.find((x) => x.id === b.dataset.id);
     if (c.soon) return showSheet(`<h2>${c.title}</h2><p>Class ${c.n} is being prepared and will arrive with Learn Chess Premium.</p><div class="row"><button class="gold" type="button" data-close>OK</button></div>`);
     if (!isOpen(c)) return showPremium(c);
+    if (PUZ[c.id] && progress[c.id]) return showSheet(`<p class="eyebrow">Class ${c.n}</p><h2>${c.title}</h2><p>Replay the class, or practise with ${PUZ[c.id].length} puzzles from real games.</p>
+      <div class="row"><button class="ghost" type="button" data-go="${c.id}">Replay class</button><button class="gold" type="button" data-practice="${c.id}">🧩 Practice</button></div>`);
     openClass(c);
   });
   function showPremium(c) {
     showSheet(`<p class="eyebrow">Learn Chess Premium</p><h2>Unlock every class</h2>
       <p>${c ? `“${c.title}” is a premium class.` : ''} Premium opens all ${ALL.length} classes, from pawns and special moves to tactics, openings, endgames and master classes.</p>
-      <ul class="perks"><li>Level 1: classes 4–8</li><li>Levels 2–6: tactics, strategy, endgames and master classes</li><li>Puzzles and practice games against the computer</li></ul>
+      <ul class="perks"><li>Level 1: classes 4–8</li><li>Levels 2–6: tactics, strategy, endgames and master classes</li><li>Hundreds of practice puzzles from real games</li><li>Practice games against the computer</li></ul>
       <p><b>Purchases are coming soon.</b> No payment is taken today.</p>
       <div class="row"><button class="gold" type="button" data-close>OK</button></div>`);
   }
@@ -265,10 +280,12 @@ html body .brand .rc-el + span strong{display:none}
   function hideSheet() { $('sheet').hidden = true; }
   $('sheet').addEventListener('click', (e) => {
     if (e.target === $('sheet') || e.target.closest('[data-close]')) return hideSheet();
+    const pr = e.target.closest('[data-practice]');
+    if (pr) { hideSheet(); const c = ALL.find((x) => x.id === pr.dataset.practice); if (c && isOpen(c)) openPractice(c); return; }
     const go = e.target.closest('[data-go]'); if (!go) return;
     hideSheet();
     if (go.dataset.go === 'home') return closeClass();
-    if (go.dataset.go === 'again') return openClass(cls);
+    if (go.dataset.go === 'again') return cls.practice ? openPractice(cls.base) : openClass(cls);
     const c = ALL.find((x) => x.id === go.dataset.go);
     if (c) { if (isOpen(c)) openClass(c); else { closeClass(); showPremium(c); } }
   });
@@ -277,14 +294,19 @@ html body .brand .rc-el + span strong{display:none}
   const FILES = 'abcdefgh';
   const sqName = (f, r) => FILES[f] + (r + 1);
   const boardEl = $('board');
-  (function buildBoard() {
+  let flipped = false;   // true = Black at the bottom (practice puzzles where you play Black)
+  function buildBoard() {
     let html = '';
-    for (let row = 7; row >= 0; row--) for (let f = 0; f < 8; f++) {
+    for (let k = 0; k < 64; k++) {
+      const row = flipped ? Math.floor(k / 8) : 7 - Math.floor(k / 8), f = flipped ? 7 - (k % 8) : k % 8;
       const s = sqName(f, row), dark = (f + row) % 2 === 0;
-      html += `<button class="sq ${dark ? 'd' : ''}" type="button" data-sq="${s}" data-dark="${dark ? 1 : 0}" aria-label="${s}">${row === 0 ? `<span class="coord f">${FILES[f]}</span>` : ''}${f === 0 ? `<span class="coord r">${row + 1}</span>` : ''}</button>`;
+      const bottom = flipped ? row === 7 : row === 0, left = flipped ? f === 7 : f === 0;
+      html += `<button class="sq ${dark ? 'd' : ''}" type="button" data-sq="${s}" data-dark="${dark ? 1 : 0}" aria-label="${s}">${bottom ? `<span class="coord f">${FILES[f]}</span>` : ''}${left ? `<span class="coord r">${row + 1}</span>` : ''}</button>`;
     }
     boardEl.innerHTML = html;
-  })();
+  }
+  buildBoard();
+  function setFlip(v) { if (v !== flipped) { flipped = v; buildBoard(); } }
   const cell = (s) => boardEl.querySelector(`[data-sq="${s}"]`);
   function draw(pos, marks = {}, extra = {}) {
     boardEl.querySelectorAll('.sq').forEach((el) => {
@@ -300,7 +322,7 @@ html body .brand .rc-el + span strong{display:none}
       if ((marks.dots || []).includes(s)) el.insertAdjacentHTML('beforeend', '<span class="dot"></span>');
       if ((extra.targets || []).includes(s)) el.insertAdjacentHTML('beforeend', p ? '<span class="ring"></span>' : '<span class="dot"></span>');
     });
-    const c = (s) => [FILES.indexOf(s[0]) + .5, 8 - Number(s[1]) + .5];
+    const c = (s) => flipped ? [8 - FILES.indexOf(s[0]) - .5, Number(s[1]) - .5] : [FILES.indexOf(s[0]) + .5, 8 - Number(s[1]) + .5];
     $('arrows').innerHTML = '<defs><marker id="ah" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="3.2" markerHeight="3.2" orient="auto"><path d="M0 0 10 5 0 10z" fill="#D9A520"/></marker></defs>' +
       (marks.arrows || []).map(([a, b]) => {
         const [x1, y1] = c(a), [x2, y2] = c(b), d = Math.hypot(x2 - x1, y2 - y1), k = (d - .38) / d;
@@ -313,12 +335,20 @@ html body .brand .rc-el + span strong{display:none}
   /* ---------- running a class ---------- */
   let cls = null, idx = 0, mistakes = 0, st = null;
   function openClass(c) {
-    cls = c; idx = 0; mistakes = 0;
+    cls = c; idx = 0; mistakes = 0; setFlip(false);
     $('home').hidden = true; $('lesson').hidden = false;
     $('lsKicker').textContent = `Level ${c.level} · Class ${c.n}`; $('lsTitle').textContent = c.title;
     startStep();
   }
-  function closeClass() { cls = null; $('lesson').hidden = true; $('home').hidden = false; renderHome(); }
+  function openPractice(c) {
+    const list = PUZ[c.id] || []; if (!list.length) return;
+    cls = { ...c, base: c, practice: true, steps: list.map((p) => ({ kind: 'puzzle', p, text: '' })), solved: 0 };
+    idx = 0; mistakes = 0;
+    $('home').hidden = true; $('lesson').hidden = false;
+    $('lsKicker').textContent = `Practice · Class ${c.n}`; $('lsTitle').textContent = c.title;
+    startStep();
+  }
+  function closeClass() { setFlip(false); cls = null; $('lesson').hidden = true; $('home').hidden = false; renderHome(); }
   $('lsClose').addEventListener('click', closeClass);
 
   function coach(text, fb = '', kind = 'info', extraHTML = '') {
@@ -344,8 +374,9 @@ html body .brand .rc-el + span strong{display:none}
       st.pos = core.parse(s.fen); st.moves = 0; st.visited = new Set();
       drawGoal(); coach(s.text, `Best: ${s.par} move${s.par > 1 ? 's' : ''}`);
       setButtons({ alt: true, altLabel: 'Restart', next: false, nextLabel: lastLabel });
-    } else if (s.kind === 'move' || s.kind === 'play') {
-      st.g = new Chess(s.fen); st.moves = 0;
+    } else if (s.kind === 'puzzle') startPuzzle(s, lastLabel);
+    else if (s.kind === 'move' || s.kind === 'play') {
+      setFlip(false); st.g = new Chess(s.fen); st.moves = 0;
       draw(fromEngine(st.g), s.marks); coach(s.text);
       setButtons({ alt: s.kind === 'play' || !!s.hint, altLabel: s.kind === 'play' ? 'Restart' : 'Hint', next: false, nextLabel: lastLabel });
       if (s.pre && s.pre.length) {
@@ -353,6 +384,58 @@ html body .brand .rc-el + span strong{display:none}
         setTimeout(() => { let mv; for (const p of s.pre) mv = st.g.move(p); st.last = [mv.from, mv.to]; st.busy = false; drawEngine(); }, 650);
       }
     }
+  }
+  /* ---------- practice puzzles ---------- */
+  const TIER = { warm: 'Warm-up', standard: 'Standard', hard: 'Hard' };
+  const uciMove = (u) => ({ from: u.slice(0, 2), to: u.slice(2, 4), promotion: u[4] || undefined });
+  function puzzleText(withSource) {
+    const p = st.s.p, me = st.me === 'w' ? 'White' : 'Black';
+    st.s.text = `<span class="meta"><span class="tier ${p.tier}">${TIER[p.tier]}</span><span class="rating">Puzzle rating ${p.rating}</span></span><b>${me} to play.</b> Find the best move${p.moves.length > 3 ? 's' : ''}.`;
+    return st.s.text + (withSource ? `<br><span class="src">From a real game · <a href="${p.url}" target="_blank" rel="noopener">see the game ↗</a></span>` : '');
+  }
+  function startPuzzle(s, lastLabel) {
+    const p = s.p;
+    st.g = new Chess(p.fen); st.ply = 0; st.firstTry = true;
+    st.me = st.g.turn() === 'w' ? 'b' : 'w';          // the first move is the opponent's
+    setFlip(st.me === 'b');
+    drawEngine(); coach(puzzleText(false), 'Watch your opponent\'s move…', 'info');
+    setButtons({ alt: true, altLabel: 'Hint', next: false, nextLabel: lastLabel });
+    st.busy = true;
+    setTimeout(() => { if (!st || st.s !== s) return; const m = st.g.move(uciMove(p.moves[0])); st.ply = 1; st.last = [m.from, m.to]; st.busy = false; drawEngine({ pop: [m.to] }); coach(puzzleText(false)); }, 700);
+  }
+  function puzzleMove(mv) {
+    const p = st.s.p, want = p.moves[st.ply], g = st.g;
+    const lastPly = st.ply === p.moves.length - 1;
+    g.move({ from: mv.from, to: mv.to, promotion: mv.promotion ? (want && want[4]) || 'q' : undefined });
+    const isMate = g.status().reason === 'checkmate';
+    const right = (mv.from + mv.to) === want.slice(0, 4) || (lastPly && isMate);
+    if (!right) { g.undo(); flash(mv.to, 'wrong'); drawEngine(); st.firstTry = false; mistakes++; st.wrong++; return coach(puzzleText(false), 'Not the best move here. Look again: checks, captures, threats.', 'bad'); }
+    st.last = [mv.from, mv.to]; st.ply++; drawEngine({ pop: [mv.to] }); flash(mv.to, 'good');
+    if (st.ply >= p.moves.length) return solvedPuzzle();
+    coach(puzzleText(false), 'Good move! Now the reply…', 'good');
+    st.busy = true;
+    setTimeout(() => {
+      if (!st || st.s.p !== p) return;
+      const m = g.move(uciMove(p.moves[st.ply])); st.ply++; st.last = [m.from, m.to]; st.busy = false;
+      drawEngine({ pop: [m.to] }); coach(puzzleText(false), 'Keep going: find the next move.', 'info');
+    }, 520);
+  }
+  function solvedPuzzle() {
+    const p = st.s.p;
+    if (st.firstTry) {
+      cls.solved++;
+      const got = new Set(practice[cls.id] || []); got.add(p.id); practice[cls.id] = [...got]; store.set(PRACTICE_KEY, practice);
+    }
+    st.done = true; st.sel = null;
+    coach(puzzleText(true), st.firstTry ? 'Solved on the first try! ✓' : 'Solved. Try for a first-try solve next time.', 'good');
+    setButtons({ alt: false, next: true, nextLabel: st.nextLabel });
+  }
+  function puzzleHint() {
+    const p = st.s.p, want = p.moves[st.ply]; if (!want || st.busy) return;
+    st.firstTry = false;
+    if (!st.hinted) { st.hinted = true; mistakes++; drawEngine({ sel: want.slice(0, 2) }); flash(want.slice(0, 2), 'good'); coach(puzzleText(false), 'Hint: move the highlighted piece.', 'info'); $('btnAlt').textContent = 'Show move'; return; }
+    puzzleMove(st.g.moves({ square: want.slice(0, 2) }).find((m) => m.to === want.slice(2, 4)));
+    st.hinted = false; if (!st.done) $('btnAlt').textContent = 'Hint';
   }
   const drawGoal = (extra = {}) => draw(st.pos, {}, Object.assign({ stars: st.s.stars || [], visited: st.visited, sel: st.sel, last: st.last }, extra));
   const drawEngine = (extra = {}) => draw(fromEngine(st.g), {}, Object.assign({ sel: st.sel, last: st.last, red: [] }, extra));
@@ -383,7 +466,7 @@ html body .brand .rc-el + span strong{display:none}
       if (s === st.s.answer) { flash(s, 'good'); succeed(`Yes, that is ${s}.`); }
       else { flash(s, 'wrong'); miss(`That is ${s}. Try again.`); }
     } else if (k === 'goal') goalClick(s);
-    else if (k === 'move' || k === 'play') engineClick(s);
+    else if (k === 'move' || k === 'play' || k === 'puzzle') engineClick(s);
   });
 
   function goalClick(s) {
@@ -415,6 +498,7 @@ html body .brand .rc-el + span strong{display:none}
   }
   function tryMove(mv) {
     const s = st.s, g = st.g; st.sel = null;
+    if (s.kind === 'puzzle') return puzzleMove(mv);
     const promo = mv.promotion ? 'q' : undefined;
     if (s.kind === 'move') {
       const san = mv.san.replace(/[+#]/, '');
@@ -448,6 +532,7 @@ html body .brand .rc-el + span strong{display:none}
 
   $('btnAlt').addEventListener('click', () => {
     const s = st.s;
+    if (s.kind === 'puzzle') return puzzleHint();
     if (s.kind === 'goal' || s.kind === 'play') return startStep();
     if (s.hint) { if (!st.hinted) { mistakes++; st.hinted = true; } coach(s.text, 'Hint: ' + s.hint, 'info'); if (s.kind === 'tap') flash(s.answer, 'good'); }
   });
@@ -457,12 +542,20 @@ html body .brand .rc-el + span strong{display:none}
     finish();
   });
   function finish() {
+    if (cls.practice) {
+      const total = cls.steps.length, all = (practice[cls.id] || []).length;
+      return showSheet(`<p class="eyebrow">Practice complete</p><h2>${cls.title}</h2><div class="big-stars">🧩 ${cls.solved}/${total}</div>
+        <p>${cls.solved} of ${total} solved on the first try this round. All-time: ${all} of ${total}.</p>
+        <p class="src">Puzzles from real games, from the free Lichess puzzle database.</p>
+        <div class="row"><button class="ghost" type="button" data-go="home">All classes</button><button class="gold" type="button" data-go="again">Practise again</button></div>`);
+    }
     const stars = mistakes === 0 ? 3 : mistakes <= 2 ? 2 : 1;
     if (!progress[cls.id] || stars > progress[cls.id]) { progress[cls.id] = stars; store.set(PROGRESS_KEY, progress); }
     const i = ALL.indexOf(cls), next = ALL.slice(i + 1).find((c) => !c.soon);
     const nextBtn = next ? `<button class="gold" type="button" data-go="${next.id}">${isOpen(next) ? 'Next class →' : 'Next class 🔒'}</button>` : '';
     showSheet(`<p class="eyebrow">Class ${cls.n} complete</p><h2>${cls.title}</h2><div class="big-stars">${starsHTML(stars)}</div>
       <p>${stars === 3 ? 'Perfect class: no mistakes and no hints.' : stars === 2 ? 'Well done! A couple of slips; replay any time for three stars.' : 'Class finished. Replay it to earn more stars.'}</p>
+      ${PUZ[cls.id] ? `<button class="gold wide" type="button" data-practice="${cls.id}">🧩 Practice: ${PUZ[cls.id].length} puzzles from real games</button>` : ''}
       <div class="row"><button class="ghost" type="button" data-go="home">All classes</button>${nextBtn || '<button class="ghost" type="button" data-go="again">Replay</button>'}</div>`);
   }
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('sheet').hidden) hideSheet(); });
@@ -471,6 +564,8 @@ html body .brand .rc-el + span strong{display:none}
   renderHome();
   const want = new URLSearchParams(location.search).get('class');
   if (want) { const c = ALL.find((x) => x.id === want || String(x.n) === want); if (c && isOpen(c)) openClass(c); }
+  const wantP = new URLSearchParams(location.search).get('practice');
+  if (wantP) { const c = ALL.find((x) => x.id === wantP); if (c && isOpen(c)) openPractice(c); }
 })();
 </script>
 </body>

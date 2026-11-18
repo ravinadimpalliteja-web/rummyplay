@@ -11,7 +11,7 @@ CLASSES = {          # class id -> Lichess theme that must be present
     "values": "advantage", "hanging": "hangingPiece", "fork": "fork", "pin": "pin",
     "skewer": "skewer", "discovered": "discoveredAttack", "backrank": "backRankMate", "mate2": "mateIn2",
 }
-EXTRA = {"values": {"oneMove"}}   # warm, simple material wins for the piece-values class
+EXTRA = {"values": {"short"}}   # short material-winning puzzles for the piece-values class
 TIERS = [("warm", 900, 1250), ("standard", 1300, 1650), ("hard", 1700, 2150)]
 PER_TIER, CANDIDATES = 5, 14
 
@@ -33,7 +33,7 @@ for row in csv.DictReader(src):
     if not tier: continue
     for cid, theme in CLASSES.items():
         if theme not in th or not EXTRA.get(cid, set()) <= th: continue
-        if cid == "values" and th & {"fork", "pin", "skewer", "mate"}: continue
+        if cid == "values" and th & {"fork", "pin", "skewer", "mate", "discoveredAttack", "hangingPiece", "sacrifice"}: continue
         pool = pools[cid][tier]
         item = (key(row["PuzzleId"]), row)
         if len(pool) < 4000: pool.append(item)

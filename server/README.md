@@ -64,7 +64,7 @@ Zero dependencies (Node 18+). Rooms live in memory, so a restart ends any game i
 
 ## Connect the website
 Set the website build variable `VITE_ROOM_SERVER_URL` to the server's WebSocket address (for example
-`wss://royal-club-rooms.onrender.com`) and redeploy. For testing a preview, `?server=wss://...` can be added to the URL.
+`wss://royal-club-rooms.ravi-nadimpalli-teja.workers.dev` on Cloudflare; the old Render address was `wss://royal-club-rooms.onrender.com`) and redeploy. For testing a preview, `?server=wss://...` can be added to the URL.
 
 ## Running on Cloudflare (Workers + Durable Objects)
 The same rooms and game rules also run on Cloudflare (`cloudflare/worker.mjs`, shared logic in `hub.js`):

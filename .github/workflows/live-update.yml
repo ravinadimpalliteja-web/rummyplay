@@ -38,7 +38,7 @@ jobs:
     env:
       VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || 'https://cveqalxcpenkncahnexd.supabase.co' }}
       VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_o89SjkD_5i4ay4JdKhVydw_VzNWbi8G' }}
-      VITE_ROOM_SERVER_URL: ${{ vars.VITE_ROOM_SERVER_URL || 'wss://royal-club-rooms.onrender.com' }}
+      VITE_ROOM_SERVER_URL: ${{ vars.VITE_ROOM_SERVER_URL || 'wss://royal-club-rooms.ravi-nadimpalli-teja.workers.dev' }}
       MIN_NATIVE: ${{ inputs.min_native }}
       NOTE: ${{ inputs.note }}
     steps:

@@ -9,6 +9,8 @@ function game(hand, top, color) {
   const g = E.createGame([{ name: 'A' }, { name: 'B' }], { seed: 7 });
   E.startRound(g);
   g.players[0].hand = hand; g.discard.push(top); g.color = color; g.turn = 0; g.pendingDrawn = null;
+  // the deck is shuffled at random: clear any attack the opening card started (Rin/Mahakal stacking)
+  g.pending = 0; g.attack = null; g.vulnerable = null;
   return g;
 }
 const n = (id, suit, value) => ({ id, suit, type: 'num', value });

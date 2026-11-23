@@ -9,6 +9,8 @@ import {
 import { DICE, Face, Piece, PieceDefs, TOKEN_SETS, isUnlocked, setPips, unlockText, type DiceId, type TokenSet } from "./pieces";
 import { useRealWins } from "./realWins";
 import { celebrate } from "../snakes/confetti";
+import { Celebration } from "./Celebration";
+import ambaroMedallion from "../brand/ambaro-medallion.webp";
 import { motionReduced, setMotionReduced } from "../lib/motion";
 import { inviteText } from "../lib/share";
 import { SAVE_KEYS, loadGame, saveGame, clearGame } from "../lib/localSave";
@@ -102,6 +104,7 @@ function tone(f: number, dur: number, type: OscillatorType = "triangle", vol = .
   if (!audioOn()) return;
   try {
     ac = ac ?? new AudioContext(); if (ac.state === "suspended") void ac.resume();
+    loadTrumpet();
     const t0 = ac.currentTime + when, o = ac.createOscillator(), g = ac.createGain();
     o.type = type; o.frequency.setValueAtTime(f, t0); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t0 + dur);
     g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
@@ -111,6 +114,21 @@ function tone(f: number, dur: number, type: OscillatorType = "triangle", vol = .
 const sDice = () => { for (let i = 0; i < 6; i++) tone(180 + Math.random() * 260, .04, "square", .03, i * .075); };
 const sStep = () => tone(620, .05, "triangle", .045);
 const sCut = () => tone(520, .35, "sawtooth", .055, 0, 90);
+/* A real elephant trumpet (public/sounds/animals/elephant-joy.mp3, also used by Snakes & Ladders), fetched once the
+   first sound has played; until it arrives the generated trumpet plays instead. */
+let trumpetBuf: AudioBuffer | null = null, trumpetAsked = false;
+function loadTrumpet() {
+  const c = ac; if (!c || trumpetAsked) return;
+  trumpetAsked = true;
+  fetch("/sounds/animals/elephant-joy.mp3").then(r => (r.ok ? r.arrayBuffer() : Promise.reject())).then(b => c.decodeAudioData(b)).then(b => { trumpetBuf = b; }).catch(() => undefined);
+}
+function trumpet(when = 0, vol = .5): boolean {
+  if (!audioOn() || !ac || !trumpetBuf) return false;
+  try {
+    const src = ac.createBufferSource(), g = ac.createGain(); src.buffer = trumpetBuf; g.gain.value = vol;
+    src.connect(g).connect(ac.destination); src.start(ac.currentTime + when); return true;
+  } catch { return false; }
+}
 /** A short burst of filtered noise (whoosh, clash, thud). */
 function hiss(dur: number, freq: number, vol = .08, when = 0, endFreq?: number, q = 1.2) {
   if (!audioOn()) return;
@@ -135,9 +153,11 @@ const sDuel = (set: TokenSet) => {
       [0, .08, .2, .28].forEach(w => tone(110, .06, "sine", .12, .02 + w, 70));          // hooves
       tone(980, .1, "triangle", .05, .16, 1500); tone(1500, .22, "triangle", .045, .26, 760);   // neigh
       break;
-    case "elephant":
-      tone(320, .34, "sawtooth", .045, .1, 760); tone(330, .34, "sawtooth", .035, .11, 780);    // trumpet
-      tone(62, .3, "sine", .2, .38, 40); hiss(.24, 220, .09, .38, 120, .8);                     // heavy stomp
+    case "ambaro":
+      if (!trumpet(.04, .5)) { tone(320, .34, "sawtooth", .045, .1, 760); tone(330, .34, "sawtooth", .035, .11, 780); }   // trumpet
+      [0, .12, .24].forEach(w => tone(58, .12, "sine", .14, .3 + w * .5, 44));                  // the charge
+      hiss(.22, 260, .08, .4, 140, .8);                                                         // dust
+      hiss(.3, 1400, .05, .5, 4200); tone(520, .4, "triangle", .04, .52, 1400);                 // flung high in the air
       break;
     case "tiger":
       hiss(.42, 160, .12, .02, 120, 6); tone(82, .4, "sawtooth", .05, .02, 70);                // growl
@@ -159,6 +179,18 @@ const sDuel = (set: TokenSet) => {
 const sSafe = () => { tone(196, .11, "square", .022, 0, 220); tone(784, .16, "sine", .045, .04); tone(1175, .2, "sine", .03, .09); };
 const sHome = () => arrival(audioOn());            // war-trumpet arrival call (lib/fanfare.ts)
 const sWin = () => victory(audioOn());             // joyful winner tune, kept soft
+/** A small temple bell, as on the safe squares. */
+const bell = (f: number, when = 0, vol = 1) => ([[1, .11, 1.6], [2, .047, 1.1], [2.76, .033, .8], [5.4, .013, .4]] as const).forEach(([m, v, d]) => tone(f * m, d, "sine", v * vol, when));
+/** Finishing sounds. 1st: nagara drums, the elephant's trumpet and the winner tune; 2nd: temple bells rising one by
+    one as the lamps light; 3rd: two soft bells. */
+const sPlace = (place: number) => {
+  if (place === 0) {
+    sWin();
+    [0, .26, .52, .65, .78, 1.04, 1.3, 1.43, 1.56, 1.82].forEach((w, i) => tone(i % 3 === 2 ? 130 : 92, .2, "sine", .2, w, 60));   // nagara
+    if (!trumpet(.5, .55)) tone(330, .6, "sawtooth", .04, .5, 760);
+  } else if (place === 1) [523, 659, 784, 1047].forEach((f, i) => bell(f, .25 + i * .3, .8));
+  else [659, 880].forEach((f, i) => bell(f, i * .35, .7));
+};
 
 function star(cx: number, cy: number, R: number, r: number) {
   return Array.from({ length: 10 }, (_, i) => { const a = -Math.PI / 2 + i * Math.PI / 5, d = i % 2 ? r : R; return `${(cx + Math.cos(a) * d).toFixed(3)},${(cy + Math.sin(a) * d).toFixed(3)}`; }).join(" ");
@@ -195,14 +227,38 @@ function BoardArt() {
     <polygon points="6,6 9,6 7.5,7.5" className="ld-f-green ld-grid" />
     <polygon points="9,6 9,9 7.5,7.5" className="ld-f-yellow ld-grid" />
     <polygon points="6,9 9,9 7.5,7.5" className="ld-f-blue ld-grid" />
-    <circle cx="7.5" cy="7.5" r=".42" className="ld-crest" />
-    <path d="M7.5 7.18 L7.68 7.5 L7.5 7.82 L7.32 7.5 Z" className="ld-crest-mark" />
+    {/* the centre is the ambari: four colour bays edged in gold around the Ambaro elephant medallion */}
+    <path d="M6 6 L9 9 M9 6 L6 9" className="ld-bay-edge" />
+    <rect x="6" y="6" width="3" height="3" className="ld-bay-frame" />
   </svg>;
 }
 
-/** Previews of every token set (all four colours) and every dice finish, for the lobby and the in-game Style sheet. */
-function StylePicker({ tokens, dice, wins, signedIn, onTokens, onDice }: { tokens: TokenSet; dice: DiceId; wins: number; signedIn: boolean; onTokens: (t: TokenSet) => void; onDice: (d: DiceId) => void }) {
+/* Board themes: the look of the squares and frame. The four player colours never change. */
+const THEMES = [
+  { id: "royal", name: "Ambaro Royal", note: "Ivory squares in an emerald and gold frame" },
+  { id: "dasara", name: "Dasara Night", note: "Indigo night, lamp-lit gold" },
+  { id: "marble", name: "Palace Marble", note: "White marble with gold inlay" },
+] as const;
+type ThemeId = typeof THEMES[number]["id"];
+const THEME_KEY = "rc-ludo-theme";
+/** A small picture of a board in a theme, for the picker. */
+const MiniBoard = ({ theme }: { theme: ThemeId }) => <span className={`ld-minib ld-theme-${theme}`}>
+  <svg viewBox="0 0 15 15" aria-hidden="true">
+    <rect width="15" height="15" className="ld-cell" />
+    {COLORS.map(c => { const [x, y] = YARD[c]; return <g key={c}><rect x={x} y={y} width="6" height="6" className={`ld-f-${c}`} /><rect x={x + 1} y={y + 1} width="4" height="4" className="ld-yard" /></g>; })}
+    <polygon points="6,6 7.5,7.5 6,9" className="ld-f-red" /><polygon points="6,6 9,6 7.5,7.5" className="ld-f-green" />
+    <polygon points="9,6 9,9 7.5,7.5" className="ld-f-yellow" /><polygon points="6,9 9,9 7.5,7.5" className="ld-f-blue" />
+    <polygon points={star(2.5, 8.5, .4, .17)} className="ld-star" /><polygon points={star(12.5, 6.5, .4, .17)} className="ld-star" />
+  </svg>
+</span>;
+
+/** Previews of every token set (all four colours), board theme and dice finish, for the lobby and the in-game Style sheet. */
+function StylePicker({ tokens, dice, theme, wins, signedIn, onTokens, onDice, onTheme }: { tokens: TokenSet; dice: DiceId; theme: ThemeId; wins: number; signedIn: boolean; onTokens: (t: TokenSet) => void; onDice: (d: DiceId) => void; onTheme: (t: ThemeId) => void }) {
   return <div className="ld-style">
+    <b className="ld-style-title">Board</b>
+    <div className="ld-theme-grid">{THEMES.map(th => <button key={th.id} className={theme === th.id ? "on" : ""} aria-pressed={theme === th.id} onClick={() => onTheme(th.id)}>
+      <MiniBoard theme={th.id} /><strong>{th.name}</strong><small>{th.note}</small>
+    </button>)}</div>
     <b className="ld-style-title">Tokens</b>
     <p className="ld-small ld-unlock-rule">New tokens unlock as you win: finish 1st in a room with at least one real player.</p>
     <div className="ld-token-grid">{TOKEN_SETS.map(s => {
@@ -245,17 +301,18 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
   const [lessMotion, setLessMotion] = useState(reduced);
   const [lastDie, setLastDie] = useState<Record<number, number>>({});   // the value showing on each player's die
   const [rollingSeat, setRollingSeat] = useState<number | null>(null);
-  const [tokenSet, setTokenSet] = useState<TokenSet>(() => readKey(TOKEN_KEY, TOKEN_SETS.map(x => x.id), "sentry"));
+  const [tokenSet, setTokenSet] = useState<TokenSet>(() => readKey(TOKEN_KEY, TOKEN_SETS.map(x => x.id), "ambaro"));
   const [dice, setDice] = useState<DiceId>(() => readKey(DICE_KEY, DICE.map(x => x.id), "ivory"));
   const chooseTokens = (v: TokenSet) => { setTokenSet(v); keep(TOKEN_KEY, v); };
   const realWins = useRealWins("ludo");
-  const shownSet: TokenSet = isUnlocked(tokenSet, realWins.wins) ? tokenSet : "sentry";
+  const shownSet: TokenSet = isUnlocked(tokenSet, realWins.wins) ? tokenSet : "ambaro";
   const shownSetRef = useRef(shownSet); shownSetRef.current = shownSet;
-  const [banner, setBanner] = useState<{ id: number; text: string; big: boolean } | null>(null);
+  const [cele, setCele] = useState<{ id: number; place: number; color: Color; name: string } | null>(null);
   const [homeFx, setHomeFx] = useState(0);
   const [unlockedNow, setUnlockedNow] = useState<string[]>([]);
   const [winCounted, setWinCounted] = useState(false);
-  const showBanner = (text: string, big = false) => { const id = Date.now(); setBanner({ id, text, big }); window.setTimeout(() => setBanner(b => (b && b.id === id ? null : b)), big ? 2600 : 1800); };
+  const [theme, setTheme] = useState<ThemeId>(() => readKey(THEME_KEY, THEMES.map(x => x.id), "royal"));
+  const chooseTheme = (v: ThemeId) => { setTheme(v); keep(THEME_KEY, v); };
   const chooseDice = (v: DiceId) => { setDice(v); keep(DICE_KEY, v); };
   const dieEls = useRef<Record<number, HTMLElement | null>>({});
   const [msg, setMsg] = useState(""), [sheet, setSheet] = useState<"none" | "rules" | "style">("none"), [sound, setSound] = useState(audioOn());
@@ -419,8 +476,9 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
     if (l.home) { sHome(); const id = Date.now(); setHomeFx(id); window.setTimeout(() => setHomeFx(v => (v === id ? 0 : v)), 900); await wait(ANIM.home); }
     if (l.finished) {
       const place = t.ranks.indexOf(l.seat), who = t.names[l.seat];
-      sWin(); celebrate(place === 0);
-      if (t.stage !== "gameEnd") showBanner(place === 0 ? (who === "You" ? "You win! 👑" : `${who} wins! 👑`) : `${who} ${who === "You" ? "finish" : "finishes"} ${ORD[place] ?? ""}`, place === 0);
+      sPlace(place);
+      if (place <= 2) setCele({ id: Date.now(), place, color: t.colors[l.seat], name: who });     // 1st: the Ambari procession
+      else celebrate(false);
     }
   };
   useEffect(() => {
@@ -551,7 +609,7 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
         <button className="ghost-button rs-wide" onClick={() => startLocal("pass")}>Start Game</button>
       </div>
     </>}
-    after={<details className="ld-style-box rs-panel"><summary>Token and dice style</summary><PieceDefs /><StylePicker tokens={shownSet} dice={dice} wins={realWins.wins} signedIn={realWins.signedIn} onTokens={chooseTokens} onDice={chooseDice} /></details>}
+    after={<details className="ld-style-box rs-panel"><summary>Board, token and dice style</summary><PieceDefs /><StylePicker tokens={shownSet} dice={dice} theme={theme} wins={realWins.wins} signedIn={realWins.signedIn} onTokens={chooseTokens} onDice={chooseDice} onTheme={chooseTheme} /></details>}
     rules={<ul><li>A 6 brings a token out.</li><li>A 6, a cut or reaching home rolls again; three 6s in a row end the turn.</li><li>Starred and start squares are safe. You need the exact roll to finish.</li></ul>} />;
 
   if (sub === "room" && view) {
@@ -622,9 +680,10 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
     <div className="ld-main">
       <div className="ld-seats top">{seatCard(0)}{seatCard(1)}</div>
       <div className="ld-stage">
-        <div className="ld-board-wrap">
+        <div className={`ld-board-wrap ld-theme-${theme}`}>
           <div className={`ld-board ld-set-${shownSet}`} style={{ "--rot": `${rot}deg` } as CSSProperties}>
             <BoardArt />
+            <div className="ld-centre" aria-hidden="true"><img src={ambaroMedallion} alt="" draggable={false} /></div>
             <div className="ld-tokens">
               {t.order.flatMap(s => [0, 1, 2, 3].map(i => {
                 const p = place[`${s}-${i}`]; if (!p) return null;
@@ -651,7 +710,6 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
             {homeFx > 0 && <div key={homeFx} className="ld-homeburst" aria-hidden="true" />}
           </div>
           <div className="ld-fx">{bubbles.map(b => { const [x, y] = corner(b.seat); return <div key={b.id} className={`ld-bubble ld-bd-${t.colors[b.seat]}`} style={{ left: `${x}%`, top: `${y}%` }}><small>{label(t.names[b.seat])}</small>{b.text}</div>; })}</div>
-          {banner && <div key={banner.id} className={`ld-banner${banner.big ? " big" : ""}`} role="status">{banner.text}</div>}
           {showEnd && <div className="ld-win">
             <span className="eyebrow">ROYAL CLUB · LUDO</span>
             <h2>{t.ranks[0] === t.you ? "You take the crown!" : `${t.names[t.ranks[0]]} wins`}</h2>
@@ -687,10 +745,11 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
       <button className="gold-button" onClick={() => setSheet("none")}>Close</button>
     </div>}
     {sheet === "style" && <div className="ld-sheet" role="dialog" aria-label="Token and dice style">
-      <StylePicker tokens={shownSet} dice={dice} wins={realWins.wins} signedIn={realWins.signedIn} onTokens={chooseTokens} onDice={chooseDice} />
+      <StylePicker tokens={shownSet} dice={dice} theme={theme} wins={realWins.wins} signedIn={realWins.signedIn} onTokens={chooseTokens} onDice={chooseDice} onTheme={chooseTheme} />
       <label className="ld-motion"><input type="checkbox" checked={lessMotion} onChange={e => { setReduced(e.target.checked); setLessMotion(e.target.checked); }} /> Reduce animations <small>(shorter moves, no capture duel)</small></label>
       <p className="ld-small">Your choice is saved on this device. In a room, everyone sees their own style.</p>
       <button className="gold-button" onClick={() => setSheet("none")}>Done</button>
     </div>}
+    {cele && <Celebration key={cele.id} place={cele.place} color={cele.color} name={label(cele.name)} onDone={() => setCele(c => (c && c.id === cele.id ? null : c))} />}
   </section>;
 }

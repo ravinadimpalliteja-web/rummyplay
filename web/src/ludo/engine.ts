@@ -161,7 +161,8 @@ export const LANE: Record<Color, [number, number][]> = {
   red: [[1, 7], [2, 7], [3, 7], [4, 7], [5, 7]], green: [[7, 1], [7, 2], [7, 3], [7, 4], [7, 5]],
   yellow: [[13, 7], [12, 7], [11, 7], [10, 7], [9, 7]], blue: [[7, 13], [7, 12], [7, 11], [7, 10], [7, 9]],
 };
-export const FINISH: Record<Color, [number, number]> = { red: [6.55, 7.5], green: [7.5, 6.55], yellow: [8.45, 7.5], blue: [7.5, 8.45] };
+/* where finished tokens rest: in their colour's bay of the ambari, around the elephant medallion in the centre */
+export const FINISH: Record<Color, [number, number]> = { red: [6.34, 7.5], green: [7.5, 6.34], yellow: [8.66, 7.5], blue: [7.5, 8.66] };
 export const SPOTS: [number, number][] = [[1.9, 1.9], [4.1, 1.9], [1.9, 4.1], [4.1, 4.1]];
 
 export function pointOf(c: Color, t: Tok, i: number): [number, number] {

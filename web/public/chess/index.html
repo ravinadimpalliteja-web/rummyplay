@@ -80,6 +80,20 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--gold-2); ou
 .multiplayer-action b{font-size:13px}
 .multiplayer-action small{font-size:10px;color:var(--muted);line-height:1.35}
 .multiplayer-note{margin:12px 0 0;line-height:1.45}
+.mp-wide{width:100%}
+.mp-or{display:flex;align-items:center;gap:10px;margin:12px 0 10px;font-size:12px;color:var(--muted)}
+.mp-or::before,.mp-or::after{content:"";flex:1;height:1px;background:#41634f}
+.mp-join{display:grid;grid-template-columns:1fr 1fr auto;gap:8px}
+.mp-join input{min-width:0;height:46px;padding:0 12px;border:1px solid #41634f;border-radius:11px;background:#06211a;color:#f5edda;font:700 16px var(--font-body);text-align:center;letter-spacing:.12em}
+.mp-err{margin:8px 0 0;min-height:1em;font-size:13px;font-weight:700;color:#f0a99c}
+.mp-err a{color:inherit}
+.mp-share{display:flex;flex-wrap:wrap;gap:8px}
+.rm-seats{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.rm-seats li{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #41634f;border-radius:12px;background:#09241b;font-weight:700}
+.rm-seats li small{margin-left:auto;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-2)}
+.rm-seats li.wait{opacity:.6;font-weight:600}
+.seg button:disabled{opacity:.55;cursor:default}
+.room .seg[aria-disabled="true"] button[aria-pressed="true"]{opacity:1}
 .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .mode-wide { grid-column: 1 / -1; }
 .mode { text-align: left; padding: 12px; border: 1px solid #41634f; border-radius: 14px; background: linear-gradient(145deg, #0d3024, #09241b); display: grid; gap: 4px; }
@@ -247,6 +261,11 @@ html body .mode[aria-pressed="true"]{border-color:var(--iv-emerald);box-shadow:0
 html body .multiplayer-action{background:#FFFFFF;border:1.5px solid #D8C9A6;color:#1F2A24}
 html body .field > span{color:#7A5A1C}
 html body .seg{background:#F3EEE2;border-color:transparent}
+html body .mp-join input{background:#FFFFFF;border-color:#D8C9A6;color:#1F2A24}
+html body .mp-or::before,html body .mp-or::after{background:#D8C9A6}
+html body .rm-seats li{background:#FFFFFF;border-color:#D8C9A6;color:#1F2A24;box-shadow:var(--iv-shadow)}
+html body .rm-seats li small{color:#7A5A1C}
+html body .mp-err{color:#B23A2E}
 html body .seg button{color:#5C6862}
 html body .seg button[aria-pressed="true"]{background:#FFFFFF;color:var(--iv-emerald);box-shadow:0 1px 2px rgba(60,40,10,.1),0 3px 8px rgba(60,40,10,.08)}
 html body .names input{background:#FFFFFF;border:1.5px solid #B39A63;color:#1F2A24}
@@ -313,20 +332,24 @@ html body .club-back{flex:none}
     <div class="rc-watermark" aria-hidden="true"></div>
     <p class="eyebrow">Royal Club · Board games</p>
     <h1>Chess, <em>your move.</em></h1>
-    <p class="lead">Play a friend on this phone, or take on the computer at three levels.</p>
+    <p class="lead">Play the computer at three levels, a friend on this phone, or a friend online.</p>
     <div class="modes">
       <button class="mode" type="button" data-mode="ai" aria-pressed="true"><span class="ico">♚</span><b>Play vs Computer</b><span>Easy, Medium or Hard.</span></button>
       <button class="mode" type="button" data-mode="local" aria-pressed="false"><span class="ico">♙</span><b>Pass &amp; Play</b><span>Two players on this phone.</span></button>
-      <button class="mode mode-wide" type="button" data-mode="multiplayer" aria-pressed="false" hidden><span class="ico">♟</span><b>Multiplayer <small class="coming-soon-label">Coming Soon</small></b><span>Private rooms and online matches are coming soon.</span></button>
+      <button class="mode mode-wide" type="button" data-mode="multiplayer" aria-pressed="false"><span class="ico">♟</span><b>Play with Friends</b><span>Create a room or join a friend's with a code.</span></button>
     </div>
     <a class="learn-card" href="learn.html" id="learnLink"><span class="learn-ico" aria-hidden="true">♔</span><span class="learn-txt"><b>Learn Chess</b><span>52 interactive classes, from first moves to tournaments. First 3 free.</span></span><span class="learn-go" aria-hidden="true">→</span></a>
     <section class="multiplayer-panel" id="multiplayerPanel" hidden aria-labelledby="multiplayerTitle">
-      <div class="multiplayer-heading"><b id="multiplayerTitle">Play with friends</b><span>Online multiplayer</span></div>
-      <div class="multiplayer-actions">
-        <button class="multiplayer-action" type="button" disabled><span>＋</span><b>Create a room</b><small>Invite a friend with a room code</small></button>
-        <button class="multiplayer-action" type="button" disabled><span>⌁</span><b>Join with code</b><small>Enter a friend's room code</small></button>
+      <div class="multiplayer-heading"><b id="multiplayerTitle">Play with friends</b><span id="mpWho"></span></div>
+      <button class="gold mp-wide" id="mpCreate" type="button">Create a room</button>
+      <p class="mp-or"><span>or join a friend's room</span></p>
+      <div class="mp-join">
+        <input id="mpCode" maxlength="4" placeholder="Code" autocapitalize="characters" autocomplete="off" aria-label="Room code">
+        <input id="mpPass" maxlength="4" inputmode="numeric" placeholder="Passcode" autocomplete="off" aria-label="Passcode">
+        <button class="ghost" id="mpJoin" type="button">Join</button>
       </div>
-      <p class="multiplayer-note">Private rooms are the first multiplayer feature. Online connection is not active yet.</p>
+      <p class="mp-err" id="mpErr" role="alert"></p>
+      <p class="multiplayer-note">Your friend joins with the room code and passcode. You pick the colours and the clock in the room.</p>
     </section>
     <div class="field" id="levelField"><span>Level</span>
       <div class="seg" id="levelSeg"><button type="button" data-v="easy">Easy</button><button type="button" data-v="medium" aria-pressed="true">Medium</button><button type="button" data-v="hard">Hard</button></div>
@@ -340,9 +363,27 @@ html body .club-back{flex:none}
     <div class="field" id="namesField" hidden><span>Players</span>
       <div class="names"><input id="nameW" maxlength="16" placeholder="White" aria-label="White player's name"><input id="nameB" maxlength="16" placeholder="Black" aria-label="Black player's name"></div>
     </div>
-    <button class="gold" id="startBtn" type="button">Start game →</button>
+    <button class="gold" id="startBtn" type="button">Start Game</button>
     <button class="ghost" id="resumeBtn" type="button" hidden>Continue your last game</button>
     <p class="note">Full rules: castling, en passant, promotion, check, checkmate, stalemate and draws. Every game is saved in standard PGN.</p>
+  </section>
+
+  <section class="setup room" id="room" hidden aria-labelledby="rmTitle">
+    <p class="eyebrow">Chess · Play with friends</p>
+    <h1 id="rmTitle">Room <em id="rmCode">----</em></h1>
+    <p class="lead">Passcode <b id="rmPass">----</b>. Share the code and passcode with your friend.</p>
+    <div class="mp-share"><button class="ghost" id="rmWa" type="button">Share on WhatsApp</button><button class="ghost" id="rmCopy" type="button">Copy invite</button></div>
+    <ul class="rm-seats" id="rmSeats"></ul>
+    <div class="field"><span>Host plays</span>
+      <div class="seg" id="rmSide"><button type="button" data-v="w">White</button><button type="button" data-v="b">Black</button><button type="button" data-v="r">Random</button></div>
+    </div>
+    <div class="field"><span>Time</span>
+      <div class="seg" id="rmTime"><button type="button" data-v="none">No timer</button><button type="button" data-v="2+1">2+1 Blitz</button><button type="button" data-v="5+0">5 min</button><button type="button" data-v="10+0">10 min</button></div>
+    </div>
+    <p class="note" id="rmNote"></p>
+    <button class="gold" id="rmStart" type="button">Start Game</button>
+    <button class="ghost" id="rmLeave" type="button">Leave room</button>
+    <p class="mp-err" id="rmErr" role="alert"></p>
   </section>
 
   <section class="game" id="game" hidden>
@@ -373,6 +414,9 @@ html body .club-back{flex:none}
     </section>
   </div>
 
+<script src="/ekah/config.js"></script>
+<script src="/rc-room.js"></script>
+<script src="/rc-coach.js"></script>
 <script src="engine.js"></script>
 <script src="ai.js"></script>
 <script>
@@ -532,7 +576,7 @@ html body .club-back{flex:none}
   }
   /** After `mover` has moved: take the time they used (White's first move is free) and add the increment. */
   function chargeClock(mover) {
-    if (!game.clock) return;
+    if (!game.clock || game.mode === 'online') return;
     if (g.history().length > 1 && !paused) game.clock[mover] -= Date.now() - turnStart;
     game.clock[mover] = Math.max(0, game.clock[mover]) + (TIME[game.tc]?.[1] || 0) * 1000;
     turnStart = Date.now();
@@ -552,6 +596,11 @@ html body .club-back{flex:none}
     }
   }
   setInterval(() => {
+    if (game && game.mode === 'online') {                              // online: the server keeps the clocks and decides time-outs
+      if (game.clock && clockOn()) paintClocks();
+      if (game.abandon && !isOver()) { const st = document.querySelector('#panel .status'); if (st) st.textContent = statusText(); }
+      return;
+    }
     if (!game || !game.clock || isOver() || !clockOn()) return;
     const c = g.turn(), ms = left(c);
     if (ms <= 0) { flagFall(c); return; }
@@ -560,7 +609,7 @@ html body .club-back{flex:none}
     if (ms < 10000 && sec !== lastTick && (game.mode !== 'ai' || c === game.human)) { lastTick = sec; sound.play('tick'); }
   }, 100);
   document.addEventListener('visibilitychange', () => {                // vs the computer, the clocks stop while the page is hidden
-    if (!game || !game.clock || isOver()) return;
+    if (!game || !game.clock || isOver() || game.mode === 'online') return;
     if (document.hidden && !paused) { if (clockOn()) game.clock[g.turn()] = left(g.turn()); paused = true; save(); }
     else if (!document.hidden && paused) { paused = false; turnStart = Date.now(); paintClocks(); }
   });
@@ -603,6 +652,8 @@ html body .club-back{flex:none}
   const cap = (s) => s[0].toUpperCase() + s.slice(1);
 
   function showSetup() {
+    if (game && game.mode === 'online') { leaveOnline(true); return; }
+    $('room').hidden = true;
     if (game && game.clock && !isOver() && !paused) { if (clockOn()) game.clock[g.turn()] = left(g.turn()); paused = true; save(); }   // a timed game waits
     hint = null; hintBusy = false;
     $('setup').hidden = false; $('game').hidden = true; $('topAction').hidden = true;
@@ -627,7 +678,7 @@ html body .club-back{flex:none}
   }
   /** Same opponent, level, colour and time control, from the start. */
   function rematch() { startGame({ mode: game.mode, level: game.level, human: game.human, names: game.names, sans: [], result: null, tc: game.tc }); }
-  function save() { if (game) { game.sans = g.history().map((m) => m.san); store.set(SAVE_KEY, game); } }
+  function save() { if (game && game.mode !== 'online') { game.sans = g.history().map((m) => m.san); store.set(SAVE_KEY, game); } }
 
   /* ---------- computer opponent (Web Worker, with a main-thread fallback) ---------- */
   let worker = null, reqId = 0;
@@ -722,6 +773,16 @@ html body .club-back{flex:none}
     if (r) return resultText(r);
     const who = game.names[g.turn()];
     if (thinking) return 'The computer is thinking…';
+    if (game.mode === 'online') {
+      if (game.abandon) {
+        const secs = Math.max(0, Math.ceil((game.abandon.at - (Date.now() + (game.skew || 0))) / 1000));
+        const mine = game.abandon.seat === game.seat;
+        return mine ? 'Reconnecting…' : `${seatName(game.abandon.seat)} went offline. They have ${secs}s to come back, or you win.`;
+      }
+      if (game.drawOffer && game.drawOffer === game.human) return `Draw offered. Waiting for ${game.names[game.human === 'w' ? 'b' : 'w']}.`;
+      if (game.drawOffer) return `${game.names[game.drawOffer]} offers a draw. Tap Accept draw, or play on.`;
+      return (g.inCheck() ? 'Check! ' : '') + (g.turn() === game.human ? 'Your move.' : `${who} to move.`);
+    }
     if (hintBusy) return 'Looking for a good move…';
     if (hint) return `Hint: try ${hint.san}.`;
     const you = game.mode === 'ai' && g.turn() === game.human;
@@ -729,7 +790,7 @@ html body .club-back{flex:none}
   }
   function resultText(r) {
     const why = { checkmate: 'by checkmate', stalemate: 'by stalemate', 'insufficient material': 'by insufficient material',
-      'threefold repetition': 'by threefold repetition', 'fifty-move rule': 'by the fifty-move rule', resignation: 'by resignation', timeout: 'on time', 'timeout vs insufficient material': 'on time against a lone king' }[r.reason] || '';
+      'threefold repetition': 'by threefold repetition', 'fifty-move rule': 'by the fifty-move rule', resignation: 'by resignation', agreement: 'by agreement', abandoned: 'as the other player left', timeout: 'on time', 'timeout vs insufficient material': 'on time against a lone king' }[r.reason] || '';
     if (r.result === '1/2-1/2') return `Draw ${why}.`;
     const winner = r.result === '1-0' ? 'w' : 'b';
     const name = game.names[winner];
@@ -744,6 +805,20 @@ html body .club-back{flex:none}
     $('sideTop').innerHTML = bar(top);
     $('sideBottom').innerHTML = bar(bottom);
     const canHint = game.mode === 'ai' && !r && !thinking && !hintBusy && g.turn() === game.human && !promoPending;
+    if (game.mode === 'online') {
+      const offerMine = game.drawOffer === game.human, offerTheirs = game.drawOffer && !offerMine;
+      $('panel').innerHTML = movesHTML(hist) +
+        `<div class="actions">
+          <button class="act ${offerTheirs ? 'warn' : ''}" id="aDraw" type="button" ${r ? 'disabled' : ''}>${ICONS.hint}${offerTheirs ? 'Accept draw' : offerMine ? 'Cancel offer' : 'Offer draw'}</button>
+          <button class="act" id="aFlip" type="button">${ICONS.flip}Flip</button>
+          <button class="act ${resignArmed ? 'warn' : ''}" id="aResign" type="button" ${r ? 'disabled' : ''}>${ICONS.flag}${resignArmed ? 'Sure?' : 'Resign'}</button>
+          <button class="act" id="aPgn" type="button" ${hist.length ? '' : 'disabled'}>${ICONS.pgn}PGN</button>
+          <button class="act" id="aNew" type="button">${ICONS.undo}Leave</button>
+        </div><p class="status" aria-live="polite">${esc(statusText())}</p>`;
+      $('aDraw').onclick = () => room && room.send({ t: 'draw' });
+      $('aFlip').onclick = () => { orient = orient === 'w' ? 'b' : 'w'; render(); };
+      $('aResign').onclick = resign; $('aPgn').onclick = showPgn; $('aNew').onclick = () => leaveOnline(true);
+    } else {
     $('panel').innerHTML = movesHTML(hist) +
       `<div class="actions">
         <button class="act" id="aUndo" type="button" ${hist.length && !thinking && !game.clock && (!r || !game.result) ? '' : 'disabled'} ${game.clock ? 'title="Undo is off in timed games"' : ''}>${ICONS.undo}Undo</button>
@@ -755,6 +830,7 @@ html body .club-back{flex:none}
       </div><p class="status" aria-live="polite">${esc(statusText())}</p>`;
     $('aUndo').onclick = undo; $('aFlip').onclick = () => { orient = orient === 'w' ? 'b' : 'w'; render(); };
     $('aResign').onclick = resign; $('aPgn').onclick = showPgn; $('aNew').onclick = showSetup; $('aHint').onclick = showHint;
+    }
     paintClocks();
     const cur = document.querySelector('.moves .cur'); if (cur) cur.scrollIntoView({ block: 'nearest', inline: 'end' });
 
@@ -776,8 +852,17 @@ html body .club-back{flex:none}
     board.innerHTML = html;
     if (r && !overInfo) overInfo = r;
     if (promoPending) board.insertAdjacentHTML('beforeend', promoHTML());
-    else if (r && !overlayHidden) board.insertAdjacentHTML('beforeend', `<div class="overlay"><span class="eyebrow">${r.result.replace('1/2-1/2', '½–½')}</span><h2>${r.result === '1/2-1/2' ? 'Draw' : resultText(r).split(' by ')[0].replace(/\.$/, '')}</h2><p>${esc(resultText(r))}</p><div class="row"><button class="gold" id="oAgain" type="button">Play again</button><button class="ghost" id="oNew" type="button">Change settings</button></div><div class="row"><button class="ghost" id="oPgn" type="button">Save PGN</button><button class="ghost" id="oView" type="button">View board</button></div></div>`);
-    if (r && !promoPending && !overlayHidden) { $('oAgain').onclick = rematch; $('oNew').onclick = showSetup; $('oPgn').onclick = showPgn; $('oView').onclick = () => { overlayHidden = true; render(); }; }
+    else if (r && !overlayHidden) {
+      const online = game.mode === 'online';
+      const again = online ? (game.isHost ? '<button class="gold" id="oAgain" type="button">Rematch</button>' : '<button class="gold" id="oAgain" type="button" disabled>Waiting for the host</button>')
+        : '<button class="gold" id="oAgain" type="button">Rematch</button>';
+      board.insertAdjacentHTML('beforeend', `<div class="overlay"><span class="eyebrow">${r.result.replace('1/2-1/2', '½–½')}</span><h2>${r.result === '1/2-1/2' ? 'Draw' : resultText(r).split(r.reason === 'abandoned' ? ' as ' : ' by ')[0].replace(/\.$/, '').replace(/ on time$/, '')}</h2><p>${esc(resultText(r))}</p><div class="row">${again}<button class="ghost" id="oNew" type="button">${online ? 'Leave room' : 'Change settings'}</button></div><div class="row"><button class="ghost" id="oPgn" type="button">Save PGN</button><button class="ghost" id="oView" type="button">View board</button></div></div>`);
+    }
+    if (r && !promoPending && !overlayHidden) {
+      $('oAgain').onclick = game.mode === 'online' ? () => room && room.send({ t: 'again' }) : rematch;
+      $('oNew').onclick = game.mode === 'online' ? () => leaveOnline(false) : showSetup;
+      $('oPgn').onclick = showPgn; $('oView').onclick = () => { overlayHidden = true; render(); };
+    }
     if (r && !game.ended) { game.ended = true; save(); gameOverEffects(r); }
     if (promoPending) board.querySelectorAll('.promo button').forEach((b) => b.onclick = () => { const m = promoPending; promoPending = null; play(m.from, m.to, b.dataset.p); });
 
@@ -818,6 +903,10 @@ html body .club-back{flex:none}
     if (isOver()) return false;
     const m = g.move({ from, to, promotion });
     selected = null;
+    if (game.mode === 'online') {                     // shown at once; the server checks it and tells both players
+      if (m) { room && room.send({ t: 'move', from, to, promotion }); afterMove(m); } else render();
+      return !!m;
+    }
     if (m) { afterMove(m); maybeComputer(); } else render();
     return !!m;
   }
@@ -830,8 +919,8 @@ html body .club-back{flex:none}
   }
   function gameOverEffects(r) {
     const winner = r.result === '1-0' ? 'w' : r.result === '0-1' ? 'b' : null;
-    const youWon = winner && (game.mode !== 'ai' || winner === game.human);
-    if (window.rcReport) window.rcReport('chess', game.mode !== 'ai' ? 'done' : !winner ? 'draw' : youWon ? 'win' : 'lose');
+    const youWon = winner && (game.mode === 'local' || winner === game.human);
+    if (window.rcReport) window.rcReport('chess', game.mode === 'local' ? 'done' : !winner ? 'draw' : youWon ? 'win' : 'lose');
     setTimeout(() => sound.play(!winner ? 'draw' : youWon ? 'win' : 'lose'), 180);
     buzz(youWon ? [40, 60, 40, 60, 80] : 60);
     if (youWon) confetti();
@@ -907,13 +996,14 @@ html body .club-back{flex:none}
     if (result()) return;
     if (!resignArmed) { resignArmed = setTimeout(() => { resignArmed = 0; render(); }, 3000); render(); return; }
     clearTimeout(resignArmed); resignArmed = 0;
+    if (game.mode === 'online') { room && room.send({ t: 'resign' }); render(); return; }
     const loser = game.mode === 'ai' ? game.human : g.turn();
     game.result = { result: loser === 'w' ? '0-1' : '1-0', reason: 'resignation' };
     save(); render();
   }
   function showPgn() {
     const r = result();
-    const text = g.pgn({ White: game.names.w, Black: game.names.b, ...(game.mode === 'ai' ? { Annotator: 'Royal Club', Mode: 'vs Computer ' + cap(game.level) } : { Mode: 'Two players' }), ...(game.tc ? { TimeControl: TIME[game.tc][0] + '+' + TIME[game.tc][1] } : {}),
+    const text = g.pgn({ White: game.names.w, Black: game.names.b, ...(game.mode === 'ai' ? { Annotator: 'Royal Club', Mode: 'vs Computer ' + cap(game.level) } : { Mode: game.mode === 'online' ? 'Online room' : 'Two players' }), ...(game.tc ? { TimeControl: TIME[game.tc][0] + '+' + TIME[game.tc][1] } : {}),
       ...(r && r.reason === 'resignation' ? { Termination: (r.result === '1-0' ? 'Black' : 'White') + ' resigned' } : {}), ...(r && /^timeout/.test(r.reason) ? { Termination: 'Time forfeit' } : {}) }, r ? r.result : undefined);
     const sheet = document.createElement('div');
     sheet.className = 'sheet';
@@ -929,8 +1019,142 @@ html body .club-back{flex:none}
     };
   }
 
+  /* ---------- play with friends: rooms on the Royal Club room server (rc-room.js) ---------- */
+  const ROOM_KEY = 'rc-room-chess';
+  let room = null, roomView = null;
+  const RC = window.RCRoom;
+  function seatName(i) { const s = roomView && roomView.seats[i]; return s ? s.name : 'Your friend'; }
+  function mpError(msg, signIn) {
+    $('mpErr').innerHTML = esc(msg) + (signIn && RC ? ` <a href="${RC.SIGNIN_URL}">Sign in</a>` : '');
+  }
+  function paintWho() {
+    const u = RC && RC.roomUser();
+    $('mpWho').textContent = u ? 'Playing as ' + u : 'Sign in needed';
+  }
+  function openRoom(first) {
+    if (!RC || !RC.serverUrl()) { mpError('Online rooms are not switched on for this version yet.'); return; }
+    if (room) room.close();
+    room = RC.connect({
+      game: 'chess', roomKey: ROOM_KEY, first,
+      onState: onRoomState,
+      onError: (msg, fatal, auth) => {
+        if (fatal) { room = null; if (!$('room').hidden || (game && game.mode === 'online')) { game = null; roomView = null; showSetup(); } mpError(msg, auth); }
+        else if (!$('room').hidden) $('rmErr').textContent = msg;
+        else { const st = document.querySelector('#panel .status'); if (st) st.textContent = msg; }
+      },
+      onGone: () => { room = null; roomView = null; if (game && game.mode === 'online') game = null; showSetup(); },
+    });
+  }
+  async function createRoom() {
+    $('mpErr').textContent = '';
+    const me = RC && await RC.roomAuth();
+    if (!me) { mpError('Sign in with your Royal Club username to play with friends.', true); return; }
+    openRoom({ t: 'create', game: 'chess', token: RC.deviceToken(), name: me.username, passcode: RC.randomPasscode(), auth: me.token });
+  }
+  async function joinRoom() {
+    const code = $('mpCode').value.trim().toUpperCase(), pass = $('mpPass').value.trim();
+    if (!/^[A-Z]{4}$/.test(code)) { mpError('Enter the 4-letter room code.'); return; }
+    if (!/^\d{4}$/.test(pass)) { mpError('Enter the 4-digit passcode.'); return; }
+    $('mpErr').textContent = '';
+    const me = RC && await RC.roomAuth();
+    if (!me) { mpError('Sign in with your Royal Club username to play with friends.', true); return; }
+    try { localStorage.removeItem(ROOM_KEY); } catch { /* ignore */ }
+    openRoom({ t: 'join', game: 'chess', code, passcode: pass, token: RC.deviceToken(), name: me.username, auth: me.token });
+  }
+  function leaveOnline(ask) {
+    const go = () => { if (room) room.leave(); room = null; roomView = null; game = null; showSetup(); };
+    const running = game && game.mode === 'online' && !isOver();
+    if (ask && running && typeof window.rcConfirm === 'function') {
+      window.rcConfirm({ title: 'Leave this game?', text: 'If you leave the room, your friend wins after 90 seconds.' }).then((ok) => { if (ok) go(); });
+      return;
+    }
+    if (ask && running && !window.confirm('Leave this game? Your friend wins if you do not come back.')) return;
+    go();
+  }
+  function onRoomState(v) {
+    roomView = v;
+    if (v.phase === 'lobby') { if (game && game.mode === 'online') game = null; paintRoom(v); return; }
+    enterOnline(v);
+  }
+  function paintRoom(v) {
+    $('setup').hidden = true; $('game').hidden = true; $('room').hidden = false; $('topAction').hidden = true;
+    $('clubLink').setAttribute('aria-label', 'Leave the room');
+    $('rmCode').textContent = v.code; $('rmPass').textContent = v.passcode; $('rmErr').textContent = '';
+    const hostSeat = v.hostSeat;
+    $('rmSeats').innerHTML = [0, 1].map((i) => {
+      const s = v.seats[i];
+      if (!s) return '<li class="wait"><span class="avatar w">?</span>Waiting for your friend…</li>';
+      return `<li><span class="avatar ${i === hostSeat ? 'w' : 'b'}">${esc(s.name.charAt(0).toUpperCase())}</span>${esc(s.name)}${i === v.you ? ' (you)' : ''}<small>${i === hostSeat ? 'Host' : s.connected ? 'Joined' : 'Offline'}</small></li>`;
+    }).join('');
+    for (const [id, val] of [['rmSide', v.side], ['rmTime', v.tc]]) {
+      $(id).setAttribute('aria-disabled', String(!v.host));
+      [...$(id).children].forEach((b) => { b.setAttribute('aria-pressed', String(b.dataset.v === val)); b.disabled = !v.host; });
+    }
+    const both = v.seats.filter(Boolean).length === 2 && v.seats.every((s) => s && s.connected);
+    $('rmStart').hidden = !v.host; $('rmStart').disabled = !both;
+    $('rmNote').textContent = v.host ? (both ? 'Ready when you are.' : 'Waiting for your friend to join with the code and passcode.') : 'The host chooses the colours and the clock, then starts.';
+  }
+  $('rmSide').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b && room) room.send({ t: 'side', value: b.dataset.v }); });
+  $('rmTime').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b && room) room.send({ t: 'time', value: b.dataset.v }); });
+  $('rmStart').addEventListener('click', () => room && room.send({ t: 'start' }));
+  $('rmLeave').addEventListener('click', () => leaveOnline(false));
+  const inviteText = () => `Play chess with me on Royal Club!\nRoom code: ${roomView.code}\nPasscode: ${roomView.passcode}\nTap to join: ${RC.siteUrl()}/chess/?room=${roomView.code}&pass=${roomView.passcode}`;
+  $('rmCopy').addEventListener('click', () => {
+    const t = inviteText();
+    try { navigator.clipboard.writeText(t).then(() => { $('rmNote').textContent = 'Invite copied.'; }, () => { $('rmNote').textContent = t; }); } catch { $('rmNote').textContent = t; }
+  });
+  $('rmWa').addEventListener('click', () => {
+    const url = 'https://wa.me/?text=' + encodeURIComponent(inviteText());
+    const app = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+    if (app) { location.href = url; return; }
+    const w = window.open(url, '_blank', 'noopener'); if (!w) location.href = url;
+  });
+  $('mpCreate').addEventListener('click', createRoom);
+  $('mpJoin').addEventListener('click', joinRoom);
+  $('mpPass').addEventListener('keydown', (e) => { if (e.key === 'Enter') joinRoom(); });
+  /** The game from the server: started fresh (new game or rematch) or brought up to date move by move. */
+  function enterOnline(v) {
+    const names = { w: v.colors.w === v.you ? 'You' : seatName(v.colors.w), b: v.colors.b === v.you ? 'You' : seatName(v.colors.b) };
+    const mine = g.history().map((m) => m.san);
+    const same = !!game && game.mode === 'online' && game.code === v.code && game.human === v.color && v.sans.length >= mine.length - 1
+      && v.sans.slice(0, Math.min(mine.length, v.sans.length)).every((x, i) => x === mine[i]) && !(game.result && !v.result);
+    if (!same) {
+      game = { mode: 'online', code: v.code, human: v.color, seat: v.you, names, sans: [], tc: v.tcGame, clock: null, result: null, level: null };
+      g = new Chess();
+      for (const san of v.sans) if (!g.move(san)) break;
+      orient = v.color || 'w'; selected = null; overInfo = null; promoPending = null; overlayHidden = false; lastAnimated = g.history().length; hint = null;
+      $('setup').hidden = true; $('room').hidden = true; $('game').hidden = false; $('topAction').hidden = true;
+      $('clubLink').setAttribute('aria-label', 'Leave the game');
+      if (!v.sans.length) sound.play('start');
+    } else {
+      if (v.sans.length < mine.length) g.undo();                     // my move was refused: take it back
+      let last = null;
+      for (const san of v.sans.slice(g.history().length)) { last = g.move(san); if (!last) { game = null; enterOnline(v); return; } }
+      if (last) { sound.play(last.san.includes('+') ? 'check' : last.captured ? 'capture' : 'move'); buzz(g.inCheck() ? [30, 40, 30] : 15); }
+    }
+    game.names = names; game.isHost = v.host; game.skew = v.now - Date.now();
+    game.drawOffer = v.drawOffer; game.abandon = v.abandon;
+    game.clock = v.clock ? { w: v.clock.w, b: v.clock.b } : null; turnStart = Date.now(); paused = false;
+    if (v.result && !game.result) game.ended = false;
+    game.result = v.result;
+    render();
+  }
+  if (RC) {
+    paintWho(); window.addEventListener('storage', paintWho);
+    if (RC.saved(ROOM_KEY) && RC.serverUrl()) openRoom(null);                 // a refresh or dropped connection: back to the same seat
+    const qs = new URLSearchParams(location.search), q = qs.get('room'), qp = (qs.get('pass') || '').replace(/\D/g, '').slice(0, 4);
+    if (q) { $('mpCode').value = q.toUpperCase().slice(0, 4); if (qp) $('mpPass').value = qp; document.querySelector('.mode[data-mode="multiplayer"]').click(); }
+  }
+  // Android back (app-mode.js): from the room, leave it; during an online game, ask first.
+  window.rcAppBack = () => {
+    if (!$('room').hidden) { leaveOnline(false); return true; }
+    if (game && game.mode === 'online' && !$('game').hidden) { leaveOnline(!isOver()); return true; }
+    return false;
+  };
+
   window.addEventListener('resize', () => render());
   showSetup();
+
 })();
 </script>
 </body>

@@ -184,6 +184,9 @@
   // ---------- game view ----------
   let ctrl = null, view = null, lastSeq = null, lastTop = null, prevHand = new Set(), armed = false, pickFor = null;
   let celebrated = null, celebrateTimers = [], winnerPi = null, scoresBefore = null, lastPeekSeq = 0, peekTimer = 0, feltCw = 70;
+  let dealing = false, dealUntil = 0, dealTimers = [], lastDir = null;
+  /* Milliseconds the table still needs before a computer may move (the deal, or tips on screen). */
+  function holdMs() { return Math.max(0, dealUntil - Date.now()) + (window.rcCoach && window.rcCoach.active ? 800 : 0); }
 
   function nm(i, cap) {
     if (!view) return '';
@@ -208,12 +211,14 @@
     view = v;
     show('game');
     $('meta').textContent = 'Round ' + v.round + ' · to ' + v.target;
+    const deal = v.phase === 'play' && isFreshDeal(v, first);
     renderSeats(v);
     renderMe(v);
     renderCenter(v);
     renderStatus(v);
     renderHand(v, first);
     layout();
+    if (deal) startDeal(v);
     handleEvents(v, first);
     handlePeek(v, first);
     handleRound(v, prev, first);
@@ -262,14 +267,27 @@
     const chip = $('pile').querySelector('.colorchip');
     if (chip) chip.innerHTML = v.color ? '<i style="--c:' + SUIT_COLOR[v.color] + '"></i>' + SUIT_LABEL[v.color] : '<i style="--c:#888"></i>Any suit';
     $('direction').classList.toggle('rev', v.direction === -1);
+    if (lastDir !== v.direction) {
+      const cw = v.direction !== -1;
+      $('dirLabel').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        (cw ? '<path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v4h-4"/>' : '<path d="M4 12a8 8 0 1 0 2.3-5.6"/><path d="M4 4v4h4"/>') + '</svg>' + (cw ? 'Clockwise' : 'Anticlockwise');
+      if (lastDir !== null) { const l = $('dirLabel'); l.classList.remove('pop'); void l.offsetWidth; l.classList.add('pop'); }
+      lastDir = v.direction;
+      placeChevrons();
+    }
     let badge = $('pile').querySelector('.stackbadge');
     if (!badge) { badge = document.createElement('span'); badge.className = 'stackbadge'; $('pile').appendChild(badge); }
     const pend = v.phase === 'play' ? (v.pending || 0) : 0;
     badge.classList.toggle('hidden', !pend);
     badge.setAttribute('aria-label', pend ? pend + ' cards waiting for ' + (v.turn === v.you ? 'you' : nm(v.turn, false)) : '');
     if (pend) {
-      const txt = '+' + pend;
-      if (badge.textContent !== txt) { badge.textContent = txt; badge.classList.remove('pop'); void badge.offsetWidth; badge.classList.add('pop'); }
+      const who = v.turn === v.you ? 'for you' : 'for ' + nm(v.turn);
+      const html = '+' + pend + '<small>' + esc(who) + '</small>';
+      if (badge.innerHTML !== html) {
+        const grew = !badge.firstChild || badge.firstChild.textContent !== '+' + pend;
+        badge.innerHTML = html;
+        if (grew) { badge.classList.remove('pop'); void badge.offsetWidth; badge.classList.add('pop'); }
+      }
     }
   }
 
@@ -303,7 +321,7 @@
     const msg = $('statusMsg');
     msg.classList.toggle('turn', myTurn);
     if (v.phase !== 'play') msg.textContent = '';
-    else if (myTurn && v.pending) msg.textContent = v.legal.length ? '+' + v.pending + ' coming! Answer it or take them' : '+' + v.pending + ' coming! No answer, take them';
+    else if (myTurn && v.pending) msg.textContent = v.legal.length ? '+' + v.pending + ' waiting! Answer it or take them' : '+' + v.pending + ' waiting! No answer, take them';
     else if (myTurn && v.pendingDrawn !== null) msg.textContent = 'It fits! Play it or keep it';
     else if (myTurn) msg.textContent = v.legal.length ? 'Your turn' : 'No match: tap the deck to draw';
     else msg.textContent = nm(v.turn) + ' is thinking…';
@@ -337,6 +355,7 @@
         .replace(/<\/button>$/, (jodi.has(c.id) ? '<span class="jodi-tag">JODI</span>' : '') + '</button>');
     }).join('');
     prevHand = nowIds;
+    $('hand').classList.toggle('undealt', dealing);
     /* place new cards without the slide transition, then let later moves (resizing) animate */
     const els = Array.from($('hand').children);
     els.forEach((el) => { el.style.transition = 'none'; });
@@ -409,8 +428,26 @@
     const handCw = $('hand').firstElementChild ? $('hand').firstElementChild.offsetWidth : 80;
     feltCw = Math.round(Math.max(38, Math.min(handCw, (fh - 46) / 1.5 * 0.82, (fw - 40) / 2.5)));
     felt.style.setProperty('--cw', feltCw + 'px');
+    placeChevrons();
   }
-  window.addEventListener('resize', () => { if (view) { arrangeHand(); layout(); } });
+  /* Four glowing arrows ride round the table in the direction of play (clockwise on screen when direction is 1:
+     you at the bottom, then the seats from your left, over the top, to your right). */
+  function placeChevrons() {
+    const d = $('direction'); if (!d || !view) return;
+    const w = d.clientWidth, h = d.clientHeight; if (!w || !h) return;
+    const rx = w / 2, ry = h / 2, cw = view.direction !== -1;
+    const angles = [135, 45, -45, -135];            // top-left, top-right, bottom-right, bottom-left (clockwise order)
+    d.querySelectorAll('.chev').forEach((el, k) => {
+      const a = angles[k] * Math.PI / 180;
+      const x = rx + rx * Math.cos(a), y = ry - ry * Math.sin(a);
+      let deg = Math.atan2(ry * Math.cos(a), rx * Math.sin(a)) * 180 / Math.PI;   // clockwise tangent on screen
+      if (!cw) deg += 180;
+      el.style.left = x + 'px'; el.style.top = y + 'px';
+      el.style.transform = 'rotate(' + deg.toFixed(1) + 'deg)';
+      el.style.setProperty('--d', ((cw ? k : 3 - k) * 0.4) + 's');
+    });
+  }
+  window.addEventListener('resize', () => { if (view) { arrangeHand(); layout(); placeChevrons(); } });
 
   // ---------- effects: flying cards, bubbles by the seats ----------
   function flyCard(html, from, to, cw, done, delay, endScale) {
@@ -432,6 +469,65 @@
     }, (delay || 0) + 16);
     el.addEventListener('transitionend', end);
     setTimeout(end, (delay || 0) + 800);
+  }
+  /* A new round: is this the moment the cards were dealt (no card played or drawn since)? */
+  function isFreshDeal(v, first) {
+    const evs = v.events || [];
+    const r = evs.slice().reverse().find((e) => e.type === 'round');
+    if (!r || r.round !== v.round) return false;
+    if (!first && !(lastSeq !== null && r.seq > lastSeq)) return false;
+    return !evs.some((e) => e.seq > r.seq && /^(play|draw|draws|pass|catch|caught)$/.test(e.type));
+  }
+  /* Deal: card backs fly from the deck to every seat in turn, one at a time; then your hand turns face up and the
+     first card is turned over onto the pile. Your cards stay hidden until they have arrived. */
+  function startDeal(v) {
+    dealTimers.forEach(clearTimeout); dealTimers = [];
+    if (REDUCED) return;
+    const n = v.players.length, per = 7, total = n * per;
+    const step = Math.max(28, Math.min(70, Math.round(1500 / total)));
+    const dealer = ((v.turn - (v.direction || 1)) % n + n) % n;   // the player before the first to play
+    dealing = true;
+    $('hand').classList.add('undealt');
+    $('pile').classList.add('undealt');
+    const dealMs = total * step + 450;
+    dealUntil = Date.now() + dealMs + 900;
+    for (let k = 0; k < total; k++) {
+      const pi = (dealer + 1 + k) % n;
+      dealTimers.push(setTimeout(() => {
+        if (!view) return;
+        flyCard(backHTML(), $('deck'), pi === view.you ? $('hand') : seatEl(pi), feltCw, null, 0, pi === view.you ? 1 : 0.5);
+        if (k % 3 === 0) Sound.play('draw');
+      }, k * step));
+    }
+    dealTimers.push(setTimeout(() => {
+      dealing = false;
+      const cards = Array.from($('hand').children);
+      cards.forEach((el, i) => { el.style.setProperty('--fd', (i * 0.05) + 's'); el.classList.add('flipin'); });
+      $('hand').classList.remove('undealt');
+      Sound.play('play', 0.1);
+      dealTimers.push(setTimeout(() => {
+        $('pile').classList.remove('undealt');
+        $('pile').classList.remove('reveal'); void $('pile').offsetWidth; $('pile').classList.add('reveal');
+        Sound.play('play');
+        cards.forEach((el) => el.classList.remove('flipin'));
+        firstTips();
+      }, 420 + cards.length * 50));
+    }, dealMs));
+  }
+  function stopDeal() {
+    dealTimers.forEach(clearTimeout); dealTimers = [];
+    dealing = false; dealUntil = 0;
+    $('hand').classList.remove('undealt'); $('pile').classList.remove('undealt');
+  }
+  /* First game on this device: three short tips pointing at the real controls. */
+  function firstTips() {
+    if (!window.rcCoach || !view || view.phase !== 'play') return;
+    window.rcCoach('ekah', [
+      { title: 'Your cards', text: 'Cards that glow gold can be played. Match the <b>colour</b> or the <b>number</b> on the pile, then tap the card.', target: '#hand', pad: 4 },
+      { title: 'No glowing card?', text: 'Tap the <b>deck</b> to draw one. If it fits you can play it straight away.', target: '#deck' },
+      { title: 'Two cards left?', text: 'Tap <b>EKAH!</b> before you play your second-last card, or another player can catch you for 2 cards.', target: '#meSeat' },
+      { title: 'Which way?', text: 'The gold arrows show whose turn comes next. A <b>Chakra</b> turns them round.', target: '#dirLabel' }
+    ]);
   }
   function bubble(pi, text, kind, color, delay) {
     setTimeout(() => {
@@ -505,7 +601,21 @@
         case 'reverse':
           if (lastPlayPi !== null) bubble(lastPlayPi, 'Reversed', 'gold', null, AFTER);
           cap = 'Direction reversed';
+          { const d = $('direction'); d.classList.remove('flip'); void d.offsetWidth; d.classList.add('flip'); }
           break;
+        case 'pass-on': {   // a Maya or Chakra answered a waiting Rin / Mahakal: the cards still wait
+          const who = ev.pi === v.you ? 'You' : nm(ev.pi);
+          const to = ev.to === v.you ? 'you' : nm(ev.to, false);
+          if (ev.to === ev.pi) {
+            bubble(ev.pi, 'Play again!', 'gold', null, AFTER);
+            cap = who + (ev.pi === v.you ? ' play' : ' plays') + ' again: +' + ev.n + ' still waiting';
+          } else {
+            bubble(ev.to, '+' + ev.n + ' to answer', 'bad', null, AFTER + 200);
+            cap = who + ' used ' + (ev.card === 'chakra' ? 'Chakra' : 'Maya') + ': now ' + to + ' must answer +' + ev.n;
+          }
+          if (ev.to === v.you) Sound.play('turn', 0.3);
+          break;
+        }
         case 'ekah':
           bubble(ev.pi, 'EKAH!', 'gold', null, 150);
           Sound.play('ekah', 0.15);
@@ -642,7 +752,7 @@
       if (cell) countUp(cell, scoresBefore[w], v.players[w].score, 1000);
     }
     const hostOnly = match && ctrl && ctrl.online && !ctrl.isHost;
-    $('nextRound').textContent = hostOnly ? 'Waiting for the host' : (match ? 'Play a new match' : 'Next round');
+    $('nextRound').textContent = hostOnly ? 'Waiting for the host' : (match ? 'Rematch' : 'Next round');
     $('nextRound').disabled = !!hostOnly;
     $('resultOverlay').classList.remove('hidden');
   }
@@ -650,7 +760,7 @@
   // ---------- input ----------
   $('hand').addEventListener('click', (e) => {
     const b = e.target.closest('.card');
-    if (!b || !view || !b.classList.contains('playable')) return;
+    if (!b || !view || dealing || !b.classList.contains('playable')) return;
     const id = Number(b.dataset.id);
     const card = view.hand.find((c) => c.id === id);
     if (!card) return;
@@ -676,7 +786,7 @@
     play(id, b.dataset.suit);
   });
   $('pickCancel').addEventListener('click', () => { pickFor = null; $('pickerOverlay').classList.add('hidden'); });
-  $('deck').addEventListener('click', () => ctrl && ctrl.act({ type: 'draw' }));
+  $('deck').addEventListener('click', () => !dealing && ctrl && ctrl.act({ type: 'draw' }));
   $('passBtn').addEventListener('click', () => ctrl && ctrl.act({ type: 'pass' }));
   $('takeBtn').addEventListener('click', () => ctrl && ctrl.act({ type: 'draw' }));
   $('ekahBtn').addEventListener('click', () => {
@@ -781,9 +891,10 @@
       '<section><h3>Stacking Rin and Mahakal</h3><p>When a Rin or Mahakal is played on you, a red <b>+2</b> or <b>+4</b> appears on the pile. Before you take the cards, you can answer with one of the glowing cards:</p><ul>' +
         '<li><b>Rin</b> adds 2 and passes it on. Any Rin answers a Rin; after a Mahakal it must be a Rin of the chosen suit.</li>' +
         '<li><b>Mahakal</b> adds 4 and passes it on. Choose the next suit.</li>' +
-        '<li><b>Maya of the same suit</b> dodges: the cards move on to the next player without growing.</li></ul>' +
+        '<li><b>Maya or Chakra of the same suit</b> keeps its own power and the cards keep waiting. With 2 players both mean <b>play again</b>: you still have to answer the cards. With 3 or more, Chakra turns play round so the player who sent them must answer, and Maya skips the next player so the one after must answer.</li></ul>' +
         '<p>No answer? Tap <b>Take cards</b> (or the deck): you take them all and miss your turn. Brahma cannot answer, and no Jodi while cards are waiting.</p>' +
-        '<div class="gcards">' + gcard({ type: 'rin', suit: 'JAL' }, 'Rin on Rin', '+2 becomes +4 for the next player.') + gcard({ type: 'maya', suit: 'JAL' }, 'Maya dodge', 'A Jal Maya on a Jal Rin sends the +2 on.') + '</div></section>' +
+        '<div class="gcards">' + gcard({ type: 'rin', suit: 'JAL' }, 'Rin on Rin', '+2 becomes +4 for the next player.') + gcard({ type: 'chakra', suit: 'JAL' }, 'Chakra on a Jal Rin', 'With 3 or more players the +2 goes back to the player who sent it.') + '</div>' +
+        '<p style="margin-top:8px"><b>House rules:</b> before a game you can switch off stacking, or stop Maya and Chakra from answering.</p></section>' +
       '<section><h3>Calling EKAH!</h3><p>When you are down to one card, everyone must know. Tap <b>EKAH!</b> before you play. If you forget, any player can tap <b>Catch!</b> on your seat before the next move, and you take 2 cards.</p></section>' +
       '<section><h3>Scoring</h3><table class="gscore"><tr><td>Number cards</td><td>Face value (1 to 9)</td></tr><tr><td>Maya, Chakra, Rin</td><td>15 each</td></tr><tr><td>Brahma, Mahakal</td><td>40 each</td></tr></table>' +
         '<p style="margin-top:8px">Pick the winning score before you start: 100, 200, 250, 300, 500, or your own number from 50 to 1000.</p></section>';
@@ -806,7 +917,8 @@
     if (ctrl && skipLeave !== true) ctrl.leave();
     if (view) store.set('rc-played', '1');      // the main site's "Protect your account" reminder waits for a game
     clearCelebration();
-    ctrl = null; view = null; lastSeq = null; lastTop = null; prevHand = new Set(); armed = false;
+    stopDeal();
+    ctrl = null; view = null; lastSeq = null; lastTop = null; prevHand = new Set(); armed = false; lastDir = null;
     celebrated = null; winnerPi = null; scoresBefore = null;
     show('home');
     showContinue();
@@ -888,9 +1000,11 @@
     if (g) $('continueInfo').textContent = 'You vs ' + (g.players.length - 1) + ' computer player' + (g.players.length > 2 ? 's' : '') +
       ', first to ' + g.target + ' points. Saved on this phone.';
   }
-  function LocalGame(name, bots, target, restored) {
+  function LocalGame(name, bots, target, restored, level, rules) {
     const names = BOT_NAMES.slice().sort(() => Math.random() - 0.5).slice(0, bots);
-    const g = restored || E.createGame([{ name: name }].concat(names.map((n) => ({ name: n, isBot: true }))), { target: target });
+    const g = restored || E.createGame([{ name: name }].concat(names.map((n) => ({ name: n, isBot: true }))), { target: target, rules: rules });
+    if (!restored) g.level = level;
+    if (!E.LEVELS.includes(g.level)) g.level = 'normal';
     if (typeof g.rnd !== 'function') g.rnd = Math.random;
     let t1 = null, t2 = null, live = true;
     function push() { if (!live) return; writeSave(g); render(E.viewFor(g, 0)); schedule(); }
@@ -899,19 +1013,22 @@
       if (g.phase !== 'play') return;
       if (g.turn !== 0) {
         const turn = g.turn, seq = g.seq;
-        const a = E.botAction(g, turn);
-        /* computer players take 1.8 to 2.8 seconds, a little longer when choosing a suit or using a Jodi */
-        const wait = 1800 + Math.random() * 1000 + (a.color || a.jodi ? 500 : 0);
-        t1 = setTimeout(() => {
+        const a = E.botAction(g, turn, g.level);
+        /* computer players take 1.8 to 2.8 seconds, a little longer when choosing a suit or using a Jodi;
+           never while the cards are being dealt or tips are on screen */
+        const wait = 1800 + Math.random() * 1000 + (a.color || a.jodi ? 500 : 0) + holdMs();
+        const go = () => {
           if (g.turn !== turn || g.seq !== seq || g.phase !== 'play') return;
+          if (holdMs() > 0) { t1 = setTimeout(go, holdMs()); return; }
           const r = E.applyAction(g, turn, a);
-          if (!r.ok) E.applyAction(g, turn, E.botAction(g, turn));
+          if (!r.ok) E.applyAction(g, turn, E.botAction(g, turn, g.level));
           push();
-        }, wait);
+        };
+        t1 = setTimeout(go, wait);
       }
       if (g.vulnerable !== null) {
         const target = g.vulnerable;
-        const chance = target === 0 ? 0.65 : 0.3;
+        const chance = { easy: [0.3, 0.12], normal: [0.65, 0.3], hard: [0.95, 0.5] }[g.level][target === 0 ? 0 : 1];
         if (Math.random() < chance) {
           const catchers = g.players.map((p, i) => i).filter((i) => i !== 0 && i !== target);
           if (catchers.length) {
@@ -1013,6 +1130,7 @@
     $('targetHost').classList.toggle('hidden', !host);
     if (host && document.activeElement !== $('lobbyCustom')) lobbyPick.apply(room.target || E.TARGET);
     $('targetNote').innerHTML = host ? '' : 'Winning score: <b>' + (room.target || E.TARGET) + ' points</b>';
+    houseLobby.paint(E.cleanRules(room.rules), host);
   }
   function seatOfHost(room) { return room.host ? room.you : room.seats.findIndex((s) => s && !s.bot); }
   $('addBot').addEventListener('click', () => { $('lobbyErr').textContent = ''; ctrl && ctrl.send({ t: 'addBot' }); });
@@ -1161,6 +1279,41 @@
   const scoreNow = $('localTarget').value;
   chipGroup($('scoreChips'), [100, 200, 250, 300, 500].map((v) => ({ v: v, label: v + ' points', html: String(v) })).concat([{ v: 'custom', label: 'Custom score', html: 'Custom' }]),
     scoreNow, (v) => { $('localTarget').value = v; $('localTarget').dispatchEvent(new Event('change')); });
+  /* House rules switches: two toggles, used on the vs-computer panel and (host only) in a room's lobby. */
+  const HOUSE = [
+    { k: 'stack', t: 'Stack Rin and Mahakal', on: 'Answer +2 / +4 with another one and pass it on.', off: 'Off: a Rin or Mahakal is always taken.' },
+    { k: 'answerActions', t: 'Maya and Chakra can answer', on: 'Same-colour Maya or Chakra can answer a waiting +2 / +4.', off: 'Off: only Rin and Mahakal can answer.' }
+  ];
+  function House(box, initial, onChange) {
+    let rules = E.cleanRules(initial), editable = true;
+    function paint(r, canEdit) {
+      if (r) rules = E.cleanRules(r);
+      if (canEdit !== undefined) editable = canEdit;
+      box.innerHTML = HOUSE.map((h) => {
+        const on = rules[h.k], dis = !editable || (h.k === 'answerActions' && !rules.stack);
+        return '<button type="button" class="switch" role="switch" data-k="' + h.k + '" aria-checked="' + (on && !(h.k === 'answerActions' && !rules.stack)) + '"' + (dis ? ' disabled' : '') + '>' +
+          '<span class="sw" aria-hidden="true"></span><span class="st"><b>' + h.t + '</b><small>' + (on ? h.on : h.off) + '</small></span></button>';
+      }).join('');
+    }
+    box.addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-k]'); if (!b || b.disabled) return;
+      rules[b.dataset.k] = !rules[b.dataset.k];
+      paint();
+      onChange(Object.assign({}, rules));
+    });
+    paint();
+    return { paint: paint, read: () => Object.assign({}, rules) };
+  }
+  let savedHouse = null;
+  try { savedHouse = JSON.parse(store.get('ekahHouse') || 'null'); } catch (e) { /* ignore */ }
+  const houseLocal = House($('houseLocal'), savedHouse, (r) => store.set('ekahHouse', JSON.stringify(r)));
+  const houseLobby = House($('houseLobby'), null, (r) => { if (ctrl && ctrl.send) ctrl.send({ t: 'rules', value: r }); });
+  function houseRead(which) { return which === 'local' ? houseLocal.read() : houseLobby.read(); }
+  chipGroup($('levelChips'), [
+    { v: 'easy', label: 'Easy', html: 'Easy<small>Relaxed</small>' },
+    { v: 'normal', label: 'Normal', html: 'Normal<small>Fair fight</small>' },
+    { v: 'hard', label: 'Hard', html: 'Hard<small>No mercy</small>' }
+  ], store.get('ekahLevel') || 'normal', (v) => store.set('ekahLevel', v));
   $('learnCards').innerHTML = [{ type: 'num', suit: 'JAL', value: 7 }, { type: 'maya', suit: 'VAYU' }, { type: 'mahakal', suit: null }].map((c) => cardHTML(c)).join('');
   $('homeFan').innerHTML = [{ type: 'num', suit: 'AGNI', value: 7 }, { type: 'maya', suit: 'JAL' }, { type: 'num', suit: 'PRITHVI', value: 9 }, { type: 'mahakal', suit: null }].map((c) => cardHTML(c)).join('');
   $('playLocal').addEventListener('click', () => {
@@ -1168,7 +1321,7 @@
     if (target === null) { $('localErr').textContent = 'Enter a winning score from 50 to 1000.'; return; }
     $('localErr').textContent = '';
     store.set('ekahTarget', String(target));
-    ctrl = LocalGame(playerName(), Number($('bots').value), target);
+    ctrl = LocalGame(playerName(), Number($('bots').value), target, null, store.get('ekahLevel') || 'normal', houseRead('local'));
     ctrl.start();
   });
   $('continueBtn').addEventListener('click', () => {

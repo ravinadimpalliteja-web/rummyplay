@@ -70,8 +70,16 @@
           <select id="localTarget" hidden aria-hidden="true" tabindex="-1"><option value="100">100 points</option><option value="200">200 points</option><option value="250" selected>250 points</option><option value="300">300 points</option><option value="500">500 points</option><option value="custom">Custom…</option></select>
           <input id="localCustom" type="number" inputmode="numeric" min="50" max="1000" step="50" placeholder="Your score, 50 to 1000" aria-label="Custom winning score" hidden>
         </div>
+        <div class="opt">
+          <span class="opt-label" id="levelLabel">Computer level</span>
+          <div class="chips level" id="levelChips" role="radiogroup" aria-labelledby="levelLabel"></div>
+        </div>
+        <div class="opt">
+          <span class="opt-label">House rules</span>
+          <div class="house" id="houseLocal"></div>
+        </div>
         <p class="err" id="localErr" role="alert"></p>
-        <button class="btn primary big" id="playLocal">Play</button>
+        <button class="btn primary big" id="playLocal">Start Game</button>
       </div>
 
       <div class="mode" role="tabpanel" id="panelFriends" aria-labelledby="tabFriends" hidden>
@@ -144,7 +152,11 @@
         </div>
       </div>
       <p class="note" id="targetNote"></p>
-      <button class="btn primary" id="startGame">Start game</button>
+      <div class="field" id="rulesBox">
+        <label>House rules</label>
+        <div class="house" id="houseLobby"></div>
+      </div>
+      <button class="btn primary" id="startGame">Start Game</button>
       <p class="note" id="waitNote">Waiting for the host to start the game.</p>
       <p class="err" id="lobbyErr" role="alert"></p>
     </div>
@@ -164,8 +176,10 @@
   <div class="arena" id="arena">
     <div class="felt" id="felt">
       <div class="direction" id="direction" aria-hidden="true">
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"><path d="M20 22 A42 42 0 0 1 80 22" vector-effect="non-scaling-stroke"/><path d="M75 17 L80 22 L74 25" vector-effect="non-scaling-stroke"/><path d="M80 78 A42 42 0 0 1 20 78" vector-effect="non-scaling-stroke"/><path d="M25 83 L20 78 L26 75" vector-effect="non-scaling-stroke"/></svg>
+        <svg class="dir-ring" viewBox="0 0 100 100" preserveAspectRatio="none"><ellipse cx="50" cy="50" rx="49" ry="49" vector-effect="non-scaling-stroke"/></svg>
+        <i class="chev"></i><i class="chev"></i><i class="chev"></i><i class="chev"></i>
       </div>
+      <span class="dir-label" id="dirLabel"></span>
       <div class="caption" id="lastMove" aria-live="polite"></div>
       <div class="centre">
         <button class="deckbtn" id="deck" aria-label="Draw a card"></button>
@@ -247,6 +261,7 @@
 </script>
 <!-- config.js is written by the site build (vite.config.ts) and carries the room server address. -->
 <script src="config.js"></script>
+<script src="/rc-coach.js"></script>
 <script src="engine.js"></script>
 <script src="client.js"></script>
 </body>

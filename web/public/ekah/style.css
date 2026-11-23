@@ -135,9 +135,35 @@ details.rules ul { margin: 6px 0 0; padding-left: 18px; }
 
 .arena { position: relative; flex: 1; min-height: 0; margin: 0 6px; }
 .felt { position: absolute; left: 12px; right: 12px; top: 8px; bottom: 8px; border-radius: 50%; background: radial-gradient(ellipse at center, var(--felt) 52%, var(--felt-edge)); box-shadow: inset 0 0 0 6px rgba(255,255,255,.04), inset 0 0 40px rgba(0,0,0,.35); display: flex; align-items: center; justify-content: center; }
-.felt .direction { position: absolute; inset: 7%; pointer-events: none; color: rgba(255,255,255,.16); transition: transform .5s; }
-.felt .direction svg { width: 100%; height: 100%; }
-.felt .direction.rev { transform: scaleX(-1); }
+.felt .direction { position: absolute; inset: 6%; pointer-events: none; }
+.felt .direction .dir-ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.felt .direction .dir-ring ellipse { fill: none; stroke: rgba(255,201,60,.38); stroke-width: 2; stroke-dasharray: 3 5; stroke-linecap: round; animation: dirflow 2.4s linear infinite; }
+.felt .direction.rev .dir-ring ellipse { animation-direction: reverse; }
+@keyframes dirflow { to { stroke-dashoffset: -32; } }
+.felt .direction .chev { position: absolute; left: 0; top: 0; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%; background: radial-gradient(circle, rgba(255,201,60,.28), rgba(255,201,60,0) 70%); transition: transform .55s cubic-bezier(.4,1.4,.5,1); }
+.felt .direction .chev::before { content: ""; position: absolute; left: 50%; top: 50%; width: 13px; height: 13px; margin: -7px 0 0 -9px; border-top: 5px solid var(--gold); border-right: 5px solid var(--gold); border-radius: 2px; transform: rotate(45deg); filter: drop-shadow(0 0 4px rgba(255,201,60,.8)); animation: chevpulse 1.6s ease-in-out infinite; animation-delay: var(--d, 0s); }
+@keyframes chevpulse { 0%, 100% { opacity: .35; } 25% { opacity: 1; } }
+.felt .direction.flip .chev { animation: chevspin .6s ease-out; }
+@keyframes chevspin { 50% { scale: 1.6; } }
+.dir-label { position: absolute; top: 2.5%; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; letter-spacing: .02em; color: var(--gold); background: rgba(0,0,0,.32); border: 1px solid rgba(255,201,60,.35); padding: 3px 10px 3px 7px; border-radius: 999px; white-space: nowrap; pointer-events: none; }
+.dir-label svg { width: 15px; height: 15px; }
+.dir-label.pop { animation: stackpop .45s cubic-bezier(.3,1.6,.5,1); }
+.hand.undealt .card { opacity: 0; }
+.hand .card.flipin.flipin { animation: flipin .42s cubic-bezier(.3,1.3,.5,1) both; animation-delay: var(--fd, 0s); }
+@keyframes flipin { from { opacity: 0; transform: rotate(var(--rot, 0deg)) translateY(-30px) rotateY(90deg) scale(.8); } }
+.pile.undealt .card { visibility: hidden; }
+.pile.reveal > .card { animation: flipin .45s cubic-bezier(.3,1.3,.5,1); }
+.house { display: flex; flex-direction: column; gap: 8px; }
+.switch { display: flex; align-items: center; gap: 12px; text-align: left; width: 100%; border: 1px solid var(--line); background: rgba(255,255,255,.05); border-radius: 14px; padding: 9px 12px; min-height: 52px; }
+.switch .sw { flex: none; width: 44px; height: 26px; border-radius: 999px; background: rgba(255,255,255,.18); position: relative; transition: background .2s; }
+.switch .sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+.switch[aria-checked="true"] .sw { background: var(--ok); }
+.switch[aria-checked="true"] .sw::after { transform: translateX(18px); }
+.switch .st { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.switch .st b { font-size: 14px; }
+.switch .st small { font-size: 12px; color: var(--muted); line-height: 1.3; }
+.switch:disabled { opacity: 1; cursor: default; }
+.house-note { font-size: 13px; color: var(--muted); line-height: 1.5; }
 .felt .centre { position: relative; display: flex; align-items: center; justify-content: center; gap: clamp(14px, 5vw, 36px); }
 .caption { position: absolute; top: 15%; left: 18%; right: 18%; text-align: center; font-size: 13px; line-height: 1.35; color: var(--muted); pointer-events: none; }
 .deckbtn { background: none; border: 0; padding: 0; position: relative; border-radius: calc(var(--cw) * .13); }
@@ -384,7 +410,8 @@ button.card { cursor: default; }
 .table-themes .t-emerald span { background: radial-gradient(circle at 50% 35%, #1D7A59, #0F4D3A 60%, #062A1E); }
 
 /* ---------- stacking: +N waiting on the pile, Take cards button ---------- */
-.stackbadge { position: absolute; top: -14px; right: -16px; z-index: 3; min-width: 40px; text-align: center; background: #E5383B; color: #fff; font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 20px; line-height: 1; padding: 7px 10px 4px; border-radius: 999px; white-space: nowrap; box-shadow: 0 0 0 2px #fff, 0 6px 14px rgba(0,0,0,.45); pointer-events: none; }
+.stackbadge { position: absolute; top: -18px; right: -22px; z-index: 3; min-width: 44px; text-align: center; background: #E5383B; color: #fff; font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 21px; line-height: 1; padding: 6px 10px 5px; border-radius: 14px; white-space: nowrap; box-shadow: 0 0 0 2px #fff, 0 6px 14px rgba(0,0,0,.45), 0 0 22px rgba(229,56,59,.55); pointer-events: none; }
+.stackbadge small { display: block; font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: .02em; opacity: .95; margin-top: 2px; max-width: 74px; overflow: hidden; text-overflow: ellipsis; }
 .stackbadge.hidden { display: none; }
 .stackbadge.pop { animation: stackpop .45s cubic-bezier(.3,1.6,.5,1); }
 @keyframes stackpop { 0% { transform: scale(.4); } 100% { transform: scale(1); } }
@@ -396,3 +423,6 @@ button.card { cursor: default; }
 .hand.two { --cw: calc(var(--hand-cw) * .9); }
 .hand.two .card.playable { --lift: -10px; }
 @media (prefers-reduced-motion: reduce) { .stackbadge.pop { animation: none; } }
+.chips.level button { flex: 1 1 0; flex-direction: column; gap: 0; line-height: 1.1; padding: 6px 4px; min-height: 50px; }
+.chips.level button small { font-size: 11px; font-weight: 600; color: var(--muted); }
+.chips.level button[aria-checked="true"] small { color: inherit; opacity: .72; }

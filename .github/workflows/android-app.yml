@@ -94,7 +94,7 @@ jobs:
           fi
           # App icon and splash screen from web/assets/
           npx --yes @capacitor/assets@3 generate --android \
-            --iconBackgroundColor '#0F4D3A' --iconBackgroundColorDark '#0F4D3A' \
+            --iconBackgroundColor '#09163A' --iconBackgroundColorDark '#09163A' \
             --splashBackgroundColor '#FAF5E9' --splashBackgroundColorDark '#0F4D3A'
           # Each build gets a higher version number, so a new APK installs over the old one.
           sed -i -E "s/versionCode( =)? [0-9]+/versionCode\\1 ${{ github.run_number }}/; s/versionName( =)? \"[^\"]+\"/versionName\\1 \"0.1.${{ github.run_number }}\"/" android/app/build.gradle

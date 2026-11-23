@@ -10,7 +10,7 @@ function ac(): AudioContext | null {
     const C = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!C) return null;
     ctx = ctx ?? new C();
-    if (ctx.state === "suspended") void ctx.resume();
+    if (ctx.state === "suspended") ctx.resume().catch(() => undefined);
     return ctx;
   } catch { return null; }
 }
@@ -70,7 +70,7 @@ export function arrival(on = true) {
   if (!on) return;
   const c = ac(); if (!c) return;
   try {
-    const t = c.currentTime + 0.02, out = room(c, 0.55);
+    const t = c.currentTime + 0.02, out = room(c, 0.45);
     const G4 = 392, C5 = 523.25, E5 = 659.25, G5 = 783.99;
     brass(c, out, G4, t, 0.1, 0.13);
     brass(c, out, G4, t + 0.13, 0.1, 0.13);
@@ -86,7 +86,7 @@ export function victory(on = true) {
   if (!on) return;
   const c = ac(); if (!c) return;
   try {
-    const t = c.currentTime + 0.03, out = room(c, 0.42);
+    const t = c.currentTime + 0.03, out = room(c, 0.32);
     const n = (semi: number) => 523.25 * 2 ** (semi / 12);   // around C5
     // brass flourish: C E G | C' (held) with a lower third
     [[0, 0, 0.12], [4, 0.14, 0.12], [7, 0.28, 0.12], [12, 0.44, 0.75]].forEach(([s, w, d]) => brass(c, out, n(s), t + w, d, 0.12));

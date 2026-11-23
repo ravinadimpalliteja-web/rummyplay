@@ -3,8 +3,8 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { GameBar, IconButton, PaletteIcon, RulesIcon, SoundIcon, TurnTimer } from "../ui/GameBar";
 import { RoomClient, deviceToken, randomPasscode, saveRoom, savedRoom, serverUrl, type NetStatus } from "../domain/online";
 import {
-  ANIM, COLORS, LANE, LEVELS, SAFE, SPOTS, START, TRACK, YARD, absOf, bestMove, cellKey, move, newGame, pointOf, previewMove, roll, rollDie, turnOf,
-  type Color, type Level, type LudoEvent, type LudoGame as Game, type Tok,
+  ANIM, COLORS, LANE, SAFE, SPOTS, START, TRACK, YARD, absOf, bestMove, cellKey, cutsWith, move, newGame, pointOf, previewMove, roll, rollDie, turnOf,
+  type Color, type LudoEvent, type LudoGame as Game, type Tok,
 } from "./engine";
 import { DICE, Face, Piece, PieceDefs, TOKEN_SETS, isUnlocked, setPips, unlockText, type DiceId, type TokenSet } from "./pieces";
 import { useRealWins } from "./realWins";
@@ -14,7 +14,7 @@ import { inviteText } from "../lib/share";
 import { SAVE_KEYS, loadGame, saveGame, clearGame } from "../lib/localSave";
 import "./ludo.css";
 import { LudoArt } from "../home/GameArt";
-import { PlayStart, WaitingRoom, keepLevel, readLevel } from "../room/RoomScreens";
+import { PlayStart, WaitingRoom } from "../room/RoomScreens";
 import { arrival, victory } from "../lib/fanfare";
 import { coach } from "../lib/coach";
 import { ROOM_SIGNIN_MSG, markPlayed, onRoomAuthError, roomAccount, useSeatLabel } from "../auth/account";
@@ -30,7 +30,7 @@ const readKey = <T extends string>(key: string, ok: readonly string[], dflt: T):
 const keep = (key: string, v: string) => { try { window.localStorage.setItem(key, v); } catch { /* storage off: still works for this visit */ } };
 const ORD = ["1st", "2nd", "3rd", "4th"];
 /* A game on this device (vs computer or pass & play), saved after every move so it survives closing the app. */
-type LudoSave = { game: Game; mode: "practice" | "pass"; names: string[]; level?: Level };
+type LudoSave = { game: Game; mode: "practice" | "pass"; names: string[] };
 const isLudoSave = (d: unknown): d is LudoSave => {
   const s = d as LudoSave;
   return !!s && (s.mode === "practice" || s.mode === "pass") && Array.isArray(s.names) && !!s.game && Array.isArray(s.game.order)
@@ -228,9 +228,6 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
   type Sub = "lobby" | "room" | "table";
   const [sub, setSub] = useState<Sub>(joinCode ? "room" : "lobby");
   const [bots, setBots] = useState(3);
-  const [level, setLevelState] = useState<Level>(() => readLevel("ludo"));
-  const setLevel = (l: Level) => { setLevelState(l); keepLevel("ludo", l); };
-  const [gameLevel, setGameLevel] = useState<Level>(level);
   const [passCount, setPassCount] = useState(2);
   const [passNames, setPassNames] = useState(["Player 1", "Player 2", "Player 3", "Player 4"]);
   const [local, setLocal] = useState<Game | null>(null);
@@ -281,6 +278,23 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
     const id = ++bubbleId.current;
     setBubbles(b => [...b.slice(-3), { id, seat, text }]);
     window.setTimeout(() => setBubbles(b => b.filter(x => x.id !== id)), 2300);
+  };
+
+  /* computer players chat now and then, like people at a table (never more than one line every few seconds) */
+  const lastChat = useRef(0);
+  const chatter = (l: LudoEvent, t: Table) => {
+    if (Date.now() - lastChat.current < 6000) return;
+    const cpus = t.order.filter(s => t.bots[s] && !t.ranks.includes(s));
+    if (!cpus.length) return;
+    const someone = cpus[Math.floor(Math.random() * cpus.length)];
+    let say: [number, number] | null = null;
+    if (l.kind === "roll" && l.value === 6 && !t.bots[l.seat] && Math.random() < .15) say = [someone, 7];          // Great roll!
+    else if (l.kind === "move" && l.home && !t.bots[l.seat] && Math.random() < .3) say = [someone, 2];             // Well played
+    else if (l.kind === "move" && l.home && t.bots[l.seat] && Math.random() < .2) say = [l.seat, 1];               // Good luck
+    else if (l.kind === "roll" && l.outcome === "three-sixes" && t.bots[l.seat]) say = [l.seat, 3];               // Oops!
+    if (!say) return;
+    lastChat.current = Date.now();
+    showBubble(say[0], PHRASES[say[1]]);
   };
 
   /* ---------- room connection (same server as Spades and Snakes & Ladders; its own saved room on this device) ---------- */
@@ -334,31 +348,36 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
   /* ---------- games on this device ---------- */
   const startLocal = (mode: "practice" | "pass") => {
     const names = mode === "practice" ? ["You", ...BOTS.slice(0, bots)] : passNames.slice(0, passCount).map((n, i) => n.trim() || `Player ${i + 1}`);
-    setLocalMode(mode); setLocalNames(names); animatedN.current = null; setDisp(null); setGameLevel(level);
+    setLocalMode(mode); setLocalNames(names); animatedN.current = null; setDisp(null);
     setLocal(newGame(names.map((_, i) => i), mode === "practice" ? 0 : Math.floor(Math.random() * names.length)));
     setSub("table");
   };
   const resumeLocal = (s: LudoSave) => {
-    setLocalMode(s.mode); setLocalNames(s.names); animatedN.current = null; setDisp(null); setGameLevel(s.level && LEVELS.includes(s.level) ? s.level : "normal"); setLocal(s.game); setSub("table");
+    setLocalMode(s.mode); setLocalNames(s.names); animatedN.current = null; setDisp(null); setLocal(s.game); setSub("table");
   };
   useEffect(() => {                                     // auto-save; a finished game is forgotten
     if (!local) return;
     if (local.phase === "gameEnd") { clearGame(SAVE_KEYS.ludo); setSaved(null); return; }
-    saveGame(SAVE_KEYS.ludo, { game: local, mode: localMode, names: localNames, level: gameLevel });
-  }, [local, localMode, localNames, gameLevel]);
+    saveGame(SAVE_KEYS.ludo, { game: local, mode: localMode, names: localNames });
+  }, [local, localMode, localNames]);
   useEffect(() => {
     if (online || !local || local.phase === "gameEnd" || animating) return;
     if (local.last && local.last.n !== animatedN.current) return;            // wait until the last event has been shown
     const seat = turnOf(local), bot = localMode === "practice" && seat !== 0;
     let id = 0;
-    if (local.phase === "roll" && bot) id = window.setTimeout(() => setLocal(g => (g ? roll(g, turnOf(g), rollDie()) : g)), 650 * pace);
+    /* computer players take their time like people do: a varied moment before rolling, and a real think when
+       there is a choice to make (longer still when a cut is on, so you see it coming) */
+    if (local.phase === "roll" && bot) id = window.setTimeout(() => setLocal(g => (g ? roll(g, turnOf(g), rollDie()) : g)), (500 + Math.random() * 600) * pace);
     else if (local.phase === "move") {
       const forced = local.last?.kind === "roll" ? local.last.forced : null;
-      if (bot) id = window.setTimeout(() => setLocal(g => (g ? move(g, turnOf(g), bestMove(g, turnOf(g), gameLevel)) : g)), 450 * pace);
+      if (bot) {
+        const pick = bestMove(local, seat), think = forced != null ? 350 : cutsWith(local, seat, pick) ? 1100 : 600 + Math.random() * 700;
+        id = window.setTimeout(() => setLocal(g => (g && g.n === local.n ? move(g, turnOf(g), pick) : g)), (think + Math.random() * 200) * pace);
+      }
       else if (forced != null) id = window.setTimeout(() => setLocal(g => (g ? move(g, turnOf(g), forced) : g)), 300 * pace);
     }
     return () => window.clearTimeout(id);
-  }, [online, local, animating, localMode, gameLevel]);
+  }, [online, local, animating, localMode]);
 
   /* ---------- animation: each new event (from this device or the server) is shown once, in order ---------- */
   const settle = () => { const t = tableRef.current; if (t) setDisp(copyTokens(t.tokens)); };
@@ -451,7 +470,7 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
         const victim = l.cuts.find(c => t.bots[c.seat]);
         if (victim && Math.random() < .6) showBubble(victim.seat, PHRASES[VICTIM[Math.floor(Math.random() * VICTIM.length)]]);
         else if (t.bots[l.seat] && Math.random() < .4) showBubble(l.seat, PHRASES[HUNTER[0]]);
-      }
+      } else if (t.mode === "practice") chatter(l, t);
     });
   }, [table, sub]);
 
@@ -536,11 +555,11 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
   }, []);
 
   /* ---------- screens ---------- */
-  const pending: LudoSave | null = local && local.phase !== "gameEnd" ? { game: local, mode: localMode, names: localNames, level: gameLevel } : saved;
+  const pending: LudoSave | null = local && local.phase !== "gameEnd" ? { game: local, mode: localMode, names: localNames } : saved;
   if (sub === "lobby" || (sub === "room" && !view)) return <PlayStart className="ld-mode" game="Ludo" tagline="Race your four tokens home. Cut, block and roll sixes."
     art={<LudoArt />} meta="2–4 players · about 15 min" passStart={() => startLocal("pass")}
     onBack={onHome}
-    vsComputer={{ count: bots, options: [1, 2, 3], onCount: setBots, onPlay: () => startLocal("practice"), level: { value: level, onLevel: setLevel } }}
+    vsComputer={{ count: bots, options: [1, 2, 3], onCount: setBots, onPlay: () => startLocal("practice"), }}
     friends={{ onCreate: createRoom, code: roomCode, onCode: setRoomCode, pass: roomPass, onPass: setRoomPass, onJoin: joinRoom, busy: net === "connecting" }}
     msg={roomMsg}
     extra={view ? <div className="rs-panel"><h2>Your room</h2><p className="rs-note">You are in room {view.code}.</p><button className="gold-button rs-wide" onClick={() => setSub("room")}>Return to the room →</button></div>

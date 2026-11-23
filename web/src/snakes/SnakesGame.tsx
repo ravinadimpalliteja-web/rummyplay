@@ -970,7 +970,7 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
     {champ && <div key={champ.id} className="sl-champ" role="status" aria-live="assertive">
       <div className="sl-champ-rays" aria-hidden="true" />
       <div className="sl-champ-hero">
-        <div className="sl-champ-token" style={{ ["--c" as string]: COLORS[champ.seat] }}><img src={pieceUrl(table.pieces[champ.seat])} alt="" /></div>
+        <div className="sl-champ-token" style={{ "--c": COLORS[champ.seat] } as import("react").CSSProperties}><img src={pieceUrl(table.pieces[champ.seat])} alt="" /></div>
         <Crown />
       </div>
       <p className="sl-champ-kicker">{champ.seat === table.you ? "VICTORY" : "WINNER"}</p>

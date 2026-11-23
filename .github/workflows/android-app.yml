@@ -160,6 +160,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view test-app >/dev/null 2>&1 || gh release create test-app --prerelease --title "Royal Club test app" \
-            --notes "Latest test build of the Royal Club Android app. Install RoyalClub-test.apk on your phone."
-          gh release upload test-app ../apk/RoyalClub-test.apk ../apk/RoyalClub-offline.apk --clobber
+          gh release view ambaro-icon-preview >/dev/null 2>&1 || gh release create ambaro-icon-preview --prerelease --target ambaro-icon-preview --title "Ambaro icon preview" \
+            --notes "Preview build with the new Ambaro elephant app icon. Not the shared test-app link."
+          gh release upload ambaro-icon-preview ../apk/RoyalClub-test.apk ../apk/RoyalClub-offline.apk --clobber

@@ -530,3 +530,25 @@
   52%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(70%,calc(var(--lift) - 60%)) rotate(180deg) scale(1)}
   100%{transform:rotate(calc(-1 * var(--rot,0deg))) translate(220%,calc(var(--lift) - 150%)) rotate(540deg) scale(.4);opacity:0}}
 .ld-unlock-rule{margin:-4px 0 2px;text-align:left}
+
+/* ===================================================================================================================
+   In the Android app: the Ludo table sits in the same dark emerald room as the lobby and Snakes & Ladders (app look,
+   not a web page). The board keeps its ivory squares in the gold frame; seats, bar, messages and chat become dark glass.
+   =================================================================================================================== */
+html.rc-app .app-shell:has(.ld-screen){background:radial-gradient(ellipse at 50% 0%,#145a42 0%,#0B3B2D 45%,#06261C 100%) fixed !important;color:#FFF8EA}
+html.rc-app .ld-bar .rc-bar-back,html.rc-app .ld-bar .rc-ibtn{background:rgba(0,0,0,.3);border-color:rgba(243,217,138,.5);color:#F3D98A;box-shadow:0 4px 0 rgba(0,0,0,.3)}
+html.rc-app .ld-bar .rc-ibtn[aria-pressed="false"]{color:rgba(243,217,138,.55)}
+html.rc-app .ld-bar .rc-bar-name strong{color:#F3D98A}
+html.rc-app .ld-bar .rc-bar-name small{color:rgba(255,255,255,.72)}
+html.rc-app .ld-seat{background:linear-gradient(180deg,rgba(8,46,32,.88),rgba(3,26,17,.88));border-color:rgba(233,200,119,.22);box-shadow:0 6px 14px rgba(0,0,0,.3)}
+html.rc-app .ld-seat.turn{border-color:var(--c);background:linear-gradient(90deg,color-mix(in srgb,var(--c) 30%,transparent),rgba(8,46,32,.88) 70%);box-shadow:0 0 0 1px var(--c),0 0 18px -4px var(--c)}
+html.rc-app .ld-seat.off{background:transparent;border-color:rgba(233,200,119,.3)}
+html.rc-app .ld-seat-txt strong{color:#FFF8EA}
+html.rc-app .ld-seat-txt small{color:rgba(255,248,234,.7)}
+html.rc-app .ld-seat.away .ld-seat-txt small{color:#FFB4A8}
+html.rc-app .ld-seat-chip{box-shadow:0 0 0 2px #06261C,0 0 0 3.5px #E9C46A}
+html.rc-app .ld-screen .ld-hint{color:#E9C46A}
+html.rc-app .ld-screen .ld-hint.ready{color:#FFE08A}
+html.rc-app .ld-screen .ld-msg{color:rgba(255,248,234,.82)}
+html.rc-app .ld-screen .ld-reacts button{background:rgba(0,0,0,.3);border:1.5px solid rgba(233,200,119,.35);color:#FFF8EA}
+html.rc-app .ld-screen .ld-board-wrap{filter:drop-shadow(0 18px 30px rgba(0,0,0,.45))}

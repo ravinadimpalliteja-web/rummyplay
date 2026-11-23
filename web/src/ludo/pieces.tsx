@@ -2,9 +2,9 @@
 import type { Color } from "./engine";
 
 export const TOKEN_SETS = [
+  { id: "ambaro", name: "Ambaro elephants", note: "The Ambaro elephant, carrying its golden ambari" },
   { id: "sentry", name: "Indian sentries", note: "Palace guards in turbans, with spear and shield" },
   { id: "horse", name: "Royal horses", note: "White Marwari horses in coloured caparisons" },
-  { id: "elephant", name: "Royal elephants", note: "Elephants with a howdah and a jewelled blanket" },
   { id: "tiger", name: "Toy tigers", note: "Lacquered Channapatna-style tigers" },
   { id: "peacock", name: "Peacocks", note: "Peacocks with their fans open" },
   { id: "chariot", name: "Chariots", note: "Temple chariots with gold wheels" },
@@ -12,8 +12,9 @@ export const TOKEN_SETS = [
 export type TokenSet = typeof TOKEN_SETS[number]["id"];
 
 /* Token sets unlock with room wins against real players: finishing 1st in a room game where at least one other
-   real, signed-in player was seated. The room server records these wins on the player's account. Sentries are free. */
-export const UNLOCK: Record<TokenSet, number> = { sentry: 0, horse: 1, elephant: 5, tiger: 10, peacock: 15, chariot: 20 };
+   real, signed-in player was seated. The room server records these wins on the player's account. The Ambaro
+   elephants (the default) and the sentries are free. */
+export const UNLOCK: Record<TokenSet, number> = { ambaro: 0, sentry: 0, horse: 1, tiger: 5, peacock: 10, chariot: 15 };
 export const isUnlocked = (set: TokenSet, wins: number) => wins >= UNLOCK[set];
 export const unlockText = (set: TokenSet, wins: number, signedIn: boolean) => {
   const n = UNLOCK[set], what = `${n} room win${n > 1 ? "s" : ""} against real players`;
@@ -43,6 +44,8 @@ export function PieceDefs() {
       <linearGradient id="ldp-gold-h" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#8a5f18" /><stop offset=".35" stopColor="#f6dc8e" /><stop offset=".6" stopColor="#fff3c0" /><stop offset="1" stopColor="#9a6c1e" /></linearGradient>
       <linearGradient id="ldp-coat" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fffaf0" /><stop offset=".6" stopColor="#efe4cf" /><stop offset="1" stopColor="#cdbd9c" /></linearGradient>
       <linearGradient id="ldp-hide" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#a8a29c" /><stop offset=".6" stopColor="#8b847e" /><stop offset="1" stopColor="#625c57" /></linearGradient>
+      <linearGradient id="ldp-jade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#4fd096" /><stop offset=".5" stopColor="#1f9464" /><stop offset="1" stopColor="#0c5537" /></linearGradient>
+      <linearGradient id="ldp-jade-d" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#1c8a5b" /><stop offset="1" stopColor="#0a4630" /></linearGradient>
       <radialGradient id="ldp-pearl" cx=".38" cy=".32" r=".7"><stop offset="0" stopColor="#ffffff" /><stop offset=".6" stopColor="#efe6d2" /><stop offset="1" stopColor="#b9a87e" /></radialGradient>
       {COLS.map(c => <g key={c}>
         <radialGradient id={`ldp-${c}-ball`} cx=".36" cy=".3" r=".75"><stop offset="0" stopColor={TONES[c].hi} /><stop offset=".45" stopColor={TONES[c].base} /><stop offset="1" stopColor={TONES[c].lo} /></radialGradient>
@@ -107,26 +110,42 @@ export function Piece({ set, color }: { set: TokenSet; color: Color }) {
         <circle cx="20.4" cy="23" r="2.6" fill={gold} stroke="#7a5214" strokeWidth=".5" /><circle cx="20.4" cy="23" r="1.1" fill={t.hi} />
         <path d="M28.4 21.4 C30 23 31.6 24.6 34 25" stroke={goldH} strokeWidth="1.4" fill="none" />
       </>; break;
-    case "elephant":
-      /* A royal elephant: grey hide, a jewelled blanket (jhool) and howdah in the player's colour, gold canopy. */
+    case "ambaro":
+      /* The Ambaro elephant from the logo: a faceted emerald elephant with gold anklets and headdress, trunk raised,
+         a jhool (blanket) in the player's colour with a gold medallion, and a golden ambari whose canopy is in the
+         player's colour. */
       art = <>
-        {[8.6, 14.2, 25.4, 31.2].map((x, i) => <g key={x}><rect x={x} y="28" width="5.6" height="15.4" rx="2.2" fill={i % 3 ? "#7a746f" : "url(#ldp-hide)"} />
-          <path d={`M${x + .8} 42.6 h1.2 M${x + 2.4} 42.6 h1.2 M${x + 4} 42.6 h.8`} stroke="#ece4d6" strokeWidth=".9" strokeLinecap="round" /></g>)}
-        <path d="M6 24 C4.4 26 4 29 4.6 31" stroke="#6e6863" strokeWidth="1.2" fill="none" strokeLinecap="round" />
-        <ellipse cx="20.4" cy="25" rx="14.4" ry="10.6" fill="url(#ldp-hide)" />
-        <circle cx="34.6" cy="21" r="8" fill="url(#ldp-hide)" />
-        <path className="ld-trunk" d="M39.6 23.4 C42.4 27 42.6 32 41.6 36.6 C41.2 38.6 42.6 39.6 44 38.6 C45 37.8 45.2 36.6 44.4 36.2" stroke="#857f79" strokeWidth="3.6" fill="none" strokeLinecap="round" />
-        <path d="M37.4 27 C39.6 28.4 42.2 28.8 44.6 28" stroke="#fffaf0" strokeWidth="1.6" fill="none" strokeLinecap="round" />
-        <ellipse cx="31" cy="21.6" rx="4.6" ry="6.4" fill="#76706b" stroke="#5e5853" strokeWidth=".5" />
-        <circle cx="37.6" cy="18.6" r=".8" fill="#211a14" />
-        <path d="M33.8 13 C36 12 38.6 12.6 40 14.4 L38.4 17.4 L35.6 15.6 Z" fill={v} stroke={gold} strokeWidth=".7" />
-        <path d="M7.8 16.6 C14 14.4 25.4 14.4 30 16.4 L30.6 33 L28.4 35.2 L26.2 33.2 L24 35.4 L21.8 33.2 L19.6 35.4 L17.4 33.2 L15.2 35.4 L13 33.2 L10.8 35.4 L8.4 33.2 L6.6 31 Z" fill={body} stroke={t.lo} strokeWidth=".6" strokeLinejoin="round" />
-        <path d="M7 31 L30.4 31" stroke={goldH} strokeWidth="1.6" />
-        <path d="M18.4 20 l2.2 2.6 l-2.2 2.6 l-2.2 -2.6 Z M12.6 22.6 l1.6 1.8 l-1.6 1.8 l-1.6 -1.8 Z M24.2 22.6 l1.6 1.8 l-1.6 1.8 l-1.6 -1.8 Z" fill={gold} />
-        <rect x="11" y="9.4" width="16" height="6.4" rx="1" fill={ball} stroke={gold} strokeWidth=".9" />
-        <path d="M12 9.6 V4.4 M26 9.6 V4.4" stroke={gold} strokeWidth="1" />
-        <path d="M10 5 C12 0.4 26 0.4 28 5 Z" fill={v} stroke={gold} strokeWidth=".8" />
-        <circle cx="19" cy="0.6" r="1.1" fill={gold} />
+        <path d="M6.4 23.4 C4.4 25.6 3.8 29 4.6 32.2" stroke="#0e5a3a" strokeWidth="1.3" fill="none" strokeLinecap="round" />
+        <path d="M4.6 32.2 l-1 2.4 l2.2 -.8 Z" fill={gold} />
+        {[8.8, 14.4, 25.6, 31.2].map((x, i) => <g key={x}>
+          <path d={`M${x} 29 h5.4 l-.3 13.6 h-4.8 Z`} fill={i % 3 ? "url(#ldp-jade-d)" : "url(#ldp-jade)"} stroke="#0a4630" strokeWidth=".4" />
+          <rect x={x - .3} y="38.4" width="6" height="1.8" rx=".5" fill={goldH} /><rect x={x - .2} y="41.6" width="5.8" height="1.4" rx=".5" fill={gold} />
+        </g>)}
+        <path d="M6.4 22 C7.4 15.8 13 13.6 20.4 13.6 C28.6 13.6 34.4 16.4 35.2 23.4 C35.8 30.6 30 35.4 20.6 35.4 C11.4 35.4 5.6 30.4 6.4 22 Z" fill="url(#ldp-jade)" stroke="#0a4630" strokeWidth=".5" />
+        <path d="M9 30.6 L16 24 L22 33.8 Z M24 33.6 L30 25.4 L33.4 30.2 Z" fill="#0d5c3c" opacity=".55" />
+        <path d="M31.4 13.8 C35 11.6 40.6 12.6 41.8 17.4 C42.6 20.8 41.2 24.6 38.8 26 C36 27.6 32 26 30.4 22.6 Z" fill="url(#ldp-jade)" stroke="#0a4630" strokeWidth=".5" />
+        <path className="ld-trunk" d="M40.4 24.6 C43.4 23.8 45.6 20.6 45.2 16.4 C45 14.2 46.4 12.8 47.8 13.6" stroke="#18865a" strokeWidth="3.4" fill="none" strokeLinecap="round" />
+        <path d="M40.4 24.6 C43.4 23.8 45.6 20.6 45.2 16.4" stroke="#0a4630" strokeWidth=".5" fill="none" opacity=".6" />
+        <path d="M38.2 25.6 C40.4 27.6 43.4 28 45.8 26.8" stroke="#fffaf0" strokeWidth="1.7" fill="none" strokeLinecap="round" />
+        <path d="M27.6 15.4 L34.8 14.4 L35.6 25 L30.6 28.6 L27 22.4 Z" fill="url(#ldp-jade-d)" stroke={gold} strokeWidth=".8" strokeLinejoin="round" />
+        <path d="M28.8 18 L33.6 17.2 L32.6 23.4 Z" fill="#36b67e" opacity=".7" />
+        <circle cx="38.6" cy="18.8" r=".85" fill="#1a120a" /><path d="M37.4 17.4 q1.3 -.7 2.6 0" stroke="#0a4630" strokeWidth=".5" fill="none" />
+        <path d="M33.4 12.8 C36 10.6 40.4 10.8 42.6 13.6 L41.2 16.6 C39.4 15.2 36.4 14.8 34.2 15.8 Z" fill={gold} stroke="#7a5214" strokeWidth=".4" />
+        <path d="M38.4 11.6 l1.4 1.6 l-1.4 1.6 l-1.4 -1.6 Z" fill="#2fd08c" stroke="#7a5214" strokeWidth=".3" />
+        <path d="M8 16.8 C14 14.6 25 14.6 29.8 16.6 L30.4 32 L28.2 34.2 L26 32.2 L23.8 34.4 L21.6 32.2 L19.4 34.4 L17.2 32.2 L15 34.4 L12.8 32.2 L10.6 34.4 L8.4 32.2 L6.8 30 Z" fill={body} stroke={gold} strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M7.2 29.6 L30.4 29.6" stroke={goldH} strokeWidth="1.3" />
+        <circle cx="18.6" cy="23" r="4.4" fill={gold} stroke="#7a5214" strokeWidth=".5" />
+        <circle cx="18.6" cy="23" r="3.2" fill="#1d3a2c" />
+        <rect x="16.6" y="21" width="1.9" height="1.9" fill="#d23a44" /><rect x="18.7" y="21" width="1.9" height="1.9" fill="#22a463" />
+        <rect x="16.6" y="23.1" width="1.9" height="1.9" fill="#2f63c4" /><rect x="18.7" y="23.1" width="1.9" height="1.9" fill="#f0b21f" />
+        <rect x="9.6" y="12.2" width="18.6" height="3.4" rx=".6" fill={goldH} stroke="#7a5214" strokeWidth=".4" />
+        <path d="M11 12.2 V5.6 M15.6 12.2 V5.6 M22.4 12.2 V5.6 M27 12.2 V5.6" stroke={gold} strokeWidth="1.1" />
+        <path d="M9.4 6.2 C10.6 0.4 15 -1.8 18.9 -1.8 C22.8 -1.8 27.2 0.4 28.4 6.2 Z" fill={v} stroke={gold} strokeWidth=".8" />
+        <path d="M13.6 5.8 C14.2 2 16.4 -.6 18.9 -1.2 M24.2 5.8 C23.6 2 21.4 -.6 18.9 -1.2" stroke={goldH} strokeWidth=".7" fill="none" />
+        <path d="M9 6 h19.8" stroke={goldH} strokeWidth="1.4" />
+        <path d="M18.9 -1.8 V-3.6" stroke={gold} strokeWidth="1" /><circle cx="18.9" cy="-3.6" r="1.1" fill={gold} />
+        {[9.6, 28.2].map(x => <g key={x}><path d={`M${x} 6 V3.2`} stroke={gold} strokeWidth=".8" /><circle cx={x} cy="2.6" r=".9" fill={gold} /></g>)}
+        <path d="M17.6 13.6 l1.3 -1.4 l1.3 1.4 l-1.3 1.4 Z" fill="#2fd08c" stroke="#7a5214" strokeWidth=".3" />
       </>; break;
     case "tiger":
       /* A lacquered Channapatna-style toy tiger painted in the player's colour, with dark stripes and a gold collar. */

@@ -751,3 +751,21 @@ main>.hero .hero-ornament{font-size:90px;top:50%;right:34%;opacity:.12}
 
 /* Phones use the bottom tab bar, so the header menu stays hidden there (this rule must come after the .rc-nav styles) */
 @media(max-width:760px){.app-shell .topbar nav.rc-nav{display:none}}
+
+/* ===== In the Android app, the remaining "page" screens (Snakes token picker, waiting rooms, Pass & Play names)
+   use the dark emerald app look of the lobbies instead of the ivory website look. ===== */
+html.rc-app .app-shell.theme-ivory:not(:has(.sl-screen, .ld-screen)):has(.mode-page){
+  --iv-bg:#072A20;--iv-card:rgba(255,255,255,.06);--iv-ink:#FFF8EA;--iv-muted:rgba(255,248,234,.72);--iv-soft:rgba(0,0,0,.28);--iv-edge:rgba(233,196,106,.45);
+  --iv-gold-text:#E9C46A;--iv-shadow:0 6px 16px rgba(0,0,0,.35);
+  background:radial-gradient(ellipse at 50% 0%,#145a42 0%,#0B3B2D 45%,#06261C 100%) fixed;color:var(--iv-ink)}
+html.rc-app .app-shell:has(.mode-page) .mode-page h1,html.rc-app .app-shell:has(.mode-page) .mode-page h2{color:#FFF8EA}
+html.rc-app .app-shell:has(.mode-page) .mode-page h1 em{color:#E9C46A}
+html.rc-app .app-shell:has(.mode-page) .mode-page .eyebrow{color:#E9C46A}
+html.rc-app .app-shell:has(.mode-page) .mode-page .gold-button{background:linear-gradient(180deg,#FFB766 0%,#F28C28 55%,#D9711A 140%);color:#2A1605;border:0;border-radius:22px;box-shadow:0 5px 0 #B85D0B;font-weight:800}
+html.rc-app .app-shell:has(.mode-page) .mode-page .gold-button:active{transform:translateY(4px);box-shadow:0 1px 0 #B85D0B}
+html.rc-app .app-shell:has(.mode-page) .mode-page .ghost-button{background:rgba(0,0,0,.3);border:1.5px solid rgba(233,196,106,.45);color:#FFF8EA;border-radius:18px}
+html.rc-app .app-shell:has(.mode-page) .mode-page input{background:rgba(0,0,0,.35);border-color:rgba(233,196,106,.45);color:#FFF8EA}
+html.rc-app .app-shell:has(.mode-page) .rs-club-back{width:44px;height:44px;border-radius:16px;background:rgba(0,0,0,.32);border:1.5px solid rgba(255,226,154,.55);color:#FFE29A;font-size:22px;box-shadow:0 4px 0 rgba(0,0,0,.3)}
+html.rc-app .app-shell:has(.mode-page) .tp-tabs button.on{background:linear-gradient(180deg,#FFE29A,#E9C46A);color:#2A1605}
+html.rc-app .app-shell:has(.mode-page) .tp-tabs button.on small{color:rgba(42,22,5,.75)}
+html.rc-app .app-shell:has(.mode-page) .tp-tabs button{color:rgba(255,248,234,.85)}

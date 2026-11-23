@@ -68,6 +68,22 @@ jobs:
           printf '%s\n' '<?xml version="1.0" encoding="utf-8"?>' '<resources><color name="rc_bars">#06140F</color></resources>' > android/app/src/main/res/values/rc_colors.xml
           sed -i 's#<item name="windowNoTitle">true</item>#<item name="windowNoTitle">true</item>\n        <item name="android:windowBackground">@color/rc_bars</item>#' android/app/src/main/res/values/styles.xml
           grep -n "windowBackground" android/app/src/main/res/values/styles.xml || echo "note: windowBackground not added (template changed)"
+          # Google sign-in comes back into the app through com.royalclubgames.app://auth-callback (src/auth/account.ts).
+          python3 - <<'PY'
+          p = 'android/app/src/main/AndroidManifest.xml'
+          s = open(p).read()
+          f = ('\n            <intent-filter>\n'
+               '                <action android:name="android.intent.action.VIEW" />\n'
+               '                <category android:name="android.intent.category.DEFAULT" />\n'
+               '                <category android:name="android.intent.category.BROWSABLE" />\n'
+               '                <data android:scheme="com.royalclubgames.app" android:host="auth-callback" />\n'
+               '            </intent-filter>\n        ')
+          if 'auth-callback' not in s:
+              i = s.index('</activity>')
+              s = s[:i] + f + s[i:]
+              open(p, 'w').write(s)
+          PY
+          grep -n "auth-callback" android/app/src/main/AndroidManifest.xml || { echo "the sign-in app link was not added"; exit 1; }
           if [ "$HAS_FIREBASE" = "true" ]; then
             printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
             # Crashlytics Gradle plugin (the Google Services plugin is already in Capacitor's project and is applied

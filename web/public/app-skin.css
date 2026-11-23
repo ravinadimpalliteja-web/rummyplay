@@ -8,14 +8,24 @@ html.rc-skin{--as-gold:#E9C46A;--as-gold-dark:#B8862B;--as-saffron:#F28C28;--as-
   --as-line:rgba(233,196,106,.32);--as-glass:rgba(0,0,0,.26)}
 
 /* ---------- artwork header ---------- */
-.as-hero{position:relative;display:block;width:100vw;height:clamp(190px,54vw,270px);margin:0 0 4px calc(50% - 50vw);overflow:hidden;grid-column:1/-1;flex:none}
-.as-art{position:absolute;left:50%;top:38%;width:100%;height:auto;min-height:100%;transform:translate(-50%,-38%);object-fit:cover}
-.as-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.45) 0%,rgba(0,0,0,0) 30%,rgba(0,0,0,.3) 62%,var(--rx-mid,#0B3B2D) 98%)}
+/* The whole artwork always shows (never cropped, on phones and tablets): it sits on the right at full height, over a
+   soft blurred copy of itself that fills the banner; the title sits on the left. */
+.as-hero{position:relative;display:block;width:100vw;height:clamp(180px,48vw,260px);margin:0 0 4px calc(50% - 50vw);overflow:hidden;grid-column:1/-1;flex:none}
+.as-art-bg{position:absolute;inset:-12%;width:124%;height:124%;object-fit:cover;filter:blur(18px) brightness(.62) saturate(1.25)}
+.as-art{position:absolute;right:max(0px,calc(50% - 330px));top:0;height:100%;width:auto;aspect-ratio:1;object-fit:contain;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 16%,#000 88%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 16%,#000 88%,transparent 100%)}
+.as-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.42) 0%,rgba(0,0,0,.12) 52%,rgba(0,0,0,0) 70%),linear-gradient(180deg,rgba(0,0,0,.35) 0%,rgba(0,0,0,0) 26%,rgba(0,0,0,0) 72%,var(--rx-mid,#0B3B2D) 100%)}
 .as-top{position:absolute;left:14px;right:14px;top:10px;display:flex;justify-content:space-between}
 .as-round{display:flex;width:44px;height:44px;padding:0;border-radius:15px;align-items:center;justify-content:center;cursor:pointer;color:var(--as-gold);
   background:rgba(0,0,0,.42);border:1.5px solid rgba(233,196,106,.5);box-shadow:0 4px 0 rgba(0,0,0,.35);-webkit-tap-highlight-color:transparent}
 .as-round:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.35)}
-.as-title{position:absolute;left:18px;right:18px;bottom:8px;display:flex;flex-direction:column;text-align:left}
+.as-title{position:absolute;left:max(18px,calc(50% - 330px));right:52%;bottom:14px;display:flex;flex-direction:column;text-align:left}
+/* tablets: the start screens are a centred column, so the banner becomes a rounded card at the top of it */
+@media (min-width:600px){
+  .as-hero{width:100%;max-width:608px;margin:12px auto 6px;border-radius:24px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .as-art{right:0}
+  .as-title{left:22px}
+}
 .as-name{font:700 clamp(30px,9vw,40px)/1.05 'Cinzel',Georgia,serif;color:var(--as-gold);text-shadow:0 4px 0 rgba(0,0,0,.55);letter-spacing:.02em}
 .as-meta{margin-top:3px;font:700 14px/1.2 'Baloo 2',system-ui,sans-serif;color:var(--as-ivory);opacity:.92}
 
@@ -117,3 +127,79 @@ html.rc-skin-words .brand-text strong{display:none !important}
 html.rc-skin-words .brand-text small{font:700 19px/1 'Cinzel',Georgia,serif !important;white-space:nowrap;letter-spacing:.02em !important;color:#FFE29A !important;text-shadow:0 3px 0 rgba(0,0,0,.4)}
 
 @media (prefers-reduced-motion:reduce){.as-round:active,html.rc-skin .btn.primary:active{transform:none}}
+
+/* ======================= In-game screens in the app (Chess, Sudoku): the same dark emerald app look as the lobby =======================
+   The boards keep their own colours; everything around them becomes dark glass with gold, and the top bar becomes an
+   app bar with a big round back button (always visible, also on tablets, below the camera/status area). */
+html.rc-skin-chess body,html.rc-skin-sudoku body{background:radial-gradient(ellipse at 50% 0%,var(--rx-mid,#0B3B2D),var(--rx-dark,#072A20) 75%) fixed !important;color:var(--as-ivory) !important}
+html.rc-skin-chess .rc-watermark,html.rc-skin-sudoku .rc-watermark{opacity:.05 !important;filter:invert(1) sepia(1) saturate(3) hue-rotate(5deg)}
+html.rc-skin-chess .top,html.rc-skin-sudoku .top{height:auto !important;min-height:56px;padding:max(8px,env(safe-area-inset-top)) 2px 6px !important;gap:8px !important}
+html.rc-skin-chess .club-back,html.rc-skin-sudoku .club-back,html.rc-skin-chess .top .iconbtn,html.rc-skin-chess .top .chip,html.rc-skin-chess .top button,html.rc-skin-sudoku .top .chip,html.rc-skin-sudoku .top button{
+  min-width:44px !important;height:44px !important;border-radius:16px !important;display:inline-flex !important;align-items:center;justify-content:center;gap:6px;padding:0 12px !important;
+  background:rgba(0,0,0,.32) !important;border:1.5px solid rgba(255,226,154,.55) !important;box-shadow:0 4px 0 rgba(0,0,0,.3) !important;color:#FFE29A !important;font:800 15px 'Baloo 2',sans-serif !important}
+html.rc-skin-chess .club-back,html.rc-skin-sudoku .club-back{width:44px !important;padding:0 !important;font-size:22px !important}
+html.rc-skin-chess .club-back[hidden],html.rc-skin-sudoku .club-back[hidden]{display:inline-flex !important}
+html.rc-skin-chess .top [hidden]:not(.club-back),html.rc-skin-sudoku .top [hidden]:not(.club-back){display:none !important}
+html.rc-skin-chess .top button svg,html.rc-skin-sudoku .top button svg{color:#FFE29A !important;fill:currentColor}
+html.rc-skin-chess .club-back:active,html.rc-skin-sudoku .club-back:active,html.rc-skin-chess .top button:active,html.rc-skin-sudoku .top button:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.3) !important}
+html.rc-skin-chess .brand .brand-mark,html.rc-skin-sudoku .brand .brand-mark{display:none !important}
+html.rc-skin-chess .brand strong,html.rc-skin-chess .brand small,html.rc-skin-sudoku .brand strong,html.rc-skin-sudoku .brand small{font:700 21px/1 'Cinzel',Georgia,serif !important;letter-spacing:.02em !important;color:#FFE29A !important;text-shadow:0 3px 0 rgba(0,0,0,.4);text-transform:none !important}
+@media (min-width:600px){html.rc-skin-chess .club-back,html.rc-skin-sudoku .club-back{width:52px !important;height:52px !important;border-radius:18px !important;font-size:26px !important}}
+
+/* Chess: player cards, moves, actions */
+html.rc-skin-chess #game .bar,html.rc-skin-chess #game #panel .moves,html.rc-skin-chess #room .rm-seats li,html.rc-skin-chess .multiplayer-panel{
+  background:var(--as-glass) !important;border:1.5px solid var(--as-line) !important;color:var(--as-ivory) !important;box-shadow:none !important;border-radius:16px !important}
+html.rc-skin-chess #game .bar.turn,html.rc-skin-chess #game .bar.active,html.rc-skin-chess #game .bar[aria-current="true"]{border-color:var(--as-gold) !important;box-shadow:0 0 14px rgba(255,214,110,.28) !important}
+html.rc-skin-chess #game .who b,html.rc-skin-chess #game .who,html.rc-skin-chess #game .moves,html.rc-skin-chess #game .moves .pair{color:var(--as-ivory) !important}
+html.rc-skin-chess #game .moves .n,html.rc-skin-chess #game .who small,html.rc-skin-chess #game .status{color:rgba(255,248,234,.78) !important}
+html.rc-skin-chess #game .moves .last,html.rc-skin-chess #game .moves span.on{background:rgba(255,226,154,.2) !important;color:#FFE29A !important}
+html.rc-skin-chess #game .avatar{background:#FFF8EA !important;color:#14251c !important;border-color:var(--as-gold) !important}
+html.rc-skin-chess #game .avatar.b{background:#14251c !important;color:#FFF8EA !important}
+html.rc-skin-chess #game .clock{background:rgba(0,0,0,.4) !important;border:1.5px solid var(--as-line) !important;color:var(--as-ivory) !important}
+html.rc-skin-chess #game .clock.run{background:linear-gradient(180deg,#FFE29A,var(--as-gold)) !important;color:var(--as-ink) !important;border-color:transparent !important}
+html.rc-skin-chess #game .act{background:rgba(0,0,0,.3) !important;border:1.5px solid var(--as-line) !important;color:#FFE29A !important;border-radius:16px !important;box-shadow:0 4px 0 rgba(0,0,0,.3) !important;font:800 13px 'Baloo 2',sans-serif !important}
+html.rc-skin-chess #game .act:disabled{opacity:.4 !important}
+html.rc-skin-chess #game .act.warn{background:linear-gradient(180deg,#E5383B,#B3201F) !important;color:#fff !important;border-color:transparent !important}
+html.rc-skin-chess #game .act:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.3) !important}
+html.rc-skin-chess #game .overlay{background:rgba(4,22,15,.9) !important;color:var(--as-ivory) !important;border:2px solid var(--as-gold) !important;border-radius:22px !important}
+html.rc-skin-chess #game .overlay h2{color:#FFE29A !important}
+html.rc-skin-chess #game .overlay .eyebrow{color:var(--as-gold) !important}
+html.rc-skin-chess .gold,html.rc-skin-chess #room #rmStart{background:linear-gradient(180deg,#FFB766 0%,var(--as-saffron) 55%,#D9711A 140%) !important;color:var(--as-ink) !important;border:0 !important;border-radius:20px !important;box-shadow:0 5px 0 var(--as-saffron-dark) !important;font:800 17px 'Baloo 2',sans-serif !important}
+html.rc-skin-chess .ghost{background:rgba(0,0,0,.32) !important;border:1.5px solid var(--as-line) !important;color:var(--as-ivory) !important;border-radius:18px !important;font:800 15px 'Baloo 2',sans-serif !important}
+html.rc-skin-chess .gold:disabled{opacity:.6}
+
+/* Chess: play with friends panel and room */
+html.rc-skin-chess .multiplayer-heading b{color:var(--as-gold) !important;font:800 18px 'Baloo 2',sans-serif !important}
+html.rc-skin-chess .multiplayer-heading span,html.rc-skin-chess .multiplayer-note,html.rc-skin-chess .mp-or{color:rgba(255,248,234,.72) !important}
+html.rc-skin-chess .mp-or::before,html.rc-skin-chess .mp-or::after{background:var(--as-line) !important}
+html.rc-skin-chess .mp-join input{background:rgba(0,0,0,.38) !important;border:1.5px solid var(--as-line) !important;color:var(--as-ivory) !important;border-radius:14px !important}
+html.rc-skin-chess .mp-join input::placeholder{color:rgba(255,248,234,.45) !important;letter-spacing:.04em}
+html.rc-skin-chess .mp-err{color:#FFB4A8 !important}
+html.rc-skin-chess #room:not([hidden]){display:flex !important;flex-direction:column;gap:12px;max-width:640px;margin:0 auto !important;padding:4px 16px 24px !important;color:var(--as-ivory)}
+html.rc-skin-chess #room .eyebrow,html.rc-skin-chess #room .field>span{color:var(--as-gold) !important;font:800 13px 'Baloo 2',sans-serif !important;letter-spacing:.13em !important}
+html.rc-skin-chess #room h1{font:700 34px 'Cinzel',Georgia,serif !important;color:var(--as-ivory) !important}
+html.rc-skin-chess #room h1 em{color:#FFE29A !important;font-style:normal;letter-spacing:.08em}
+html.rc-skin-chess #room .lead,html.rc-skin-chess #room .note{color:rgba(255,248,234,.78) !important}
+html.rc-skin-chess #room .lead b{color:#FFE29A !important;letter-spacing:.1em}
+html.rc-skin-chess #room .rm-seats li small{color:var(--as-gold) !important}
+html.rc-skin-chess #room .seg{background:rgba(0,0,0,.35) !important;border:0 !important;border-radius:16px !important;padding:4px !important;gap:6px !important}
+html.rc-skin-chess #room .seg button{color:var(--as-ivory) !important;font:800 14px 'Baloo 2',sans-serif !important;border-radius:12px !important;min-height:40px;background:transparent !important}
+html.rc-skin-chess #room .seg button[aria-pressed="true"]{background:linear-gradient(180deg,#FFE29A,var(--as-gold)) !important;color:var(--as-ink) !important;box-shadow:0 3px 0 var(--as-gold-dark) !important;opacity:1 !important}
+
+/* Sudoku game: dark frame around the light puzzle, glass tools and number pad */
+html.rc-skin-sudoku #game .hud,html.rc-skin-sudoku #game .hud *{color:var(--as-ivory) !important}
+html.rc-skin-sudoku #game .hud #lvlName{color:#FFE29A !important;font-family:'Cinzel',Georgia,serif !important}
+html.rc-skin-sudoku #game .board{box-shadow:0 0 0 3px var(--as-gold),0 16px 40px rgba(0,0,0,.45) !important;border-radius:10px !important}
+html.rc-skin-sudoku #game .tool{background:rgba(0,0,0,.3) !important;border:1.5px solid var(--as-line) !important;color:#FFE29A !important;border-radius:16px !important;box-shadow:0 4px 0 rgba(0,0,0,.3) !important;font:800 13px 'Baloo 2',sans-serif !important}
+html.rc-skin-sudoku #game .tool[aria-pressed="true"]{background:linear-gradient(180deg,#FFE29A,var(--as-gold)) !important;color:var(--as-ink) !important}
+html.rc-skin-sudoku #game .tool:disabled{opacity:.45 !important}
+html.rc-skin-sudoku #game .pad button{background:var(--as-glass) !important;border:1.5px solid var(--as-line) !important;color:var(--as-ivory) !important;border-radius:14px !important;box-shadow:0 4px 0 rgba(0,0,0,.3) !important}
+html.rc-skin-sudoku #game .pad button small,html.rc-skin-sudoku #game .pad button span{color:rgba(255,226,154,.8) !important}
+html.rc-skin-sudoku #game .pad button:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.3) !important}
+html.rc-skin-sudoku #game .msg,html.rc-skin-sudoku #game .race-strip{color:var(--as-ivory) !important}
+html.rc-skin-sudoku #game .race-strip{background:var(--as-glass) !important;border:1.5px solid var(--as-line) !important;border-radius:16px !important}
+html.rc-skin-sudoku #lobby:not([hidden]),html.rc-skin-sudoku #lobby .room-card{color:var(--as-ivory) !important}
+html.rc-skin-sudoku #lobby .room-card,html.rc-skin-sudoku #lobby .seats li{background:var(--as-glass) !important;border:1.5px solid var(--as-line) !important;border-radius:16px !important;box-shadow:none !important;color:var(--as-ivory) !important}
+html.rc-skin-chess .top .brand,html.rc-skin-sudoku .top .brand{background:none !important;border:0 !important;box-shadow:none !important;padding:0 4px !important;min-width:0 !important}
+html.rc-skin-sudoku #game #pauseBtn{background:rgba(0,0,0,.32) !important;border:1.5px solid rgba(255,226,154,.55) !important;color:#FFE29A !important;box-shadow:none !important}
+html.rc-skin-sudoku #game #pauseBtn svg{fill:currentColor;color:#FFE29A}

@@ -149,6 +149,7 @@ button{font-family:inherit}
 .btn:active{transform:translateY(2px);box-shadow:0 2px 0 #8a4508}
 .btn.ghost{background:rgba(0,0,0,.25);color:var(--gold2);box-shadow:none;border:1px solid rgba(227,181,74,.4)}
 .btnrow{display:flex;gap:10px;margin-top:10px}
+.btn.more{display:block;width:100%;margin-top:12px;min-height:52px;font-size:17px;font-weight:800}
 /* word book */
 .level{display:flex;align-items:center;gap:12px;padding:12px;border-radius:16px;background:rgba(0,0,0,.25);border:1px solid rgba(227,181,74,.35)}
 .badge{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;font-size:26px;background:linear-gradient(180deg,var(--gold2),var(--goldDeep));flex:none;box-shadow:0 3px 0 #6b4c0e}
@@ -213,7 +214,7 @@ a.iconbtn{text-decoration:none}
     <div class="tabs">
       <button class="tab" data-mode="easy">Easy · 4</button>
       <button class="tab on" data-mode="classic">Classic · 5</button>
-      <button class="tab" data-mode="practice">Practice</button>
+      <button class="tab" data-mode="practice">Unlimited ∞</button>
     </div>
     <div class="chips">
       <div class="chip" title="Daily streak">🔥<b id="streakChip">0</b></div>
@@ -246,7 +247,8 @@ a.iconbtn{text-decoration:none}
     <div class="next" id="nextBox"><span>Next word in</span><b class="cd">--:--:--</b></div>
     <button class="btn" id="shareBtn">Copy result</button>
   </div>
-  <div class="btnrow"><button class="btn ghost" id="otherBtn">Play Easy</button><button class="btn ghost" id="practiceBtn">Practice</button></div>
+  <button class="btn more" id="practiceBtn">Play another word</button>
+  <div class="btnrow"><button class="btn ghost" id="otherBtn">Play Easy</button></div>
 </div></div>
 
 <!-- stats -->
@@ -294,7 +296,7 @@ a.iconbtn{text-decoration:none}
   <div class="ex2"><div class="t">T</div><div class="t">I</div><div class="t">G</div><div class="t miss">E</div><div class="t">R</div></div>
   <p><b style="color:#c9d6d1">Slate</b>: the letter is not in the word.</p>
   <div class="sec">Modes</div>
-  <p><b>Easy · 4</b>: a new 4-letter word every day. Great for kids and beginners.<br><b>Classic · 5</b>: the main daily 5-letter word.<br><b>Practice</b>: unlimited words, no effect on your streak.</p>
+  <p><b>Easy · 4</b>: a new 4-letter word every day. Great for kids and beginners.<br><b>Classic · 5</b>: the main daily 5-letter word.<br><b>Unlimited ∞</b>: as many words as you like, any time of day, in 4 or 5 letters. Each solve earns coins; your daily streak is not affected.</p>
   <div class="sec">Clues & learning</div>
   <p>The <b>Theme</b> (Food, Animals, Sports…) is a free clue. Stuck? Spend coins on 💡 <b>Meaning</b> or 🔤 <b>Letter</b>.</p>
   <p>After every round you get a <b>Word Card</b> with the meaning and an example sentence, saved to your 📖 <b>Word Book</b>.</p>
@@ -572,7 +574,7 @@ a.iconbtn{text-decoration:none}
     const daily = mode !== 'practice';
     const pay = daily ? (solved ? [50, 60] : [10, 20]) : (solved ? [25, 50] : [10, 20]);
     $('reward').innerHTML = (fresh ? '<span class="coin">R</span><div><b style="color:var(--gold2)">+' + pay[0] + ' coins · +' + pay[1] + ' XP</b><br><span style="color:var(--muted)">' : '<div><span style="color:var(--muted)">')
-      + (daily ? (solved ? '🔥 ' + liveStreak() + '-day ' + (mode === 'easy' ? 'Easy' : 'Classic') + ' streak' : 'Streak reset. Come back tomorrow!') : "Practice doesn't change your streak") + '</span></div>';
+      + (daily ? (solved ? '🔥 ' + liveStreak() + '-day ' + (mode === 'easy' ? 'Easy' : 'Classic') + ' streak' : 'Streak reset. Come back tomorrow!') : "Unlimited words don't change your daily streak") + '</span></div>';
     $('endLbWrap').hidden = !daily;
     if (daily) loadBoard($('endLb'));
     $('nextBox').hidden = !daily;
@@ -580,7 +582,7 @@ a.iconbtn{text-decoration:none}
     $('otherBtn').hidden = !daily;
     $('otherBtn').textContent = other === 'easy' ? 'Play Easy · 4' : 'Play Classic · 5';
     $('otherBtn').onclick = () => { close('endModal'); setMode(other); };
-    $('practiceBtn').textContent = mode === 'practice' ? 'Next word' : 'Practice';
+    $('practiceBtn').textContent = mode === 'practice' ? 'Next word ▶' : 'Play another word ▶';
     open('endModal');
   }
 
@@ -735,7 +737,7 @@ a.iconbtn{text-decoration:none}
     $('themeTxt').textContent = (CAT_ICON[theme] || '') + ' ' + theme;
     $('themeLbl').textContent = festival ? festival[1] + ' ' + festival[0] + ' special' : 'Theme';
     const date = new Date(istDay() * DAY).toLocaleDateString('en-IN', { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' });
-    $('puzzleNo').textContent = mode === 'practice' ? 'PRACTICE · ' + len + ' letters · unlimited'
+    $('puzzleNo').textContent = mode === 'practice' ? 'UNLIMITED · ' + len + ' letters · play as many as you like'
       : (mode === 'easy' ? 'EASY' : 'CLASSIC') + ' #' + puzzleNo + ' · ' + date + (festival ? ' · ' + festival[1] + ' ' + festival[0].toUpperCase() : '');
   }
   function startLocalDaily() {

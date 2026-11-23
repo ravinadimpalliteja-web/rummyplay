@@ -6,16 +6,26 @@
 .al-scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-bottom:16px}
 
 /* artwork header */
-.al-hero{position:relative;height:clamp(170px,46vw,240px);overflow:hidden;flex:none}
-.al-hero-art{position:absolute;inset:0}
-.al-hero-art>svg{position:absolute;left:50%;top:50%;width:100%;height:auto;min-height:100%;transform:translate(-50%,-50%)}
-.al-hero-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.45) 0%,rgba(0,0,0,0) 34%,rgba(0,0,0,.15) 60%,var(--rx-mid,#0B3B2D) 100%)}
+/* the whole artwork always shows (never cropped): full height on the right, over a blurred copy that fills the banner */
+.al-hero{position:relative;height:clamp(180px,48vw,260px);overflow:hidden;flex:none}
+.al-hero-bg{position:absolute;inset:-12%;filter:blur(18px) brightness(.62) saturate(1.25)}
+.al-hero-bg>svg{width:100%;height:100%}
+.al-hero-art{position:absolute;top:0;right:max(0px,calc(50% - 330px));height:100%;aspect-ratio:1;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 16%,#000 88%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 16%,#000 88%,transparent 100%)}
+.al-hero-art>svg{display:block;width:100%;height:100%}
+.al-hero-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.42) 0%,rgba(0,0,0,.12) 52%,rgba(0,0,0,0) 70%),linear-gradient(180deg,rgba(0,0,0,.35) 0%,rgba(0,0,0,0) 26%,rgba(0,0,0,0) 72%,var(--rx-mid,#0B3B2D) 100%)}
 .al-hero-top{position:absolute;left:14px;right:14px;top:10px;display:flex;justify-content:space-between}
 .al-round{display:flex;width:44px;height:44px;padding:0;border-radius:15px;align-items:center;justify-content:center;cursor:pointer;color:var(--al-gold);
   background:rgba(0,0,0,.42);border:1.5px solid rgba(233,196,106,.5);box-shadow:0 4px 0 rgba(0,0,0,.35)}
 .al-round.small{width:38px;height:38px;border-radius:13px}
 .al-round:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.35)}
-.al-hero-title{position:absolute;left:18px;right:18px;bottom:8px}
+.al-hero-title{position:absolute;left:max(18px,calc(50% - 330px));right:52%;bottom:14px}
+/* tablets: the lobby is a centred column, so the banner becomes a rounded card at the top of it */
+@media (min-width:600px){
+  .al-hero{max-width:608px;margin:12px auto 6px;border-radius:24px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .al-hero-art{right:0}
+  .al-hero-title{left:22px}
+}
 .al-hero-title h1{margin:0;font:700 clamp(30px,9vw,40px)/1.05 'Cinzel',Georgia,serif;color:var(--al-gold);text-shadow:0 4px 0 rgba(0,0,0,.55);letter-spacing:.02em}
 .al-hero-title p{margin:3px 0 0;font-size:14px;font-weight:700;opacity:.92}
 
@@ -105,3 +115,6 @@
 @keyframes al-up{from{transform:translateY(40px);opacity:.4}}
 @media (prefers-reduced-motion:reduce){.al-sheet-scrim,.al-sheet{animation:none}}
 .al-page button:focus-visible{outline:3px solid var(--al-gold);outline-offset:2px}
+.al-row-level{margin-top:10px}
+.al-level button{height:46px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05;font-size:15px}
+.al-level button small{font:600 11px 'Baloo 2',sans-serif;opacity:.72}

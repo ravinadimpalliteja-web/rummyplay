@@ -124,3 +124,5 @@
 .rs-share { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .rs-share > button { flex: 1 1 150px; min-height: 46px; }
 .rs-wa { background: #1f8f4e !important; color: #fff !important; border-color: #1f8f4e !important; }
+.rs-level button{display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1;min-height:50px;font-size:15px}
+.rs-level button small{font-size:11px;font-weight:600;opacity:.75}

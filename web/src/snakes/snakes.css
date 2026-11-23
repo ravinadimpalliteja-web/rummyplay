@@ -66,18 +66,30 @@
 /* players: a strip of round portraits on phones held upright */
 .sl-left{grid-area:left;min-width:0}
 .sl-side-title{display:none}
-.sl-players{list-style:none;margin:0;padding:0;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px;position:relative;z-index:12}
-.sl-players li{position:relative;min-width:0;display:grid;justify-items:center;gap:2px;padding:2px 2px 0;font-size:12.5px;text-align:center}
-.sl-players .sl-avatar{width:clamp(44px,12.5vw,64px);height:clamp(44px,12.5vw,64px);border-width:3px;transition:transform .25s,box-shadow .25s}
-.sl-players li.turn .sl-avatar{transform:scale(1.08);box-shadow:0 0 0 2.5px #ffe08a,0 0 16px 4px rgba(255,208,100,.75)}
+.sl-players{--pds:42px;list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;position:relative;z-index:12}
+/* each player is a card like Ludo's seats: token, name and square, then their own dice */
+.sl-players li{position:relative;min-width:0;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;justify-items:start;gap:8px;padding:6px 6px 6px 6px;
+  border:1.5px solid rgba(233,200,119,.22);border-radius:16px;background:linear-gradient(180deg,rgba(8,46,32,.82),rgba(3,26,17,.82));box-shadow:0 6px 14px rgba(0,0,0,.3);font-size:12.5px;text-align:left;transition:border-color .2s,box-shadow .2s}
+.sl-players li.turn{border-color:#e9c46a;background:linear-gradient(90deg,rgba(233,200,119,.26),rgba(8,46,32,.85) 70%);box-shadow:0 0 16px rgba(255,214,110,.3),0 6px 14px rgba(0,0,0,.3)}
+.sl-players .sl-avatar{width:40px;height:40px;border-width:2.5px;transition:transform .25s,box-shadow .25s}
+.sl-players li.turn .sl-avatar{box-shadow:0 0 0 2px #ffe08a,0 0 10px 2px rgba(255,208,100,.6)}
+.sl-pdie{grid-row:1;grid-column:3;position:relative;width:var(--pds);height:var(--pds);flex:none;padding:0;border:0;border-radius:22%;background:none;line-height:0}
+.sl-pdie .sl-face{position:absolute;inset:0;padding:15%;transition:opacity .2s}
+.sl-pdie:disabled{cursor:default}
+.sl-pdie:not(.live):not(.rolling) .sl-face{opacity:.6;filter:saturate(.8)}
+.sl-pdie.ready{animation:slDieBob 1.6s ease-in-out infinite}
+.sl-pdie.ready::after{content:"";position:absolute;inset:-5px;border-radius:28%;box-shadow:0 0 0 2.5px #ffe08a,0 0 16px 4px rgba(255,208,100,.7);animation:slDieRing 1.2s ease-in-out infinite;pointer-events:none}
+.sl-pdie.ready:active{transform:scale(.93)}
+@keyframes slDieRing{50%{box-shadow:0 0 0 3.5px #fff1c0,0 0 24px 7px rgba(255,208,100,.9)}}
+.sl-pdie.rolling{z-index:30}
 .sl-players li.done .sl-avatar{box-shadow:0 0 0 2px var(--sl-gold)}
 .sl-players em{font-style:normal;color:#f0a99c;font-size:11px}
-.sl-info{min-width:0;max-width:100%;display:grid;justify-items:center;line-height:1.2}
+.sl-info{min-width:0;max-width:100%;display:grid;justify-items:start;line-height:1.2}
 .sl-name{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:800}
 .sl-players li.turn .sl-name{color:#ffe08a}
 .sl-sq{display:inline-flex;align-items:center;gap:4px;font-variant-numeric:tabular-nums;font-weight:800;color:var(--sl-muted);white-space:nowrap;font-size:12px}
 .sl-dot{display:inline-block;width:9px;height:9px;flex:none;border-radius:50%;box-shadow:0 0 0 1.5px rgba(255,255,255,.55),0 0 6px rgba(255,255,255,.25)}
-.sl-turn-tag{position:absolute;top:-4px;left:50%;transform:translateX(-50%);padding:1px 7px;border-radius:999px;background:linear-gradient(135deg,#fff0b8,#d6a443);color:#1d1506;font-size:9.5px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.sl-turn-tag{position:absolute;top:-8px;left:12px;padding:1px 7px;border-radius:999px;background:linear-gradient(135deg,#fff0b8,#d6a443);color:#1d1506;font-size:9.5px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.4)}
 .sl-bubble{position:absolute;left:50%;top:calc(100% + 6px);transform:translateX(-50%);z-index:20;max-width:180px;padding:7px 12px;border-radius:14px;
   background:#fffaf0;color:#1f2a22;font-size:13.5px;font-weight:800;white-space:nowrap;box-shadow:0 8px 20px rgba(0,0,0,.45);animation:slBubble 3.2s ease forwards;pointer-events:none}
 .sl-bubble::before{content:"";position:absolute;left:50%;top:-6px;width:12px;height:12px;background:#fffaf0;transform:translateX(-50%) rotate(45deg);border-radius:2px}
@@ -100,7 +112,7 @@
 @media (prefers-reduced-motion:reduce){.sl-gl-wait{animation:none}}
 
 /* ===== the 2D die on its gold-rimmed pedestal, and its five finishes ===== */
-.sl-right{grid-area:right;display:grid;grid-template-columns:64px minmax(0,1fr) 64px;grid-template-areas:"rules tray chat" "rules roll chat" "last last last";align-items:center;justify-items:center;gap:4px 8px;position:relative}
+.sl-right{grid-area:right;display:grid;grid-template-columns:64px minmax(0,1fr) 64px;grid-template-areas:"rules roll chat" "rules last chat";align-items:center;justify-items:center;gap:4px 8px;position:relative}
 .sl-tray{grid-area:tray;position:relative;width:calc(var(--ds) * 2.3);height:calc(var(--ds) * 1.42);display:block;margin:0;padding:0;border:0;border-radius:50% / 40%;background:none;color:inherit;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 /* the die is the roll button: on your turn the pedestal glows and the die bobs gently, inviting a tap */
 .sl-tray:enabled{cursor:pointer}.sl-tray:disabled{cursor:default}
@@ -217,7 +229,7 @@
 /* short phones held upright: one control row, so the board keeps its size */
 @media (orientation:portrait) and (max-height:700px){
   .sl-screen{--ds:44px;gap:4px}
-  .sl-right{grid-template-columns:56px auto minmax(0,1fr) 56px;grid-template-areas:"rules tray roll chat" "last last last last"}
+  .sl-right{grid-template-columns:56px minmax(0,1fr) 56px;grid-template-areas:"rules roll chat" "rules last chat"}
   .sl-roll{min-width:0;padding:0 16px;font-size:15px}
   .sl-act{width:54px}
   .sl-msg{min-height:2.6em;font-size:12.5px}
@@ -225,7 +237,8 @@
 /* tall phones held upright: use the extra height for bigger portraits and a bigger die */
 @media (orientation:portrait) and (min-height:780px) and (max-width:599px){
   .sl-screen{--ds:62px;gap:10px}
-  .sl-players .sl-avatar{width:clamp(50px,15vw,74px);height:clamp(50px,15vw,74px)}
+  .sl-players{--pds:48px}
+  .sl-players .sl-avatar{width:46px;height:46px}
   .sl-players li{font-size:13.5px}
 }
 /* tablets held upright: more room, larger pieces of interface */
@@ -234,8 +247,9 @@
   .sl-head .sl-icon-btn{width:54px;height:54px}
   .sl-crown{width:52px;height:27px}
   .sl-players{max-width:720px;width:100%;margin:0 auto;gap:12px}
-  .sl-players .sl-avatar{width:96px;height:96px;border-width:4px}
-  .sl-players li{font-size:18px}
+  .sl-players{--pds:62px}
+  .sl-players .sl-avatar{width:62px;height:62px;border-width:3.5px}
+  .sl-players li{font-size:18px;padding:8px 10px;gap:12px}
   .sl-sq{font-size:15px}.sl-dot{width:11px;height:11px}
   .sl-turn-tag{font-size:11.5px;padding:2px 9px}
   .sl-right{grid-template-columns:110px minmax(0,1fr) 110px;max-width:720px;width:100%;margin:0 auto;gap:8px 14px}
@@ -247,7 +261,7 @@
 /* landscape, phones and tablets: players | board | dice and actions */
 @media (orientation:landscape) and (min-width:600px){
   /* the crest moves into the left column, so the board gets the full height of the screen */
-  .sl-screen{--ds:clamp(48px,5.5vw,76px);grid-template-columns:clamp(132px,14.5vw,226px) minmax(0,1fr) clamp(132px,14.5vw,226px);grid-template-rows:auto minmax(0,1fr);
+  .sl-screen{--ds:clamp(48px,5.5vw,76px);grid-template-columns:clamp(176px,19vw,260px) minmax(0,1fr) clamp(132px,14.5vw,226px);grid-template-rows:auto minmax(0,1fr);
     grid-template-areas:"head stage right" "left stage right";gap:8px 12px;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
   .sl-head{align-self:start;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"crest crest crest" "back . end";gap:6px}
   .sl-head>.sl-icon-btn{grid-area:back}.sl-crest{grid-area:crest}.sl-head-end{grid-area:end}
@@ -257,16 +271,17 @@
   .sl-side-title b{font:600 clamp(15px,1.6vw,20px) 'Playfair Display',serif;color:#ffe9a8}
   .sl-side-title small{font-size:10.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--sl-gold)}
   .sl-players{grid-auto-flow:row;grid-auto-columns:auto;gap:6px}
-  .sl-players li{grid-template-columns:auto minmax(0,1fr);justify-items:start;align-items:center;gap:10px;padding:6px 8px;border:1px solid transparent;border-radius:14px;text-align:left;font-size:clamp(13px,1.35vw,17px)}
+  .sl-players{--pds:clamp(34px,3.6vw,48px);grid-template-columns:minmax(0,1fr)}
+  .sl-players li{grid-template-columns:auto minmax(0,1fr) auto;justify-items:start;align-items:center;gap:10px;padding:6px 8px;border:1px solid transparent;border-radius:14px;background:none;box-shadow:none;text-align:left;font-size:clamp(13px,1.35vw,17px)}
   .sl-players li.turn{border-color:#e9c46a;background:linear-gradient(90deg,rgba(233,200,119,.22),rgba(233,200,119,.05));box-shadow:0 0 14px rgba(255,214,110,.25)}
   .sl-players .sl-avatar{width:clamp(38px,4.4vw,58px);height:clamp(38px,4.4vw,58px)}
   .sl-players li.turn .sl-avatar{transform:none}
   .sl-info{justify-items:start}
-  .sl-turn-tag{position:static;transform:none;grid-column:2;justify-self:start;margin-top:-2px}
+  .sl-turn-tag{position:absolute;top:-8px;left:10px;transform:none}
   .sl-bubble{left:calc(100% + 10px);top:50%;transform:translateY(-50%);animation-name:slBubbleSide}
   .sl-bubble::before{left:-5px;top:50%;transform:translateY(-50%) rotate(45deg)}
   @keyframes slBubbleSide{0%{opacity:0;transform:translateY(-50%) scale(.8)}8%{opacity:1;transform:translateY(-50%) scale(1.05)}14%{transform:translateY(-50%) scale(1)}85%{opacity:1}100%{opacity:0}}
-  .sl-right{align-self:center;grid-template-columns:1fr 1fr;grid-template-areas:"tray tray" "roll roll" "last last" "rules chat";gap:10px 8px}
+  .sl-right{align-self:center;grid-template-columns:1fr 1fr;grid-template-areas:"roll roll" "last last" "rules chat";gap:10px 8px}
   .sl-roll{width:100%;min-width:0;padding:0 12px;font-size:clamp(15px,1.6vw,20px);min-height:clamp(46px,5vw,58px)}
   .sl-last{padding:10px 12px;border:1.5px solid var(--sl-gold2);border-radius:16px;background:linear-gradient(180deg,rgba(10,54,37,.88),rgba(3,26,17,.88));gap:6px;box-shadow:0 10px 24px rgba(0,0,0,.4)}
   .sl-last-title{display:block;font:600 clamp(13px,1.4vw,18px) 'Playfair Display',serif;color:#ffe9a8;padding-bottom:5px;border-bottom:1px solid var(--sl-line);width:100%;text-align:center}
@@ -287,6 +302,7 @@
   .sl-side-title{display:none}
   .sl-players{gap:2px}.sl-players li{padding:3px 6px;gap:8px}
   .sl-players .sl-avatar{width:34px;height:34px;border-width:2.5px}
+  .sl-players{--pds:34px}
   .sl-right{gap:6px}
   .sl-last{padding:6px 8px;gap:3px}.sl-last-title{display:none}.sl-last-roll{display:none}
   .sl-msg{min-height:3.3em;font-size:11.5px}
@@ -371,3 +387,33 @@
 .sl-rule-opts button small { font-size: 12px; color: #5c6862; }
 .sl-rule-opts button.on { border-color: #0f4d3a; background: #0f4d3a; color: #fff; }
 .sl-rule-opts button.on small { color: #cfe2d8; }
+
+/* tokens page: the Start Game button sits in the middle */
+.sl-tokens-go{display:flex;justify-content:center;width:100%;margin-top:14px}
+.sl-tokens-page .sl-tokens-go>.gold-button{width:100%;max-width:420px;font-size:17px;min-height:52px}
+
+/* the champion moment: rays turning behind the winner's token, a crown dropping onto it, then the title */
+.sl-champ{position:fixed;inset:0;z-index:60;display:grid;place-content:center;justify-items:center;gap:6px;padding:24px;text-align:center;pointer-events:none;
+  background:radial-gradient(circle at 50% 42%,rgba(18,90,62,.55),rgba(2,16,10,.86) 70%);animation:slChampIn .35s ease-out both}
+.sl-champ-rays{position:absolute;left:50%;top:42%;width:150vmax;height:150vmax;transform:translate(-50%,-50%);
+  background:repeating-conic-gradient(from 0deg,rgba(255,224,140,.18) 0 6deg,rgba(255,224,140,0) 6deg 18deg);-webkit-mask-image:radial-gradient(circle,#000 0,transparent 45%);mask-image:radial-gradient(circle,#000 0,transparent 45%);animation:slRays 9s linear infinite}
+.sl-champ-hero{position:relative;width:clamp(120px,34vw,180px);height:clamp(120px,34vw,180px);display:grid;place-items:center}
+.sl-champ-token{width:100%;height:100%;display:grid;place-items:end center;overflow:hidden;border-radius:50%;border:5px solid var(--c,#e9c46a);
+  background:radial-gradient(circle at 50% 35%,#2a8a66,#07301f);box-shadow:0 0 0 4px #ffe08a,0 0 50px 12px rgba(255,208,100,.55),0 18px 40px rgba(0,0,0,.6);animation:slChampToken .7s cubic-bezier(.2,1.6,.4,1) both}
+.sl-champ-token img{width:118%;margin-bottom:-12%}
+.sl-champ-hero .sl-crown{position:absolute;left:50%;top:-18%;width:48%;height:auto;transform:translateX(-50%);filter:drop-shadow(0 6px 6px rgba(0,0,0,.5));animation:slCrownDrop .7s .55s cubic-bezier(.3,1.5,.5,1) both}
+.sl-champ-kicker{margin:14px 0 0;font:900 13px 'DM Sans',sans-serif;letter-spacing:.32em;color:#ffe08a;animation:slChampText .5s .95s both}
+.sl-champ-title{margin:0;font:700 clamp(28px,8vw,48px)/1.1 'Playfair Display',Georgia,serif;background:linear-gradient(180deg,#fff6d2 10%,#f0c75e 55%,#b07b1e);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 3px 2px rgba(0,0,0,.55));animation:slChampText .5s 1.05s both}
+.sl-champ-sub{margin:2px 0 0;font-weight:800;font-size:15px;color:#f8f0dc;animation:slChampText .5s 1.2s both}
+@keyframes slChampIn{from{opacity:0}}
+@keyframes slRays{to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes slChampToken{from{transform:scale(.2) translateY(40px);opacity:0}}
+@keyframes slCrownDrop{from{transform:translate(-50%,-160%) rotate(-18deg);opacity:0}}
+@keyframes slChampText{from{opacity:0;transform:translateY(10px)}}
+.sl-win-hero{position:relative;width:86px;height:86px;display:grid;place-items:center;margin-bottom:6px}
+.sl-win-hero>img{position:relative;z-index:1;width:86px;height:86px;object-fit:contain;filter:drop-shadow(0 8px 10px rgba(0,0,0,.5))}
+.sl-win-hero .sl-crown{position:absolute;z-index:2;left:50%;top:-22px;transform:translateX(-50%);width:54px;height:29px}
+.sl-win-rays{position:absolute;inset:-60%;border-radius:50%;background:repeating-conic-gradient(rgba(255,224,140,.22) 0 8deg,rgba(255,224,140,0) 8deg 20deg);-webkit-mask-image:radial-gradient(circle,#000 0,transparent 68%);mask-image:radial-gradient(circle,#000 0,transparent 68%);animation:slRays 12s linear infinite}
+@media (prefers-reduced-motion:reduce){.sl-champ-rays,.sl-win-rays,.sl-pdie.ready,.sl-pdie.ready::after{animation:none}}
+.sl-win .gold-button{background:linear-gradient(180deg,#ffe29a,#e9b44c);color:#2a1605;box-shadow:0 4px 0 #a9782a;font-weight:800}

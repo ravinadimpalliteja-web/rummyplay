@@ -18,6 +18,12 @@
     PRITHVI: 'Discard one extra number card',
     VAYU: 'Give one card to the next player'
   };
+  /* House rules a room host can switch (vs computer uses the defaults). */
+  const RULES = { stack: true, answerActions: true };
+  function cleanRules(r) {
+    r = r || {};
+    return { stack: r.stack !== false, answerActions: r.answerActions !== false };
+  }
   const NAMES = {
     maya: 'Maya', chakra: 'Chakra', rin: 'Rin', brahma: 'Brahma', mahakal: 'Mahakal',
     AGNI: 'Agni', JAL: 'Jal', PRITHVI: 'Prithvi', VAYU: 'Vayu'
@@ -62,7 +68,7 @@
       deck: [], discard: [], color: null, direction: 1, turn: 0, dealer: -1,
       phase: 'idle', pendingDrawn: null, vulnerable: null, pending: 0, attack: null,
       events: [], seq: 0, round: 0, target: cleanTarget(opts.target), peek: null,
-      winner: null, roundPoints: 0, matchWinner: null
+      winner: null, roundPoints: 0, matchWinner: null, rules: cleanRules(opts.rules)
     };
     state.rnd = opts.rnd || Math.random;
     startRound(state);
@@ -144,15 +150,22 @@
 
   function top(state) { return state.discard[state.discard.length - 1]; }
 
-  /* Stacking: while a Rin (+2) or Mahakal (+4) is waiting, the player may only answer it with
+  /* Answering: while a Rin (+2) or Mahakal (+4) is waiting, the player may only answer it with
      - Mahakal (adds 4), always;
      - a Rin (adds 2): any Rin after a Rin, or a Rin of the chosen element after a Mahakal;
-     - a Maya of the current element, which dodges: the waiting cards move on to the next player.
-     Otherwise they draw every waiting card and lose their turn. Brahma cannot answer. */
+     - a Maya or Chakra of the current element. They keep their own effect and the waiting cards stay waiting:
+         2 players: both mean "play again", so the same player must still answer (stack it or take the cards);
+         3+ players: Chakra reverses, so the player who sent the cards must answer them;
+                     Maya skips the next player, so the one after must answer them.
+     Otherwise they draw every waiting card and lose their turn. Brahma cannot answer.
+     House rules: with stacking off nothing answers; with answerActions off Maya and Chakra cannot answer. */
+  function rulesOf(state) { return state.rules || RULES; }   // games saved before house rules
   function answers(state, card) {
+    const r = rulesOf(state);
+    if (!r.stack) return false;
     if (card.type === 'mahakal') return true;
     if (card.type === 'rin') return state.attack === 'rin' || card.suit === state.color;
-    if (card.type === 'maya') return card.suit === state.color;
+    if (card.type === 'maya' || card.type === 'chakra') return r.answerActions && card.suit === state.color;
     return false;
   }
 
@@ -278,7 +291,7 @@
       const card = me.hand[idx];
       if (state.pendingDrawn !== null && card.id !== state.pendingDrawn)
         return { ok: false, error: 'You can only play the card you just drew' };
-      if (!isLegal(state, card)) return { ok: false, error: state.pending > 0 ? 'Answer with Rin, Mahakal or a Maya of the element, or take the cards' : 'That card does not match' };
+      if (!isLegal(state, card)) return { ok: false, error: state.pending > 0 ? 'Answer with Rin, Mahakal, or a Maya or Chakra of the element, or take the cards' : 'That card does not match' };
       if (a.jodi && state.pending > 0) return { ok: false, error: 'No Jodi while cards are waiting' };
       const wild = WILDS.includes(card.type);
       if (wild && !SUITS.includes(a.color)) return { ok: false, error: 'Choose a suit' };
@@ -297,29 +310,33 @@
         else state.vulnerable = pi;
       }
 
+      const waiting = state.pending > 0;
       let step = 1;
-      const next = nextIndex(state, pi);
-      if (card.type === 'maya' && state.pending > 0) {
-        emit(state, { type: 'dodge', pi, to: next, n: state.pending });   // the waiting cards move on
-      } else if (card.type === 'maya') { step = 2; emit(state, { type: 'skip', pi: next }); }
-      else if (card.type === 'chakra') {
-        if (n === 2) { step = 2; emit(state, { type: 'skip', pi: next }); }
+      if (card.type === 'maya') {
+        step = 2;
+        emit(state, { type: 'skip', pi: nextIndex(state, pi) });
+      } else if (card.type === 'chakra') {
+        if (n === 2) { step = 2; emit(state, { type: 'skip', pi: nextIndex(state, pi) }); }
         else { state.direction *= -1; emit(state, { type: 'reverse' }); }
-      } else if (card.type === 'rin' || card.type === 'mahakal') {
+      }
+      const to = nextIndex(state, pi, step);         // after any skip or reverse: who plays (and answers) next
+      if (card.type === 'rin' || card.type === 'mahakal') {
         state.pending = (state.pending || 0) + (card.type === 'rin' ? 2 : 4);   // || 0: games saved before stacking
         state.attack = card.type;
-        emit(state, { type: 'stack', pi, to: next, n: state.pending });
+        emit(state, { type: 'stack', pi, to, n: state.pending });
+      } else if (waiting) {
+        emit(state, { type: 'pass-on', pi, to, n: state.pending, card: card.type });   // Maya / Chakra: the cards still wait
       }
 
       if (me.hand.length === 0) {
-        if (state.pending > 0) {                     // going out on a Rin, Mahakal or dodge: the next player still takes them
-          drawCards(state, next, state.pending);
-          emit(state, { type: 'draws', pi: next, n: state.pending });
+        if (state.pending > 0 && to !== pi) {        // going out while cards wait: whoever must answer takes them
+          drawCards(state, to, state.pending);
+          emit(state, { type: 'draws', pi: to, n: state.pending });
         }
         endRound(state, pi);
         return { ok: true };
       }
-      state.turn = nextIndex(state, pi, step);
+      state.turn = to;
       return { ok: true };
     }
 
@@ -435,24 +452,36 @@
     return { type: 'draw' };
   }
 
-  function botAction(state, pi) {
+  /* Computer players. level: 'easy' plays any legal card and often forgets EKAH; 'normal' is the classic bot;
+     'hard' saves its wild cards, punishes a player close to winning and always calls EKAH. */
+  const LEVELS = ['easy', 'normal', 'hard'];
+  function botAction(state, pi, level) {
+    level = LEVELS.includes(level) ? level : 'normal';
     const rnd = state.rnd;
+    const callP = level === 'easy' ? 0.55 : level === 'hard' ? 1 : 0.9;
     const hand = state.players[pi].hand;
     const legal = legalCards(state, pi);
     if (state.pendingDrawn !== null) {
       const c = hand.find(x => x.id === state.pendingDrawn);
       if (c && legal.includes(c.id) && !(c.type === 'mahakal' && hand.length > 3 && rnd() < 0.5)) {
         const rest = hand.filter(x => x.id !== c.id);
-        return { type: 'play', cardId: c.id, color: WILDS.includes(c.type) ? bestColor(rest, rnd) : undefined, ekah: hand.length === 2 && rnd() < 0.9 };
+        return { type: 'play', cardId: c.id, color: WILDS.includes(c.type) ? bestColor(rest, rnd) : undefined, ekah: hand.length === 2 && rnd() < callP };
       }
       return { type: 'pass' };
     }
     if (!legal.length) return { type: 'draw' };
-    if (state.pending > 0) {                         // answer a waiting Rin or Mahakal: Rin first, then Maya, Mahakal last
-      const rank = c => (c.type === 'rin' ? 0 : c.type === 'maya' ? 1 : 2);
+    if (level === 'easy' && state.pending === 0) {     // easy: any playable card, no plans
+      const pick = legal[Math.floor(rnd() * legal.length)];
+      const c = hand.find(x => x.id === pick);
+      const rest = hand.filter(x => x.id !== c.id);
+      return { type: 'play', cardId: c.id, color: WILDS.includes(c.type) ? bestColor(rest, rnd) : undefined, ekah: hand.length === 2 && rnd() < callP };
+    }
+    if (state.pending > 0) {                         // answer a waiting Rin or Mahakal: Rin first, then Maya/Chakra, Mahakal last
+      if (level === 'easy' && rnd() < 0.35) return { type: 'draw' };
+      const rank = c => (c.type === 'rin' ? 0 : (c.type === 'maya' || c.type === 'chakra') ? 1 : 2);
       const c = legal.map(id => hand.find(x => x.id === id)).sort((x, y) => rank(x) - rank(y))[0];
       const rest = hand.filter(x => x.id !== c.id);
-      return { type: 'play', cardId: c.id, color: c.type === 'mahakal' ? bestColor(rest, rnd) : undefined, ekah: hand.length === 2 && rnd() < 0.9 };
+      return { type: 'play', cardId: c.id, color: c.type === 'mahakal' ? bestColor(rest, rnd) : undefined, ekah: hand.length === 2 && rnd() < callP };
     }
     const nextCount = state.players[nextIndex(state, pi)].hand.length;
     const suitCount = {};
@@ -466,19 +495,24 @@
       if (c.type === 'num') s += 10 + c.value * 0.3;
       if (ACTIONS.includes(c.type)) s += nextCount <= 2 ? 30 : 12;
       if (c.type === 'brahma') s += 2;
-      if (c.type === 'mahakal') s += nextCount <= 2 ? 40 : -5;
+      if (c.type === 'mahakal') s += nextCount <= 2 ? 40 : (level === 'hard' ? -25 : -5);
+      if (level === 'hard') {
+        if (c.type === 'brahma') s -= hand.length > 2 ? 14 : 0;            // keep wilds for the end
+        if ((c.type === 'rin' || c.type === 'maya') && nextCount <= 3) s += 18;
+        if (c.type === 'num' && hand.length > 4) s += c.value * 0.6;       // shed high cards early
+      }
       if (c.suit) s += (suitCount[c.suit] || 0) * 1.5;
       if (s > bs) { bs = s; best = c; }
     }
     if (jodi.has(best.id)) {
       const bp = botPower(state, pi, best);
-      return { type: 'play', cardId: best.id, jodi: true, power: bp.power, ekah: bp.left === 1 && rnd() < 0.9 };
+      return { type: 'play', cardId: best.id, jodi: true, power: bp.power, ekah: bp.left === 1 && rnd() < callP };
     }
     const rest = hand.filter(x => x.id !== best.id);
     return {
       type: 'play', cardId: best.id,
       color: WILDS.includes(best.type) ? bestColor(rest, rnd) : undefined,
-      ekah: hand.length === 2 && rnd() < 0.9
+      ekah: hand.length === 2 && rnd() < callP
     };
   }
 
@@ -490,7 +524,7 @@
       top: top(state), color: state.color, direction: state.direction, turn: state.turn,
       phase: state.phase, deckCount: state.deck.length,
       pendingDrawn: state.turn === pi ? state.pendingDrawn : null,
-      vulnerable: state.vulnerable, pending: state.pending, attack: state.attack, legal: legalCards(state, pi), jodi: jodiCards(state, pi),
+      vulnerable: state.vulnerable, pending: state.pending, attack: state.attack, rules: rulesOf(state), legal: legalCards(state, pi), jodi: jodiCards(state, pi),
       peek: state.peek && state.peek.by === pi ? state.peek : null,
       events: state.events.slice(), seq: state.seq, round: state.round, target: state.target,
       winner: state.winner, roundPoints: state.roundPoints, matchWinner: state.matchWinner
@@ -501,5 +535,5 @@
     return state.deck.length + state.discard.length + state.players.reduce((s, p) => s + p.hand.length, 0);
   }
 
-  return { SUITS, ACTIONS, WILDS, POWERS, TARGET, TARGET_MIN, TARGET_MAX, TARGET_STEP, cleanTarget, partnerOf, jodiCards, powerNeeds, buildDeck, createGame, startRound, applyAction, legalCards, isLegal, botAction, timeoutAction, viewFor, cardName, cardPoints, nextIndex, totalCards };
+  return { SUITS, ACTIONS, WILDS, POWERS, RULES, LEVELS, cleanRules, TARGET, TARGET_MIN, TARGET_MAX, TARGET_STEP, cleanTarget, partnerOf, jodiCards, powerNeeds, buildDeck, createGame, startRound, applyAction, legalCards, isLegal, botAction, timeoutAction, viewFor, cardName, cardPoints, nextIndex, totalCards };
 });

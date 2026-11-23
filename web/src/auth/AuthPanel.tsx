@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
 import {
-  USERNAME_HINT, USERNAME_RE, claimUsername, doneRecovering, sendPasswordReset, signInWithUsername, startAccount,
+  APP_AUTH_CALLBACK, USERNAME_HINT, USERNAME_RE, claimUsername, doneRecovering, isNativeApp, sendPasswordReset, signInWithUsername, startAccount,
   useAccount, usernameAvailable, usernameEmail, type AuthReason
 } from "./account";
 
@@ -79,6 +79,8 @@ export default function AuthPanel({ onProfile }: { onProfile?: () => void } = {}
   useEffect(() => {
     const onAsk = (e: Event) => show((e as CustomEvent<AuthReason>).detail || "signin");
     window.addEventListener("rc:auth", onAsk);
+    const onFail = (e: Event) => { show("signin"); setError(String((e as CustomEvent<string>).detail || "Sign-in didn't work this time. Please try again.")); };
+    window.addEventListener("rc:auth-error", onFail);
     const read = (q: string) => new URLSearchParams(q.replace(/^[?#]/, ""));
     const q = read(window.location.search), h = read(window.location.hash);
     if (q.get("error") || h.get("error")) {
@@ -93,7 +95,7 @@ export default function AuthPanel({ onProfile }: { onProfile?: () => void } = {}
       show(q.get("signin") === "rooms" ? "rooms" : "signin");
       window.history.replaceState(null, "", window.location.pathname);
     }
-    return () => window.removeEventListener("rc:auth", onAsk);
+    return () => { window.removeEventListener("rc:auth", onAsk); window.removeEventListener("rc:auth-error", onFail); };
   }, []);
 
   // A signed-in account without a username (new Google players) is asked to pick one.
@@ -141,14 +143,23 @@ export default function AuthPanel({ onProfile }: { onProfile?: () => void } = {}
     } finally { setBusy(null); }
   };
 
+  /* After Google: pick a username and your own password, so you can also sign in with them (remembered on this
+     device; the username-signin function finds Google accounts by username). */
   const savePick = async (e: FormEvent) => {
     e.preventDefault();
     const u = pick.trim();
     if (pickAvail === "taken") { setError("That username is taken. Try another one."); return; }
+    const withPw = !!session && isGoogle(session);
+    if (withPw && password.length < 6) { setError("Use a password with at least 6 characters."); return; }
+    if (withPw && password !== password2) { setError("The two passwords don't match."); return; }
     setBusy("username"); setError("");
+    if (withPw && c) {
+      const { error: pwErr } = await c.auth.updateUser({ password });
+      if (pwErr) { setBusy(null); setError("Could not save your password. Please try again."); return; }
+    }
     const err = await claimUsername(u);
     setBusy(null);
-    if (err) setError(err); else setToast(`You're ${u} now.`);
+    if (err) setError(err); else { setPassword(""); setPassword2(""); setToast(`You're ${u} now.`); }
   };
 
   const sendReset = async (e: FormEvent) => {
@@ -173,6 +184,14 @@ export default function AuthPanel({ onProfile }: { onProfile?: () => void } = {}
   const google = async () => {
     if (!c) return;
     setBusy("google"); setError("");
+    if (isNativeApp()) {
+      /* the app: Google opens in the phone's browser and comes back into the app (APP_AUTH_CALLBACK), not to the website */
+      const { data, error: err } = await c.auth.signInWithOAuth({ provider: "google", options: { redirectTo: APP_AUTH_CALLBACK, skipBrowserRedirect: true } });
+      if (err || !data?.url) { setError("Could not reach Google. Please try again."); setBusy(null); return; }
+      window.location.href = data.url;
+      window.setTimeout(() => setBusy(null), 4000);
+      return;
+    }
     const { error: err } = await c.auth.signInWithOAuth({ provider: "google", options: { redirectTo: `${window.location.origin}/` } });
     if (err) { setError("Could not reach Google. Please try again."); setBusy(null); }
   };
@@ -253,10 +272,14 @@ export default function AuthPanel({ onProfile }: { onProfile?: () => void } = {}
         <button className="auth-close" aria-label="Close" onClick={() => setOpen(false)}>×</button>
         <div className="auth-kicker">ROYAL CLUB GAMES</div>
         <h2 id="auth-title">Pick your username</h2>
-        <p className="auth-intro">{INTRO.username}{session && isGoogle(session) ? " You'll keep signing in with Google." : ""}</p>
+        <p className="auth-intro">{session && isGoogle(session) ? "Pick a username and your own password. Next time you can sign in with them, or with Google again." : INTRO.username}</p>
         <form onSubmit={e => void savePick(e)} className="auth-form">
           <label>Username<input autoFocus autoComplete="username" maxLength={16} value={pick} onChange={e => setPick(e.target.value.replace(/\s/g, ""))} placeholder="e.g. RaviKing" /></label>
           <AvailLine avail={pickAvail} />
+          {session && isGoogle(session) && <>
+            <label>Password<input type="password" autoComplete="new-password" minLength={6} required value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 6 characters" /></label>
+            <label>Confirm password<input type="password" autoComplete="new-password" minLength={6} required value={password2} onChange={e => setPassword2(e.target.value)} placeholder="Type it again" /></label>
+          </>}
           <button className="auth-option auth-primary" type="submit" disabled={busy !== null || pickAvail !== "free"}>{busy === "username" ? "Saving…" : "Save username"}</button>
         </form>
         {error && <p className="auth-error" role="alert">{error}</p>}

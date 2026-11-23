@@ -57,6 +57,7 @@
     var hero = document.createElement('header');
     hero.className = 'as-hero';
     hero.innerHTML =
+      '<img class="as-art-bg" src="/art/' + id + '.svg" alt="" decoding="async" aria-hidden="true">' +
       '<img class="as-art" src="/art/' + id + '.svg" alt="" decoding="async">' +
       '<span class="as-shade" aria-hidden="true"></span>' +
       '<span class="as-top">' +

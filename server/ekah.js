@@ -10,7 +10,7 @@
  *  - 30 seconds per turn. A player who runs out of time, leaves or goes offline is played by the computer
  *    (after 2 seconds once they have missed two turns or are offline). They can rejoin from the same device.
  *  - After a round the next one starts when any player presses Next round, or automatically after 25 seconds.
- * Clients only send intents: 'addBot', 'removeBot', 'target', 'start', 'act' (with an engine action), 'again', 'leave'.
+ * Clients only send intents: 'addBot', 'removeBot', 'target', 'rules', 'start', 'act' (with an engine action), 'again', 'leave'.
  */
 const Engine = require('./ekah-engine');
 
@@ -33,6 +33,7 @@ class EkahRoom {
     this.hostToken = null;
     this.game = null;
     this.target = Engine.TARGET;
+    this.rules = Engine.cleanRules();   // house rules, chosen by the host in the lobby
     this.order = [];          // engine player index -> seat
     this.timer = null;
     this.catchTimer = null;
@@ -57,7 +58,7 @@ class EkahRoom {
     const base = {
       t: 'state', game: 'ekah', code: this.code, passcode: this.passcode, now: Date.now(), you: seat,
       host: this.hostSeat() === seat,
-      phase: g ? 'game' : 'lobby', target: this.target,
+      phase: g ? 'game' : 'lobby', target: this.target, rules: this.rules,
       seats: this.seats.map((s, i) => (s ? { seat: i, name: s.name, bot: !!s.bot, connected: !!s.bot || s.connected, away: g ? this.isAway(i) && !s.bot : false } : null)),
     };
     if (!g) return base;
@@ -84,7 +85,7 @@ class EkahRoom {
 
   newGame() {
     this.order = this.seats.map((s, i) => (s ? i : -1)).filter((i) => i >= 0);
-    this.game = Engine.createGame(this.order.map((i) => ({ name: this.seats[i].name, isBot: !!this.seats[i].bot })), { target: this.target });
+    this.game = Engine.createGame(this.order.map((i) => ({ name: this.seats[i].name, isBot: !!this.seats[i].bot })), { target: this.target, rules: this.rules });
     for (const s of this.humans()) s.missed = 0;
     this.schedule();
   }
@@ -185,6 +186,13 @@ class EkahRoom {
         if (!Number.isInteger(v) || v < Engine.TARGET_MIN || v > Engine.TARGET_MAX || v % Engine.TARGET_STEP)
           throw new Error('Pick a winning score from 50 to 1000, in steps of 50');
         this.target = v;
+        return this.broadcast();
+      }
+      case 'rules': {
+        if (!host) throw new Error('Only the host can change the house rules');
+        if (g) throw new Error('The game has already started');
+        if (!m.value || typeof m.value !== 'object') throw new Error('Bad rules');
+        this.rules = Engine.cleanRules({ stack: m.value.stack !== false, answerActions: m.value.answerActions !== false });
         return this.broadcast();
       }
       case 'start':

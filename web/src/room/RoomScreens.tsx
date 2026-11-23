@@ -30,7 +30,9 @@ export type StartProps = {
   tagline: string;                      // one line under the title
   onBack: () => void;
   /** Play vs computer: how many computer players, and what starts it. */
-  vsComputer: { count: number; options: number[]; onCount: (n: number) => void; onPlay: () => void; playLabel?: string };
+  vsComputer: { count: number; options: number[]; onCount: (n: number) => void; onPlay: () => void; playLabel?: string;
+    /** Computer level chips (Easy / Normal / Hard), when the game has them. */
+    level?: { value: CpuLevel; onLevel: (l: CpuLevel) => void } };
   /** Play with friends. `busy` while connecting. */
   friends: { onCreate: () => void; code: string; onCode: (c: string) => void; pass: string; onPass: (p: string) => void; onJoin: () => void; busy: boolean };
   msg?: string;
@@ -67,6 +69,13 @@ const TAB_KEY = (game: string) => `rc-tab-${game.toLowerCase().replace(/[^a-z]+/
 /** The start screen. In the Android app: the app-style lobby (AppLobby). On the website: laid out like EKAH's, with tabs
     (Vs Computer / With Friends; Online once it is ready), one panel at a time. */
 const NATIVE = isNativeApp();
+export type CpuLevel = "easy" | "normal" | "hard";
+export const CPU_LEVELS: { id: CpuLevel; name: string; note: string }[] = [
+  { id: "easy", name: "Easy", note: "Relaxed" }, { id: "normal", name: "Normal", note: "Fair fight" }, { id: "hard", name: "Hard", note: "No mercy" },
+];
+/** Remembered per game on this device. */
+export const readLevel = (game: string): CpuLevel => { try { const v = window.localStorage.getItem(`rc-${game}-level`); return v === "easy" || v === "hard" ? v : "normal"; } catch { return "normal"; } };
+export const keepLevel = (game: string, l: CpuLevel) => { try { window.localStorage.setItem(`rc-${game}-level`, l); } catch { /* storage off */ } };
 export function PlayStart(p: StartProps) {
   return NATIVE ? <AppLobby {...p} /> : <WebPlayStart {...p} />;
 }
@@ -100,7 +109,10 @@ function WebPlayStart(p: StartProps) {
           <div className="rs-field">Computer players
             <div className="rs-chips" role="group" aria-label="Computer players">{p.vsComputer.options.map(n => <button key={n} type="button" className={p.vsComputer.count === n ? "on" : ""} aria-pressed={p.vsComputer.count === n} onClick={() => p.vsComputer.onCount(n)}>{n}</button>)}</div>
           </div>
-          <button className="gold-button rs-wide" onClick={p.vsComputer.onPlay}>{p.vsComputer.playLabel ?? "Play now"}</button>
+          {p.vsComputer.level && <div className="rs-field">Computer level
+            <div className="rs-chips rs-level" role="radiogroup" aria-label="Computer level">{CPU_LEVELS.map(l => <button key={l.id} type="button" role="radio" className={p.vsComputer.level!.value === l.id ? "on" : ""} aria-checked={p.vsComputer.level!.value === l.id} onClick={() => p.vsComputer.level!.onLevel(l.id)}>{l.name}<small>{l.note}</small></button>)}</div>
+          </div>}
+          <button className="gold-button rs-wide" onClick={p.vsComputer.onPlay}>{p.vsComputer.playLabel ?? "Start Game"}</button>
         </div>}
 
         {tab === "friends" && <div className="rs-panel rs-tabpanel" role="tabpanel" id="rs-panel-friends" aria-labelledby="rs-tab-friends">

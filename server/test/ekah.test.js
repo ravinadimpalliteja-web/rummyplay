@@ -81,15 +81,85 @@ function table(n, top, hands) {
   assert.deepStrictEqual(E.jodiCards(s, 1), []);
 }
 {
-  // Maya of the element dodges: the waiting cards move on to the next player, nobody is skipped.
-  const s = table(3, card(1, 'num', 'AGNI', 7), [[card(2, 'rin', 'AGNI'), card(9, 'num', 'JAL', 1)], [card(3, 'maya', 'AGNI'), card(4, 'maya', 'JAL'), card(8, 'num', 'JAL', 2)]]);
+  // 3+ players: a Maya of the element answers by skipping; the player after must answer the waiting cards.
+  const s = table(4, card(1, 'num', 'AGNI', 7), [[card(2, 'rin', 'AGNI'), card(9, 'num', 'JAL', 1)], [card(3, 'maya', 'AGNI'), card(4, 'maya', 'JAL'), card(8, 'num', 'JAL', 2)]]);
   E.applyAction(s, 0, { type: 'play', cardId: 2 });
   assert.deepStrictEqual(E.legalCards(s, 1), [3], 'only the Agni Maya');
   assert(E.applyAction(s, 1, { type: 'play', cardId: 3 }).ok);
-  assert.strictEqual(s.turn, 2); assert.strictEqual(s.pending, 2);
-  assert(s.events.some((e) => e.type === 'dodge' && e.pi === 1 && e.to === 2));
-  E.applyAction(s, 2, { type: 'draw' });
-  assert.strictEqual(s.players[2].hand.length, 4); assert.strictEqual(s.turn, 0);
+  assert.strictEqual(s.turn, 3, 'player 2 is skipped'); assert.strictEqual(s.pending, 2);
+  assert(s.events.some((e) => e.type === 'skip' && e.pi === 2));
+  assert(s.events.some((e) => e.type === 'pass-on' && e.pi === 1 && e.to === 3 && e.n === 2));
+  E.applyAction(s, 3, { type: 'draw' });
+  assert.strictEqual(s.players[3].hand.length, 4); assert.strictEqual(s.turn, 0); assert.strictEqual(s.pending, 0);
+}
+{
+  // 3+ players: A plays Mahakal on B calling Prithvi; B answers with a Prithvi Chakra, so A must answer it.
+  const s = table(3, card(1, 'num', 'AGNI', 7), [[card(2, 'mahakal'), card(9, 'num', 'JAL', 1)], [card(3, 'chakra', 'PRITHVI'), card(4, 'chakra', 'AGNI'), card(8, 'num', 'JAL', 2)]]);
+  E.applyAction(s, 0, { type: 'play', cardId: 2, color: 'PRITHVI' });
+  assert.deepStrictEqual(E.legalCards(s, 1), [3], 'only the Chakra of the called element');
+  assert(E.applyAction(s, 1, { type: 'play', cardId: 3 }).ok);
+  assert.strictEqual(s.direction, -1); assert.strictEqual(s.turn, 0, 'back to A'); assert.strictEqual(s.pending, 4);
+  assert(E.applyAction(s, 0, { type: 'draw' }).ok);
+  assert.strictEqual(s.players[0].hand.length, 5); assert.strictEqual(s.turn, 2, 'play carries on in the new direction');
+}
+{
+  // 2 players: Chakra or Maya on a waiting Rin means "play again"; the same player still has to answer it.
+  for (const t of ['chakra', 'maya']) {
+    const s = table(2, card(1, 'num', 'AGNI', 7), [[card(2, 'rin', 'AGNI'), card(9, 'num', 'JAL', 1)], [card(3, t, 'AGNI'), card(5, 'rin', 'JAL'), card(8, 'num', 'JAL', 2)]]);
+    E.applyAction(s, 0, { type: 'play', cardId: 2 });
+    assert(E.applyAction(s, 1, { type: 'play', cardId: 3 }).ok);
+    assert.strictEqual(s.turn, 1, t + ': B plays again'); assert.strictEqual(s.pending, 2, t + ': the Rin still waits');
+    assert.deepStrictEqual(E.legalCards(s, 1), [5], t + ': B may stack a Rin');
+    assert(E.applyAction(s, 1, { type: 'play', cardId: 5 }).ok);
+    assert.strictEqual(s.turn, 0); assert.strictEqual(s.pending, 4);
+  }
+  const s = table(2, card(1, 'num', 'AGNI', 7), [[card(2, 'rin', 'AGNI'), card(9, 'num', 'JAL', 1)], [card(3, 'maya', 'AGNI'), card(8, 'num', 'JAL', 2)]]);
+  E.applyAction(s, 0, { type: 'play', cardId: 2 });
+  E.applyAction(s, 1, { type: 'play', cardId: 3 });
+  assert(E.applyAction(s, 1, { type: 'draw' }).ok, 'or take the cards');
+  assert.strictEqual(s.players[1].hand.length, 3); assert.strictEqual(s.turn, 0);
+}
+{
+  // A Maya or Chakra of another element cannot answer.
+  const s = table(3, card(1, 'num', 'AGNI', 7), [[card(2, 'rin', 'AGNI'), card(9, 'num', 'JAL', 1)], [card(3, 'chakra', 'JAL'), card(4, 'maya', 'VAYU')]]);
+  E.applyAction(s, 0, { type: 'play', cardId: 2 });
+  assert.deepStrictEqual(E.legalCards(s, 1), []);
+}
+{
+  // Going out on a Maya while cards wait: the player who must answer takes them.
+  const s = table(3, card(1, 'num', 'AGNI', 7), [[card(2, 'rin', 'AGNI'), card(9, 'num', 'JAL', 1)], [card(3, 'maya', 'AGNI')]]);
+  E.applyAction(s, 0, { type: 'play', cardId: 2 });
+  E.applyAction(s, 1, { type: 'play', cardId: 3, ekah: true });
+  assert.strictEqual(s.phase, 'roundOver'); assert.strictEqual(s.players[0].hand.length, 3, 'A (after the skip) takes the 2');
+}
+{
+  // House rules: stacking off means nothing answers; answerActions off keeps Maya and Chakra out.
+  const s = table(3, card(1, 'num', 'AGNI', 7), [[card(2, 'rin', 'AGNI'), card(9, 'num', 'JAL', 1)], [card(3, 'rin', 'JAL'), card(4, 'maya', 'AGNI'), card(5, 'mahakal')]]);
+  s.rules = E.cleanRules({ stack: false });
+  E.applyAction(s, 0, { type: 'play', cardId: 2 });
+  assert.deepStrictEqual(E.legalCards(s, 1), []);
+  const t = table(3, card(1, 'num', 'AGNI', 7), [[card(2, 'rin', 'AGNI'), card(9, 'num', 'JAL', 1)], [card(3, 'rin', 'JAL'), card(4, 'maya', 'AGNI'), card(5, 'mahakal')]]);
+  t.rules = E.cleanRules({ answerActions: false });
+  E.applyAction(t, 0, { type: 'play', cardId: 2 });
+  assert.deepStrictEqual(E.legalCards(t, 1).sort((a, b) => a - b), [3, 5]);
+  assert.deepStrictEqual(E.cleanRules(undefined), { stack: true, answerActions: true });
+  assert.deepStrictEqual(E.createGame([{ name: 'a' }, { name: 'b' }], { rules: { stack: false } }).rules, { stack: false, answerActions: true });
+}
+{
+  // Computer levels: every level only ever makes legal moves over many games.
+  for (const level of E.LEVELS) {
+    let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    for (let g = 0; g < 30; g++) {
+      const s = E.createGame([{ name: 'a', isBot: true }, { name: 'b', isBot: true }, { name: 'c', isBot: true }], { rnd });
+      let guard = 0;
+      while (s.phase === 'play' && guard++ < 3000) {
+        const r = E.applyAction(s, s.turn, E.botAction(s, s.turn, level));
+        assert(r.ok, level + ': ' + r.error);
+        assert.strictEqual(E.totalCards(s), 104);
+      }
+      assert.notStrictEqual(s.phase, 'play', level + ': game finishes');
+    }
+  }
 }
 {
   // Going out on a Rin: the next player still takes the cards before the score is counted.
@@ -279,9 +349,13 @@ server.listen(0, async () => {
     b.send({ t: 'target', value: 100 }); await b.until(() => b.errs.some((e) => /host/.test(e) && /score/.test(e)));
     a.send({ t: 'target', value: 333 }); await a.until(() => a.errs.some((e) => /50 to 1000/.test(e)));
     a.send({ t: 'target', value: 500 }); await b.until(() => b.state.target === 500);
+    assert.deepStrictEqual(a.state.rules, { stack: true, answerActions: true });
+    b.send({ t: 'rules', value: { stack: false } }); await b.until(() => b.errs.some((e) => /host/.test(e) && /rules/.test(e)));
+    a.send({ t: 'rules', value: { stack: true, answerActions: false } }); await b.until(() => b.state.rules && b.state.rules.answerActions === false);
     a.send({ t: 'start' });
     await Promise.all([a, b].map((x) => x.until(() => x.state.phase === 'game')));
     assert.strictEqual(a.state.view.target, 500);
+    assert.deepStrictEqual(a.state.view.rules, { stack: true, answerActions: false }, 'the game uses the host\'s house rules');
     assert.strictEqual(a.state.view.players.length, 3);
     assert.strictEqual(a.state.view.hand.length, 7);
     assert(b.state.view.players[0].hand === undefined, 'nobody sees other hands during play');

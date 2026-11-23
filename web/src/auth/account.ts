@@ -9,6 +9,14 @@
 import { useSyncExternalStore } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
+import { App as NativeApp } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
+
+/** Inside the Android app, Google sign-in opens in the phone's browser and comes back into the app through this app
+    link (the Android manifest declares it, see .github/workflows/android-app.yml). Supabase must list it under
+    Authentication › URL Configuration › Redirect URLs, otherwise Google sends players to the website instead. */
+export const APP_AUTH_CALLBACK = "com.royalclubgames.app://auth-callback";
+export const isNativeApp = () => { try { return Capacitor.isNativePlatform(); } catch { return false; } };
 
 export const USERNAME_RE = /^[A-Za-z0-9_]{3,16}$/;
 export const USERNAME_HINT = "3–16 letters, numbers or _";
@@ -67,10 +75,34 @@ export function startAccount() {
     if ((state.session?.user.id ?? null) === uid) set({ username, ready: true });
   };
   void c.auth.getSession().then(({ data }) => apply(data.session));
+  listenForAppSignIn();
   c.auth.onAuthStateChange((event, session) => {
     if (event === "PASSWORD_RECOVERY") set({ recovering: true });
     window.setTimeout(() => void apply(session), 0);
   });
+}
+
+/** The app was opened by the sign-in app link (Google finished in the phone's browser): finish signing in here.
+    Handles both the PKCE (?code=) and implicit (#access_token=) answers, and a cold start opened by the link. */
+function listenForAppSignIn() {
+  const c = supabase;
+  if (!c || !isNativeApp()) return;
+  const finish = async (url: string | undefined) => {
+    if (!url || !url.startsWith(APP_AUTH_CALLBACK)) return;
+    let u: URL;
+    try { u = new URL(url); } catch { return; }
+    const q = u.searchParams, h = new URLSearchParams(u.hash.replace(/^#/, ""));
+    const problem = q.get("error_description") || h.get("error_description") || q.get("error") || h.get("error");
+    const fail = (msg: string) => window.dispatchEvent(new CustomEvent("rc:auth-error", { detail: msg }));
+    if (problem) { fail(/expired|invalid/i.test(problem) ? "That sign-in link has expired. Please try again." : "Sign-in didn't work this time. Please try again."); return; }
+    const code = q.get("code"), access = h.get("access_token"), refresh = h.get("refresh_token");
+    const { error } = code ? await c.auth.exchangeCodeForSession(code)
+      : access && refresh ? await c.auth.setSession({ access_token: access, refresh_token: refresh })
+      : { error: new Error("no session in the link") };
+    if (error) fail("Sign-in didn't work this time. Please try again.");
+  };
+  void NativeApp.addListener("appUrlOpen", ({ url }) => void finish(url)).catch(() => undefined);
+  void NativeApp.getLaunchUrl().then((r) => finish(r?.url)).catch(() => undefined);
 }
 
 /** True when nobody has that username yet (case-insensitive). */

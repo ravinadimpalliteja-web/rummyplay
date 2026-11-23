@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { GameBar, IconButton, PaletteIcon, RulesIcon, SoundIcon, TurnTimer } from "../ui/GameBar";
 import { RoomClient, deviceToken, randomPasscode, saveRoom, savedRoom, serverUrl, type NetStatus } from "../domain/online";
 import {
-  ANIM, COLORS, LANE, SAFE, SPOTS, TRACK, YARD, absOf, bestMove, cellKey, cutsWith, move, newGame, pointOf, previewMove, roll, rollDie, turnOf,
+  ANIM, COLORS, LANE, SAFE, SPOTS, START, TRACK, YARD, absOf, bestMove, cellKey, cutsWith, move, newGame, pointOf, previewMove, roll, rollDie, turnOf,
   type Color, type LudoEvent, type LudoGame as Game, type Tok,
 } from "./engine";
 import { DICE, Face, Piece, PieceDefs, TOKEN_SETS, isUnlocked, setPips, unlockText, type DiceId, type TokenSet } from "./pieces";
@@ -156,7 +156,12 @@ const sDuel = (set: TokenSet) => {
   tone(660, .5, "triangle", .05, .46, 180);                                              // the captured token's falling "whoaa"
 };
 /** Landing on a safe square (a starred square or a start square): a small, low "shield" buzz with a soft chime on top. */
-const sSafe = () => { tone(196, .11, "square", .022, 0, 220); tone(784, .16, "sine", .045, .04); tone(1175, .2, "sine", .03, .09); };
+/** Safe square: a soft temple bell (ghanta). Higher on the star squares, a little lower on another colour's start square. */
+const sSafe = (star: boolean) => {
+  const f = 880 * (star ? 1 : .8);
+  ([[1, .11, 1.6], [2, .047, 1.1], [2.76, .033, .8], [5.4, .013, .4]] as const).forEach(([m, v, d]) => tone(f * m, d, "sine", v));
+  hiss(.03, f * 3.4, .027);
+};
 const sHome = () => arrival(audioOn());            // war-trumpet arrival call (lib/fanfare.ts)
 const sWin = () => victory(audioOn());             // joyful winner tune, kept soft
 
@@ -414,7 +419,10 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
     setMoving(`${l.seat}-${l.token}`);
     for (const st of l.steps) { base[l.seat][l.token] = st; setDisp(copyTokens(base)); sStep(); await wait(ANIM.step); }
     const end = l.steps[l.steps.length - 1];
-    if (end && end.s === "track" && SAFE.has(absOf(t.colors[l.seat], end.r))) { sSafe(); try { navigator.vibrate?.(22); } catch { /* not supported */ } }
+    if (end && end.s === "track" && end.r !== 0 && SAFE.has(absOf(t.colors[l.seat], end.r))) {   // not its own start square
+      const sq = absOf(t.colors[l.seat], end.r);
+      sSafe(!Object.values(START).includes(sq)); try { navigator.vibrate?.(22); } catch { /* not supported */ }
+    }
     setMoving(null);
     if (l.cuts.length) {
       const vic = l.cuts.map(c => `${c.seat}-${c.token}`);

@@ -102,16 +102,53 @@ export function move(g0: LudoGame, seat: number, i: number): LudoGame {
   return g;
 }
 
-/** The computer players' choice (also used when a timer runs out): cut, go home, stay safe, then progress. */
-export type Level = "easy" | "normal" | "hard";
-export const LEVELS: readonly Level[] = ["easy", "normal", "hard"];
-/** The computer's pick. easy: often any legal token, so beginners can win; normal: the classic sensible bot;
-    hard: little randomness, cuts hard, runs from danger and keeps tokens on safe squares. */
-export function bestMove(g: LudoGame, seat: number, level: Level = "normal"): number {
-  if (level === "easy" && Math.random() < 0.6) return g.moves[Math.floor(Math.random() * g.moves.length)];
-  const hard = level === "hard";
+/* ---------- the computer player ----------
+   Plays like a sharp human: cuts whenever it can (the leader's tokens first), brings tokens out on a six, runs from
+   danger, heads for safe squares and the home lane, and reads the board one roll ahead: how likely each exposed token
+   is to be cut before its next turn, and which opponent tokens it is lining up to catch. Near-equal choices are
+   settled the way a person would, not always the same way. Also plays for a player whose turn timer runs out.
+   The same player runs on the room server (server/ludo.js). */
+const walked = (t: Tok) => (t.s === "base" ? 0 : t.s === "track" ? t.r + 1 : t.s === "lane" ? 52 + t.l : 57);
+/** Chance that a token on track square `a` is cut before its owner moves again (7-12 away needs a six first). */
+function hitChance(g: LudoGame, tokens: Record<number, Tok[]>, seat: number, a: number) {
+  if (SAFE.has(a)) return 0;
+  let miss = 1;
+  for (const o of g.order) {
+    if (o === seat || g.ranks.includes(o)) continue;
+    let p = 0;
+    for (const t of tokens[o]) {
+      if (t.s !== "track") continue;
+      const d = (a - absOf(g.colors[o], t.r) + 52) % 52;
+      if (d < 1 || d > 12 || t.r + d > 50) continue;      // out of reach, or that token turns into its home lane first
+      p += d <= 6 ? 1 / 6 : 1 / 36;
+    }
+    miss *= 1 - Math.min(p, 0.6);
+  }
+  return 1 - miss;
+}
+/** [expected loss if my exposed tokens get cut, value of the opponent tokens I am lined up to catch next turn] */
+function exposure(g: LudoGame, tokens: Record<number, Tok[]>, seat: number) {
+  const color = g.colors[seat];
+  let risk = 0, chase = 0;
+  for (const t of tokens[seat]) {
+    if (t.s !== "track") continue;
+    const a = absOf(color, t.r);
+    risk += hitChance(g, tokens, seat, a) * (walked(t) + 10);
+    for (const o of g.order) {
+      if (o === seat || g.ranks.includes(o)) continue;
+      for (const u of tokens[o]) {
+        if (u.s !== "track") continue;
+        const b = absOf(g.colors[o], u.r), d = (b - a + 52) % 52;
+        if (d >= 1 && d <= 6 && !SAFE.has(b) && t.r + d <= 50) chase += (walked(u) + 10) / 6;
+      }
+    }
+  }
+  return [risk, chase];
+}
+export function bestMove(g: LudoGame, seat: number): number {
+  if (g.moves.length === 1) return g.moves[0];
   const color = g.colors[seat], v = g.dice;
-  const danger = (a: number) => {
+  const attackers = (a: number) => {                     // opponent tokens 1-6 squares behind square a
     let n = 0;
     for (const o of g.order) {
       if (o === seat || g.ranks.includes(o)) continue;
@@ -119,26 +156,50 @@ export function bestMove(g: LudoGame, seat: number, level: Level = "normal"): nu
     }
     return n;
   };
-  const prog = (t: Tok) => (t.s === "track" ? t.r : t.s === "lane" ? 51 + t.l : t.s === "home" ? 57 : -1);
-  let best = g.moves[0], bs = -Infinity;
-  for (const i of g.moves) {
-    const t = g.tokens[seat][i], steps = pathOf(t, v)!, f = steps[steps.length - 1];
-    let s = Math.random() * (hard ? 0.5 : 3);
-    if (t.s === "base") s += 55;
+  const total = (o: number) => g.tokens[o].reduce((m, t) => m + walked(t), 0);
+  const leader = Math.max(...g.order.filter(o => o !== seat && !g.ranks.includes(o)).map(total));
+  const [risk0, chase0] = exposure(g, g.tokens, seat);
+  const scored = g.moves.map(i => {
+    const tokens: Record<number, Tok[]> = {};
+    for (const o of g.order) tokens[o] = g.tokens[o].map(t => ({ ...t }));
+    const t = tokens[seat][i], from = { ...t }, steps = pathOf(t, v)!, f = steps[steps.length - 1];
+    Object.assign(t, f);
+    let s = 0;
+    if (from.s === "base") s += 55;                      // a six: bring a token out
     if (f.s === "home") s += 95;
-    if (f.s === "lane" && t.s === "track") s += 45;
+    if (f.s === "lane" && from.s === "track") s += 45;   // into the safety of the home lane
     if (f.s === "track") {
       const a = absOf(color, f.r);
-      if (SAFE.has(a)) s += hard ? 30 : 22;
-      else { const vic = victimsAt(g, seat, a); if (vic.length) s += (hard ? 160 : 130) + vic.reduce((m, x) => m + g.tokens[x.seat][x.token].r, 0); s -= (hard ? 55 : 38) * danger(a); }
+      if (SAFE.has(a)) s += 22;
+      else {
+        for (const o of g.order) {
+          if (o === seat) continue;
+          for (const u of tokens[o]) if (u.s === "track" && absOf(g.colors[o], u.r) === a) {
+            s += (130 + u.r) * (total(o) === leader ? 1.15 : 1);      // a cut, the leader's tokens first
+            Object.assign(u, { s: "base", r: 0, l: 0 });
+          }
+        }
+        s -= 19 * attackers(a);
+      }
     }
-    if (t.s === "track") { const a0 = absOf(color, t.r); if (!SAFE.has(a0)) s += (hard ? 42 : 28) * danger(a0); }
-    s += prog(f) * 0.35;
-    if (s > bs) { bs = s; best = i; }
-  }
-  return best;
+    if (from.s === "track") { const a0 = absOf(color, from.r); if (!SAFE.has(a0)) s += 14 * attackers(a0); }   // run from danger
+    s += (f.s === "track" ? f.r : f.s === "lane" ? 51 + f.l : 57) * 0.35;
+    const [risk1, chase1] = exposure(g, tokens, seat);
+    s += -(risk1 - risk0) + 0.5 * (chase1 - chase0);     // one roll ahead: how exposed I am, who I can catch next
+    return { i, s };
+  });
+  const top = Math.max(...scored.map(x => x.s));
+  const near = scored.filter(x => x.s >= top - 2);        // a real player doesn't split hairs between near-equal moves
+  return near[Math.floor(Math.random() * near.length)].i;
 }
 
+/** Whether moving token `i` with the current roll would cut someone (the computer pauses a little longer before it). */
+export function cutsWith(g: LudoGame, seat: number, i: number) {
+  const t = g.tokens[seat][i], steps = t && pathOf(t, g.dice), f = steps && steps[steps.length - 1];
+  if (!f || f.s !== "track") return false;
+  const a = absOf(g.colors[seat], f.r);
+  return !SAFE.has(a) && victimsAt(g, seat, a).length > 0;
+}
 /* ---------- board geometry (15 x 15 grid; red yard top-left, then clockwise green, yellow, blue) ---------- */
 export const TRACK: [number, number][] = (() => {
   const t: [number, number][] = [];

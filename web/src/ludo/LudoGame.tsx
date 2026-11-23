@@ -3,8 +3,8 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { GameBar, IconButton, PaletteIcon, RulesIcon, SoundIcon, TurnTimer } from "../ui/GameBar";
 import { RoomClient, deviceToken, randomPasscode, saveRoom, savedRoom, serverUrl, type NetStatus } from "../domain/online";
 import {
-  ANIM, COLORS, LANE, SAFE, SPOTS, TRACK, YARD, absOf, bestMove, cellKey, move, newGame, pointOf, previewMove, roll, rollDie, turnOf,
-  type Color, type LudoEvent, type LudoGame as Game, type Tok,
+  ANIM, COLORS, LANE, LEVELS, SAFE, SPOTS, TRACK, YARD, absOf, bestMove, cellKey, move, newGame, pointOf, previewMove, roll, rollDie, turnOf,
+  type Color, type Level, type LudoEvent, type LudoGame as Game, type Tok,
 } from "./engine";
 import { DICE, Face, Piece, PieceDefs, TOKEN_SETS, isUnlocked, setPips, unlockText, type DiceId, type TokenSet } from "./pieces";
 import { useRealWins } from "./realWins";
@@ -14,7 +14,9 @@ import { inviteText } from "../lib/share";
 import { SAVE_KEYS, loadGame, saveGame, clearGame } from "../lib/localSave";
 import "./ludo.css";
 import { LudoArt } from "../home/GameArt";
-import { PlayStart, WaitingRoom } from "../room/RoomScreens";
+import { PlayStart, WaitingRoom, keepLevel, readLevel } from "../room/RoomScreens";
+import { arrival, victory } from "../lib/fanfare";
+import { coach } from "../lib/coach";
 import { ROOM_SIGNIN_MSG, markPlayed, onRoomAuthError, roomAccount, useSeatLabel } from "../auth/account";
 
 
@@ -28,7 +30,7 @@ const readKey = <T extends string>(key: string, ok: readonly string[], dflt: T):
 const keep = (key: string, v: string) => { try { window.localStorage.setItem(key, v); } catch { /* storage off: still works for this visit */ } };
 const ORD = ["1st", "2nd", "3rd", "4th"];
 /* A game on this device (vs computer or pass & play), saved after every move so it survives closing the app. */
-type LudoSave = { game: Game; mode: "practice" | "pass"; names: string[] };
+type LudoSave = { game: Game; mode: "practice" | "pass"; names: string[]; level?: Level };
 const isLudoSave = (d: unknown): d is LudoSave => {
   const s = d as LudoSave;
   return !!s && (s.mode === "practice" || s.mode === "pass") && Array.isArray(s.names) && !!s.game && Array.isArray(s.game.order)
@@ -155,8 +157,8 @@ const sDuel = (set: TokenSet) => {
 };
 /** Landing on a safe square (a starred square or a start square): a small, low "shield" buzz with a soft chime on top. */
 const sSafe = () => { tone(196, .11, "square", .022, 0, 220); tone(784, .16, "sine", .045, .04); tone(1175, .2, "sine", .03, .09); };
-const sHome = () => [523, 659, 784, 1047].forEach((f, i) => tone(f, .18, "triangle", .06, i * .08));
-const sWin = () => [392, 523, 659, 784, 659, 1047].forEach((f, i) => tone(f, .26, "triangle", .07, i * .13));
+const sHome = () => arrival(audioOn());            // war-trumpet arrival call (lib/fanfare.ts)
+const sWin = () => victory(audioOn());             // joyful winner tune, kept soft
 
 function star(cx: number, cy: number, R: number, r: number) {
   return Array.from({ length: 10 }, (_, i) => { const a = -Math.PI / 2 + i * Math.PI / 5, d = i % 2 ? r : R; return `${(cx + Math.cos(a) * d).toFixed(3)},${(cy + Math.sin(a) * d).toFixed(3)}`; }).join(" ");
@@ -221,6 +223,9 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
   type Sub = "lobby" | "room" | "table";
   const [sub, setSub] = useState<Sub>(joinCode ? "room" : "lobby");
   const [bots, setBots] = useState(3);
+  const [level, setLevelState] = useState<Level>(() => readLevel("ludo"));
+  const setLevel = (l: Level) => { setLevelState(l); keepLevel("ludo", l); };
+  const [gameLevel, setGameLevel] = useState<Level>(level);
   const [passCount, setPassCount] = useState(2);
   const [passNames, setPassNames] = useState(["Player 1", "Player 2", "Player 3", "Player 4"]);
   const [local, setLocal] = useState<Game | null>(null);
@@ -324,18 +329,18 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
   /* ---------- games on this device ---------- */
   const startLocal = (mode: "practice" | "pass") => {
     const names = mode === "practice" ? ["You", ...BOTS.slice(0, bots)] : passNames.slice(0, passCount).map((n, i) => n.trim() || `Player ${i + 1}`);
-    setLocalMode(mode); setLocalNames(names); animatedN.current = null; setDisp(null);
+    setLocalMode(mode); setLocalNames(names); animatedN.current = null; setDisp(null); setGameLevel(level);
     setLocal(newGame(names.map((_, i) => i), mode === "practice" ? 0 : Math.floor(Math.random() * names.length)));
     setSub("table");
   };
   const resumeLocal = (s: LudoSave) => {
-    setLocalMode(s.mode); setLocalNames(s.names); animatedN.current = null; setDisp(null); setLocal(s.game); setSub("table");
+    setLocalMode(s.mode); setLocalNames(s.names); animatedN.current = null; setDisp(null); setGameLevel(s.level && LEVELS.includes(s.level) ? s.level : "normal"); setLocal(s.game); setSub("table");
   };
   useEffect(() => {                                     // auto-save; a finished game is forgotten
     if (!local) return;
     if (local.phase === "gameEnd") { clearGame(SAVE_KEYS.ludo); setSaved(null); return; }
-    saveGame(SAVE_KEYS.ludo, { game: local, mode: localMode, names: localNames });
-  }, [local, localMode, localNames]);
+    saveGame(SAVE_KEYS.ludo, { game: local, mode: localMode, names: localNames, level: gameLevel });
+  }, [local, localMode, localNames, gameLevel]);
   useEffect(() => {
     if (online || !local || local.phase === "gameEnd" || animating) return;
     if (local.last && local.last.n !== animatedN.current) return;            // wait until the last event has been shown
@@ -344,11 +349,11 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
     if (local.phase === "roll" && bot) id = window.setTimeout(() => setLocal(g => (g ? roll(g, turnOf(g), rollDie()) : g)), 650 * pace);
     else if (local.phase === "move") {
       const forced = local.last?.kind === "roll" ? local.last.forced : null;
-      if (bot) id = window.setTimeout(() => setLocal(g => (g ? move(g, turnOf(g), bestMove(g, turnOf(g))) : g)), 450 * pace);
+      if (bot) id = window.setTimeout(() => setLocal(g => (g ? move(g, turnOf(g), bestMove(g, turnOf(g), gameLevel)) : g)), 450 * pace);
       else if (forced != null) id = window.setTimeout(() => setLocal(g => (g ? move(g, turnOf(g), forced) : g)), 300 * pace);
     }
     return () => window.clearTimeout(id);
-  }, [online, local, animating, localMode]);
+  }, [online, local, animating, localMode, gameLevel]);
 
   /* ---------- animation: each new event (from this device or the server) is shown once, in order ---------- */
   const settle = () => { const t = tableRef.current; if (t) setDisp(copyTokens(t.tokens)); };
@@ -506,6 +511,16 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
     }
     wasMyRoll.current = mine;
   }, [canRoll]);
+  /* First game on this device: a few tips pointing at the dice and the board. */
+  useEffect(() => {
+    if (sub !== "table" || !canRoll || !t || t.mode === "online") return;
+    const id = window.setTimeout(() => void coach("ludo", [
+      { title: "Your dice", text: "Tap your dice to roll. You need a <b>6</b> to bring a token out of your yard.", target: ".ld-sdie.ready" },
+      { title: "Moving", text: "Tokens that can move <b>glow</b>, and a marker shows where each would land: ★ safe, ✓ cut, ! risky, ♛ home. Tap a token or its marker.", target: ".ld-board", pad: 2 },
+      { title: "Cut and stay safe", text: "Land on an opponent to send them back to their yard. Starred squares and start squares are safe. A 6, a cut or reaching home gives another roll.", target: ".ld-board", pad: 2 },
+    ]), 700);
+    return () => window.clearTimeout(id);
+  }, [sub, canRoll]);
   useEffect(() => {
     const back = () => { if (!document.hidden) document.title = baseTitle.current; };
     document.addEventListener("visibilitychange", back);
@@ -513,11 +528,11 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
   }, []);
 
   /* ---------- screens ---------- */
-  const pending: LudoSave | null = local && local.phase !== "gameEnd" ? { game: local, mode: localMode, names: localNames } : saved;
+  const pending: LudoSave | null = local && local.phase !== "gameEnd" ? { game: local, mode: localMode, names: localNames, level: gameLevel } : saved;
   if (sub === "lobby" || (sub === "room" && !view)) return <PlayStart className="ld-mode" game="Ludo" tagline="Race your four tokens home. Cut, block and roll sixes."
     art={<LudoArt />} meta="2–4 players · about 15 min" passStart={() => startLocal("pass")}
     onBack={onHome}
-    vsComputer={{ count: bots, options: [1, 2, 3], onCount: setBots, onPlay: () => startLocal("practice") }}
+    vsComputer={{ count: bots, options: [1, 2, 3], onCount: setBots, onPlay: () => startLocal("practice"), level: { value: level, onLevel: setLevel } }}
     friends={{ onCreate: createRoom, code: roomCode, onCode: setRoomCode, pass: roomPass, onPass: setRoomPass, onJoin: joinRoom, busy: net === "connecting" }}
     msg={roomMsg}
     extra={view ? <div className="rs-panel"><h2>Your room</h2><p className="rs-note">You are in room {view.code}.</p><button className="gold-button rs-wide" onClick={() => setSub("room")}>Return to the room →</button></div>
@@ -533,7 +548,7 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
           const c = (passCount === 2 ? ["red", "yellow"] : passCount === 3 ? ["red", "green", "yellow"] : COLORS)[i] as Color;
           return <label key={i}><span className={`ld-dot ld-bg-${c}`} />{COLOR_NAME[c]}<input id={`ld-name-${i}`} value={n} maxLength={14} onChange={e => setPassNames(v => v.map((x, j) => (j === i ? e.target.value : x)))} /></label>;
         })}</div>
-        <button className="ghost-button rs-wide" onClick={() => startLocal("pass")}>Start pass &amp; play</button>
+        <button className="ghost-button rs-wide" onClick={() => startLocal("pass")}>Start Game</button>
       </div>
     </>}
     after={<details className="ld-style-box rs-panel"><summary>Token and dice style</summary><PieceDefs /><StylePicker tokens={shownSet} dice={dice} wins={realWins.wins} signedIn={realWins.signedIn} onTokens={chooseTokens} onDice={chooseDice} /></details>}
@@ -644,8 +659,8 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
             {unlockedNow.length > 0 ? <p className="ld-unlocked">🔓 New tokens unlocked: <b>{unlockedNow.join(", ")}</b>. Try them from Style.</p>
               : winCounted && <p className="ld-unlocked">🏆 This win counts toward new tokens · {realWins.wins} room win{realWins.wins === 1 ? "" : "s"} so far.</p>}
             <div className="ld-win-actions">
-              {online ? (view?.host ? <button className="gold-button" onClick={() => send({ t: "again" })}>Play again</button> : <p className="ld-small">Waiting for the host to start a new game.</p>)
-                : <button className="gold-button" onClick={() => startLocal(t.mode === "pass" ? "pass" : "practice")}>Play again</button>}
+              {online ? (view?.host ? <button className="gold-button" onClick={() => send({ t: "again" })}>Rematch</button> : <p className="ld-small">Waiting for the host to start a new game.</p>)
+                : <button className="gold-button" onClick={() => startLocal(t.mode === "pass" ? "pass" : "practice")}>Rematch</button>}
               <button className="ghost-button" onClick={() => (online ? leaveRoom() : setSub("lobby"))}>{online ? "Leave room" : "Back to lobby"}</button>
             </div>
           </div>}

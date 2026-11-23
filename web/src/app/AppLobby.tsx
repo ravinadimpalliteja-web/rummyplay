@@ -5,7 +5,7 @@
    big PLAY button at the bottom. Nothing the game offers is removed: the same controls, laid out like an app. */
 import { useState } from "react";
 import { GameArtDefs } from "../home/GameArt";
-import { RoomAccountLine, type StartProps } from "../room/RoomScreens";
+import { CPU_LEVELS, RoomAccountLine, type StartProps } from "../room/RoomScreens";
 import { bgVars, useBg } from "./theme";
 import "./app-lobby.css";
 
@@ -45,14 +45,15 @@ export default function AppLobby(p: StartProps) {
       <span className="al-check" aria-hidden="true">{mode === m ? "✓" : ""}</span>
     </button>;
 
-  const play = mode === "computer" ? { label: p.vsComputer.playLabel?.replace(/\s*→$/, "") ?? "PLAY", go: p.vsComputer.onPlay, busy: false }
-    : mode === "pass" ? { label: "PLAY", go: p.passStart!, busy: false }
+  const play = mode === "computer" ? { label: p.vsComputer.playLabel?.replace(/\s*→$/, "") ?? "START GAME", go: p.vsComputer.onPlay, busy: false }
+    : mode === "pass" ? { label: "START GAME", go: p.passStart!, busy: false }
     : { label: f.busy ? "Connecting…" : "CREATE A ROOM", go: f.onCreate, busy: f.busy };
 
   return <section className="al-page" style={bgVars(bg)}>
     <GameArtDefs />
     <div className="al-scroll">
       <header className="al-hero">
+        <div className="al-hero-bg" aria-hidden="true">{p.art}</div>
         <div className="al-hero-art" aria-hidden="true">{p.art}</div>
         <div className="al-hero-shade" aria-hidden="true" />
         <div className="al-hero-top">
@@ -82,6 +83,12 @@ export default function AppLobby(p: StartProps) {
               {p.vsComputer.options.map(n => <button key={n} type="button" className={p.vsComputer.count === n ? "on" : ""} aria-pressed={p.vsComputer.count === n} onClick={() => p.vsComputer.onCount(n)}>{n}</button>)}
             </div>
           </div>
+          {p.vsComputer.level && <div className="al-row al-row-level">
+            <span className="al-row-label">Level</span>
+            <div className="al-seg al-level" role="radiogroup" aria-label="Computer level">
+              {CPU_LEVELS.map(l => <button key={l.id} type="button" role="radio" className={p.vsComputer.level!.value === l.id ? "on" : ""} aria-checked={p.vsComputer.level!.value === l.id} onClick={() => p.vsComputer.level!.onLevel(l.id)}>{l.name}<small>{l.note}</small></button>)}
+            </div>
+          </div>}
         </div>}
 
         {mode === "pass" && <div className="al-box al-pass">{p.passPlay}</div>}

@@ -103,7 +103,13 @@ export function move(g0: LudoGame, seat: number, i: number): LudoGame {
 }
 
 /** The computer players' choice (also used when a timer runs out): cut, go home, stay safe, then progress. */
-export function bestMove(g: LudoGame, seat: number): number {
+export type Level = "easy" | "normal" | "hard";
+export const LEVELS: readonly Level[] = ["easy", "normal", "hard"];
+/** The computer's pick. easy: often any legal token, so beginners can win; normal: the classic sensible bot;
+    hard: little randomness, cuts hard, runs from danger and keeps tokens on safe squares. */
+export function bestMove(g: LudoGame, seat: number, level: Level = "normal"): number {
+  if (level === "easy" && Math.random() < 0.6) return g.moves[Math.floor(Math.random() * g.moves.length)];
+  const hard = level === "hard";
   const color = g.colors[seat], v = g.dice;
   const danger = (a: number) => {
     let n = 0;
@@ -117,16 +123,16 @@ export function bestMove(g: LudoGame, seat: number): number {
   let best = g.moves[0], bs = -Infinity;
   for (const i of g.moves) {
     const t = g.tokens[seat][i], steps = pathOf(t, v)!, f = steps[steps.length - 1];
-    let s = Math.random() * 3;
+    let s = Math.random() * (hard ? 0.5 : 3);
     if (t.s === "base") s += 55;
     if (f.s === "home") s += 95;
     if (f.s === "lane" && t.s === "track") s += 45;
     if (f.s === "track") {
       const a = absOf(color, f.r);
-      if (SAFE.has(a)) s += 22;
-      else { const vic = victimsAt(g, seat, a); if (vic.length) s += 130 + vic.reduce((m, x) => m + g.tokens[x.seat][x.token].r, 0); s -= 38 * danger(a); }
+      if (SAFE.has(a)) s += hard ? 30 : 22;
+      else { const vic = victimsAt(g, seat, a); if (vic.length) s += (hard ? 160 : 130) + vic.reduce((m, x) => m + g.tokens[x.seat][x.token].r, 0); s -= (hard ? 55 : 38) * danger(a); }
     }
-    if (t.s === "track") { const a0 = absOf(color, t.r); if (!SAFE.has(a0)) s += 28 * danger(a0); }
+    if (t.s === "track") { const a0 = absOf(color, t.r); if (!SAFE.has(a0)) s += (hard ? 42 : 28) * danger(a0); }
     s += prog(f) * 0.35;
     if (s > bs) { bs = s; best = i; }
   }

@@ -8,14 +8,24 @@ html.rc-skin{--as-gold:#E9C46A;--as-gold-dark:#B8862B;--as-saffron:#F28C28;--as-
   --as-line:rgba(233,196,106,.32);--as-glass:rgba(0,0,0,.26)}
 
 /* ---------- artwork header ---------- */
-.as-hero{position:relative;display:block;width:100vw;height:clamp(190px,54vw,270px);margin:0 0 4px calc(50% - 50vw);overflow:hidden;grid-column:1/-1;flex:none}
-.as-art{position:absolute;left:50%;top:38%;width:100%;height:auto;min-height:100%;transform:translate(-50%,-38%);object-fit:cover}
-.as-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.45) 0%,rgba(0,0,0,0) 30%,rgba(0,0,0,.3) 62%,var(--rx-mid,#0B3B2D) 98%)}
+/* The whole artwork always shows (never cropped, on phones and tablets): it sits on the right at full height, over a
+   soft blurred copy of itself that fills the banner; the title sits on the left. */
+.as-hero{position:relative;display:block;width:100vw;height:clamp(180px,48vw,260px);margin:0 0 4px calc(50% - 50vw);overflow:hidden;grid-column:1/-1;flex:none}
+.as-art-bg{position:absolute;inset:-12%;width:124%;height:124%;object-fit:cover;filter:blur(18px) brightness(.62) saturate(1.25)}
+.as-art{position:absolute;right:max(0px,calc(50% - 330px));top:0;height:100%;width:auto;aspect-ratio:1;object-fit:contain;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 16%,#000 88%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 16%,#000 88%,transparent 100%)}
+.as-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.42) 0%,rgba(0,0,0,.12) 52%,rgba(0,0,0,0) 70%),linear-gradient(180deg,rgba(0,0,0,.35) 0%,rgba(0,0,0,0) 26%,rgba(0,0,0,0) 72%,var(--rx-mid,#0B3B2D) 100%)}
 .as-top{position:absolute;left:14px;right:14px;top:10px;display:flex;justify-content:space-between}
 .as-round{display:flex;width:44px;height:44px;padding:0;border-radius:15px;align-items:center;justify-content:center;cursor:pointer;color:var(--as-gold);
   background:rgba(0,0,0,.42);border:1.5px solid rgba(233,196,106,.5);box-shadow:0 4px 0 rgba(0,0,0,.35);-webkit-tap-highlight-color:transparent}
 .as-round:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.35)}
-.as-title{position:absolute;left:18px;right:18px;bottom:8px;display:flex;flex-direction:column;text-align:left}
+.as-title{position:absolute;left:max(18px,calc(50% - 330px));right:52%;bottom:14px;display:flex;flex-direction:column;text-align:left}
+/* tablets: the start screens are a centred column, so the banner becomes a rounded card at the top of it */
+@media (min-width:600px){
+  .as-hero{width:100%;max-width:608px;margin:12px auto 6px;border-radius:24px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .as-art{right:0}
+  .as-title{left:22px}
+}
 .as-name{font:700 clamp(30px,9vw,40px)/1.05 'Cinzel',Georgia,serif;color:var(--as-gold);text-shadow:0 4px 0 rgba(0,0,0,.55);letter-spacing:.02em}
 .as-meta{margin-top:3px;font:700 14px/1.2 'Baloo 2',system-ui,sans-serif;color:var(--as-ivory);opacity:.92}
 

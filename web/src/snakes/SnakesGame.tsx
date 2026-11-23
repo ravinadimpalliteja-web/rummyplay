@@ -6,7 +6,9 @@ import { MODELS, MODEL_IDS, NUM_FONT, OFF, PIECE_H, SHARED, SHARED3D, THEMES, TH
 import { fitView, planeStyle, project, squash, type View } from "./view3d";
 import { SnakeArt, type SnakeOverlay } from "./snake2d";
 import { setSound, sfx, soundOn, unlock } from "./sound";
-import { celebrate } from "./confetti";
+import { celebrate, fireworks } from "./confetti";
+import { victory } from "../lib/fanfare";
+import { coach } from "../lib/coach";
 import TokenPicker from "./TokenPicker";
 import { GameBar, IconButton, TurnTimer } from "../ui/GameBar";
 import { ClubBar, PlayStart, WaitingRoom } from "../room/RoomScreens";
@@ -53,7 +55,7 @@ const isSLSave = (d: unknown): d is SLSave => {
   return !!s && Array.isArray(s.names) && Array.isArray(s.pieces) && s.pieces.every(p => (PIECE_IDS as readonly string[]).includes(p)) && !!s.game
     && Array.isArray(s.game.order) && s.game.order.length === s.names.length && typeof s.game.pos === "object" && s.game.phase === "playing";
 };
-const PIPS: Record<number, number[]> = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+const PIPS: Record<number, number[]> = { 0: [], 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
 const PLACE = ["1st", "2nd", "3rd", "4th"], MEDAL = ["🥇", "🥈", "🥉", "🎖️"];
 let reduced = motionReduced();
 let pace = reduced ? 0.3 : 1;
@@ -165,7 +167,12 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
   const [msg, setMsg] = useState(""), [, setTick] = useState(0);
   const [chatGap, setChatGap] = useState(false);
 
-  const stageRef = useRef<HTMLDivElement | null>(null), diceRef = useRef<HTMLDivElement | null>(null), cubeRef = useRef<HTMLDivElement | null>(null), shadowRef = useRef<HTMLDivElement | null>(null);
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  /** Each player's own die, next to their name (as in Ludo): yours is the roll button on your turn. */
+  const dieEls = useRef<Record<number, HTMLButtonElement | null>>({});
+  const [lastDie, setLastDie] = useState<Record<number, number>>({});
+  /** The champion moment: the winner's token under a falling crown, rays and fireworks. */
+  const [champ, setChamp] = useState<{ seat: number; id: number } | null>(null);
   const baseRef = useRef<HTMLCanvasElement | null>(null), boardRef = useRef<HTMLCanvasElement | null>(null), piecesRef = useRef<HTMLCanvasElement | null>(null), fxRef = useRef<HTMLCanvasElement | null>(null);
   const geoRef = useRef<View | null>(null); geoRef.current = geo;
   /* the 3D board whenever the player chose it and the device can draw it; it is never swapped out for being slow
@@ -638,37 +645,35 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
     return null;
   };
 
-  /* Rolls the 2D die on its pedestal: it is tossed up spinning flat, its face flicking through numbers as it tumbles
-     (slowing down), bounces with a little squash and settles showing `value`. The value always comes from the game
-     (engine or server); this only shows it. */
-  const throwDie = (value: number) => new Promise<void>((resolve) => {
-    const el = diceRef.current, cube = cubeRef.current, sh = shadowRef.current, face = cube?.firstElementChild ?? null;
-    if (!el || !cube || !sh) { resolve(); return; }
-    const size = el.clientWidth || 56, dir = Math.random() < .5 ? -1 : 1;
-    const spins = (2 + Math.floor(Math.random() * 2)) * 360 * dir, endTilt = (Math.random() - .5) * 16;
-    const jx = (Math.random() - .5) * size * .6, dur = reduced ? 250 : TIMING.die, t0 = performance.now();
-    let nextFlip = 0, shown = value;
+  /* Rolls the player's own die, next to their name (the same throw as Ludo): it hops up spinning, the face flicking
+     through numbers as it tumbles, then lands with a little squash on `value`. The value always comes from the game
+     (engine or server); this only shows it. Same length as before, so online rooms stay in step. */
+  const throwDie = (seat: number, value: number) => new Promise<void>((resolve) => {
+    const el = dieEls.current[seat], face = el?.querySelector(".sl-face") as HTMLElement | null;
+    const dur = reduced ? 250 : TIMING.die;
     sfx.dice(dur);
+    if (!el || !face) { window.setTimeout(resolve, dur); return; }
+    const size = el.clientWidth || 44, dir = Math.random() < .5 ? -1 : 1;
+    const spins = (2 + Math.floor(Math.random() * 2)) * 360 * dir, endTilt = (Math.random() - .5) * 14, t0 = performance.now();
+    let nextFlip = 0, shown = value;
+    el.classList.add("rolling");
     const step = (now: number) => {
-      const t = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - t, 3), rot = 1 - Math.pow(1 - t, 2.2);
-      const bounce = Math.abs(Math.cos(t * Math.PI * 2.5)), h = reduced ? 0 : size * 1.5 * Math.pow(1 - t, 1.6) * bounce, x = jx * (1 - e);
-      const squash = h < size * .06 && t > .2 && t < .97 ? .9 : 1;
-      el.style.transform = `translate(${x}px, ${-h}px)`;
-      cube.style.transform = t < 1 ? `rotate(${spins * (1 - rot) + endTilt * rot}deg) scale(${1 + h / size * .12}, ${(1 + h / size * .12) * squash})` : `rotate(${endTilt}deg)`;
+      const t = Math.min(1, (now - t0) / dur), rot = 1 - Math.pow(1 - t, 2.2);
+      const bounce = Math.abs(Math.cos(t * Math.PI * 2.5)), h = reduced ? 0 : size * .7 * Math.pow(1 - t, 1.6) * bounce;
+      const squash = h < size * .05 && t > .2 && t < .97 ? .9 : 1, grow = 1 + h / size * .3;
+      face.style.transform = t < 1 ? `translateY(${-h}px) rotate(${spins * (1 - rot) + endTilt * rot}deg) scale(${grow}, ${grow * squash})` : `rotate(${endTilt}deg)`;
       if (t < .82 && now >= nextFlip) { let v = shown; while (v === shown) v = 1 + Math.floor(Math.random() * 6); shown = v; setPips(face, v); nextFlip = now + 45 + t * 140; }
       else if (t >= .82 && shown !== value) { shown = value; setPips(face, value); }
-      sh.style.transform = `translateX(${x}px) scale(${Math.max(.45, 1 - h / size * .4)})`;
-      sh.style.opacity = String(Math.max(.2, .6 - h / size * .3));
       if (t < 1) requestAnimationFrame(step);
-      else { el.style.transform = ""; setPips(face, value); try { navigator.vibrate?.(18); } catch { /* not supported */ } resolve(); }
+      else { setPips(face, value); el.classList.remove("rolling"); try { navigator.vibrate?.(18); } catch { /* not supported */ } resolve(); }
     };
     requestAnimationFrame(step);
   });
 
   /* Plays one roll on the board. Its length matches the server's pause (TIMING in engine.ts). */
   const play = async (l: LastRoll) => {
-    await throwDie(l.value);
-    setDieValue(l.value);
+    await throwDie(l.seat, l.value);
+    setDieValue(l.value); setLastDie(d => ({ ...d, [l.seat]: l.value }));
     await wait(TIMING.settle);
     const seat = l.seat, here = () => disp.current[seat] ?? OFF;
     if (l.outcome === "enter") { sfx.hop(); await follow(seat, [OFF, spotOf(1)], TIMING.enter, 16); }
@@ -757,10 +762,20 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
       const t = tableRef.current, who = t ? t.names[seat] : "";
       const big = l.rank === 1;
       settle();
-      celebrate(big); sfx.finish(l.rank);
-      setBanner({ text: `${MEDAL[l.rank - 1]} ${who === "You" ? "You finished" : who + " finished"} ${PLACE[l.rank - 1]}!`, big });
-      await wait(big ? TIMING.finish1 : TIMING.finishN);
-      setBanner(null);
+      if (big) {
+        /* the champion moment (same length as the server's pause): rays, the winner's token, a crown dropping onto it,
+           fireworks in the players' colours and a joyful, soft tune */
+        const id = Date.now();
+        setChamp({ seat, id }); victory(soundOn());
+        fireworks(TIMING.finish1 - 400, t ? t.order.map(s => COLORS[s]).concat("#ffe08a") : undefined);
+        await wait(TIMING.finish1);
+        setChamp(c => (c && c.id === id ? null : c));
+      } else {
+        celebrate(false); sfx.finish(l.rank);
+        setBanner({ text: `${MEDAL[l.rank - 1]} ${who === "You" ? "You finished" : who + " finished"} ${PLACE[l.rank - 1]}!`, big });
+        await wait(TIMING.finishN);
+        setBanner(null);
+      }
     }
   };
 
@@ -769,7 +784,8 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
     if (!table || sub !== "table") return;
     const l = table.last;
     if (animatedN.current === null || !l || l.n < animatedN.current) {          // fresh table, resumed game, or new game
-      animatedN.current = l?.n ?? 0; settle(); setBanner(null);
+      animatedN.current = l?.n ?? 0; settle(); setBanner(null); setChamp(null);
+      setLastDie(l ? { [l.seat]: l.value } : {});
       const enterHint = (online ? view?.quick : local?.quick) ? "Quick game: any roll enters the board." : "Roll a 6 to enter the board.";
       if (!l) setMsg(online ? `${table.names[table.turn]}${table.turn === table.you ? " go" : " goes"} first. ${enterHint}` : `You go first. ${enterHint}`);
       else setMsg(describe(l, table));
@@ -797,6 +813,16 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
     const k = (e: KeyboardEvent) => { if ((e.code === "Space" || e.key === "Enter") && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLButtonElement)) { e.preventDefault(); doRoll(); } };
     window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k);
   });
+  /* First game on this device: tips pointing at your dice and the board. */
+  useEffect(() => {
+    if (sub !== "table" || !myTurn || online) return;
+    const id = window.setTimeout(() => void coach("snakes", [
+      { title: "Your dice", text: `Your dice sits next to your name, like in Ludo. Tap it to roll${local?.quick ? "." : ". In a Classic game you need a <b>6</b> to enter the board."}`, target: ".sl-pdie.ready" },
+      { title: "Ladders and snakes", text: "Land at the foot of a ladder to climb it. Land on a snake's head and it swallows you down to its tail.", target: ".sl-stage", pad: 0 },
+      { title: "Winning", text: "Land <b>exactly</b> on 100 to win. A 6 rolls again, but three 6s in a row cancel the turn.", target: ".sl-stage", pad: 0 },
+    ]), 600);
+    return () => window.clearTimeout(id);
+  }, [sub, myTurn]);
   const secsLeft = online && view?.deadline != null && table?.turn === table?.you ? Math.max(0, Math.ceil((view.deadline - (Date.now() + skew.current)) / 1000)) : null;
   const showEnd = !!table && table.phase === "gameEnd" && !animating;
   /* Coins and XP: report each finished game once (src/lib/report.ts). */
@@ -841,7 +867,7 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
     <h1>Choose your tokens</h1>
     <TokenPicker players={localNames.map((n, i) => ({ key: i, name: label(n), piece: localPieces[i], color: COLORS[i], editable: true }))}
       active={picking} onActive={setPicking} onPick={pickLocal} note="Tap a player, then a token. Mix any collections; each player's token is different." />
-    <button className="gold-button" onClick={startPractice}>Start match →</button>
+    <div className="sl-tokens-go"><button className="gold-button" onClick={startPractice}>Start Game</button></div>
   </section>;
 
   if (sub === "room" && view) {
@@ -892,6 +918,12 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
               <span className="sl-sq"><i className="sl-dot" style={{ background: COLORS[s] }} />{r ? `${MEDAL[r - 1]} ${PLACE[r - 1]}` : table.pos[s] ? table.pos[s] : "Start"}</span>
             </span>
             {now && <span className="sl-turn-tag">{s === table.you ? "Your turn" : "Turn"}</span>}
+            {/* each player's die: yours glows on your turn and is the roll button (or press Space / Enter) */}
+            <button type="button" ref={el => { dieEls.current[s] = el; }} className={`sl-pdie d-${dice}${myTurn && s === table.you ? " ready" : ""}${now ? " live" : ""}`}
+              disabled={!(myTurn && s === table.you)} onClick={doRoll}
+              aria-label={myTurn && s === table.you ? (table.streak > 0 ? "Roll the dice again" : "Roll the dice") : `${table.names[s]}'s dice${lastDie[s] ? `, showing ${lastDie[s]}` : ""}`}>
+              <span className="sl-face flat"><Face v={lastDie[s] ?? 0} /></span>
+            </button>
             {b && <span key={b.id} className={`sl-bubble ${[...b.text].length <= 2 ? "emoji" : ""}`} role="status">{b.text}</span>}
           </li>;
         })}
@@ -911,30 +943,19 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
       </>}
       {banner && <div className={`sl-banner ${banner.big ? "big" : ""}`} role="status">{banner.text}</div>}
       {showEnd && <div className="sl-win">
-        <Crown />
+        {table.finished[0] != null && <div className="sl-win-hero" aria-hidden="true"><span className="sl-win-rays" /><img src={pieceUrl(table.pieces[table.finished[0]])} alt="" /><Crown /></div>}
         <span className="eyebrow">FINAL STANDINGS</span>
         <ol className="sl-standings">{table.finished.map((s, i) => <li key={s} className={i === 0 ? "first" : ""}><span className="medal">{MEDAL[i]}</span><span className="sl-avatar" style={{ borderColor: COLORS[s] }}><img src={pieceUrl(table.pieces[s])} alt="" /></span><b>{label(table.names[s])}</b><span>{PLACE[i]}</span></li>)}</ol>
         <div className="sl-win-actions">
-          {online ? (view?.host ? <button className="gold-button" onClick={() => send({ t: "again" })}>Play again</button> : <p className="sl-small">Waiting for the host to start a new game.</p>)
-            : <button className="gold-button" onClick={() => setSub("tokens")}>Play again</button>}
+          {online ? (view?.host ? <button className="gold-button" onClick={() => send({ t: "again" })}>Rematch</button> : <p className="sl-small">Waiting for the host to start a new game.</p>)
+            : <button className="gold-button" onClick={startPractice}>Rematch</button>}
           <button className="ghost-button" onClick={() => (online ? leaveRoom() : setSub("lobby"))}>{online ? "Leave room" : "Back to lobby"}</button>
         </div>
       </div>}
     </div>
 
     <aside className="sl-right" aria-label="Dice and actions">
-      {/* the die is the roll button: tap it (or press Space / Enter) to roll */}
-      <button type="button" className={`sl-tray ${myTurn ? "ready" : ""}`} disabled={!myTurn} onClick={doRoll}
-        aria-label={myTurn ? (table.streak > 0 ? "Roll the dice again" : "Roll the dice") : rollLabel}>
-        <div className="sl-pedestal" aria-hidden="true" />
-        <div className="sl-dice-shadow" ref={shadowRef} />
-        <div className={`sl-dice d-${dice}`} ref={diceRef} aria-hidden="true">
-          <div className="sl-cube flat" ref={cubeRef}>
-            <div className="sl-face flat"><Face v={dieValue} /></div>
-          </div>
-        </div>
-      </button>
-      <span className={`sl-roll-hint ${myTurn ? "ready" : ""}`} aria-hidden="true">{myTurn ? (table.streak > 0 ? "Tap the dice to roll again" : "Tap the dice to roll") : rollLabel}</span>
+      <span className={`sl-roll-hint ${myTurn ? "ready" : ""}`} aria-hidden="true">{myTurn ? (table.streak > 0 ? "Tap your dice to roll again" : "Tap your dice to roll") : rollLabel}</span>
       {myTurn && <span className="timer-chip"><TurnTimer secs={secsLeft} onDark /></span>}
       <div className="sl-last">
         <b className="sl-last-title">{table.last ? "Last turn" : "Ready"}</b>
@@ -946,6 +967,16 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
       <span className="sl-sr" aria-live="polite">{animating ? "" : `Die shows ${dieValue}`}</span>
     </aside>
 
+    {champ && <div key={champ.id} className="sl-champ" role="status" aria-live="assertive">
+      <div className="sl-champ-rays" aria-hidden="true" />
+      <div className="sl-champ-hero">
+        <div className="sl-champ-token" style={{ ["--c" as string]: COLORS[champ.seat] }}><img src={pieceUrl(table.pieces[champ.seat])} alt="" /></div>
+        <Crown />
+      </div>
+      <p className="sl-champ-kicker">{champ.seat === table.you ? "VICTORY" : "WINNER"}</p>
+      <h2 className="sl-champ-title">{champ.seat === table.you ? "You reached 100!" : `${label(table.names[champ.seat])} reached 100!`}</h2>
+      <p className="sl-champ-sub">🥇 First to finish{table.order.length > 2 ? " · the game goes on for 2nd and 3rd" : ""}</p>
+    </div>}
     {panel !== "none" && <div className="sl-backdrop" onClick={() => setPanel("none")} />}
     {panel === "settings" && <div className="sl-sheet" role="dialog" aria-label="Settings">
       <b>Board view</b>

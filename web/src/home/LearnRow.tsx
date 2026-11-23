@@ -7,7 +7,7 @@ import "./learn-row.css";
 const ITEMS: { id: GameId; title: string; note: string; href: string; mark: string }[] = [
   { id: "ekah", title: "How to play EKAH", note: "Cards, Jodi powers, scoring", href: "/ekah/?guide=1", mark: "E" },
   { id: "chess", title: "Learn Chess", note: "52 classes · first moves to master", href: "/chess/learn.html", mark: "♞" },
-  { id: "sudoku", title: "Learn Sudoku", note: "25 lessons · up to X-Wings", href: "/sudoku/learn.html", mark: "9" },
+  { id: "sudoku", title: "Learn Sudoku", note: "25 classes · up to X-Wings", href: "/sudoku/learn.html", mark: "9" },
 ];
 
 export default function LearnRow({ id = "rc-learn", className = "" }: { id?: string; className?: string }) {

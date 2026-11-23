@@ -46,3 +46,56 @@ export function celebrate(big: boolean) {
   };
   requestAnimationFrame(frame);
 }
+
+/* Fireworks for the champion: rockets climb from the bottom and burst into rings of sparks in the players' colours,
+   each spark trailing and fading, with a soft glow. About `ms` long; never blocks taps. */
+export function fireworks(ms = 2800, colors: string[] = COLORS) {
+  if (typeof document === "undefined") return;
+  const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  if (reduced) return;
+  const cv = document.createElement("canvas");
+  cv.className = "sl-confetti"; cv.setAttribute("aria-hidden", "true");
+  document.body.appendChild(cv);
+  const dpr = Math.min(2, window.devicePixelRatio || 1), W = window.innerWidth, H = window.innerHeight;
+  cv.width = W * dpr; cv.height = H * dpr;
+  const g = cv.getContext("2d")!; g.scale(dpr, dpr);
+  type Rocket = { x: number; y: number; vy: number; tx: number; ty: number; c: string; at: number; done: boolean };
+  type Spark = { x: number; y: number; vx: number; vy: number; c: string; life: number; max: number };
+  const rnd = (a: number, b: number) => a + Math.random() * (b - a);
+  const rockets: Rocket[] = [], sparks: Spark[] = [];
+  const shots = Math.max(5, Math.round(ms / 380));
+  for (let i = 0; i < shots; i++) {
+    const tx = rnd(W * .14, W * .86), ty = rnd(H * .14, H * .45);
+    rockets.push({ x: tx + rnd(-30, 30), y: H + 10, vy: 0, tx, ty, c: colors[i % colors.length], at: i * (ms * .7 / shots), done: false });
+  }
+  const t0 = performance.now();
+  let last = t0;
+  const frame = (now: number) => {
+    const el = now - t0, dt = Math.min(40, now - last) / 16.7; last = now;
+    g.globalCompositeOperation = "destination-out"; g.fillStyle = "rgba(0,0,0,.28)"; g.fillRect(0, 0, W, H);   // trails
+    g.globalCompositeOperation = "lighter";
+    for (const r of rockets) {
+      if (r.done || el < r.at) continue;
+      const k = Math.min(1, (el - r.at) / 520), e = 1 - Math.pow(1 - k, 2.4);
+      r.y = H + 10 + (r.ty - H - 10) * e;
+      g.fillStyle = "#fff4d0"; g.beginPath(); g.arc(r.x + (r.tx - r.x) * e, r.y, 2.2, 0, 6.3); g.fill();
+      if (k >= 1) {
+        r.done = true;
+        const n = 46, speed = rnd(3.2, 4.6);
+        for (let j = 0; j < n; j++) {
+          const a = (j / n) * Math.PI * 2 + rnd(-.05, .05), s = speed * rnd(.75, 1.05);
+          sparks.push({ x: r.tx, y: r.ty, vx: Math.cos(a) * s, vy: Math.sin(a) * s, c: j % 5 === 0 ? "#fff6d8" : r.c, life: 0, max: rnd(48, 70) });
+        }
+      }
+    }
+    for (const p of sparks) {
+      if (p.life > p.max) continue;
+      p.life += dt; p.vx *= .965; p.vy = p.vy * .965 + .07 * dt; p.x += p.vx * dt; p.y += p.vy * dt;
+      const a = Math.max(0, 1 - p.life / p.max);
+      g.globalAlpha = a; g.fillStyle = p.c; g.beginPath(); g.arc(p.x, p.y, 1.6 + a * 1.6, 0, 6.3); g.fill();
+    }
+    g.globalAlpha = 1;
+    if (el < ms + 1400) requestAnimationFrame(frame); else cv.remove();
+  };
+  requestAnimationFrame(frame);
+}

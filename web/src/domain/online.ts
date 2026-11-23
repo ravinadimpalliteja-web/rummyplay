@@ -16,12 +16,12 @@ export type View={
 };
 
 /* ---------- server address ---------- */
-type Env={env?:Record<string,string|undefined>};
-/** The room server's address comes from the VITE_ROOM_SERVER_URL build setting. For testing only (local, previews and
+declare const __ROOM_SERVER_URL__: string;
+/** The room server's address is set at build time (vite.config.ts: Cloudflare, or VITE_ROOM_SERVER_URL). For testing only (local, previews and
     test.royalclubgames.com, never the live site), ?server=wss://... may override it; it is remembered for the rest of the
     browser session so every game page uses it (?server=off goes back to the normal one). */
 export const serverUrl=():string=>{
-  const fromEnv=((import.meta as unknown as Env).env?.VITE_ROOM_SERVER_URL??"").trim();
+  const fromEnv=(typeof __ROOM_SERVER_URL__==="string"?__ROOM_SERVER_URL__:"").trim();
   const host=window.location.hostname;
   const testing=host==="localhost"||host==="127.0.0.1"||host.startsWith("deploy-preview-")||host.includes("--")||host.startsWith("test.");
   let q=testing?new URLSearchParams(window.location.search).get("server"):null;

@@ -313,7 +313,7 @@
 .ld-unlocked b{color:#0F4D3A}
 
 /* ---------- locked token sets ---------- */
-.ld-token-grid button.locked{cursor:not-allowed}
+.ld-token-grid button.locked{cursor:pointer}
 .ld-token-grid button.locked .ld-token-row{filter:grayscale(1) opacity(.45)}
 .ld-screen .ld-token-grid button.locked strong{color:var(--iv-muted,#5C6862)}
 @media (prefers-reduced-motion:reduce){.ld-target{animation:none}.ld-homeburst{animation-duration:.4s}.ld-banner{animation-duration:.01s;animation-delay:1.6s;animation-fill-mode:forwards}}
@@ -644,3 +644,22 @@ html.rc-app .ld-screen .ld-board-wrap{filter:drop-shadow(0 18px 30px rgba(0,0,0,
   .ld-cel-bob,.ld-cel-walk .ld-trunk,.ld-cel-crown,.ld-diya-flame{animation-iteration-count:1}
   .ld-diya-flame,.ld-diya-core{animation:ldFlameOn .01s forwards}
 }
+
+/* Game length (lobby): Classic or Quick */
+.ld-length-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ld-length-opts button{display:grid;gap:2px;text-align:left;padding:10px 12px;border-radius:12px;border:1px solid #315344;background:#04170f;color:#f6f0df;cursor:pointer;font:inherit}
+.ld-length-opts button strong{font-family:'Cinzel','Playfair Display',Georgia,serif;font-size:15px}
+.ld-length-opts button small{font-size:12px;color:#bcd0c4}
+.ld-length-opts button.on{border-color:#d9b96f;box-shadow:inset 0 0 0 1px #d9b96f;background:#0d3527}
+.ld-length-opts button:focus-visible{outline:2px solid #f0a24a;outline-offset:2px}
+
+/* Buying a token set with coins */
+.ld-price{justify-self:center;margin-top:4px;padding:2px 10px;border-radius:99px;background:linear-gradient(180deg,#f6d36b,#c9a14e);color:#2a1d05;font-size:12px;font-weight:800;box-shadow:0 1px 0 #7a5214}
+.ld-buy{display:grid;gap:10px;margin:0 0 10px;padding:12px 14px;border-radius:12px;background:#0d3527;border:1px solid #d9b96f;color:#f6f0df}
+.ld-buy p{margin:0;font-size:14px;line-height:1.4}
+.ld-buy small{color:#bcd0c4;font-size:12px}
+.ld-buy-btns{display:flex;gap:8px}
+.ld-buy-btns .gold-button{flex:1}
+.ld-buy-btns .gold-button:disabled{opacity:.45;cursor:not-allowed}
+.ld-buy-cancel{flex:none;padding:0 16px;border-radius:99px;border:1px solid #6f8d7f;background:transparent;color:#f6f0df;font:inherit;font-weight:700;cursor:pointer}
+.ld-bought{margin:0 0 10px;padding:8px 12px;border-radius:10px;background:#FFF4D6;border:1px solid #E3C680;color:#5A4410;font-size:13px}

@@ -29,9 +29,10 @@ export const turnOf = (g: LudoGame) => g.order[g.turnIdx];
 export const absOf = (c: Color, r: number) => (START[c] + r) % 52;
 export const rollDie = () => { const b = new Uint32Array(1); crypto.getRandomValues(b); return 1 + (b[0] % 6); };
 
-export function newGame(order: number[], first = 0): LudoGame {
+/** A new game. `each` is the number of tokens per player: 4 for classic Ludo, 2 for Quick Ludo. */
+export function newGame(order: number[], first = 0, each: 2 | 4 = 4): LudoGame {
   const cols = colorsFor(order.length), colors: Record<number, Color> = {}, tokens: Record<number, Tok[]> = {}, caps: Record<number, number> = {};
-  order.forEach((s, i) => { colors[s] = cols[i]; tokens[s] = [0, 1, 2, 3].map(() => ({ s: "base", r: 0, l: 0 })); caps[s] = 0; });
+  order.forEach((s, i) => { colors[s] = cols[i]; tokens[s] = Array.from({ length: each }, () => ({ s: "base" as const, r: 0, l: 0 })); caps[s] = 0; });
   return { order: order.slice(), colors, tokens, caps, turnIdx: first, sixes: 0, dice: 0, phase: "roll", moves: [], ranks: [], last: null, n: 0 };
 }
 
@@ -226,8 +227,8 @@ export const LANE: Record<Color, [number, number][]> = {
 export const FINISH: Record<Color, [number, number]> = { red: [6.34, 7.5], green: [7.5, 6.34], yellow: [8.66, 7.5], blue: [7.5, 8.66] };
 export const SPOTS: [number, number][] = [[1.9, 1.9], [4.1, 1.9], [1.9, 4.1], [4.1, 4.1]];
 
-export function pointOf(c: Color, t: Tok, i: number): [number, number] {
-  if (t.s === "base") { const [bx, by] = YARD[c]; return [bx + SPOTS[i][0], by + SPOTS[i][1]]; }
+export function pointOf(c: Color, t: Tok, i: number, n = 4): [number, number] {
+  if (t.s === "base") { const [bx, by] = YARD[c], sp = SPOTS[n === 2 ? [0, 3][i] : i]; return [bx + sp[0], by + sp[1]]; }   // Quick Ludo: two tokens on the diagonal
   if (t.s === "track") { const [x, y] = TRACK[absOf(c, t.r)]; return [x + .5, y + .5]; }
   if (t.s === "lane") { const [x, y] = LANE[c][t.l]; return [x + .5, y + .5]; }
   return FINISH[c];

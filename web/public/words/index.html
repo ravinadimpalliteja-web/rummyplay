@@ -13,15 +13,15 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <title>Word Puzzle · Ambaro</title>
-<meta name="theme-color" content="#5c2a08">
+<meta name="theme-color" content="#0B3B2D">
 <meta name="description" content="A new word every day: guess it in 6 tries, learn its meaning, and compare with your family.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* Royal Club Word Puzzle — Citrine look: deep amber, gold tiles, saffron only on what you tap. */
+/* Ambaro Word Puzzle — the emerald room of the other games, gold tiles, saffron only on what you tap. */
 :root{
-  --bg1:#5c2a08; --bg2:#2a1003;
+  --bg1:#0B3B2D; --bg2:#06261C;
   --gold:#e3b54a; --gold2:#f6d77e; --goldDeep:#a67a1c;
   --saffron:#ff9933; --saffronDeep:#e0761a;
   --hit:#13a36e; --hitDeep:#0a6d48; --miss:#2f3d39; --missDeep:#1d2826;
@@ -30,7 +30,7 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%}
 body{font-family:Poppins,system-ui,sans-serif;color:var(--ink);
-  background:radial-gradient(120% 80% at 50% 0%,#9a4e12 0%,var(--bg1) 45%,var(--bg2) 100%);
+  background:radial-gradient(120% 80% at 50% 0%,#1B6B50 0%,var(--bg1) 45%,var(--bg2) 100%);
   display:flex;justify-content:center;overflow:hidden;
   padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
 body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.07;
@@ -213,7 +213,7 @@ a.iconbtn{text-decoration:none}
     </span>
     <span class="tools-top">
       <button class="iconbtn" id="bookBtn" aria-label="Word Book" title="Word Book">📖</button>
-      <button class="iconbtn" id="lbBtn" aria-label="Family Board" title="Family Board">👑</button>
+      <button class="iconbtn" id="lbBtn" aria-label="Family Board" title="Family Board">🏆</button>
       <button class="iconbtn" id="statsBtn" aria-label="Stats and help" title="Stats">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="6" width="4" height="15" rx="1"/><rect x="17" y="9" width="4" height="12" rx="1"/></svg>
       </button>
@@ -310,7 +310,7 @@ a.iconbtn{text-decoration:none}
   <p>The <b>Theme</b> (Food, Animals, Sports…) is a free clue. Stuck? Spend coins on 💡 <b>Meaning</b> or 🔤 <b>Letter</b>.</p>
   <p>After every round you get a <b>Word Card</b> with the meaning and an example sentence, saved to your 📖 <b>Word Book</b>.</p>
   <div class="sec">Rewards</div>
-  <p>Solve the daily word for coins and XP, and come back every day to grow your 🔥 streak. Sign in to keep your streak on every phone and to see your family's scores on the 👑 Family Board.</p>
+  <p>Solve the daily word for coins and XP, and come back every day to grow your 🔥 streak. Sign in to keep your streak on every phone and to see your family's scores on the 🏆 Family Board.</p>
 </div></div>
 
 <script src="../ekah/config.js" onerror="void 0"></script>
@@ -605,8 +605,8 @@ a.iconbtn{text-decoration:none}
       const r = await rpc('word_friends_board', { p_mode: key });
       if (r.locked) { el.innerHTML = '<div class="empty">Finish today\'s ' + (key === 'easy' ? 'Easy' : 'Classic') + ' word to see everyone\'s scores. No spoilers!</div>'; return; }
       const ps = r.players || [];
-      el.innerHTML = ps.map((p, i) => '<div class="lbrow ' + (p.me ? 'me' : '') + '"><span style="width:16px;color:var(--muted);font-weight:700">' + (i === 0 && p.tries ? '👑' : i + 1) + '</span><span class="av" style="background:' + (p.me ? '#ff9933' : COLORS[i % COLORS.length]) + '">' + esc((p.name || '?')[0].toUpperCase()) + '</span><span class="nm">' + esc(p.me ? 'You' : p.name) + '</span><span class="sc">' + (p.tries ? p.tries + '/6' : p.finished ? 'X' : '—') + '</span></div>').join('')
-        + (ps.length <= 1 ? '<div class="demo-note">Add family and friends on the 👑 Family Board to compare scores.</div>' : '');
+      el.innerHTML = ps.map((p, i) => '<div class="lbrow ' + (p.me ? 'me' : '') + '"><span style="width:16px;color:var(--muted);font-weight:700">' + (i === 0 && p.tries ? '🏆' : i + 1) + '</span><span class="av" style="background:' + (p.me ? '#ff9933' : COLORS[i % COLORS.length]) + '">' + esc((p.name || '?')[0].toUpperCase()) + '</span><span class="nm">' + esc(p.me ? 'You' : p.name) + '</span><span class="sc">' + (p.tries ? p.tries + '/6' : p.finished ? 'X' : '—') + '</span></div>').join('')
+        + (ps.length <= 1 ? '<div class="demo-note">Add family and friends on the 🏆 Family Board to compare scores.</div>' : '');
     } catch { el.innerHTML = '<div class="empty">Could not load the board. Check your connection.</div>'; }
   }
   async function loadCrown() {
@@ -615,7 +615,7 @@ a.iconbtn{text-decoration:none}
     try {
       const list = await rpc('word_weekly_crown', { p_mode: mode === 'easy' ? 'easy' : 'classic' });
       if (!Array.isArray(list) || list.length < 2) return;
-      el.innerHTML = '<div class="sec">This week\'s crown 👑</div><div class="lb">' + list.slice(0, 5).map((p, i) => '<div class="lbrow"><span style="width:16px;color:var(--muted);font-weight:700">' + (i === 0 ? '👑' : i + 1) + '</span><span class="nm">' + esc(p.name) + '</span><span class="sc">' + p.total + '</span></div>').join('') + '</div><div class="demo-note">Fewest guesses over the last 7 days (an unsolved day counts 7).</div>';
+      el.innerHTML = '<div class="sec">This week\'s top player 🏆</div><div class="lb">' + list.slice(0, 5).map((p, i) => '<div class="lbrow"><span style="width:16px;color:var(--muted);font-weight:700">' + (i === 0 ? '🏆' : i + 1) + '</span><span class="nm">' + esc(p.name) + '</span><span class="sc">' + p.total + '</span></div>').join('') + '</div><div class="demo-note">Fewest guesses over the last 7 days (an unsolved day counts 7).</div>';
     } catch { /* offline */ }
   }
   async function loadFriends() {
@@ -659,7 +659,7 @@ a.iconbtn{text-decoration:none}
   }
 
   /* ---------- Word Book ---------- */
-  const LEVELS = [[0, 'Word Seeker', '🌱'], [5, 'Word Explorer', '🧭'], [15, 'Word Wizard', '🪄'], [40, 'Word Master', '🏆'], [100, 'Royal Scholar', '👑']];
+  const LEVELS = [[0, 'Word Seeker', '🌱'], [5, 'Word Explorer', '🧭'], [15, 'Word Wizard', '🪄'], [40, 'Word Master', '🏆'], [100, 'Word Legend', '🌟']];
   let bookFilter = 'All';
   async function renderBook() {
     const book = Object.assign({}, S.book);

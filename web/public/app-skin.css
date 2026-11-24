@@ -203,3 +203,7 @@ html.rc-skin-sudoku #lobby .room-card,html.rc-skin-sudoku #lobby .seats li{backg
 html.rc-skin-chess .top .brand,html.rc-skin-sudoku .top .brand{background:none !important;border:0 !important;box-shadow:none !important;padding:0 4px !important;min-width:0 !important}
 html.rc-skin-sudoku #game #pauseBtn{background:rgba(0,0,0,.32) !important;border:1.5px solid rgba(255,226,154,.55) !important;color:#FFE29A !important;box-shadow:none !important}
 html.rc-skin-sudoku #game #pauseBtn svg{fill:currentColor;color:#FFE29A}
+
+/* Word Puzzle follows the chosen app colour like the other games (it had its own amber room); tiles keep their colours. */
+html.rc-skin-words{--bg1:var(--rx-mid,#0B3B2D);--bg2:var(--rx-dark,#072A20)}
+html.rc-skin-words body{background:radial-gradient(120% 80% at 50% 0%,var(--rx-light,#1B6B50) 0%,var(--rx-mid,#0B3B2D) 45%,var(--rx-dark,#072A20) 100%) fixed !important}

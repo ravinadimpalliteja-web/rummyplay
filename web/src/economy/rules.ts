@@ -43,10 +43,16 @@ const GAME_PAY: Record<string, { coins: number; xp: number }> = {
 export const FREE_LOOKS = ["bg-emerald", "bg-ruby", "bg-indigo"];
 
 export interface ShopItem { id: string; name: string; price: number; level: number }
-/** Looks that cost coins, or come free at a level. */
+/** Looks that cost coins, or come free at a level. Ludo token sets ("ludo-…") are bought with coins only (level 999
+    is never reached); they also unlock with room wins against real players (src/ludo/pieces.tsx UNLOCK). Keep the
+    prices in step with the database's save_wallet() shop list (supabase/migrations). */
 export const SHOP: ShopItem[] = [
   { id: "bg-purple", name: "Royal Purple", price: 1500, level: 10 },
   { id: "bg-peacock", name: "Peacock Teal", price: 1500, level: 15 },
+  { id: "ludo-horse", name: "Royal horses", price: 500, level: 999 },
+  { id: "ludo-tiger", name: "Toy tigers", price: 1000, level: 999 },
+  { id: "ludo-peacock", name: "Peacocks", price: 1500, level: 999 },
+  { id: "ludo-chariot", name: "Chariots", price: 2000, level: 999 },
 ];
 
 /* ---------- days ---------- */

@@ -266,7 +266,7 @@ function RewardsTab() {
   const w = useWallet(), now = useNow();
   const lv = R.levelOf(w.xp);
   const daily = R.dailyStatus(w, now), chest = R.chestStatus(w, now), m = R.missionView(w, now);
-  const next = R.SHOP.filter(s => !w.owned.includes(s.id)).sort((a, b) => a.level - b.level)[0];
+  const next = R.SHOP.filter(s => s.id.startsWith("bg-") && !w.owned.includes(s.id)).sort((a, b) => a.level - b.level)[0];
   return <div className="rx-page rx-rewards">
     <h1 className="rx-title">Rewards</h1>
 

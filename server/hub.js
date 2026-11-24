@@ -246,7 +246,7 @@ function handle(ws, m) {
       do { code = Array.from({ length: 4 }, () => CODE_ALPHABET[crypto.randomInt(CODE_ALPHABET.length)]).join(''); } while (rooms.has(code));
       const kind = gameKind(m);
       const room = kind === 'snakes' ? new SnakesRoom(code, String(m.passcode), SPEED)
-        : kind === 'ludo' ? new LudoRoom(code, String(m.passcode), SPEED)
+        : kind === 'ludo' ? new LudoRoom(code, String(m.passcode), SPEED, { quick: m.quick === true })
         : kind === 'ekah' ? new EkahRoom(code, String(m.passcode), SPEED)
         : kind === 'sudoku' ? new SudokuRoom(code, String(m.passcode), SPEED)
         : kind === 'chess' ? new ChessRoom(code, String(m.passcode), SPEED) : new Room(code, String(m.passcode));

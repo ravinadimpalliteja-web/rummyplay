@@ -1,5 +1,6 @@
 /* Royal Club Ludo: token sets and dice finishes. Purely visual; chosen per device and remembered. */
 import type { Color } from "./engine";
+import { SHOP } from "../economy/rules";
 
 export const TOKEN_SETS = [
   { id: "ambaro", name: "Ambaro elephants", note: "The Ambaro elephant, carrying its golden ambari" },
@@ -15,10 +16,13 @@ export type TokenSet = typeof TOKEN_SETS[number]["id"];
    real, signed-in player was seated. The room server records these wins on the player's account. The Ambaro
    elephants (the default) and the sentries are free. */
 export const UNLOCK: Record<TokenSet, number> = { ambaro: 0, sentry: 0, horse: 1, tiger: 5, peacock: 10, chariot: 15 };
-export const isUnlocked = (set: TokenSet, wins: number) => wins >= UNLOCK[set];
+/* Or bought with coins (src/economy/rules.ts SHOP, ids "ludo-<set>"). */
+export const shopId = (set: TokenSet) => `ludo-${set}`;
+export const tokenPrice = (set: TokenSet) => SHOP.find(x => x.id === shopId(set))?.price ?? 0;
+export const isUnlocked = (set: TokenSet, wins: number, owned: readonly string[] = []) => wins >= UNLOCK[set] || owned.includes(shopId(set));
 export const unlockText = (set: TokenSet, wins: number, signedIn: boolean) => {
   const n = UNLOCK[set], what = `${n} room win${n > 1 ? "s" : ""} against real players`;
-  return signedIn ? `Unlocks after ${what} · ${Math.min(wins, n)} of ${n}` : `Sign in · unlocks after ${what}`;
+  return signedIn ? `Unlocks after ${what} (${Math.min(wins, n)} of ${n}), or buy with coins` : `Unlocks after ${what} (sign in), or buy with coins`;
 };
 
 /* Same finishes as the Snakes & Ladders die. */

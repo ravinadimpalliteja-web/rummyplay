@@ -25,12 +25,13 @@ const REACTIONS = 8;                       // index into the client's quick phra
 /* ---------- pure rules ---------- */
 const colorsFor = (n) => (n === 2 ? ['red', 'yellow'] : n === 3 ? ['red', 'green', 'yellow'] : COLORS.slice());
 
-function newGame(order) {
+/** `each`: tokens per player, 4 for classic Ludo or 2 for Quick Ludo. */
+function newGame(order, each = 4) {
   if (!Array.isArray(order) || order.length < 2 || order.length > 4) throw new Error('Ludo needs 2 to 4 players');
   const cols = colorsFor(order.length), colors = {}, tokens = {}, caps = {};
   order.forEach((s, i) => {
     colors[s] = cols[i];
-    tokens[s] = [0, 1, 2, 3].map(() => ({ s: 'base', r: 0, l: 0 }));
+    tokens[s] = Array.from({ length: each === 2 ? 2 : 4 }, () => ({ s: 'base', r: 0, l: 0 }));
     caps[s] = 0;
   });
   return { order: order.slice(), colors, tokens, caps, turnIdx: 0, sixes: 0, dice: 0, phase: 'roll', moves: [], ranks: [], last: null, n: 0 };
@@ -220,8 +221,10 @@ const AWAY_DELAY_MS = 1500;        // a player who left / is offline / missed 2 
 const AWAY_AFTER_MISSES = 2;
 
 class LudoRoom {
-  constructor(code, passcode, speed = 1) {
+  /** opts.quick: Quick Ludo (2 tokens each), chosen by the host when creating the room. */
+  constructor(code, passcode, speed = 1, opts = {}) {
     this.kind = 'ludo';
+    this.quick = !!(opts && opts.quick);
     this.code = code;
     this.passcode = passcode;
     this.speed = speed;
@@ -250,7 +253,7 @@ class LudoRoom {
   view(seat) {
     const g = this.game;
     const base = {
-      t: 'state', game: 'ludo', code: this.code, passcode: this.passcode, now: Date.now(), you: seat,
+      t: 'state', game: 'ludo', code: this.code, passcode: this.passcode, now: Date.now(), you: seat, quick: this.quick,
       host: this.hostSeat() === seat, hostSeat: this.hostSeat(),
       phase: g ? (g.phase === 'gameEnd' ? 'gameEnd' : 'playing') : 'lobby',
       seats: this.seats.map((s, i) => (s ? { seat: i, name: s.name, bot: !!s.bot, connected: !!s.bot || s.connected, away: g ? this.isAway(i) : false } : null)),
@@ -281,7 +284,7 @@ class LudoRoom {
 
   newGame() {
     const order = this.seats.map((s, i) => (s ? i : -1)).filter((i) => i >= 0);
-    this.game = newGame(order);
+    this.game = newGame(order, this.quick ? 2 : 4);
     this.game.turnIdx = crypto.randomInt(order.length);
     for (const s of this.humans()) s.missed = 0;
     // who was a real, signed-in player when the game started (a seat a bot later takes over still counts as real)

@@ -6,7 +6,8 @@ import {
   ANIM, COLORS, LANE, SAFE, SPOTS, START, TRACK, YARD, absOf, bestMove, cellKey, cutsWith, move, newGame, pointOf, previewMove, roll, rollDie, turnOf,
   type Color, type LudoEvent, type LudoGame as Game, type Tok,
 } from "./engine";
-import { DICE, Face, Piece, PieceDefs, TOKEN_SETS, isUnlocked, setPips, unlockText, type DiceId, type TokenSet } from "./pieces";
+import { DICE, Face, Piece, PieceDefs, TOKEN_SETS, isUnlocked, setPips, shopId, tokenPrice, unlockText, type DiceId, type TokenSet } from "./pieces";
+import { unlockLook, useWallet, useWalletReady } from "../economy/wallet";
 import { useRealWins } from "./realWins";
 import { celebrate } from "../snakes/confetti";
 import { Celebration } from "./Celebration";
@@ -53,6 +54,7 @@ type LView = {
   phase: "lobby" | "playing" | "gameEnd"; seats: SeatInfo[];
   order?: number[]; colors?: Record<number, Color>; tokens?: Record<number, Tok[]>; turn?: number; stage?: "roll" | "move" | "gameEnd";
   dice?: number; sixes?: number; moves?: number[]; ranks?: number[]; last?: LudoEvent | null; deadline?: number | null; moving?: boolean;
+  quick?: boolean;       // Quick Ludo room (2 tokens each), chosen by the host
   winCounts?: boolean;   // set once someone finishes 1st: whether that 1st place counts toward token unlocks
 };
 type Mode = "practice" | "pass" | "online";
@@ -90,7 +92,7 @@ function describe(l: LudoEvent, t: Table): string {
   }
   const cut = l.cuts.map(c => t.names[c.seat]).filter((n, i, a) => a.indexOf(n) === i);
   const again = l.bonus ? (you ? " Roll again." : " Rolls again.") : "";
-  if (l.finished) { const p = t.ranks.indexOf(l.seat); return `${who} ${you ? "finish" : "finishes"} ${ORD[p] ?? ""}! All four tokens home.`; }
+  if (l.finished) { const p = t.ranks.indexOf(l.seat); return `${who} ${you ? "finish" : "finishes"} ${ORD[p] ?? ""}! All tokens home.`; }
   if (cut.length) return `${who} cut ${cut.map(n => (n === "You" ? "you" : n)).join(" & ")}!${again}`;
   if (l.home) return `${who} brought a token home!${again}`;
   if (l.from.s === "base") return `${who} brought a token out.${again}`;
@@ -246,6 +248,7 @@ const THEMES = [
 ] as const;
 type ThemeId = typeof THEMES[number]["id"];
 const THEME_KEY = "rc-ludo-theme";
+const QUICK_KEY = "rc-ludo-length";
 /** A small picture of a board in a theme, for the picker. */
 const MiniBoard = ({ theme }: { theme: ThemeId }) => <span className={`ld-minib ld-theme-${theme}`}>
   <svg viewBox="0 0 15 15" aria-hidden="true">
@@ -259,18 +262,36 @@ const MiniBoard = ({ theme }: { theme: ThemeId }) => <span className={`ld-minib 
 
 /** Previews of every token set (all four colours), board theme and dice finish, for the lobby and the in-game Style sheet. */
 function StylePicker({ tokens, dice, theme, wins, signedIn, onTokens, onDice, onTheme }: { tokens: TokenSet; dice: DiceId; theme: ThemeId; wins: number; signedIn: boolean; onTokens: (t: TokenSet) => void; onDice: (d: DiceId) => void; onTheme: (t: ThemeId) => void }) {
+  const w = useWallet(), walletReady = useWalletReady();
+  const [ask, setAsk] = useState<TokenSet | null>(null);          // the locked set the player tapped "Buy" on
+  const [bought, setBought] = useState("");
+  const asking = ask ? TOKEN_SETS.find(x => x.id === ask) : null, price = ask ? tokenPrice(ask) : 0;
+  const buy = () => {
+    if (!ask) return;
+    if (unlockLook(shopId(ask))) { onTokens(ask); setBought(`${asking?.name} are yours. Picked for your next game.`); }
+    setAsk(null);
+  };
   return <div className="ld-style">
     <b className="ld-style-title">Board</b>
     <div className="ld-theme-grid">{THEMES.map(th => <button key={th.id} className={theme === th.id ? "on" : ""} aria-pressed={theme === th.id} onClick={() => onTheme(th.id)}>
       <MiniBoard theme={th.id} /><strong>{th.name}</strong><small>{th.note}</small>
     </button>)}</div>
     <b className="ld-style-title">Tokens</b>
-    <p className="ld-small ld-unlock-rule">New tokens unlock as you win: finish 1st in a room with at least one real player.</p>
+    <p className="ld-small ld-unlock-rule">Unlock new tokens by finishing 1st in a room with at least one real player, or buy them with your coins.</p>
+    {bought && <p className="ld-bought" role="status">🔓 {bought}</p>}
+    {asking && <div className="ld-buy" role="dialog" aria-label={`Buy ${asking.name}`}>
+      <p>Buy <b>{asking.name}</b> for <b>🪙 {price.toLocaleString("en-IN")}</b> coins?<br /><small>You have 🪙 {w.coins.toLocaleString("en-IN")}.{w.coins < price ? ` You need ${(price - w.coins).toLocaleString("en-IN")} more: coins come from playing, the daily reward, chests and missions.` : ""}</small></p>
+      <div className="ld-buy-btns">
+        <button type="button" className="gold-button" disabled={w.coins < price || !walletReady} onClick={buy}>Buy</button>
+        <button type="button" className="ld-buy-cancel" onClick={() => setAsk(null)}>Cancel</button>
+      </div>
+    </div>}
     <div className="ld-token-grid">{TOKEN_SETS.map(s => {
-      const open = isUnlocked(s.id, wins);
-      return <button key={s.id} className={`${tokens === s.id ? "on" : ""}${open ? "" : " locked"}`} aria-pressed={tokens === s.id} aria-disabled={!open} onClick={() => open && onTokens(s.id)}>
+      const open = isUnlocked(s.id, wins, w.owned);
+      return <button key={s.id} className={`${tokens === s.id ? "on" : ""}${open ? "" : " locked"}`} aria-pressed={tokens === s.id} aria-label={open ? undefined : `${s.name}: locked, buy for ${tokenPrice(s.id)} coins`} onClick={() => (open ? onTokens(s.id) : setAsk(s.id))}>
         <span className="ld-token-row">{COLORS.map(c => <Piece key={c} set={s.id} color={c} />)}</span>
         <strong>{open ? s.name : `🔒 ${s.name}`}</strong><small>{open ? s.note : unlockText(s.id, wins, signedIn)}</small>
+        {!open && <span className="ld-price">🪙 {tokenPrice(s.id).toLocaleString("en-IN")} · Buy</span>}
       </button>;
     })}</div>
     <b className="ld-style-title">Dice</b>
@@ -284,6 +305,9 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
   type Sub = "lobby" | "room" | "table";
   const [sub, setSub] = useState<Sub>(joinCode ? "room" : "lobby");
   const [bots, setBots] = useState(3);
+  /* Game length: Classic (4 tokens each) or Quick (2 tokens each, about half the time). Kept on this phone. */
+  const [quick, setQuickState] = useState<boolean>(() => readKey<"quick" | "classic">(QUICK_KEY, ["quick", "classic"], "classic") === "quick");
+  const setQuick = (q: boolean) => { setQuickState(q); keep(QUICK_KEY, q ? "quick" : "classic"); };
   const [passCount, setPassCount] = useState(2);
   const [passNames, setPassNames] = useState(["Player 1", "Player 2", "Player 3", "Player 4"]);
   const [local, setLocal] = useState<Game | null>(null);
@@ -307,7 +331,8 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
   const [dice, setDice] = useState<DiceId>(() => readKey(DICE_KEY, DICE.map(x => x.id), "ivory"));
   const chooseTokens = (v: TokenSet) => { setTokenSet(v); keep(TOKEN_KEY, v); };
   const realWins = useRealWins("ludo");
-  const shownSet: TokenSet = isUnlocked(tokenSet, realWins.wins) ? tokenSet : "ambaro";
+  const wallet = useWallet();
+  const shownSet: TokenSet = isUnlocked(tokenSet, realWins.wins, wallet.owned) ? tokenSet : "ambaro";
   const shownSetRef = useRef(shownSet); shownSetRef.current = shownSet;
   const [cele, setCele] = useState<{ id: number; place: number; color: Color; name: string } | null>(null);
   const [homeFx, setHomeFx] = useState(0);
@@ -392,7 +417,7 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
     setRoomMsg("");
     const me = await roomAccount();
     if (!me) { setRoomMsg(ROOM_SIGNIN_MSG); return; }
-    openRoom({ t: "create", game: "ludo", token: deviceToken(), name: me.username, passcode: randomPasscode(), auth: me.token });
+    openRoom({ t: "create", game: "ludo", token: deviceToken(), name: me.username, passcode: randomPasscode(), auth: me.token, quick });
   };
   const joinRoom = async () => {
     if (roomCode.length !== 4 || roomPass.length !== 4) { setRoomMsg("Enter the 4-letter room code and the 4-digit passcode."); return; }
@@ -406,7 +431,7 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
   const startLocal = (mode: "practice" | "pass") => {
     const names = mode === "practice" ? ["You", ...BOTS.slice(0, bots)] : passNames.slice(0, passCount).map((n, i) => n.trim() || `Player ${i + 1}`);
     setLocalMode(mode); setLocalNames(names); animatedN.current = null; setDisp(null);
-    setLocal(newGame(names.map((_, i) => i), mode === "practice" ? 0 : Math.floor(Math.random() * names.length)));
+    setLocal(newGame(names.map((_, i) => i), mode === "practice" ? 0 : Math.floor(Math.random() * names.length), quick ? 2 : 4));
     setSub("table");
   };
   const resumeLocal = (s: LudoSave) => {
@@ -576,7 +601,7 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
       window.setTimeout(() => {          // give the room server a moment to save the win
         void realWins.refresh().then(after => {
           if (after == null) return;
-          setUnlockedNow(TOKEN_SETS.filter(x => !isUnlocked(x.id, before) && isUnlocked(x.id, after)).map(x => x.name));
+          setUnlockedNow(TOKEN_SETS.filter(x => !isUnlocked(x.id, before, wallet.owned) && isUnlocked(x.id, after, wallet.owned)).map(x => x.name));
         });
       }, 1500);
     }
@@ -615,16 +640,24 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
 
   /* ---------- screens ---------- */
   const pending: LudoSave | null = local && local.phase !== "gameEnd" ? { game: local, mode: localMode, names: localNames } : saved;
-  if (sub === "lobby" || (sub === "room" && !view)) return <PlayStart className="ld-mode" game="Ludo" tagline="Race your four tokens home. Cut, block and roll sixes."
-    art={<LudoArt />} meta="2–4 players · about 15 min" passStart={() => startLocal("pass")}
+  const lengthPanel = <div className="rs-panel ld-length">
+    <h2>Game length</h2>
+    <div className="ld-length-opts" role="radiogroup" aria-label="Game length">
+      <button type="button" role="radio" aria-checked={!quick} className={!quick ? "on" : ""} onClick={() => setQuick(false)}><strong>Classic</strong><small>4 tokens each · about 15 min</small></button>
+      <button type="button" role="radio" aria-checked={quick} className={quick ? "on" : ""} onClick={() => setQuick(true)}><strong>Quick</strong><small>2 tokens each · about 6 min</small></button>
+    </div>
+    <p className="rs-note">Same rules either way. For a room, the host's choice counts.</p>
+  </div>;
+  if (sub === "lobby" || (sub === "room" && !view)) return <PlayStart className="ld-mode" game="Ludo" tagline="Race your tokens home. Cut, block and roll sixes."
+    art={<LudoArt />} meta="2–4 players · Classic or Quick" passStart={() => startLocal("pass")}
     onBack={onHome}
     vsComputer={{ count: bots, options: [1, 2, 3], onCount: setBots, onPlay: () => startLocal("practice"), }}
     friends={{ onCreate: createRoom, code: roomCode, onCode: setRoomCode, pass: roomPass, onPass: setRoomPass, onJoin: joinRoom, busy: net === "connecting" }}
     msg={roomMsg}
-    extra={view ? <div className="rs-panel"><h2>Your room</h2><p className="rs-note">You are in room {view.code}.</p><button className="gold-button rs-wide" onClick={() => setSub("room")}>Return to the room →</button></div>
+    extra={<>{!view && lengthPanel}{view ? <div className="rs-panel"><h2>Your room</h2><p className="rs-note">You are in room {view.code}.</p><button className="gold-button rs-wide" onClick={() => setSub("room")}>Return to the room →</button></div>
       : pending ? <div className="rs-panel ld-continue"><h2>Continue your game</h2>
         <p className="rs-note">{pending.mode === "pass" ? `Pass & play: ${pending.names.join(", ")}` : `You vs ${pending.names.length - 1} computer player${pending.names.length > 2 ? "s" : ""}`}. Saved on this phone.</p>
-        <button className="gold-button rs-wide" onClick={() => resumeLocal(pending)}>Continue →</button></div> : undefined}
+        <button className="gold-button rs-wide" onClick={() => resumeLocal(pending)}>Continue →</button></div> : null}</>}
     passPlay={<>
       <div className="rs-panel ld-pass">
         <h2>Pass &amp; play</h2>
@@ -649,7 +682,7 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
       onAddBot={() => send({ t: "addBot" })} onRemoveBot={() => send({ t: "removeBot" })} onStart={() => send({ t: "start" })}
       blocked={!inLobby ? <button className="gold-button rs-wide" onClick={() => setSub("table")}>Return to the board →</button> : undefined}
       msg={roomMsg} onMsg={setRoomMsg} onLeave={leaveRoom}
-      note={inLobby ? "Colours are given when the game starts; two players sit on opposite corners. The host can fill empty seats with computer players." : "If you leave, the game plays for you. You can rejoin from this device with the same code and passcode."} />;
+      note={inLobby ? (view.quick ? "Quick Ludo: 2 tokens each. " : "Classic Ludo: 4 tokens each. ") + "Colours are given when the game starts; two players sit on opposite corners. The host can fill empty seats with computer players." : "If you leave, the game plays for you. You can rejoin from this device with the same code and passcode."} />;
   }
 
   /* ---------- table ---------- */
@@ -664,7 +697,7 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
     const list = groups[key], n = list.length;
     const offs = n === 1 ? [[0, 0]] : n === 2 ? [[-.2, 0], [.2, 0]] : n === 3 ? [[-.2, .13], [.2, .13], [0, -.2]] : n === 4 ? [[-.2, -.2], [.2, -.2], [-.2, .2], [.2, .2]]
       : list.map((_, j) => [Math.cos(j / n * 6.283) * .27, Math.sin(j / n * 6.283) * .27]);
-    list.forEach(([s, i], j) => { const [x, y] = pointOf(t.colors[s], shown[s][i], i); place[`${s}-${i}`] = { x: x + offs[j][0], y: y + offs[j][1], sc: n === 1 ? 1 : n === 2 ? .74 : .6 }; });
+    list.forEach(([s, i], j) => { const [x, y] = pointOf(t.colors[s], shown[s][i], i, shown[s].length); place[`${s}-${i}`] = { x: x + offs[j][0], y: y + offs[j][1], sc: n === 1 ? 1 : n === 2 ? .74 : .6 }; });
   }
   const homeCount = (s: number) => t.tokens[s].filter(x => x.s === "home").length;
   const seatAt = (ci: number) => { const c = COLORS[(ci - k + 8) % 4]; return { color: c, seat: t.order.find(s => t.colors[s] === c) ?? null }; };
@@ -674,16 +707,16 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
       <span className="ld-seat-chip" /><div className="ld-seat-txt"><strong>Empty seat</strong><small>{COLOR_NAME[color]}</small></div>
     </div>;
     const turn = t.stage !== "gameEnd" && (rollingSeat ?? t.turn) === seat, mine = canRoll && seat === t.turn;
-    const rank = t.ranks.indexOf(seat), homeN = homeCount(seat);
+    const rank = t.ranks.indexOf(seat), homeN = homeCount(seat), each = t.tokens[seat]?.length ?? 4;
     const who = t.names[seat] === "You" ? "You" : t.bots[seat] ? "CPU" : t.away[seat] ? "Away" : "Player";
     return <div key={ci} className={`ld-seat${turn ? " turn" : ""}${t.away[seat] ? " away" : ""}`} style={{ "--c": `var(--ld-${color})` } as CSSProperties}>
       <span className="ld-seat-chip" />
       <div className="ld-seat-txt">
         <strong>{label(t.names[seat])}</strong>
         <small>{who === "You" ? COLOR_NAME[color] : <><span className="ld-cn">{COLOR_NAME[color]} · </span>{who}</>}</small>
-        <span className="ld-seat-home" aria-label={`${homeN} of 4 tokens home`}>
-          {[0, 1, 2, 3].map(i => <b key={i} className={i < homeN ? "on" : ""} />)}
-          <em>{rank >= 0 ? ORD[rank] : `${homeN}/4`}</em>
+        <span className="ld-seat-home" aria-label={`${homeN} of ${each} tokens home`}>
+          {Array.from({ length: each }, (_, i) => <b key={i} className={i < homeN ? "on" : ""} />)}
+          <em>{rank >= 0 ? ORD[rank] : `${homeN}/${each}`}</em>
         </span>
       </div>
       {/* each player's die: yours glows on your turn and is the roll button (or press Space / Enter) */}
@@ -726,7 +759,7 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
               {/* move preview: where each token you can move would land, and what happens there */}
               {t.stage === "move" && ready && forced == null && t.moves.map(i => {
                 const pv = previewMove(t.order, t.colors, t.tokens, t.ranks, t.turn, i, t.dice); if (!pv) return null;
-                const [x, y] = pointOf(t.colors[t.turn], pv.dest, i);
+                const [x, y] = pointOf(t.colors[t.turn], pv.dest, i, t.tokens[t.turn].length);
                 const kind = pv.home ? "home" : pv.cut ? "cut" : pv.danger ? "danger" : pv.safe ? "safe" : "plain";
                 const label = pv.home ? "Reaches home" : pv.cut ? "Cuts a token" : pv.danger ? "Can be cut here" : pv.safe ? "Safe square" : "Lands here";
                 return <button key={"pv" + i} type="button" className={`ld-target ${kind}`} style={{ left: `${x / 15 * 100}%`, top: `${y / 15 * 100}%` }}

@@ -5,15 +5,14 @@
 .rc-home :focus-visible{outline:2.5px solid var(--rc-emerald);outline-offset:3px}
 .rc-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
-/* Brand: the AMBARO logo in the header (on a maroon plaque, since the logo is drawn for a deep background),
+/* Brand: the AMBARO logo in the header (it carries its own white sticker outline),
    the elephant in the footer */
 .brand-elephant{display:block;height:64px;width:auto;flex:0 0 auto}
-.brand:has(.brand-logo){padding:4px 14px;border-radius:16px;background:radial-gradient(ellipse at 50% 30%,#6E0A18,#4A0510 60%,#3A040C);box-shadow:0 4px 12px rgba(74,10,20,.25)}
-.brand-logo.brand-elephant{height:52px}
+.brand-logo.brand-elephant{height:60px}
 footer .rc-foot-brand{display:inline-flex;align-items:center;gap:8px}
 .rc-foot-elephant{display:block;height:40px;width:auto}
-@media (max-width:760px){.brand-elephant{height:52px}.brand-logo.brand-elephant{height:44px}.brand:has(.brand-logo){padding:3px 10px;border-radius:14px}}
-@media (max-width:420px){.brand-elephant{height:46px}.brand-logo.brand-elephant{height:38px}}
+@media (max-width:760px){.brand-elephant{height:52px}.brand-logo.brand-elephant{height:48px}}
+@media (max-width:420px){.brand-elephant{height:46px}.brand-logo.brand-elephant{height:42px}}
 
 /* Large faint elephant behind the home page */
 .rc-home{position:relative;isolation:isolate}

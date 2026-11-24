@@ -16,6 +16,7 @@
  */
 const Sudoku = require('./sudoku-engine');
 const { addBot, removeBot } = require('./room-bots');
+const { recordGame, byPlace, quitters } = require('./results');
 
 const MAX_SEATS = 4;
 const MAX_MISTAKES = 3;
@@ -91,6 +92,7 @@ class SudokuRoom {
     this.game = {
       phase: 'countdown', puzzle: p.puzzle, solution: p.solution, need: p.puzzle.filter((v) => !v).length,
       startAt: now + this.ms(COUNTDOWN_MS), firstFinishAt: null, endAt: null, players, ranking: null,
+      uids: this.seats.map((s) => (s && !s.bot && s.uid ? s.uid : null)),   // real players at the start, for stats
     };
     this.clearTimers();
     this.timer = setTimeout(() => { this.timer = null; this.beginRace(); }, this.ms(COUNTDOWN_MS));
@@ -167,6 +169,10 @@ class SudokuRoom {
       if (A.finishedMs !== null) return A.finishedMs - B.finishedMs;
       return B.filled - A.filled || A.mistakes - B.mistakes;
     });
+    // stats: places by the race ranking; a winner's time counts toward their fastest Sudoku
+    const entries = byPlace(g.ranking, g.uids || [], quitters(this.seats, g.uids || []));
+    entries.forEach((e, i) => { const p = g.players[g.ranking[i]]; if (p && p.finishedMs !== null) e.timeMs = p.finishedMs; });
+    recordGame('sudoku', entries);
     this.broadcast();
   }
 
@@ -217,7 +223,7 @@ class SudokuRoom {
           if (g) delete g.players[seat];
           if (this.humans().length === 0) this.destroy(); else this.broadcast();
         } else {                                    // mid-race: keep their progress; they may rejoin from the same device
-          s.ws = null; s.connected = false;
+          s.ws = null; s.connected = false; s.quit = true;   // leaving a race counts as a loss unless they come back
           this.broadcast();
         }
         return true;

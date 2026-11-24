@@ -17,6 +17,7 @@ const { EkahRoom } = require('./ekah');
 const { SudokuRoom } = require('./sudoku');
 const { ChessRoom } = require('./chess');
 const { playerFor, AuthError } = require('./auth');
+const { recordGame, quitters } = require('./results');
 
 const SPEED = Number(typeof process !== 'undefined' && process.env && process.env.SPEED) || 1;
 const AWAY_DELAY_MS = 3000;       // a player who left / is offline / missed 2 turns in a row is auto-played after this
@@ -97,6 +98,7 @@ class Room {
   newGame() {
     this.game = new Game();
     for (const s of this.seats) s.missed = 0;
+    this.realAtStart = this.seats.map((s) => (s && !s.bot && s.uid ? s.uid : null));   // for stats
     this.game.startRound();
     this.stage = 'review';
     this.schedule();
@@ -104,10 +106,22 @@ class Room {
 
   clearTimer() { if (this.timer) clearTimeout(this.timer); this.timer = null; this.deadline = null; }
 
+  /** Game over: everyone's stats. Highest score wins (equal top scores share the win); places and scores count too. */
+  saveStats() {
+    const g = this.game;
+    if (!g || g.phase !== 'gameEnd' || g.statsSaved || !g.final) return;
+    g.statsSaved = true;
+    const uids = this.realAtStart || [], quit = quitters(this.seats, uids);
+    recordGame('spades', g.final.ranking.map((r) => ({
+      uid: uids[r.seat] || null, outcome: r.winner ? 'win' : 'loss', place: r.rank, score: r.total, quit: quit[r.seat],
+    })));
+  }
+
   schedule() {
     this.clearTimer();
     const g = this.game;
     if (!g) return this.broadcast();
+    if (g.phase === 'gameEnd') this.saveStats();
     if (this.connectedHumans().length === 0) return;            // nobody here: the game pauses
     const at = (delay, fn) => { this.timer = setTimeout(() => { this.timer = null; fn(); }, delay); };
 
@@ -189,7 +203,7 @@ const cleanName = (n) => String(n || '').replace(/[^\p{L}\p{N} _.'-]/gu, '').tri
 function attach(ws, room, seat) {
   const s = room.seats[seat];
   if (s.ws && s.ws !== ws && s.ws.open) { s.ws.ctx = null; s.ws.terminate(); }
-  s.ws = ws; s.connected = true; s.missed = 0;
+  s.ws = ws; s.connected = true; s.missed = 0; s.quit = false;   // back in the room: not a quit any more
   ws.ctx = { room, seat };
   room.lastActive = Date.now();
   if (room.onAttach) room.onAttach(seat);
@@ -288,7 +302,7 @@ function handle(ws, m) {
         room.seats[seat] = null; s.ws = null;
         if (room.humans().length === 0) { room.destroy(); rooms.delete(room.code); } else room.broadcast();
       } else {                                // in a game: the timeout rules play for them; they may rejoin with the same device
-        s.ws = null; s.connected = false;
+        s.ws = null; s.connected = false; s.quit = true;   // leaving a game counts as a loss unless they come back
         if (room.connectedHumans().length === 0) room.clearTimer();
         else if (room.game.phase === 'bidding' || room.game.phase === 'playing') { if (room.game.turn === seat) room.schedule(); else room.broadcast(); }
         else if (room.game.phase === 'roundEnd' && room.stage === 'review' && room.allContinued()) room.beginStarting();
@@ -345,4 +359,4 @@ function sweep(now = Date.now()) {
 /** True while anything needs the server to stay awake (open sockets or rooms that still exist). */
 const busy = () => sockets.size > 0 || rooms.size > 0;
 
-module.exports = { rooms, sockets, connected, message, closed, heartbeat, sweep, busy, CONFIG, SPEED };
+module.exports = { rooms, sockets, connected, message, closed, heartbeat, sweep, busy, CONFIG, SPEED, Room };

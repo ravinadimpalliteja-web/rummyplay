@@ -16,6 +16,7 @@
  * Clients only send intents: 'side', 'time', 'start', 'move' {from, to, promotion}, 'resign', 'draw', 'again', 'leave'.
  */
 const { Chess } = require('./chess-engine');
+const { recordGame } = require('./results');
 
 const MAX_SEATS = 2;
 const ABANDON_SECS = 90;
@@ -95,6 +96,7 @@ class ChessRoom {
       phase: 'playing', colors, chess: new Chess(), tc,
       clock: tc ? { w: TIME[tc][0] * 1000, b: TIME[tc][0] * 1000 } : null,
       turnStart: Date.now(), result: null, drawOffer: null, abandon: null,
+      uids: { w: (this.seats[colors.w] || {}).uid || null, b: (this.seats[colors.b] || {}).uid || null },   // for stats
     };
     this.schedule();
   }
@@ -107,6 +109,9 @@ class ChessRoom {
     if (g.clock) { g.clock.w = this.left('w'); g.clock.b = this.left('b'); }
     g.phase = 'gameEnd'; g.result = { result, reason }; g.drawOffer = null; g.abandon = null;
     this.clearTimer();
+    // stats: win / loss / draw for both players (a player who abandoned already lost by the result)
+    const out = (c) => (result === '1/2-1/2' ? 'draw' : (result === '1-0') === (c === 'w') ? 'win' : 'loss');
+    recordGame('chess', [{ uid: g.uids && g.uids.w, outcome: out('w') }, { uid: g.uids && g.uids.b, outcome: out('b') }]);
   }
 
   onlyKing(color) {

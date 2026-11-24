@@ -568,7 +568,8 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
     counted.current = true;
     if (t.mode === "online" && t.you == null) return;
     const won = t.mode !== "pass" && t.ranks[0] === (t.mode === "online" ? t.you : 0);
-    reportGame("ludo", t.mode === "pass" ? "done" : won ? "win" : "lose");
+    const me = t.mode === "online" ? t.you ?? 0 : 0;
+    reportGame("ludo", t.mode === "pass" ? "done" : won ? "win" : "lose", { online: t.mode === "online", place: t.ranks.indexOf(me) + 1, players: t.order.length });
     if (t.mode === "online" && won && view?.winCounts) {
       const before = realWins.wins;
       setWinCounted(true);

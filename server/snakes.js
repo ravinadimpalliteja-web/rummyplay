@@ -14,6 +14,7 @@
  */
 const crypto = require('crypto');
 const { BOT_DELAY_MS, addBot, removeBot } = require('./room-bots');
+const { recordGame, byPlace, quitters } = require('./results');
 
 /* Nine ladders and seven snakes spread over the board. Must match web/src/snakes/engine.ts (a test checks this). */
 const LADDERS = Object.freeze({ 3: 24, 8: 30, 20: 41, 33: 52, 37: 64, 45: 66, 59: 80, 68: 89, 71: 91 });
@@ -205,6 +206,8 @@ class SnakesRoom {
     const order = this.seats.map((s, i) => (s ? i : -1)).filter((i) => i >= 0);
     this.game = newGame(order, { quick: this.quick });
     for (const s of this.humans()) s.missed = 0;
+    // who was a real, signed-in player when the game started, for stats
+    this.realAtStart = this.seats.map((s) => (s && !s.bot && s.uid ? s.uid : null));
     this.pauseUntil = 0;
     this.schedule();
   }
@@ -232,6 +235,8 @@ class SnakesRoom {
 
   doRoll(seat) {
     roll(this.game, seat, rareDie(this.game.pos[seat]));
+    if (this.game.phase === 'gameEnd')                               // game over: everyone's stats
+      recordGame('snakes', byPlace(this.game.finished, this.realAtStart || [], quitters(this.seats, this.realAtStart || [])));
     this.pauseUntil = Date.now() + this.ms(animMs(this.game.last));
     this.schedule();
   }
@@ -300,7 +305,7 @@ class SnakesRoom {
           this.seats[seat] = null;
           if (this.humans().length === 0) this.destroy(); else this.broadcast();
         } else {                                    // in a game: the server rolls for them; they may rejoin from the same device
-          s.ws = null; s.connected = false;
+          s.ws = null; s.connected = false; s.quit = true;   // leaving a game counts as a loss unless they come back
           if (this.connectedHumans().length === 0) this.clearTimer(); else this.onTurnHolderChange(seat);
         }
         return true;

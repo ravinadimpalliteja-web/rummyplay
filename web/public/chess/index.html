@@ -920,7 +920,7 @@ html body .club-back{flex:none}
   function gameOverEffects(r) {
     const winner = r.result === '1-0' ? 'w' : r.result === '0-1' ? 'b' : null;
     const youWon = winner && (game.mode === 'local' || winner === game.human);
-    if (window.rcReport) window.rcReport('chess', game.mode === 'local' ? 'done' : !winner ? 'draw' : youWon ? 'win' : 'lose');
+    if (window.rcReport) window.rcReport('chess', game.mode === 'local' ? 'done' : !winner ? 'draw' : youWon ? 'win' : 'lose', { online: game.mode === 'online' });
     setTimeout(() => sound.play(!winner ? 'draw' : youWon ? 'win' : 'lose'), 180);
     buzz(youWon ? [40, 60, 40, 60, 80] : 60);
     if (youWon) confetti();

@@ -14,7 +14,7 @@
  * The server rolls the die. Clients only send intents: 'start', 'roll', 'move', 'react', 'again', 'leave'.
  */
 const crypto = require('crypto');
-const { recordWin } = require('./results');
+const { recordWin, recordGame, byPlace, quitters } = require('./results');
 const { BOT_DELAY_MS, addBot, removeBot } = require('./room-bots');
 
 const COLORS = ['red', 'green', 'yellow', 'blue'];
@@ -288,6 +288,7 @@ class LudoRoom {
     this.realAtStart = this.seats.map((s) => (s && !s.bot && s.uid ? s.uid : null));
     this.winCounts = false;
     this.resultSaved = false;
+    this.statsSaved = false;
     this.pauseUntil = 0;
     this.schedule();
   }
@@ -323,6 +324,10 @@ class LudoRoom {
       winner's account (play goes on for 2nd and 3rd). */
   saveResult() {
     const g = this.game;
+    if (g && g.phase === 'gameEnd' && !this.statsSaved) {        // game over: everyone's stats (places 1st-4th)
+      this.statsSaved = true;
+      recordGame('ludo', byPlace(g.ranks, this.realAtStart || [], quitters(this.seats, this.realAtStart || [])));
+    }
     if (!g || !g.ranks.length || this.resultSaved) return;
     this.resultSaved = true;
     const winner = g.ranks[0], uid = (this.realAtStart || [])[winner];
@@ -384,7 +389,7 @@ class LudoRoom {
           this.seats[seat] = null;
           if (this.humans().length === 0) this.destroy(); else this.broadcast();
         } else {                                    // in a game: the game plays for them; they may rejoin from the same device
-          s.ws = null; s.connected = false;
+          s.ws = null; s.connected = false; s.quit = true;   // leaving a game counts as a loss unless they come back
           if (this.connectedHumans().length === 0) this.clearTimer(); else this.onTurnHolderChange(seat);
         }
         return true;

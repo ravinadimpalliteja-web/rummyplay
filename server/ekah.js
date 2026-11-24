@@ -13,6 +13,7 @@
  * Clients only send intents: 'addBot', 'removeBot', 'target', 'rules', 'start', 'act' (with an engine action), 'again', 'leave'.
  */
 const Engine = require('./ekah-engine');
+const { recordGame, byPlace, quitters } = require('./results');
 
 const MAX_SEATS = 10;
 const TURN_SECS = 20;            // time to play before the timeout rule plays for you (Engine.timeoutAction)
@@ -87,7 +88,24 @@ class EkahRoom {
     this.order = this.seats.map((s, i) => (s ? i : -1)).filter((i) => i >= 0);
     this.game = Engine.createGame(this.order.map((i) => ({ name: this.seats[i].name, isBot: !!this.seats[i].bot })), { target: this.target, rules: this.rules });
     for (const s of this.humans()) s.missed = 0;
+    this.markRealPlayers();
     this.schedule();
+  }
+
+  /** Who was a real, signed-in player when the match started (for stats). */
+  markRealPlayers() { this.realAtStart = this.seats.map((s) => (s && !s.bot && s.uid ? s.uid : null)); this.statsSaved = false; }
+
+  /** Match over (someone reached the winning score): everyone's stats. Places follow the match scores; the score
+      counts toward each player's best EKAH score. */
+  saveStats() {
+    const g = this.game;
+    if (!g || g.phase !== 'matchOver' || this.statsSaved) return;
+    this.statsSaved = true;
+    const uids = this.realAtStart || [], quit = quitters(this.seats, uids);
+    const pis = g.players.map((_, pi) => pi).sort((a, b) => (a === g.matchWinner ? -1 : b === g.matchWinner ? 1 : g.players[b].score - g.players[a].score));
+    const entries = byPlace(pis.map((pi) => this.order[pi]), uids, quit);
+    entries.forEach((e, i) => { e.score = g.players[pis[i]].score; });
+    recordGame('ekah', entries);
   }
 
   clearTimer() {
@@ -100,6 +118,8 @@ class EkahRoom {
     this.clearTimer();
     const g = this.game;
     if (!g) return this.broadcast();
+    if (g.phase === 'matchOver') this.saveStats();
+    else if (this.statsSaved) this.markRealPlayers();               // a new match has begun
     if (this.connectedHumans().length === 0) return;               // nobody here: the game pauses
     const at = (delay, fn) => { this.timer = setTimeout(() => { this.timer = null; fn(); }, Math.max(0, delay)); };
 
@@ -222,7 +242,7 @@ class EkahRoom {
           this.seats[seat] = null;
           if (this.humans().length === 0) this.destroy(); else this.broadcast();
         } else {                                    // in a game: the computer plays for them; they may rejoin from the same device
-          s.ws = null; s.connected = false;
+          s.ws = null; s.connected = false; s.quit = true;   // leaving a game counts as a loss unless they come back
           if (this.connectedHumans().length === 0) this.clearTimer(); else this.onTurnHolderChange(seat);
         }
         return true;

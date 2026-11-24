@@ -12,7 +12,7 @@ type Avail = "idle" | "checking" | "free" | "taken" | "bad";
 
 const INTRO: Record<AuthReason, string> = {
   signin: "Sign in with your username to play with friends. No email needed.",
-  rooms: "Sign in with your Royal Club username to create or join rooms.",
+  rooms: "Sign in with your Ambaro username to create or join rooms.",
   username: "Pick the username other players will see."
 };
 
@@ -229,7 +229,7 @@ export default function AuthPanel({ onProfile }: { onProfile?: () => void } = {}
             <button className="account-secondary" onClick={() => show("signin")}>I have an account</button>
           </> : <>
             <strong>{username}</strong>
-            <p>{isGoogle(session) ? "Signed in with Google" : "Royal Club account"}</p>
+            <p>{isGoogle(session) ? "Signed in with Google" : "Ambaro account"}</p>
             {onProfile && <button className="account-secondary auth-strong" onClick={() => { setMenu(false); onProfile(); }}>My profile</button>}
           </>}
           <button className="account-secondary" disabled={busy !== null} onClick={() => void signOut()}>Sign out</button>
@@ -238,7 +238,7 @@ export default function AuthPanel({ onProfile }: { onProfile?: () => void } = {}
     : <button className="account-trigger" onClick={() => show("signin")}>Sign in</button>;
 
   const recoveryDialog = <section className="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="auth-title">
-    <div className="auth-kicker">ROYAL CLUB GAMES</div>
+    <div className="auth-kicker">AMBARO</div>
     <h2 id="auth-title">Set a new password</h2>
     <p className="auth-intro">{username ? `For ${username}. ` : ""}Choose a new password to finish resetting it.</p>
     <form onSubmit={e => void saveNewPassword(e)} className="auth-form">
@@ -251,10 +251,10 @@ export default function AuthPanel({ onProfile }: { onProfile?: () => void } = {}
 
   const forgotDialog = <section className="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="auth-title">
     <button className="auth-close" aria-label="Close" onClick={() => setOpen(false)}>×</button>
-    <div className="auth-kicker">ROYAL CLUB GAMES</div>
+    <div className="auth-kicker">AMBARO</div>
     <h2 id="auth-title">Forgot your password?</h2>
     {resetSent
-      ? <p className="auth-message" role="status">If that email is on a Royal Club account, a reset link is on its way. Open it on this device to choose a new password.</p>
+      ? <p className="auth-message" role="status">If that email is on a Ambaro account, a reset link is on its way. Open it on this device to choose a new password.</p>
       : <>
         <p className="auth-intro">Enter the recovery email you added to your account. We'll email you a link to choose a new password.</p>
         <form onSubmit={e => void sendReset(e)} className="auth-form">
@@ -270,7 +270,7 @@ export default function AuthPanel({ onProfile }: { onProfile?: () => void } = {}
   const dialog = recovering && session ? recoveryDialog : tab === "forgot" ? forgotDialog : needsUsername
     ? <section className="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="auth-title">
         <button className="auth-close" aria-label="Close" onClick={() => setOpen(false)}>×</button>
-        <div className="auth-kicker">ROYAL CLUB GAMES</div>
+        <div className="auth-kicker">AMBARO</div>
         <h2 id="auth-title">Pick your username</h2>
         <p className="auth-intro">{session && isGoogle(session) ? "Pick a username and your own password. Next time you can sign in with them, or with Google again." : INTRO.username}</p>
         <form onSubmit={e => void savePick(e)} className="auth-form">
@@ -287,7 +287,7 @@ export default function AuthPanel({ onProfile }: { onProfile?: () => void } = {}
       </section>
     : <section className="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="auth-title">
         <button className="auth-close" aria-label="Close" onClick={() => setOpen(false)}>×</button>
-        <div className="auth-kicker">ROYAL CLUB GAMES</div>
+        <div className="auth-kicker">AMBARO</div>
         <h2 id="auth-title">{tab === "signin" ? "Welcome back" : "Create your account"}</h2>
         <p className="auth-intro">{reason === "rooms" ? INTRO.rooms : tab === "signup" ? "Choose a username and password. No email needed." : INTRO.signin}</p>
         <div className="auth-tabs" role="tablist">

@@ -1,6 +1,6 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
-/* Royal Club Android app (Capacitor).
+/* Ambaro Android app (Capacitor). The app id stays com.royalclubgames.app (changing it would make a different app).
    - Default ("bundled"): the games ship inside the app from dist/, so vs-computer play works offline.
    - Test build: the GitHub workflow sets CAP_SERVER_URL=https://test.royalclubgames.com, so the test app
      opens the test site directly and picks up every game change without a new APK. */
@@ -9,13 +9,13 @@ const liveUrl = (process.env.CAP_SERVER_URL ?? "").trim();
 
 const config: CapacitorConfig = {
   appId: "com.royalclubgames.app",
-  appName: "Royal Club",
+  appName: "Ambaro",
   webDir: "dist",
   /* Shown behind the status and navigation bars (and while a page loads): the app's dark night-green. */
   backgroundColor: "#06140F",
   android: { allowMixedContent: false },
   plugins: {
-    SplashScreen: { launchShowDuration: 1200, backgroundColor: "#FAF5E9", showSpinner: false },
+    SplashScreen: { launchShowDuration: 1200, backgroundColor: "#0B3B2D", showSpinner: false },
     /* No page asks for viewport-fit=cover, so Capacitor keeps every screen between the status bar and the
        navigation bar (native padding): nothing is ever drawn under the time, network or battery icons.
        style DARK = light icons, readable on the dark bars. During a game the status bar is hidden for a

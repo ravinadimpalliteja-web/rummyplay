@@ -4,16 +4,24 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <script src="/app-mode.js"></script>
-<title>Royal Club Word Puzzle</title>
-<meta name="theme-color" content="#5c2a08">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ambaro">
+<meta property="og:title" content="Ambaro">
+<meta property="og:description" content="Climb aboard, play together.">
+<meta property="og:image" content="https://test.royalclubgames.com/brand/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<title>Word Puzzle · Ambaro</title>
+<meta name="theme-color" content="#0B3B2D">
 <meta name="description" content="A new word every day: guess it in 6 tries, learn its meaning, and compare with your family.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* Royal Club Word Puzzle — Citrine look: deep amber, gold tiles, saffron only on what you tap. */
+/* Ambaro Word Puzzle — the emerald room of the other games, gold tiles, saffron only on what you tap. */
 :root{
-  --bg1:#5c2a08; --bg2:#2a1003;
+  --bg1:#0B3B2D; --bg2:#06261C;
   --gold:#e3b54a; --gold2:#f6d77e; --goldDeep:#a67a1c;
   --saffron:#ff9933; --saffronDeep:#e0761a;
   --hit:#13a36e; --hitDeep:#0a6d48; --miss:#2f3d39; --missDeep:#1d2826;
@@ -22,7 +30,7 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%}
 body{font-family:Poppins,system-ui,sans-serif;color:var(--ink);
-  background:radial-gradient(120% 80% at 50% 0%,#9a4e12 0%,var(--bg1) 45%,var(--bg2) 100%);
+  background:radial-gradient(120% 80% at 50% 0%,#1B6B50 0%,var(--bg1) 45%,var(--bg2) 100%);
   display:flex;justify-content:center;overflow:hidden;
   padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
 body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.07;
@@ -54,7 +62,8 @@ button{font-family:inherit}
 .chip{display:flex;align-items:center;gap:4px;font:600 12px Poppins;padding:5px 9px;border-radius:999px;background:rgba(0,0,0,.28);border:1px solid rgba(227,181,74,.3)}
 .chip b{color:var(--gold2)}
 .chip.bump{animation:pop .35s}
-.coin{width:24px;height:24px;border-radius:50%;flex:none;background:radial-gradient(circle at 35% 30%,#fff3c4,var(--gold) 50%,var(--goldDeep));
+/* the Ambaro coin: gold with the lotus */
+.coin{width:24px;height:24px;border-radius:50%;flex:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='%235a3d06'%3E%3Cpath d='M12 5.6c1.5 1.6 2.1 3.6 0 7.4-2.1-3.8-1.5-5.8 0-7.4z'/%3E%3Cpath d='M6.6 8.9c2.1.2 3.8 1.5 5 4.6-3.2-.6-4.6-2.3-5-4.6z'/%3E%3Cpath d='M17.4 8.9c-.4 2.3-1.8 4-5 4.6 1.2-3.1 2.9-4.4 5-4.6z'/%3E%3Cpath d='M6.8 14.2c1.6 1.4 3.3 1.9 5.2 1.9s3.6-.5 5.2-1.9c-.9 2-2.8 3.2-5.2 3.2s-4.3-1.2-5.2-3.2z'/%3E%3C/g%3E%3C/svg%3E") center/82% no-repeat,radial-gradient(circle at 35% 30%,#fff3c4,var(--gold) 50%,var(--goldDeep));
   display:grid;place-items:center;font:800 11px Cinzel;color:#5a3d06;box-shadow:0 2px 0 #6b4c0e}
 .coin.s{width:16px;height:16px;font-size:8px;box-shadow:none}
 /* clue bar */
@@ -196,15 +205,15 @@ a.iconbtn{text-decoration:none}
 <div class="app">
   <header class="top">
     <span class="club-lead">
-      <a class="club-back" id="backBtn" href="/" aria-label="Back to Royal Club">←</a>
+      <a class="club-back" id="backBtn" href="/" aria-label="Back to Ambaro">←</a>
       <span class="brand">
-        <span class="brand-mark"><img src="../brand/badge-logo-small.webp" alt="" width="320" height="224"></span>
-        <span class="brand-text"><strong>ROYAL CLUB</strong><small>WORD PUZZLE</small></span>
+        <span class="brand-mark"><img src="../brand/badge-logo-small.webp" alt="" width="320" height="269"></span>
+        <span class="brand-text"><strong>AMBARO</strong><small>WORD PUZZLE</small></span>
       </span>
     </span>
     <span class="tools-top">
       <button class="iconbtn" id="bookBtn" aria-label="Word Book" title="Word Book">📖</button>
-      <button class="iconbtn" id="lbBtn" aria-label="Family Board" title="Family Board">👑</button>
+      <button class="iconbtn" id="lbBtn" aria-label="Family Board" title="Family Board">🏆</button>
       <button class="iconbtn" id="statsBtn" aria-label="Stats and help" title="Stats">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="6" width="4" height="15" rx="1"/><rect x="17" y="9" width="4" height="12" rx="1"/></svg>
       </button>
@@ -218,14 +227,14 @@ a.iconbtn{text-decoration:none}
     </div>
     <div class="chips">
       <div class="chip" title="Daily streak">🔥<b id="streakChip">0</b></div>
-      <div class="chip" id="coinChipBox" title="Your coins"><span class="coin s">R</span><b id="coinChip">0</b></div>
+      <div class="chip" id="coinChipBox" title="Your coins"><span class="coin s" aria-hidden="true"></span><b id="coinChip">0</b></div>
     </div>
   </div>
   <div class="cluebar">
     <div class="theme"><span id="themeLbl">Theme</span><b id="themeTxt">—</b></div>
     <div class="lenpick" id="lenPick"><button data-len="4">4</button><button data-len="5" class="on">5</button></div>
-    <button class="hint" id="hintMeaning" title="Show the meaning">💡 Meaning <span class="coin">R</span>15</button>
-    <button class="hint" id="hintLetter" title="Reveal one letter">🔤 Letter <span class="coin">R</span>25</button>
+    <button class="hint" id="hintMeaning" title="Show the meaning">💡 Meaning <span class="coin" aria-hidden="true"></span>15</button>
+    <button class="hint" id="hintLetter" title="Reveal one letter">🔤 Letter <span class="coin" aria-hidden="true"></span>25</button>
   </div>
   <div class="meaning" id="meaningBox"></div>
   <div class="puzzleno" id="puzzleNo"></div>
@@ -301,7 +310,7 @@ a.iconbtn{text-decoration:none}
   <p>The <b>Theme</b> (Food, Animals, Sports…) is a free clue. Stuck? Spend coins on 💡 <b>Meaning</b> or 🔤 <b>Letter</b>.</p>
   <p>After every round you get a <b>Word Card</b> with the meaning and an example sentence, saved to your 📖 <b>Word Book</b>.</p>
   <div class="sec">Rewards</div>
-  <p>Solve the daily word for coins and XP, and come back every day to grow your 🔥 streak. Sign in to keep your streak on every phone and to see your family's scores on the 👑 Family Board.</p>
+  <p>Solve the daily word for coins and XP, and come back every day to grow your 🔥 streak. Sign in to keep your streak on every phone and to see your family's scores on the 🏆 Family Board.</p>
 </div></div>
 
 <script src="../ekah/config.js" onerror="void 0"></script>
@@ -338,7 +347,7 @@ a.iconbtn{text-decoration:none}
   let S = store.get('local', null) || { stats: { easy: blankStats(), classic: blankStats() }, book: {} };
   const saveS = () => store.set('local', S);
 
-  /* ---------- Royal Club account (same sign-in as the main site, EKAH and Sudoku) ---------- */
+  /* ---------- Ambaro account (same sign-in as the main site, EKAH and Sudoku) ---------- */
   const SB_URL = String(window.RC_SUPABASE_URL || ''), SB_KEY = String(window.RC_SUPABASE_KEY || '');
   const SB_STORE = SB_URL ? 'sb-' + SB_URL.replace(/^https:\/\//, '').split('.')[0] + '-auth-token' : '';
   function readSession() { try { const x = JSON.parse(raw.get(SB_STORE) || 'null'); return x && x.access_token ? x : null; } catch { return null; } }
@@ -573,7 +582,7 @@ a.iconbtn{text-decoration:none}
     $('wordCard').innerHTML = entry ? wordCardHTML(entry, isNew) : '';
     const daily = mode !== 'practice';
     const pay = daily ? (solved ? [50, 60] : [10, 20]) : (solved ? [25, 50] : [10, 20]);
-    $('reward').innerHTML = (fresh ? '<span class="coin">R</span><div><b style="color:var(--gold2)">+' + pay[0] + ' coins · +' + pay[1] + ' XP</b><br><span style="color:var(--muted)">' : '<div><span style="color:var(--muted)">')
+    $('reward').innerHTML = (fresh ? '<span class="coin" aria-hidden="true"></span><div><b style="color:var(--gold2)">+' + pay[0] + ' coins · +' + pay[1] + ' XP</b><br><span style="color:var(--muted)">' : '<div><span style="color:var(--muted)">')
       + (daily ? (solved ? '🔥 ' + liveStreak() + '-day ' + (mode === 'easy' ? 'Easy' : 'Classic') + ' streak' : 'Streak reset. Come back tomorrow!') : "Unlimited words don't change your daily streak") + '</span></div>';
     $('endLbWrap').hidden = !daily;
     if (daily) loadBoard($('endLb'));
@@ -596,8 +605,8 @@ a.iconbtn{text-decoration:none}
       const r = await rpc('word_friends_board', { p_mode: key });
       if (r.locked) { el.innerHTML = '<div class="empty">Finish today\'s ' + (key === 'easy' ? 'Easy' : 'Classic') + ' word to see everyone\'s scores. No spoilers!</div>'; return; }
       const ps = r.players || [];
-      el.innerHTML = ps.map((p, i) => '<div class="lbrow ' + (p.me ? 'me' : '') + '"><span style="width:16px;color:var(--muted);font-weight:700">' + (i === 0 && p.tries ? '👑' : i + 1) + '</span><span class="av" style="background:' + (p.me ? '#ff9933' : COLORS[i % COLORS.length]) + '">' + esc((p.name || '?')[0].toUpperCase()) + '</span><span class="nm">' + esc(p.me ? 'You' : p.name) + '</span><span class="sc">' + (p.tries ? p.tries + '/6' : p.finished ? 'X' : '—') + '</span></div>').join('')
-        + (ps.length <= 1 ? '<div class="demo-note">Add family and friends on the 👑 Family Board to compare scores.</div>' : '');
+      el.innerHTML = ps.map((p, i) => '<div class="lbrow ' + (p.me ? 'me' : '') + '"><span style="width:16px;color:var(--muted);font-weight:700">' + (i === 0 && p.tries ? '🏆' : i + 1) + '</span><span class="av" style="background:' + (p.me ? '#ff9933' : COLORS[i % COLORS.length]) + '">' + esc((p.name || '?')[0].toUpperCase()) + '</span><span class="nm">' + esc(p.me ? 'You' : p.name) + '</span><span class="sc">' + (p.tries ? p.tries + '/6' : p.finished ? 'X' : '—') + '</span></div>').join('')
+        + (ps.length <= 1 ? '<div class="demo-note">Add family and friends on the 🏆 Family Board to compare scores.</div>' : '');
     } catch { el.innerHTML = '<div class="empty">Could not load the board. Check your connection.</div>'; }
   }
   async function loadCrown() {
@@ -606,13 +615,13 @@ a.iconbtn{text-decoration:none}
     try {
       const list = await rpc('word_weekly_crown', { p_mode: mode === 'easy' ? 'easy' : 'classic' });
       if (!Array.isArray(list) || list.length < 2) return;
-      el.innerHTML = '<div class="sec">This week\'s crown 👑</div><div class="lb">' + list.slice(0, 5).map((p, i) => '<div class="lbrow"><span style="width:16px;color:var(--muted);font-weight:700">' + (i === 0 ? '👑' : i + 1) + '</span><span class="nm">' + esc(p.name) + '</span><span class="sc">' + p.total + '</span></div>').join('') + '</div><div class="demo-note">Fewest guesses over the last 7 days (an unsolved day counts 7).</div>';
+      el.innerHTML = '<div class="sec">This week\'s top player 🏆</div><div class="lb">' + list.slice(0, 5).map((p, i) => '<div class="lbrow"><span style="width:16px;color:var(--muted);font-weight:700">' + (i === 0 ? '🏆' : i + 1) + '</span><span class="nm">' + esc(p.name) + '</span><span class="sc">' + p.total + '</span></div>').join('') + '</div><div class="demo-note">Fewest guesses over the last 7 days (an unsolved day counts 7).</div>';
     } catch { /* offline */ }
   }
   async function loadFriends() {
     const el = $('friendsWrap');
     if (!signedIn()) { el.innerHTML = ''; return; }
-    el.innerHTML = '<div class="sec">Family & friends</div><form id="addFriend" class="addf"><input id="friendName" maxlength="16" autocomplete="off" autocapitalize="off" placeholder="Their Royal Club username"><button class="btn" type="submit">Add</button></form><div class="lb" id="friendList"></div>';
+    el.innerHTML = '<div class="sec">Family & friends</div><form id="addFriend" class="addf"><input id="friendName" maxlength="16" autocomplete="off" autocapitalize="off" placeholder="Their Ambaro username"><button class="btn" type="submit">Add</button></form><div class="lb" id="friendList"></div>';
     $('addFriend').addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = $('friendName').value.trim();
@@ -630,7 +639,7 @@ a.iconbtn{text-decoration:none}
     try {
       const list = await rpc('friend_list', {});
       el.innerHTML = (Array.isArray(list) && list.length) ? list.map((f) => '<div class="lbrow"><span class="nm">' + esc(f.name) + '</span>' + (f.status === 'incoming' ? '<button class="btn small" data-accept="' + esc(f.id) + '">Accept</button>' : '<span class="sc" style="width:auto;font:600 11px Poppins;color:var(--muted)">' + (f.status === 'friend' ? 'Friend ✓' : 'Request sent') + '</span>') + '</div>').join('')
-        : '<div class="demo-note">No friends yet. Add them by their Royal Club username.</div>';
+        : '<div class="demo-note">No friends yet. Add them by their Ambaro username.</div>';
     } catch { el.innerHTML = ''; }
   }
   $('friendsWrap').addEventListener('click', async (e) => {
@@ -646,11 +655,11 @@ a.iconbtn{text-decoration:none}
     $('statsGrid').innerHTML = [[st.played, 'Played'], [pct, 'Win %'], [liveStreak(), 'Streak'], [st.best, 'Best']].map(([v, l]) => '<div class="stat"><b>' + v + '</b><span>' + l + '</span></div>').join('');
     const dist = st.dist || [0, 0, 0, 0, 0, 0], mx = Math.max(1, ...dist);
     $('dist').innerHTML = dist.map((n, i) => '<div class="bar"><i>' + (i + 1) + '</i><div style="width:' + (8 + n / mx * 84) + '%">' + n + '</div></div>').join('');
-    $('syncNote').innerHTML = server ? 'Saved to your Royal Club account.' : signedIn() ? 'Offline: saved on this phone for now.' : 'Saved on this phone. <a href="/?signin=rooms">Sign in</a> to keep your streak on every device.';
+    $('syncNote').innerHTML = server ? 'Saved to your Ambaro account.' : signedIn() ? 'Offline: saved on this phone for now.' : 'Saved on this phone. <a href="/?signin=rooms">Sign in</a> to keep your streak on every device.';
   }
 
   /* ---------- Word Book ---------- */
-  const LEVELS = [[0, 'Word Seeker', '🌱'], [5, 'Word Explorer', '🧭'], [15, 'Word Wizard', '🪄'], [40, 'Word Master', '🏆'], [100, 'Royal Scholar', '👑']];
+  const LEVELS = [[0, 'Word Seeker', '🌱'], [5, 'Word Explorer', '🧭'], [15, 'Word Wizard', '🪄'], [40, 'Word Master', '🏆'], [100, 'Word Legend', '🌟']];
   let bookFilter = 'All';
   async function renderBook() {
     const book = Object.assign({}, S.book);
@@ -705,7 +714,7 @@ a.iconbtn{text-decoration:none}
   /* Android back button / the ← link: close a sheet first. */
   window.addEventListener('popstate', () => { const s = document.querySelector('.scrim.show'); if (s) s.classList.remove('show'); });
   /* In the Android app (app-mode.js): back closes an open sheet (results, Word Book, Family Board, stats, help);
-     otherwise it goes straight to the Royal Club home. Word Puzzle is saved as you play, so it never asks
+     otherwise it goes straight to the Ambaro home. Word Puzzle is saved as you play, so it never asks
      "Leave this game?". */
   window.rcAppBack = () => {
     const s = document.querySelector('.scrim.show');

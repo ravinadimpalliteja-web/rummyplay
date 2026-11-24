@@ -10,7 +10,8 @@
   'use strict';
   var html = document.documentElement;
   var BGS = {
-    'bg-emerald': ['#072A20', '#0B3B2D', '#1B6B50'], 'bg-ruby': ['#2A0710', '#4A0E1C', '#7A1A2E'],
+    // same colours as src/app/theme.ts (Festive Cream: the game menus use its maroon band)
+    'bg-emerald': ['#072A20', '#0B3B2D', '#1B6B50'], 'bg-ruby': ['#2C0207', '#4A0510', '#7A1426'], 'bg-cream': ['#3E030B', '#5A0612', '#8A1E30'],
     'bg-indigo': ['#0B1030', '#18205A', '#2C3A8C'], 'bg-purple': ['#1C0A2E', '#33124F', '#5A2A86'], 'bg-peacock': ['#04222A', '#0A3F4C', '#157A8C']
   };
   var bg = BGS['bg-emerald'];
@@ -61,7 +62,7 @@
       '<img class="as-art" src="/art/' + id + '.svg" alt="" decoding="async">' +
       '<span class="as-shade" aria-hidden="true"></span>' +
       '<span class="as-top">' +
-        '<button type="button" class="as-round" data-as="back" aria-label="Back to Royal Club">' + svg('back') + '</button>' +
+        '<button type="button" class="as-round" data-as="back" aria-label="Back to Ambaro">' + svg('back') + '</button>' +
         '<button type="button" class="as-round" data-as="info" aria-label="' + cfg.info[2] + '">' + svg(cfg.info[1], 22) + '</button>' +
       '</span>' +
       '<span class="as-title"><span class="as-name"></span><span class="as-meta"></span></span>';

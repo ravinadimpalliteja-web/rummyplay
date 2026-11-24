@@ -1148,7 +1148,7 @@
   }
   function inviteText() {
     const code = $('roomCode').textContent, pass = $('roomPass').textContent;
-    return 'Join my Royal Club EKAH room!\nRoom code: ' + code + '\nPasscode: ' + pass + '\nTap to join: ' + siteUrl() + '/ekah/?room=' + encodeURIComponent(code) + '&pass=' + encodeURIComponent(pass);
+    return 'Join my Ambaro EKAH room!\nRoom code: ' + code + '\nPasscode: ' + pass + '\nTap to join: ' + siteUrl() + '/ekah/?room=' + encodeURIComponent(code) + '&pass=' + encodeURIComponent(pass);
   }
   function copyText(text) {
     const old = () => {
@@ -1167,7 +1167,7 @@
     const w = window.open(url, '_blank', 'noopener'); if (!w) location.href = url;
   });
 
-  // ---------- Royal Club account (signed in on the main site; rooms need a username) ----------
+  // ---------- Ambaro account (signed in on the main site; rooms need a username) ----------
   const SB_URL = String(window.RC_SUPABASE_URL || ''), SB_KEY = String(window.RC_SUPABASE_KEY || '');
   const SB_STORE = SB_URL ? 'sb-' + SB_URL.replace(/^https:\/\//, '').split('.')[0] + '-auth-token' : '';
   const SIGNIN_URL = '/?signin=rooms';
@@ -1202,7 +1202,7 @@
     const who = $('roomWho'); if (!who) return;
     const name = roomUser();
     who.innerHTML = name ? 'Playing as <b>' + esc(name) + '</b>'
-      : 'Sign in with your Royal Club username to play with friends. <a href="' + SIGNIN_URL + '">Sign in</a>';
+      : 'Sign in with your Ambaro username to play with friends. <a href="' + SIGNIN_URL + '">Sign in</a>';
   }
   function needSignIn() {
     $('homeErr').textContent = 'Please sign in first (link above).';
@@ -1215,7 +1215,7 @@
     if (!roomUser()) { store.set('ekahName', n); store.set('rc-player-name', n); }
     return n;
   }
-  /* One name everywhere: signed-in players play as their Royal Club username (the same name Ludo, Snakes & Ladders
+  /* One name everywhere: signed-in players play as their Ambaro username (the same name Ludo, Snakes & Ladders
      and the rooms use) and it is not edited here; guests type a name, kept on this device. */
   function savedName() {
     return roomUser() || store.get('rc-player-name') || store.get('ekahName') || '';
@@ -1230,7 +1230,7 @@
     else if ($('name').readOnly) $('name').value = savedName();
     $('name').readOnly = !!user;
     $('editName').hidden = !!user;
-    $('name').title = user ? 'Your Royal Club username' : '';
+    $('name').title = user ? 'Your Ambaro username' : '';
     paintAvatar();
   }
   $('name').value = savedName();

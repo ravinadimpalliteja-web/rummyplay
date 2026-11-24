@@ -1,16 +1,19 @@
-/* Royal Club home — "FINAL" design (design D: ivory, emerald, gold, saffron for things to tap) */
+/* Ambaro home — "FINAL" design (design D: ivory, emerald, gold, saffron for things to tap) */
 .rc-home{--rc-ivory:#FBF7EE;--rc-card:#fff;--rc-emerald:#0F4D3A;--rc-emerald-dark:#0A3528;--rc-gold:#D9B45A;--rc-gold-text:#7A5A1C;--rc-gold-light:#F0D99D;--rc-ink:#1F2A24;--rc-muted:#5C6862;--rc-line:#E6DAC0;--rc-saffron:#F28C28;--rc-saffron-dark:#DB7614;--rc-saffron-ink:#2A1605;--rc-shadow:0 1px 2px rgba(60,40,10,.06),0 8px 24px rgba(60,40,10,.10);
   color:var(--rc-ink);padding:24px 0 48px;font-family:'DM Sans',sans-serif}
 .rc-home button{font:inherit;cursor:pointer}
 .rc-home :focus-visible{outline:2.5px solid var(--rc-emerald);outline-offset:3px}
 .rc-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
-/* Brand mark: the crowned elephant (App header and footer) */
+/* Brand: the AMBARO logo in the header (on a maroon plaque, since the logo is drawn for a deep background),
+   the elephant in the footer */
 .brand-elephant{display:block;height:64px;width:auto;flex:0 0 auto}
+.brand:has(.brand-logo){padding:4px 14px;border-radius:16px;background:radial-gradient(ellipse at 50% 30%,#6E0A18,#4A0510 60%,#3A040C);box-shadow:0 4px 12px rgba(74,10,20,.25)}
+.brand-logo.brand-elephant{height:52px}
 footer .rc-foot-brand{display:inline-flex;align-items:center;gap:8px}
 .rc-foot-elephant{display:block;height:40px;width:auto}
-@media (max-width:760px){.brand-elephant{height:52px}}
-@media (max-width:420px){.brand-elephant{height:46px}}
+@media (max-width:760px){.brand-elephant{height:52px}.brand-logo.brand-elephant{height:44px}.brand:has(.brand-logo){padding:3px 10px;border-radius:14px}}
+@media (max-width:420px){.brand-elephant{height:46px}.brand-logo.brand-elephant{height:38px}}
 
 /* Large faint elephant behind the home page */
 .rc-home{position:relative;isolation:isolate}

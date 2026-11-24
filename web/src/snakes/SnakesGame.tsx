@@ -863,7 +863,7 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
 
   if (sub === "tokens") return <section className="mode-page sl-mode sl-tokens-page">
     <ClubBar game="Snakes & Ladders" onBack={() => setSub("lobby")} />
-    <div className="eyebrow">ROYAL CLUB · SNAKES &amp; LADDERS</div>
+    <div className="eyebrow">AMBARO · SNAKES &amp; LADDERS</div>
     <h1>Choose your tokens</h1>
     <TokenPicker players={localNames.map((n, i) => ({ key: i, name: label(n), piece: localPieces[i], color: COLORS[i], editable: true }))}
       active={picking} onActive={setPicking} onPick={pickLocal} note="Tap a player, then a token. Mix any collections; each player's token is different." />

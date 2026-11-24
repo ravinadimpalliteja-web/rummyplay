@@ -753,11 +753,11 @@ main>.hero .hero-ornament{font-size:90px;top:50%;right:34%;opacity:.12}
 @media(max-width:760px){.app-shell .topbar nav.rc-nav{display:none}}
 
 /* ===== In the Android app, the remaining "page" screens (Snakes token picker, waiting rooms, Pass & Play names)
-   use the dark emerald app look of the lobbies instead of the ivory website look. ===== */
+   use the dark app look of the lobbies, in the chosen colour (theme.ts sets --rx-* on <html>), instead of the ivory website look. ===== */
 html.rc-app .app-shell.theme-ivory:not(:has(.sl-screen, .ld-screen)):has(.mode-page){
-  --iv-bg:#072A20;--iv-card:rgba(255,255,255,.06);--iv-ink:#FFF8EA;--iv-muted:rgba(255,248,234,.72);--iv-soft:rgba(0,0,0,.28);--iv-edge:rgba(233,196,106,.45);
+  --iv-bg:var(--rx-dark,#072A20);--iv-card:rgba(255,255,255,.06);--iv-ink:#FFF8EA;--iv-muted:rgba(255,248,234,.72);--iv-soft:rgba(0,0,0,.28);--iv-edge:rgba(233,196,106,.45);
   --iv-gold-text:#E9C46A;--iv-shadow:0 6px 16px rgba(0,0,0,.35);
-  background:radial-gradient(ellipse at 50% 0%,#145a42 0%,#0B3B2D 45%,#06261C 100%) fixed;color:var(--iv-ink)}
+  background:radial-gradient(ellipse at 50% 0%,var(--rx-light,#145a42) 0%,var(--rx-mid,#0B3B2D) 45%,var(--rx-dark,#06261C) 100%) fixed;color:var(--iv-ink)}
 html.rc-app .app-shell:has(.mode-page) .mode-page h1,html.rc-app .app-shell:has(.mode-page) .mode-page h2{color:#FFF8EA}
 html.rc-app .app-shell:has(.mode-page) .mode-page h1 em{color:#E9C46A}
 html.rc-app .app-shell:has(.mode-page) .mode-page .eyebrow{color:#E9C46A}

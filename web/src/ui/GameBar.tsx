@@ -12,7 +12,7 @@ export const PaletteIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="cu
 export function GameBar(p: { game: string; where?: string; onBack: () => void; backLabel: string; dark?: boolean; children?: ReactNode; className?: string }) {
   return <header className={`rc-bar${p.dark ? " dark" : ""}${p.className ? " " + p.className : ""}`}>
     <button type="button" className="rc-bar-back" onClick={p.onBack} aria-label={p.backLabel}>←</button>
-    <span className="rc-bar-brand"><img src="/brand/badge-logo-small.webp" alt="" width="320" height="224" /><span className="rc-bar-name"><strong>{p.game}</strong>{p.where && <small>{p.where}</small>}</span></span>
+    <span className="rc-bar-brand"><img src="/brand/badge-logo-small.webp" alt="" width="320" height="269" /><span className="rc-bar-name"><strong>{p.game}</strong>{p.where && <small>{p.where}</small>}</span></span>
     {p.children && <span className="rc-bar-tools">{p.children}</span>}
   </header>;
 }

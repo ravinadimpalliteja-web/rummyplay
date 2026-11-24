@@ -1,7 +1,7 @@
-/* Royal Club game art — "Royal Gold, jewel colours" set (polished lineup).
+/* Ambaro game art — "jewel colours" set (polished lineup); no crowns or badges on the art, each game shows its own pieces.
    One jewel colour per game (EKAH ruby, Ludo emerald, Snakes & Ladders sapphire, Sudoku amethyst, Chess onyx,
    Word Puzzle citrine),
-   shared gold, crowns and a soft sunburst so the five read as one family. All artwork is original.
+   shared gold and a soft sunburst so the five read as one family. All artwork is original.
    <GameArtDefs /> must be rendered once on the page; every art piece below points at its gradients and filters. */
 import type { ReactNode } from "react";
 
@@ -15,11 +15,6 @@ export const GameArtDefs = () => (
   <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden="true" focusable="false">
     <defs>
       <g id="rcg-rays">{RAYS.map(p => <polygon key={p} points={p} />)}</g>
-      <g id="rcg-crown">
-        <polygon points="-20,10 -26,-12 -10,-2 0,-20 10,-2 26,-12 20,10" fill="url(#rcg-gold)" stroke="#7A5508" strokeWidth="2" strokeLinejoin="round" />
-        <rect x="-21" y="8" width="42" height="8" rx="3" fill="url(#rcg-gold)" stroke="#7A5508" strokeWidth="2" />
-        <circle cx="0" cy="-20" r="3.5" fill="#E0303F" /><circle cx="-26" cy="-12" r="3" fill="#22B573" /><circle cx="26" cy="-12" r="3" fill="#3B7BFF" />
-      </g>
       <filter id="rcg-shadow" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="0" dy="8" stdDeviation="7" floodColor="#000" floodOpacity="0.4" /></filter>
       <filter id="rcg-glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="11" /></filter>
       <linearGradient id="rcg-gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#FFF0A8" /><stop offset="0.45" stopColor="#F2C23E" /><stop offset="1" stopColor="#A8740C" /></linearGradient>
@@ -68,7 +63,7 @@ const Backdrop = ({ jewel }: { jewel: string }) => (
 const Vignette = () => <rect x="-80" y="-80" width="400" height="400" fill="url(#rcg-vig)" />;
 
 /* All five use the same frame, pinned to the top ("xMidYMin slice"): on wide or short tiles the bottom is
-   trimmed instead of the top, so the crowns always show and the dark label strip covers only the base. */
+   trimmed instead of the top, so the top of each picture always shows and the dark label strip covers only the base. */
 const Frame = ({ children }: { children: ReactNode }) => (
   <svg viewBox="0 0 240 240" preserveAspectRatio="xMidYMin slice" aria-hidden="true">{children}</svg>
 );
@@ -83,7 +78,6 @@ export const EkahArt = () => (
       <use href="#rcg-card-jal" transform="rotate(-9 120 236) translate(84 72) scale(0.86)" />
       <use href="#rcg-card-agni" transform="rotate(-27 120 236) translate(84 72) scale(0.86)" />
     </g>
-    <use href="#rcg-crown" filter="url(#rcg-shadow)" transform="translate(120 40) scale(1.3)" />
     <Vignette />
   </Frame>
 );
@@ -104,13 +98,12 @@ export const LudoArt = () => (
     <g filter="url(#rcg-shadow)"><ellipse cx="170" cy="172" rx="14" ry="5" fill="#173C9E" /><path d="M 164 138 Q 158 156 156 168 L 184 168 Q 182 156 176 138 Z" fill="url(#rcg-sph-blue)" /><circle cx="170" cy="130" r="11" fill="url(#rcg-sph-blue)" /><ellipse cx="166" cy="126" rx="3.5" ry="2.2" fill="#FFF" opacity="0.8" /></g>
     <circle cx="120" cy="110" r="40" fill="#FFD36B" opacity="0.45" filter="url(#rcg-glow)" />
     <g filter="url(#rcg-shadow)"><ellipse cx="120" cy="160" rx="24" ry="8" fill="#8F600A" /><path d="M 110 104 Q 98 136 94 156 L 146 156 Q 142 136 130 104 Z" fill="url(#rcg-sph-gold)" /><ellipse cx="120" cy="104" rx="16" ry="5" fill="#C08A12" /><circle cx="120" cy="86" r="19" fill="url(#rcg-sph-gold)" /><ellipse cx="113" cy="79" rx="5.5" ry="3.5" fill="#FFF" opacity="0.8" /></g>
-    <use href="#rcg-crown" filter="url(#rcg-shadow)" transform="translate(120 58) scale(0.85)" />
     </g>
     <Vignette />
   </Frame>
 );
 
-/* Snakes & Ladders: a friendly crowned snake weaving in and out of a wide gold ladder.
+/* Snakes & Ladders: a friendly snake weaving in and out of a wide gold ladder.
    The body is a tapered outline (thick neck to thin tail) with shading, scales, soft markings and a segmented belly. */
 const SNAKE_BODY = "M 34.0 244.5 L 38.3 243.9 L 42.6 243.5 L 46.8 243.1 L 51.1 242.7 L 55.4 242.3 L 59.7 241.8 L 63.9 241.3 L 68.2 240.8 L 72.4 240.2 L 76.6 239.6 L 80.8 238.9 L 84.9 238.3 L 89.1 237.5 L 93.1 236.8 L 97.2 236.0 L 101.2 235.2 L 105.1 234.4 L 109.0 233.5 L 112.9 232.6 L 116.6 231.6 L 120.4 230.7 L 124.0 229.7 L 127.6 228.7 L 131.1 227.7 L 134.5 226.6 L 137.9 225.6 L 141.1 224.5 L 144.3 223.4 L 147.4 222.2 L 150.4 221.1 L 153.2 219.9 L 156.0 218.8 L 158.7 217.6 L 161.2 216.4 L 163.6 215.2 L 165.9 214.1 L 168.1 212.9 L 170.1 211.7 L 172.0 210.5 L 173.7 209.4 L 175.3 208.2 L 176.8 207.1 L 178.0 206.0 L 179.1 205.0 L 180.0 204.0 L 180.8 203.0 L 181.4 202.2 L 181.8 201.5 L 182.1 200.9 L 182.2 200.4 L 182.3 200.0 L 182.3 199.7 L 182.2 199.5 L 182.2 199.3 L 182.0 199.0 L 181.8 198.6 L 181.4 198.1 L 180.9 197.5 L 180.2 196.8 L 179.2 196.0 L 177.9 195.1 L 176.5 194.2 L 175.0 193.3 L 173.3 192.4 L 171.5 191.5 L 169.5 190.7 L 167.5 189.8 L 165.3 189.0 L 163.0 188.2 L 160.7 187.3 L 158.2 186.6 L 155.7 185.8 L 153.1 185.0 L 150.5 184.3 L 147.8 183.6 L 145.0 182.8 L 142.2 182.1 L 139.3 181.5 L 136.4 180.8 L 133.5 180.1 L 130.6 179.5 L 127.6 178.8 L 124.6 178.2 L 121.7 177.5 L 118.7 176.9 L 115.7 176.2 L 112.7 175.6 L 109.8 174.9 L 106.9 174.3 L 104.0 173.6 L 101.1 173.0 L 98.3 172.3 L 95.5 171.6 L 92.8 171.0 L 90.1 170.2 L 87.4 169.5 L 84.9 168.8 L 82.4 168.0 L 79.9 167.2 L 77.5 166.4 L 75.2 165.5 L 73.0 164.7 L 70.8 163.7 L 68.7 162.7 L 66.7 161.6 L 64.8 160.5 L 62.9 159.2 L 61.1 157.8 L 59.4 156.3 L 57.8 154.6 L 56.3 152.6 L 55.0 150.4 L 54.0 147.9 L 53.4 145.2 L 53.2 142.4 L 53.4 139.7 L 54.0 137.0 L 54.9 134.5 L 56.0 132.1 L 57.5 129.9 L 59.1 127.7 L 61.0 125.7 L 63.0 123.9 L 65.1 122.2 L 67.3 120.7 L 69.6 119.2 L 71.9 117.9 L 74.4 116.6 L 77.0 115.4 L 79.6 114.2 L 82.3 113.2 L 85.1 112.1 L 87.9 111.2 L 90.8 110.2 L 93.8 109.3 L 96.8 108.4 L 99.8 107.6 L 102.9 106.8 L 106.0 106.0 L 109.2 105.2 L 112.3 104.5 L 115.5 103.8 L 118.7 103.1 L 121.9 102.4 L 125.0 101.7 L 128.2 101.0 L 131.3 100.4 L 134.4 99.8 L 137.5 99.1 L 140.5 98.5 L 143.5 97.9 L 146.4 97.3 L 149.2 96.7 L 152.0 96.0 L 154.6 95.4 L 157.2 94.8 L 159.7 94.2 L 162.0 93.6 L 164.2 93.0 L 166.3 92.4 L 168.2 91.8 L 169.9 91.1 L 171.5 90.6 L 172.9 90.0 L 174.0 89.5 L 174.9 89.0 L 175.5 88.6 L 175.8 88.4 L 175.7 88.4 L 175.4 88.7 L 174.9 89.4 L 174.3 90.6 L 173.9 92.2 L 173.8 93.9 L 174.1 95.3 L 174.4 96.2 L 174.6 96.7 L 174.6 96.7 L 174.2 96.4 L 173.5 95.7 L 172.3 94.8 L 171.1 93.8 L 169.8 93.0 L 168.6 92.1 L 167.3 91.3 L 166.1 90.6 L 164.8 89.9 L 163.5 89.3 L 162.3 88.6 L 161.0 88.1 L 159.7 87.5 L 158.4 87.0 L 157.1 86.6 L 155.8 86.2 L 154.5 85.8 L 153.2 85.4 L 152.0 85.0 L 150.7 84.7 L 149.4 84.4 L 148.1 84.1 L 146.9 83.9 L 145.6 83.6 L 144.3 83.4 L 143.1 83.2 L 141.9 83.1 L 140.7 83.0 L 139.5 82.8 L 138.3 82.7 L 137.1 82.6 L 136.0 82.6 L 134.8 82.5 L 133.7 82.5 L 132.6 82.4 L 131.6 82.4 L 130.5 82.4 L 129.5 82.3 L 128.5 82.3 L 127.6 82.3 L 126.6 82.3 L 125.7 82.3 L 124.8 82.3 L 123.9 82.3 L 123.0 82.2 L 122.1 82.2 L 121.1 82.2 L 120.2 82.1 L 119.2 81.9 L 118.0 81.8 L 116.7 81.5 L 115.0 80.9 L 113.0 80.0 L 110.5 78.3 L 107.9 75.2 L 106.0 70.9 L 105.7 66.4 L 106.4 62.9 L 107.5 60.5 L 108.6 58.8 L 109.6 57.6 L 110.3 56.8 L 129.7 75.2 L 129.7 75.2 L 130.1 74.6 L 130.8 73.6 L 131.6 71.7 L 132.3 68.7 L 132.0 64.7 L 130.3 60.8 L 127.9 58.1 L 125.9 56.6 L 124.4 56.0 L 123.5 55.7 L 123.0 55.5 L 122.8 55.5 L 122.8 55.5 L 123.0 55.5 L 123.4 55.6 L 123.9 55.6 L 124.5 55.6 L 125.2 55.6 L 126.0 55.6 L 126.9 55.6 L 127.8 55.6 L 128.9 55.7 L 129.9 55.7 L 131.1 55.7 L 132.3 55.7 L 133.5 55.8 L 134.8 55.8 L 136.1 55.9 L 137.5 55.9 L 139.0 56.0 L 140.4 56.1 L 142.0 56.3 L 143.5 56.4 L 145.1 56.6 L 146.7 56.8 L 148.4 57.1 L 150.1 57.3 L 151.8 57.6 L 153.5 58.0 L 155.3 58.4 L 157.1 58.8 L 158.9 59.2 L 160.7 59.7 L 162.5 60.3 L 164.4 60.9 L 166.3 61.6 L 168.1 62.4 L 170.0 63.2 L 171.9 64.0 L 173.8 64.9 L 175.7 65.9 L 177.6 67.0 L 179.4 68.1 L 181.3 69.3 L 183.2 70.5 L 185.0 71.8 L 186.9 73.2 L 188.7 74.7 L 190.5 76.3 L 192.5 78.2 L 194.4 80.3 L 196.1 82.7 L 197.6 85.4 L 198.7 88.5 L 199.3 92.1 L 199.2 95.8 L 198.3 99.3 L 196.8 102.4 L 195.0 104.9 L 193.0 106.9 L 191.0 108.6 L 188.9 110.0 L 186.8 111.2 L 184.7 112.2 L 182.5 113.2 L 180.3 114.0 L 178.0 114.8 L 175.6 115.5 L 173.1 116.2 L 170.6 116.9 L 168.0 117.5 L 165.3 118.1 L 162.6 118.7 L 159.8 119.3 L 156.9 119.8 L 154.0 120.4 L 151.0 120.9 L 148.0 121.5 L 145.0 122.0 L 141.9 122.5 L 138.8 123.1 L 135.7 123.6 L 132.6 124.1 L 129.5 124.7 L 126.4 125.2 L 123.2 125.8 L 120.2 126.3 L 117.1 126.9 L 114.1 127.5 L 111.1 128.1 L 108.2 128.8 L 105.3 129.4 L 102.5 130.1 L 99.8 130.8 L 97.2 131.5 L 94.6 132.2 L 92.2 133.0 L 89.8 133.7 L 87.6 134.5 L 85.6 135.3 L 83.6 136.1 L 81.9 137.0 L 80.3 137.8 L 78.8 138.6 L 77.6 139.4 L 76.6 140.2 L 75.7 140.9 L 75.0 141.5 L 74.5 142.1 L 74.2 142.7 L 74.0 143.0 L 73.9 143.0 L 73.9 142.9 L 73.9 142.5 L 73.9 142.1 L 73.8 141.7 L 73.7 141.5 L 73.6 141.4 L 73.7 141.5 L 73.9 141.8 L 74.3 142.3 L 75.0 142.8 L 75.8 143.4 L 76.9 144.1 L 78.1 144.8 L 79.5 145.6 L 81.0 146.3 L 82.7 147.1 L 84.5 147.8 L 86.5 148.6 L 88.6 149.3 L 90.8 150.1 L 93.1 150.9 L 95.5 151.6 L 97.9 152.4 L 100.5 153.1 L 103.1 153.9 L 105.8 154.6 L 108.5 155.4 L 111.3 156.1 L 114.2 156.8 L 117.0 157.6 L 119.9 158.3 L 122.9 159.1 L 125.8 159.9 L 128.8 160.6 L 131.8 161.4 L 134.8 162.2 L 137.8 163.0 L 140.7 163.8 L 143.7 164.6 L 146.6 165.5 L 149.5 166.3 L 152.4 167.2 L 155.3 168.1 L 158.1 169.0 L 160.9 169.9 L 163.6 170.9 L 166.2 171.9 L 168.8 172.9 L 171.4 173.9 L 173.8 175.0 L 176.2 176.2 L 178.5 177.3 L 180.8 178.5 L 182.9 179.8 L 185.0 181.1 L 186.9 182.5 L 188.8 184.0 L 190.6 185.6 L 192.3 187.3 L 193.7 189.2 L 195.0 191.2 L 196.0 193.3 L 196.7 195.5 L 197.1 197.8 L 197.1 200.1 L 196.9 202.4 L 196.3 204.6 L 195.6 206.7 L 194.6 208.6 L 193.4 210.4 L 192.1 212.2 L 190.6 213.8 L 189.0 215.3 L 187.3 216.8 L 185.4 218.3 L 183.5 219.7 L 181.4 221.0 L 179.2 222.3 L 176.9 223.6 L 174.5 224.9 L 171.9 226.1 L 169.3 227.3 L 166.6 228.5 L 163.7 229.6 L 160.8 230.7 L 157.8 231.8 L 154.6 232.9 L 151.4 233.9 L 148.1 235.0 L 144.7 235.9 L 141.2 236.9 L 137.7 237.8 L 134.1 238.7 L 130.4 239.6 L 126.6 240.4 L 122.8 241.2 L 118.9 242.0 L 115.0 242.7 L 111.0 243.4 L 106.9 244.1 L 102.8 244.7 L 98.7 245.2 L 94.5 245.8 L 90.3 246.3 L 86.1 246.7 L 81.8 247.1 L 77.5 247.4 L 73.2 247.7 L 68.8 248.0 L 64.5 248.2 L 60.1 248.3 L 55.8 248.4 L 51.4 248.4 L 47.0 248.4 L 42.7 248.3 L 38.3 248.0 L 34.0 247.5 Z";
 const SnakeBody = ({ front = false }: { front?: boolean }) => (
@@ -164,7 +157,6 @@ export const SnakesArt = () => (
     </g>
     <SnakeBody front />
     <SnakeHead />
-    <use href="#rcg-crown" filter="url(#rcg-shadow)" transform="translate(120 21) scale(0.72)" />
     <Vignette />
   </Frame>
 );
@@ -183,7 +175,6 @@ export const SudokuArt = () => (
       </g>
       <text x="0" y="12" textAnchor="middle" fontFamily="Cinzel, serif" fontWeight="700" fontSize="34" fill="#7A1020">9</text>
     </g>
-    <use href="#rcg-crown" filter="url(#rcg-shadow)" transform="translate(186 44) rotate(14) scale(1.1)" />
     <g filter="url(#rcg-shadow)" transform="translate(184 196) rotate(38)">
       <rect x="-7" y="-64" width="14" height="58" rx="2" fill="url(#rcg-gold)" stroke="#8F600A" strokeWidth="1.5" />
       <rect x="-7" y="-74" width="14" height="11" rx="3" fill="#D42A3E" stroke="#8A0F20" strokeWidth="1.2" />
@@ -196,7 +187,7 @@ export const SudokuArt = () => (
   </Frame>
 );
 
-/* Chess: a gold horse-head knight as the hero, framed by a bishop, a rook and a big crowned pawn behind. */
+/* Chess: a gold horse-head knight as the hero, framed by a bishop, a rook and a big pawn behind. */
 const CHESS_DARK = [[-76, -76], [0, -76], [-38, -38], [38, -38], [-76, 0], [0, 0], [-38, 38], [38, 38]];
 const CHESS_LIGHT = [[-38, -76], [38, -76], [-76, -38], [0, -38], [-38, 0], [38, 0], [-76, 38], [0, 38]];
 
@@ -266,7 +257,6 @@ export const ChessArt = () => (
     </g>
     <circle cx="120" cy="104" r="64" fill="#FFD36B" opacity="0.4" filter="url(#rcg-glow)" />
     <Pawn x={120} y={182} s={0.98} />
-    <use href="#rcg-crown" filter="url(#rcg-shadow)" transform="translate(120 38) scale(0.95)" />
     <Bishop x={52} y={230} s={0.8} />
     <Rook x={190} y={230} s={0.64} />
     <Knight x={118} y={238} s={0.98} />
@@ -274,7 +264,7 @@ export const ChessArt = () => (
   </Frame>
 );
 
-/* Word Puzzle: four letter tiles spelling WORD — two solved in emerald, one gold, one ivory — under a crown. */
+/* Word Puzzle: four letter tiles spelling WORD — two solved in emerald, one gold, one ivory. */
 const WORD_TILES: { x: number; y: number; ch: string; fill: string; ink: string; rot: number }[] = [
   { x: -58, y: -58, ch: "W", fill: "#1FA36C", ink: "#FFFDF6", rot: -6 },
   { x: 58, y: -58, ch: "O", fill: "url(#rcg-gold)", ink: "#4A2A02", rot: 5 },
@@ -294,7 +284,6 @@ export const WordArt = () => (
         </g>
       ))}
     </g>
-    <use href="#rcg-crown" filter="url(#rcg-shadow)" transform="translate(120 26) scale(0.8)" />
     <Vignette />
   </Frame>
 );

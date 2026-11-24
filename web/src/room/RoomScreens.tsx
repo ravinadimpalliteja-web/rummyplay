@@ -59,7 +59,7 @@ export function RoomAccountLine() {
 export function ClubBar({ game, onBack }: { game: string; onBack: () => void }) {
   return <div className="rs-clubbar">
     <button type="button" className="rs-club-back" onClick={onBack} aria-label="Back">←</button>
-    <span className="rs-brand"><img src="/brand/badge-logo-small.webp" alt="" width="320" height="224" /><span><strong>ROYAL CLUB</strong><small>{game.toUpperCase()}</small></span></span>
+    <span className="rs-brand"><img src="/brand/badge-logo-small.webp" alt="" width="320" height="269" /><span><strong>AMBARO</strong><small>{game.toUpperCase()}</small></span></span>
   </div>;
 }
 
@@ -93,7 +93,7 @@ function WebPlayStart(p: StartProps) {
     <div className="rs-watermark" aria-hidden="true" />
     <ClubBar game={p.game} onBack={p.onBack} />
     <div className="rs-head">
-      <div className="eyebrow">ROYAL CLUB · {p.game.toUpperCase()}</div>
+      <div className="eyebrow">AMBARO · {p.game.toUpperCase()}</div>
       <h1>{p.game}</h1>
       <p>{p.tagline}</p>
     </div>

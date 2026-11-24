@@ -4,7 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="/app-mode.js"></script>
-<title>Royal Club Chess</title>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ambaro">
+<meta property="og:title" content="Ambaro">
+<meta property="og:description" content="Climb aboard, play together.">
+<meta property="og:image" content="https://test.royalclubgames.com/brand/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<title>Chess · Ambaro</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="theme-color" content="#06231a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -320,17 +328,17 @@ html body .club-back{flex:none}
 
 <div class="app" id="app">
   <header class="top">
-    <span class="lead-group"><a class="club-back" id="clubLink" href="/" hidden aria-label="Back to Royal Club">←</a>
-    <button class="brand" id="homeBtn" type="button" aria-label="Royal Club Chess home">
-      <span class="brand-mark rc-el" id="brandMark"><img src="../brand/badge-logo-small.webp" alt="" width="320" height="224"></span>
-      <span><strong>ROYAL CLUB</strong><small>CHESS</small></span>
+    <span class="lead-group"><a class="club-back" id="clubLink" href="/" hidden aria-label="Back to Ambaro">←</a>
+    <button class="brand" id="homeBtn" type="button" aria-label="Ambaro Chess home">
+      <span class="brand-mark rc-el" id="brandMark"><img src="../brand/badge-logo-small.webp" alt="" width="320" height="269"></span>
+      <span><strong>AMBARO</strong><small>CHESS</small></span>
     </button></span>
     <span class="top-tools"><button class="chip icon-chip" id="soundBtn" type="button" aria-pressed="true" aria-label="Sound on"></button><button class="chip theme-trigger" id="themeOpen" type="button" aria-haspopup="dialog" aria-controls="themeDialog"><span aria-hidden="true">▦</span> Themes</button><button class="chip" id="topAction" type="button" hidden>New game</button></span>
   </header>
 
   <section class="setup rc-wm-host" id="setup">
     <div class="rc-watermark" aria-hidden="true"></div>
-    <p class="eyebrow">Royal Club · Board games</p>
+    <p class="eyebrow">Ambaro · Board games</p>
     <h1>Chess, <em>your move.</em></h1>
     <p class="lead">Play the computer at three levels, a friend on this phone, or a friend online.</p>
     <div class="modes">
@@ -657,7 +665,7 @@ html body .club-back{flex:none}
     if (game && game.clock && !isOver() && !paused) { if (clockOn()) game.clock[g.turn()] = left(g.turn()); paused = true; save(); }   // a timed game waits
     hint = null; hintBusy = false;
     $('setup').hidden = false; $('game').hidden = true; $('topAction').hidden = true;
-    $('clubLink').setAttribute('aria-label', 'Back to Royal Club');
+    $('clubLink').setAttribute('aria-label', 'Back to Ambaro');
     const s = store.get(SAVE_KEY);
     $('resumeBtn').hidden = !(s && s.sans && s.sans.length && !s.result);
   }
@@ -1003,7 +1011,7 @@ html body .club-back{flex:none}
   }
   function showPgn() {
     const r = result();
-    const text = g.pgn({ White: game.names.w, Black: game.names.b, ...(game.mode === 'ai' ? { Annotator: 'Royal Club', Mode: 'vs Computer ' + cap(game.level) } : { Mode: game.mode === 'online' ? 'Online room' : 'Two players' }), ...(game.tc ? { TimeControl: TIME[game.tc][0] + '+' + TIME[game.tc][1] } : {}),
+    const text = g.pgn({ White: game.names.w, Black: game.names.b, ...(game.mode === 'ai' ? { Annotator: 'Ambaro', Mode: 'vs Computer ' + cap(game.level) } : { Mode: game.mode === 'online' ? 'Online room' : 'Two players' }), ...(game.tc ? { TimeControl: TIME[game.tc][0] + '+' + TIME[game.tc][1] } : {}),
       ...(r && r.reason === 'resignation' ? { Termination: (r.result === '1-0' ? 'Black' : 'White') + ' resigned' } : {}), ...(r && /^timeout/.test(r.reason) ? { Termination: 'Time forfeit' } : {}) }, r ? r.result : undefined);
     const sheet = document.createElement('div');
     sheet.className = 'sheet';
@@ -1048,7 +1056,7 @@ html body .club-back{flex:none}
   async function createRoom() {
     $('mpErr').textContent = '';
     const me = RC && await RC.roomAuth();
-    if (!me) { mpError('Sign in with your Royal Club username to play with friends.', true); return; }
+    if (!me) { mpError('Sign in with your Ambaro username to play with friends.', true); return; }
     openRoom({ t: 'create', game: 'chess', token: RC.deviceToken(), name: me.username, passcode: RC.randomPasscode(), auth: me.token });
   }
   async function joinRoom() {
@@ -1057,7 +1065,7 @@ html body .club-back{flex:none}
     if (!/^\d{4}$/.test(pass)) { mpError('Enter the 4-digit passcode.'); return; }
     $('mpErr').textContent = '';
     const me = RC && await RC.roomAuth();
-    if (!me) { mpError('Sign in with your Royal Club username to play with friends.', true); return; }
+    if (!me) { mpError('Sign in with your Ambaro username to play with friends.', true); return; }
     try { localStorage.removeItem(ROOM_KEY); } catch { /* ignore */ }
     openRoom({ t: 'join', game: 'chess', code, passcode: pass, token: RC.deviceToken(), name: me.username, auth: me.token });
   }
@@ -1098,7 +1106,7 @@ html body .club-back{flex:none}
   $('rmTime').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b && room) room.send({ t: 'time', value: b.dataset.v }); });
   $('rmStart').addEventListener('click', () => room && room.send({ t: 'start' }));
   $('rmLeave').addEventListener('click', () => leaveOnline(false));
-  const inviteText = () => `Play chess with me on Royal Club!\nRoom code: ${roomView.code}\nPasscode: ${roomView.passcode}\nTap to join: ${RC.siteUrl()}/chess/?room=${roomView.code}&pass=${roomView.passcode}`;
+  const inviteText = () => `Play chess with me on Ambaro!\nRoom code: ${roomView.code}\nPasscode: ${roomView.passcode}\nTap to join: ${RC.siteUrl()}/chess/?room=${roomView.code}&pass=${roomView.passcode}`;
   $('rmCopy').addEventListener('click', () => {
     const t = inviteText();
     try { navigator.clipboard.writeText(t).then(() => { $('rmNote').textContent = 'Invite copied.'; }, () => { $('rmNote').textContent = t; }); } catch { $('rmNote').textContent = t; }

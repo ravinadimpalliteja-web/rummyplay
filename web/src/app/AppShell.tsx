@@ -9,7 +9,7 @@ import { GameArtDefs, EkahArt, LudoArt, SnakesArt, ChessArt, SudokuArt, WordArt 
 import { TILES, RESUME, findResume, type RoomGame } from "../home/Home";
 import * as R from "../economy/rules";
 import { claimChest, claimDaily, claimMission, collectGames, refreshDay, unlockLook, useWallet, useWalletReady, type Earned } from "../economy/wallet";
-import { BGS, bgVars, setBg, useBg } from "./theme";
+import { BGS, isCream, setBg, shellVars, useBg } from "./theme";
 import Glider from "./Glider";
 import "./app-shell.css";
 
@@ -56,7 +56,8 @@ export function Icon({ name, size = 22 }: { name: IconName; size?: number }) {
   }
 }
 export const Coin = ({ size = 22 }: { size?: number }) => (
-  <svg className="rx-coin" width={size} height={size} viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.5" fill="#F5C542" stroke="#B8862B" strokeWidth="1.5" /><circle cx="12" cy="12" r="7" fill="none" stroke="#B8862B" strokeWidth="1" /><path d="M7.5 10.5l2 1.7L12 8.5l2.5 3.7 2-1.7-.9 4.5H8.4z" fill="#B8862B" /></svg>
+  /* The Ambaro coin: gold, with the lotus from the logo (not a crown or a chip, so it never looks like a casino token). */
+  <svg className="rx-coin" width={size} height={size} viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.6" fill="#F5C542" stroke="#B8862B" strokeWidth="1.3" /><circle cx="12" cy="12" r="8.3" fill="none" stroke="#B8862B" strokeWidth=".7" opacity=".7" /><g fill="#B8862B"><path d="M12 5.6c1.5 1.6 2.1 3.6 0 7.4-2.1-3.8-1.5-5.8 0-7.4z" /><path d="M6.6 8.9c2.1.2 3.8 1.5 5 4.6-3.2-.6-4.6-2.3-5-4.6z" /><path d="M17.4 8.9c-.4 2.3-1.8 4-5 4.6 1.2-3.1 2.9-4.4 5-4.6z" /><path d="M6.8 14.2c1.6 1.4 3.3 1.9 5.2 1.9s3.6-.5 5.2-1.9c-.9 2-2.8 3.2-5.2 3.2s-4.3-1.2-5.2-3.2z" /></g></svg>
 );
 function useNow(ms = 1000) {
   const [now, setNow] = useState(Date.now);
@@ -132,10 +133,13 @@ export default function AppShell({ tab, onTab, onOpen, onJoin, profile }: AppShe
   const ready = useWalletReady();
   useEffect(() => { if (!ready) return; refreshDay(); const e = collectGames(); if (e.games) setEarned(e); }, [ready]);
 
-  return <div className="rx" style={bgVars(shown) as CSSProperties}>
+  return <div className={`rx${isCream(shown) ? " rx-light" : ""}`} style={shellVars(shown) as CSSProperties}>
     <GameArtDefs />
     <Toast />
-    <Hud onTab={onTab} />
+    <div className="rx-top">
+      {tab === "home" && <h1 className="rx-logo"><img src="/brand/ambaro-logo.webp" alt="Ambaro" width={960} height={326} /></h1>}
+      <Hud onTab={onTab} />
+    </div>
     <main className="rx-main">
       {tab === "home" && <HomeStage games={games.map(g => g.id)} game={game} onPick={pickGame} onOpen={onOpen} onTab={onTab} onFriends={g => { setFriendGame(g); onTab("friends"); }} />}
       {tab === "friends" && <FriendsTab onOpen={onOpen} onJoin={onJoin} initial={friendGame} />}
@@ -144,7 +148,7 @@ export default function AppShell({ tab, onTab, onOpen, onJoin, profile }: AppShe
       {tab === "settings" && <SettingsTab />}
     </main>
     <nav className="rx-nav" aria-label="Main">
-      <span className="rx-rail-mark" aria-hidden="true">RC</span>
+      <span className="rx-rail-mark" aria-hidden="true"><img src="/brand/ambaro-elephant.webp" alt="" width={480} height={403} /></span>
       {NAV.map(n => n.id === "play"
         ? <button key="play" type="button" className="rx-navplay" aria-label={`Play ${games.find(g => g.id === game)?.name ?? ""}`} onClick={() => onOpen(game)}><Icon name="play" size={28} />PLAY</button>
         : <button key={n.id} type="button" className={`rx-navbtn${tab === n.id ? " on" : ""}`} aria-current={tab === n.id ? "page" : undefined} onClick={() => onTab(n.id as AppTab)}>
@@ -173,7 +177,7 @@ function Hud({ onTab }: { onTab: (t: AppTab) => void }) {
       <span className="rx-me-text"><strong>{name}</strong><span className="rx-xpbar" aria-hidden="true"><span style={{ width: `${Math.round(lv.pct * 100)}%` }} /></span></span>
     </button>
     <button type="button" className="rx-coins" onClick={() => onTab("rewards")} aria-label={`${w.coins} coins. Earn more in Rewards`}>
-      <Coin size={26} /><span>{fmtCoins(w.coins)}</span><span className="rx-coins-plus"><Icon name="plus" size={15} /></span>
+      <Coin size={26} /><span>{fmtCoins(w.coins)}</span>
     </button>
     <button type="button" className="rx-gear" onClick={() => onTab("settings")} aria-label="Settings"><Icon name="gear" size={22} /></button>
   </header>;
@@ -194,9 +198,9 @@ function HomeStage({ games, game, onPick, onOpen, onTab, onFriends }: {
 
   return <div className="rx-page rx-home">
     <div className="rx-chips">
-      <button type="button" className={`rx-chip${chest.ready ? " ready" : ""}`} onClick={() => chest.ready ? earn(claimChest(), "free chest") : onTab("rewards")}>
+      <button type="button" className={`rx-chip${chest.ready ? " ready" : ""}`} onClick={() => chest.ready ? earn(claimChest(), "free gift") : onTab("rewards")}>
         <span className="rx-chip-ico gold"><Icon name="gift" size={19} /></span>
-        <span><strong>{chest.ready ? "Open chest!" : "Chest"}</strong><small>{chest.ready ? `${chest.ready} ready` : chest.nextAt ? left(chest.nextAt - now) : ""}</small></span>
+        <span><strong>Free gift</strong><small>{chest.ready ? "Open now!" : chest.nextAt ? left(chest.nextAt - now) : ""}</small></span>
       </button>
       <button type="button" className={`rx-chip${daily.done ? "" : " ready"}`} onClick={() => onTab("rewards")}>
         <span className="rx-chip-ico saffron"><Icon name="fire" size={19} /></span>
@@ -295,12 +299,12 @@ function RewardsTab() {
       {daily.shield && !daily.done && <p className="rx-small">You missed a day, but your weekly streak shield keeps your streak.</p>}
     </section>
 
-    <h2 className="rx-kicker">FREE CHEST</h2>
-    <section className="rx-card-box rx-chest" aria-label="Free chest">
+    <h2 className="rx-kicker">FREE GIFT</h2>
+    <section className="rx-card-box rx-chest" aria-label="Free gift">
       <span className="rx-chest-ico"><Icon name="gift" size={34} /></span>
-      <div><strong>{chest.ready ? `${chest.ready} chest${chest.ready > 1 ? "s" : ""} ready` : "Next chest"}</strong>
-        <small>{chest.ready ? `${R.CHEST_COINS} coins each. A new one every 4 hours.` : chest.nextAt ? `Opens in ${left(chest.nextAt - now)}` : ""}</small></div>
-      <button type="button" className="rx-btn rx-saffron" disabled={!chest.ready} onClick={() => earn(claimChest(), "free chest")}>OPEN</button>
+      <div><strong>{chest.ready ? `${chest.ready} free gift${chest.ready > 1 ? "s" : ""} ready` : "Next free gift"}</strong>
+        <small>{chest.ready ? `${R.CHEST_COINS} coins in each. A new one every 4 hours.` : chest.nextAt ? `Opens in ${left(chest.nextAt - now)}` : ""}</small></div>
+      <button type="button" className="rx-btn rx-saffron" disabled={!chest.ready} onClick={() => earn(claimChest(), "free gift")}>OPEN</button>
     </section>
 
     <h2 className="rx-kicker">TODAY'S MISSIONS</h2>
@@ -311,7 +315,7 @@ function RewardsTab() {
           : <button type="button" className="rx-btn rx-saffron rx-sm" disabled={!x.done} onClick={() => earn(claimMission(x.id), "mission")}><Coin size={18} />{R.MISSION_COINS}</button>}
       </div>)}
       <div className="rx-mission bonus">
-        <div><strong>All three done</strong><small>Bonus chest</small></div>
+        <div><strong>All three done</strong><small>Bonus gift</small></div>
         {m.bonusClaimed ? <span className="rx-done"><Icon name="check" size={18} />Done</span>
           : <button type="button" className="rx-btn rx-saffron rx-sm" disabled={!m.bonusReady} onClick={() => earn(claimMission("bonus"), "mission bonus")}><Coin size={18} />{R.MISSION_BONUS}</button>}
       </div>
@@ -334,7 +338,7 @@ function LookPicker() {
         const s = R.unlockStatus(w, b.id);
         return <button key={b.id} type="button" className={`rx-swatch${shown === b.id ? " on" : ""}`} aria-pressed={shown === b.id}
           onClick={() => s.owned ? setBg(b.id) : s.item && setAsk(s.item)}>
-          <span className="rx-swatch-dot" style={{ background: `radial-gradient(circle at 50% 30%, ${b.light}, ${b.mid} 60%, ${b.dark})` }}>
+          <span className="rx-swatch-dot" style={{ background: b.cream ? `linear-gradient(180deg, ${b.mid} 0 34%, #FFFBF3 34%, #F2DDBB)` : `radial-gradient(circle at 50% 30%, ${b.light}, ${b.mid} 60%, ${b.dark})` }}>
             {shown === b.id ? <Icon name="check" size={20} /> : !s.owned ? <Icon name="lock" size={18} /> : null}
           </span>
           <span className="rx-swatch-name">{b.name}</span>
@@ -462,12 +466,12 @@ function SettingsTab() {
     <p className="rx-note">Sound is set inside each game.</p>
     <h2 className="rx-kicker">ABOUT</h2>
     <section className="rx-card-box rx-list" aria-label="About">
-      <LinkRow label="About Royal Club" href="/about/" />
+      <LinkRow label="About Ambaro" href="/about/" />
       <LinkRow label="Contact us" href="/contact/" />
       <LinkRow label="Privacy Policy" href="/privacy/" />
       <LinkRow label="Terms of Service" href="/terms/" />
       <LinkRow label="Delete my account" href="/delete-account/" />
     </section>
-    <p className="rx-note">Royal Club Games{version ? ` · version ${version}` : ""}</p>
+    <p className="rx-note">Ambaro{version ? ` · version ${version}` : ""}</p>
   </div>;
 }

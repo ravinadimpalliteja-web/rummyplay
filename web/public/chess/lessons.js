@@ -843,7 +843,7 @@
       id: 'grand-final', n: 52, title: 'Grand final', sub: 'Master test and badge',
       steps: [
         { kind: 'card', fen: START,
-          text: 'The Royal Club master test: five positions from everything you have learned. Earn three stars to become a Royal Club master.' },
+          text: 'The Ambaro master test: five positions from everything you have learned. Earn three stars to become a Ambaro master.' },
         { kind: 'move', fen: '6k1/6pp/2B5/8/1Q6/1K6/8/8 w - - 0 1', accept: ['Bd5'], mate: 2, hint: 'A quiet bishop move.',
           text: 'Mate in 2.', done: 'The king has only h8 left.' },
         { kind: 'move', fen: '6k1/6pp/2B5/8/1Q6/1K6/8/8 w - - 0 1', pre: ['Bd5', 'Kh8'], accept: 'mate', hint: 'The queen to the back rank.',
@@ -853,7 +853,7 @@
         { kind: 'move', fen: '2k5/8/2K5/8/8/8/8/7R w - - 0 1', accept: 'mate', hint: 'The kings face each other.',
           text: 'Mate in 1.', done: 'Checkmate.' },
         { kind: 'move', fen: '3qkb1r/pp1p1ppp/8/8/4N3/8/PPP2PPP/4R1K1 w - - 0 1', accept: 'mate', hint: 'Double check.',
-          text: 'Mate in 1.', done: 'Double check and mate. You are a Royal Club master!' },
+          text: 'Mate in 1.', done: 'Double check and mate. You are a Ambaro master!' },
       ],
     },
   ];

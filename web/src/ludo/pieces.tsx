@@ -1,6 +1,10 @@
 /* Royal Club Ludo: token sets and dice finishes. Purely visual; chosen per device and remembered. */
 import type { Color } from "./engine";
 import { SHOP } from "../economy/rules";
+import ambaroRed from "./art/ambaro-red.webp";
+import ambaroGreen from "./art/ambaro-green.webp";
+import ambaroYellow from "./art/ambaro-yellow.webp";
+import ambaroBlue from "./art/ambaro-blue.webp";
 
 export const TOKEN_SETS = [
   { id: "ambaro", name: "Ambaro elephants", note: "The Ambaro elephant, carrying its golden ambari" },
@@ -47,9 +51,12 @@ export function PieceDefs() {
       <linearGradient id="ldp-gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fff3c0" /><stop offset=".45" stopColor="#e6bd5f" /><stop offset="1" stopColor="#8a5f18" /></linearGradient>
       <linearGradient id="ldp-gold-h" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#8a5f18" /><stop offset=".35" stopColor="#f6dc8e" /><stop offset=".6" stopColor="#fff3c0" /><stop offset="1" stopColor="#9a6c1e" /></linearGradient>
       <linearGradient id="ldp-coat" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fffaf0" /><stop offset=".6" stopColor="#efe4cf" /><stop offset="1" stopColor="#cdbd9c" /></linearGradient>
+      <linearGradient id="ldp-ivy" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fffcf3" /><stop offset=".55" stopColor="#f4e8cf" /><stop offset="1" stopColor="#dcc69e" /></linearGradient>
+      <linearGradient id="ldp-ivy-d" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#ede0c3" /><stop offset="1" stopColor="#cdb387" /></linearGradient>
+      <linearGradient id="ldp-ear" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fffaf0" /><stop offset=".6" stopColor="#f3e3bf" /><stop offset="1" stopColor="#e9c36a" /></linearGradient>
+      <linearGradient id="ldp-amb-saffron" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#f3a52a" /><stop offset=".55" stopColor="#d97f0e" /><stop offset="1" stopColor="#a85a06" /></linearGradient>
+      <radialGradient id="ldp-amb-saffron-v" cx=".35" cy=".3" r=".8"><stop offset="0" stopColor="#ffd27a" /><stop offset=".5" stopColor="#e88f14" /><stop offset="1" stopColor="#a85a06" /></radialGradient>
       <linearGradient id="ldp-hide" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#a8a29c" /><stop offset=".6" stopColor="#8b847e" /><stop offset="1" stopColor="#625c57" /></linearGradient>
-      <linearGradient id="ldp-jade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#4fd096" /><stop offset=".5" stopColor="#1f9464" /><stop offset="1" stopColor="#0c5537" /></linearGradient>
-      <linearGradient id="ldp-jade-d" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#1c8a5b" /><stop offset="1" stopColor="#0a4630" /></linearGradient>
       <radialGradient id="ldp-pearl" cx=".38" cy=".32" r=".7"><stop offset="0" stopColor="#ffffff" /><stop offset=".6" stopColor="#efe6d2" /><stop offset="1" stopColor="#b9a87e" /></radialGradient>
       {COLS.map(c => <g key={c}>
         <radialGradient id={`ldp-${c}-ball`} cx=".36" cy=".3" r=".75"><stop offset="0" stopColor={TONES[c].hi} /><stop offset=".45" stopColor={TONES[c].base} /><stop offset="1" stopColor={TONES[c].lo} /></radialGradient>
@@ -62,7 +69,103 @@ export function PieceDefs() {
 
 /** One token drawn in the chosen set, in the player's colour. Animals face right (towards the token they attack).
     Each piece's art sits in a group (.ld-art) so the capture animations can move parts of it. */
-export function Piece({ set, color }: { set: TokenSet; color: Color }) {
+const AMBARO_ART: Record<Color, string> = { red: ambaroRed, green: ambaroGreen, yellow: ambaroYellow, blue: ambaroBlue };
+
+/* The Ambaro elephant token, drawn to match the logo: an ivory elephant with a raised trunk, a big fan ear edged in
+   gold, gold tusk caps, anklets and toenails and a gold headband with an emerald; a blanket in the player's colour with
+   a gold border, tassels and the gold lotus in a laurel; a golden ambari whose dome canopy is in the player's colour;
+   all standing on a round gold base ringed in the player's colour, like a carved game piece. The trunk and ear move
+   (they lift and flap on your turn, and the trunk does the capture's toss). `bare` (the 1st-place procession) shows
+   the big logo artwork instead. */
+function AmbaroPiece({ color, bare }: { color: Color; bare?: boolean }) {
+  if (bare) return <svg className="ld-piece" viewBox="0 0 48 41.4" aria-hidden="true" focusable="false"><image href={AMBARO_ART[color]} x="0" y="0" width="48" height="41.4" /></svg>;
+  // yellow cloth is a deeper saffron amber here, so it stands apart from all the gold
+  const body = color === "yellow" ? "url(#ldp-amb-saffron)" : `url(#ldp-${color}-body)`, v = color === "yellow" ? "url(#ldp-amb-saffron-v)" : `url(#ldp-${color}-v)`;
+  const gold = "url(#ldp-gold)", goldH = "url(#ldp-gold-h)";
+  const line = "#7a5a2e", ivory = "url(#ldp-ivy)", ivoryD = "url(#ldp-ivy-d)", gem = "#17b06a";
+  const diamond = (x: number, y: number, r: number) => <path d={`M${x} ${y - r} l${r} ${r} l${-r} ${r} l${-r} ${-r} Z`} fill={gem} stroke="#6e4a14" strokeWidth=".3" />;
+  return <svg className="ld-piece" viewBox="0 -9 48 59" aria-hidden="true" focusable="false">
+    <ellipse cx="24" cy="48.4" rx="19.5" ry="3" fill="rgba(0,0,0,.3)" />
+    <g className="ld-art">
+      {/* the base */}
+      <path d="M5.6 44.4 V46.2 A18.4 4.2 0 0 0 42.4 46.2 V44.4 Z" fill={body} stroke="#6e4a14" strokeWidth=".45" />
+      <ellipse cx="24" cy="44.4" rx="18.4" ry="3.9" fill={goldH} stroke="#8a5f18" strokeWidth=".4" />
+      <ellipse cx="24" cy="44.2" rx="15" ry="2.6" fill="none" stroke="rgba(255,243,192,.75)" strokeWidth=".5" />
+      {/* tail */}
+      <path d="M6 24.4 C3.8 27 3.4 30.4 4 33.4" stroke={line} strokeWidth="2.1" fill="none" strokeLinecap="round" />
+      <path d="M6 24.4 C3.8 27 3.4 30.4 4 33.4" stroke="#f2e5ca" strokeWidth="1.3" fill="none" strokeLinecap="round" />
+      <path d="M4 32.4 C2.4 34 2.4 36 3.4 37.4 C4.2 36 5.4 35 5.6 33.2 Z" fill={gold} stroke="#7a5214" strokeWidth=".3" />
+      {/* far legs, then near legs */}
+      {[[13.6, true], [29.4, true], [8.8, false], [25, false]].map(([x, far]) => <g key={String(x)} opacity={far ? .92 : 1}>
+        <path d={`M${x} 31 h6.2 l-.3 12.6 q-2.8 1 -5.6 0 Z`} fill={far ? ivoryD : ivory} stroke={line} strokeWidth=".45" />
+        <path d={`M${(x as number) - .2} 39.4 h6.6`} stroke={gold} strokeWidth="1.9" />
+        {[1.2, 3.1, 5].map(d => <ellipse key={d} cx={(x as number) + d} cy="43.3" rx=".8" ry=".55" fill={gold} />)}
+      </g>)}
+      {/* body with soft light and facets */}
+      <path d="M5.4 25.8 C5.6 18.4 12 15.8 20 15.8 C28.4 15.8 34.8 18.6 35 26.2 C35.2 33.4 29 37.2 20.2 37.2 C11.6 37.2 5.2 33.4 5.4 25.8 Z" fill={ivory} stroke={line} strokeWidth=".55" />
+      <path d="M8.4 33.2 L14.6 27.4 L20 36.6 Z M22.6 36.4 L28.6 28.8 L32.6 33" fill="#c9ae80" opacity=".3" />
+      {/* the blanket: player's colour, gold border, tassels and the lotus in a laurel */}
+      <path d="M7.4 18.6 C13 16.4 24 16.4 29.4 18.4 L30 33.4 C24 35 13 35 7 33.2 Z" fill={body} stroke={gold} strokeWidth="1.1" strokeLinejoin="round" />
+      <path d="M8.8 20.2 C14 18.4 23.4 18.4 28 20 L28.5 31.8 C23 33.2 13.4 33.2 8.4 31.6 Z" fill="rgba(40,10,0,.2)" stroke={goldH} strokeWidth=".55" />
+      <ellipse cx="18.5" cy="25" rx="6.4" ry="5.6" fill="rgba(30,6,0,.22)" />
+      {[9.4, 13.8, 18.4, 23, 27.4].map(x => <g key={x}><path d={`M${x} 34.2 v1.1`} stroke={gold} strokeWidth=".5" /><path d={`M${x} 35.2 l-.9 1.8 h1.8 Z`} fill={gold} /></g>)}
+      <path d="M13.2 29.4 C11.6 27 11.8 23.2 13.8 21.2 M23.8 29.4 C25.4 27 25.2 23.2 23.2 21.2" stroke={goldH} strokeWidth=".9" fill="none" strokeDasharray="1.1 .55" strokeLinecap="round" />
+      <g fill={goldH} stroke="#7a5214" strokeWidth=".28">
+        <path d="M18.5 20.6 C20 22.4 20 25.2 18.5 27.4 C17 25.2 17 22.4 18.5 20.6 Z" />
+        <path d="M18.2 27.4 C16 27 14.6 24.8 14.8 22.6 C16.6 23.4 18 25 18.2 27.4 Z" />
+        <path d="M18.8 27.4 C21 27 22.4 24.8 22.2 22.6 C20.4 23.4 19 25 18.8 27.4 Z" />
+        <path d="M18 27.7 C16 27.9 14 27 13.4 25.6 C15.4 25.4 17 26.2 18 27.7 Z" />
+        <path d="M19 27.7 C21 27.9 23 27 23.6 25.6 C21.6 25.4 20 26.2 19 27.7 Z" />
+        <path d="M15.6 28.4 Q18.5 29.6 21.4 28.4" fill="none" strokeWidth=".6" stroke={goldH} />
+      </g>
+      <g transform="translate(36.2 21.6) scale(1.1) translate(-36.2 -21.6)">
+      {/* head */}
+      <path d="M29 17.2 C31.6 13.4 38.6 12.8 42 16.4 C44.6 19.2 44.2 24.4 41.6 27.2 C38.6 30.2 32.6 29.6 30 26.6 Z" fill={ivory} stroke={line} strokeWidth=".55" />
+      <path d="M33 16 C35.4 14.8 38.6 15 40.4 16.6" stroke="#fffdf6" strokeWidth="1.2" fill="none" opacity=".8" strokeLinecap="round" />
+      {/* the raised trunk and tusk */}
+      <g className="ld-trunk">
+        <path d="M41.6 24.2 C45.4 24 47.6 20.6 47 16.6 C46.6 13.8 44.6 12.6 43 13.6" stroke={line} strokeWidth="4.8" fill="none" strokeLinecap="round" />
+        <path d="M41.6 24.2 C45.4 24 47.6 20.6 47 16.6 C46.6 13.8 44.6 12.6 43 13.6" stroke="#f6ebd4" strokeWidth="3.8" fill="none" strokeLinecap="round" />
+        <path d="M44.8 22.6 l1.6 .6 M45.9 19.6 l1.6 .2 M46 16.8 l1.5 -.2" stroke="#c9ae80" strokeWidth=".5" strokeLinecap="round" />
+      </g>
+      <path d="M38.8 27 C41.2 29.2 44.4 29.4 46.8 27.8" stroke={line} strokeWidth="2.6" fill="none" strokeLinecap="round" />
+      <path d="M38.8 27 C41.2 29.2 44.4 29.4 46.8 27.8" stroke="#fffaf0" strokeWidth="1.7" fill="none" strokeLinecap="round" />
+      <path d="M44.6 28.8 C45.6 28.6 46.4 28.3 46.8 27.8" stroke={gold} strokeWidth="1.9" fill="none" strokeLinecap="round" />
+      <path d="M39.6 27.8 l1.4 .6" stroke={gold} strokeWidth="1.2" strokeLinecap="round" />
+      {/* eye and smile */}
+      <ellipse cx="39.4" cy="20.4" rx=".95" ry="1.1" fill="#2b1a0c" /><circle cx="39.7" cy="20" r=".3" fill="#fff" />
+      <path d="M38 18.6 q1.4 -.8 2.8 .1" stroke={line} strokeWidth=".5" fill="none" />
+      <path d="M37.6 25.2 q1.6 1 3.2 .2" stroke={line} strokeWidth=".5" fill="none" />
+      {/* gold headband with an emerald */}
+      <path d="M31.6 15.6 C34.2 13.2 39 13 42 15.4 L41.4 17.4 C38.6 15.6 34.4 15.6 32.4 17.6 Z" fill={gold} stroke="#7a5214" strokeWidth=".35" />
+      {diamond(37, 14.6, 1.5)}
+      </g>
+      {/* the big fan ear, edged in gold (it flaps on your turn) */}
+      <g className="ld-ear">
+        <path d="M31.6 15.4 C26.6 15.2 24.4 19.4 25 24 C25.6 28.4 28.6 31.2 31.8 30.4 C33.8 29.8 34.4 27.2 34 24.6 C33.6 21.2 34.6 17.4 31.6 15.4 Z" fill="url(#ldp-ear)" stroke={gold} strokeWidth=".95" />
+        <path d="M30.6 18.4 C28.4 19.4 27.6 22.4 28.2 25 M31.8 20 C30.6 22 30.8 25 31.6 27" stroke="#d8bf90" strokeWidth=".5" fill="none" />
+      </g>
+      {/* neck strap with an emerald pendant */}
+      <path d="M30.6 27.6 C31.6 30.4 33.6 32 36.2 32.2" stroke={gold} strokeWidth="1.2" fill="none" />
+      {diamond(34.2, 33.2, 1.3)}
+      {/* the ambari: gold platform, pillars, railing and a dome canopy in the player's colour */}
+      <rect x="8.4" y="12.6" width="21" height="3.6" rx=".7" fill={goldH} stroke="#7a5214" strokeWidth=".4" />
+      {diamond(18.9, 14.4, 1.2)}
+      <path d="M10 12.6 V5.4 M14.8 12.6 V5.4 M23 12.6 V5.4 M27.8 12.6 V5.4" stroke={gold} strokeWidth="1.25" />
+      <path d="M9.4 10.4 h19 M9.4 11.4 h19" stroke={goldH} strokeWidth=".6" />
+      <path d="M11.4 10.4 q1.5 -1.6 3 0 M16.4 10.4 q2.4 -2 4.8 0 M22.4 10.4 q2.4 -1.8 4.6 0" stroke={gold} strokeWidth=".5" fill="none" />
+      <path d="M8.2 5.6 C8.4 -1.6 13.6 -4.8 18.9 -4.8 C24.2 -4.8 29.4 -1.6 29.6 5.6 Z" fill={v} stroke={gold} strokeWidth=".9" />
+      <path d="M12.8 5.2 C13.2 1 15.6 -2.6 18.9 -4 M25 5.2 C24.6 1 22.2 -2.6 18.9 -4 M18.9 -4.4 V5.2" stroke={goldH} strokeWidth=".7" fill="none" />
+      <path d="M11 1.6 C12.6 -.6 15 -2 17 -2.6" stroke="rgba(255,255,255,.45)" strokeWidth=".9" fill="none" strokeLinecap="round" />
+      <rect x="7.6" y="5" width="22.6" height="1.9" rx=".6" fill={goldH} stroke="#7a5214" strokeWidth=".3" />
+      {diamond(18.9, 1.6, 1.5)}
+      <path d="M18.9 -4.8 V-6.4" stroke={gold} strokeWidth="1" /><path d="M18.9 -8.8 l1.3 1.4 l-1.3 1.4 l-1.3 -1.4 Z" fill={goldH} stroke="#7a5214" strokeWidth=".3" />
+      {[8.6, 29.2].map(x => <g key={x}><path d={`M${x} 5 V2.8`} stroke={gold} strokeWidth=".8" /><path d={`M${x} .6 l1 1.1 l-1 1.1 l-1 -1.1 Z`} fill={goldH} stroke="#7a5214" strokeWidth=".25" /></g>)}
+    </g>
+  </svg>;
+}
+
+export function Piece({ set, color, bare }: { set: TokenSet; color: Color; bare?: boolean }) {
   const ball = `url(#ldp-${color}-ball)`, body = `url(#ldp-${color}-body)`, v = `url(#ldp-${color}-v)`, t = TONES[color];
   const gold = "url(#ldp-gold)", goldH = "url(#ldp-gold-h)";
   if (set === "sentry") {
@@ -115,42 +218,7 @@ export function Piece({ set, color }: { set: TokenSet; color: Color }) {
         <path d="M28.4 21.4 C30 23 31.6 24.6 34 25" stroke={goldH} strokeWidth="1.4" fill="none" />
       </>; break;
     case "ambaro":
-      /* The Ambaro elephant from the logo: a faceted emerald elephant with gold anklets and headdress, trunk raised,
-         a jhool (blanket) in the player's colour with a gold medallion, and a golden ambari whose canopy is in the
-         player's colour. */
-      art = <>
-        <path d="M6.4 23.4 C4.4 25.6 3.8 29 4.6 32.2" stroke="#0e5a3a" strokeWidth="1.3" fill="none" strokeLinecap="round" />
-        <path d="M4.6 32.2 l-1 2.4 l2.2 -.8 Z" fill={gold} />
-        {[8.8, 14.4, 25.6, 31.2].map((x, i) => <g key={x}>
-          <path d={`M${x} 29 h5.4 l-.3 13.6 h-4.8 Z`} fill={i % 3 ? "url(#ldp-jade-d)" : "url(#ldp-jade)"} stroke="#0a4630" strokeWidth=".4" />
-          <rect x={x - .3} y="38.4" width="6" height="1.8" rx=".5" fill={goldH} /><rect x={x - .2} y="41.6" width="5.8" height="1.4" rx=".5" fill={gold} />
-        </g>)}
-        <path d="M6.4 22 C7.4 15.8 13 13.6 20.4 13.6 C28.6 13.6 34.4 16.4 35.2 23.4 C35.8 30.6 30 35.4 20.6 35.4 C11.4 35.4 5.6 30.4 6.4 22 Z" fill="url(#ldp-jade)" stroke="#0a4630" strokeWidth=".5" />
-        <path d="M9 30.6 L16 24 L22 33.8 Z M24 33.6 L30 25.4 L33.4 30.2 Z" fill="#0d5c3c" opacity=".55" />
-        <path d="M31.4 13.8 C35 11.6 40.6 12.6 41.8 17.4 C42.6 20.8 41.2 24.6 38.8 26 C36 27.6 32 26 30.4 22.6 Z" fill="url(#ldp-jade)" stroke="#0a4630" strokeWidth=".5" />
-        <path className="ld-trunk" d="M40.4 24.6 C43.4 23.8 45.6 20.6 45.2 16.4 C45 14.2 46.4 12.8 47.8 13.6" stroke="#18865a" strokeWidth="3.4" fill="none" strokeLinecap="round" />
-        <path d="M40.4 24.6 C43.4 23.8 45.6 20.6 45.2 16.4" stroke="#0a4630" strokeWidth=".5" fill="none" opacity=".6" />
-        <path d="M38.2 25.6 C40.4 27.6 43.4 28 45.8 26.8" stroke="#fffaf0" strokeWidth="1.7" fill="none" strokeLinecap="round" />
-        <path d="M27.6 15.4 L34.8 14.4 L35.6 25 L30.6 28.6 L27 22.4 Z" fill="url(#ldp-jade-d)" stroke={gold} strokeWidth=".8" strokeLinejoin="round" />
-        <path d="M28.8 18 L33.6 17.2 L32.6 23.4 Z" fill="#36b67e" opacity=".7" />
-        <circle cx="38.6" cy="18.8" r=".85" fill="#1a120a" /><path d="M37.4 17.4 q1.3 -.7 2.6 0" stroke="#0a4630" strokeWidth=".5" fill="none" />
-        <path d="M33.4 12.8 C36 10.6 40.4 10.8 42.6 13.6 L41.2 16.6 C39.4 15.2 36.4 14.8 34.2 15.8 Z" fill={gold} stroke="#7a5214" strokeWidth=".4" />
-        <path d="M38.4 11.6 l1.4 1.6 l-1.4 1.6 l-1.4 -1.6 Z" fill="#2fd08c" stroke="#7a5214" strokeWidth=".3" />
-        <path d="M8 16.8 C14 14.6 25 14.6 29.8 16.6 L30.4 32 L28.2 34.2 L26 32.2 L23.8 34.4 L21.6 32.2 L19.4 34.4 L17.2 32.2 L15 34.4 L12.8 32.2 L10.6 34.4 L8.4 32.2 L6.8 30 Z" fill={body} stroke={gold} strokeWidth=".9" strokeLinejoin="round" />
-        <path d="M7.2 29.6 L30.4 29.6" stroke={goldH} strokeWidth="1.3" />
-        <circle cx="18.6" cy="23" r="4.4" fill={gold} stroke="#7a5214" strokeWidth=".5" />
-        <circle cx="18.6" cy="23" r="3.2" fill="#1d3a2c" />
-        <rect x="16.6" y="21" width="1.9" height="1.9" fill="#d23a44" /><rect x="18.7" y="21" width="1.9" height="1.9" fill="#22a463" />
-        <rect x="16.6" y="23.1" width="1.9" height="1.9" fill="#2f63c4" /><rect x="18.7" y="23.1" width="1.9" height="1.9" fill="#f0b21f" />
-        <rect x="9.6" y="12.2" width="18.6" height="3.4" rx=".6" fill={goldH} stroke="#7a5214" strokeWidth=".4" />
-        <path d="M11 12.2 V5.6 M15.6 12.2 V5.6 M22.4 12.2 V5.6 M27 12.2 V5.6" stroke={gold} strokeWidth="1.1" />
-        <path d="M9.4 6.2 C10.6 0.4 15 -1.8 18.9 -1.8 C22.8 -1.8 27.2 0.4 28.4 6.2 Z" fill={v} stroke={gold} strokeWidth=".8" />
-        <path d="M13.6 5.8 C14.2 2 16.4 -.6 18.9 -1.2 M24.2 5.8 C23.6 2 21.4 -.6 18.9 -1.2" stroke={goldH} strokeWidth=".7" fill="none" />
-        <path d="M9 6 h19.8" stroke={goldH} strokeWidth="1.4" />
-        <path d="M18.9 -1.8 V-3.6" stroke={gold} strokeWidth="1" /><circle cx="18.9" cy="-3.6" r="1.1" fill={gold} />
-        {[9.6, 28.2].map(x => <g key={x}><path d={`M${x} 6 V3.2`} stroke={gold} strokeWidth=".8" /><circle cx={x} cy="2.6" r=".9" fill={gold} /></g>)}
-        <path d="M17.6 13.6 l1.3 -1.4 l1.3 1.4 l-1.3 1.4 Z" fill="#2fd08c" stroke="#7a5214" strokeWidth=".3" />
-      </>; break;
+      return <AmbaroPiece color={color} bare={bare} />;
     case "tiger":
       /* A lacquered Channapatna-style toy tiger painted in the player's colour, with dark stripes and a gold collar. */
       art = <>

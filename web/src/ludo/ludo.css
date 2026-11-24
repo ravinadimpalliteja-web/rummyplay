@@ -602,7 +602,7 @@ html.rc-app .ld-screen .ld-board-wrap{filter:drop-shadow(0 18px 30px rgba(0,0,0,
 .ld-petals{position:fixed;inset:0;width:100vw;height:100vh;z-index:1001;pointer-events:none}
 .ld-cel{position:fixed;inset:0;z-index:1000;pointer-events:none;overflow:hidden;font-family:'Cinzel','Playfair Display',Georgia,serif}
 /* 1st: the Ambari procession */
-.ld-cel-1{background:radial-gradient(ellipse at 50% 55%,rgba(6,38,28,.55),rgba(3,20,14,.82));animation:ldCelFade 4.6s ease forwards}
+.ld-cel-1{background:radial-gradient(ellipse at 50% 55%,rgba(110,8,24,.55),rgba(48,0,8,.84));animation:ldCelFade 4.6s ease forwards}
 .ld-cel-title{position:absolute;left:50%;top:18%;transform:translateX(-50%);display:grid;justify-items:center;gap:2px;text-align:center;white-space:nowrap;
   animation:ldCelRise .7s cubic-bezier(.2,.8,.3,1.2) .15s both}
 .ld-cel-crown{font-size:clamp(40px,11vmin,84px);line-height:1;color:#f6d36b;text-shadow:0 0 18px rgba(246,211,107,.75),0 3px 0 #8a5f18;animation:ldCelCrown 1.6s ease-in-out .8s infinite alternate}
@@ -663,3 +663,12 @@ html.rc-app .ld-screen .ld-board-wrap{filter:drop-shadow(0 18px 30px rgba(0,0,0,
 .ld-buy-btns .gold-button:disabled{opacity:.45;cursor:not-allowed}
 .ld-buy-cancel{flex:none;padding:0 16px;border-radius:99px;border:1px solid #6f8d7f;background:transparent;color:#f6f0df;font:inherit;font-weight:700;cursor:pointer}
 .ld-bought{margin:0 0 10px;padding:8px 12px;border-radius:10px;background:#FFF4D6;border:1px solid #E3C680;color:#5A4410;font-size:13px}
+
+/* Ambaro elephant: on your turn its ear flaps and its trunk lifts (the tokens you can move) */
+.ld-set-ambaro .ld-ear{transform-box:fill-box;transform-origin:85% 15%}
+.ld-set-ambaro .ld-trunk{transform-box:fill-box;transform-origin:0% 100%}
+.ld-set-ambaro .ld-token.movable .ld-ear{animation:ldEarFlap 1.4s ease-in-out infinite}
+.ld-set-ambaro .ld-token.movable .ld-trunk{animation:ldTrunkLift 1.4s ease-in-out infinite}
+@keyframes ldEarFlap{0%,100%{transform:rotate(0) scaleX(1)}30%{transform:rotate(-9deg) scaleX(1.06)}55%{transform:rotate(2deg) scaleX(.97)}}
+@keyframes ldTrunkLift{0%,100%{transform:rotate(0)}40%{transform:rotate(-14deg)}70%{transform:rotate(4deg)}}
+@media (prefers-reduced-motion:reduce){.ld-set-ambaro .ld-token.movable .ld-ear,.ld-set-ambaro .ld-token.movable .ld-trunk{animation:none}}

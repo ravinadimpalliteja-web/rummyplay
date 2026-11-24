@@ -306,7 +306,7 @@ export default function LudoGame({ onHome, joinCode, joinPass }: { onHome: () =>
   const [sub, setSub] = useState<Sub>(joinCode ? "room" : "lobby");
   const [bots, setBots] = useState(3);
   /* Game length: Classic (4 tokens each) or Quick (2 tokens each, about half the time). Kept on this phone. */
-  const [quick, setQuickState] = useState<boolean>(() => readKey(QUICK_KEY, ["quick", "classic"], "classic") === "quick");
+  const [quick, setQuickState] = useState<boolean>(() => readKey<"quick" | "classic">(QUICK_KEY, ["quick", "classic"], "classic") === "quick");
   const setQuick = (q: boolean) => { setQuickState(q); keep(QUICK_KEY, q ? "quick" : "classic"); };
   const [passCount, setPassCount] = useState(2);
   const [passNames, setPassNames] = useState(["Player 1", "Player 2", "Player 3", "Player 4"]);

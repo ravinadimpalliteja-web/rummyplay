@@ -115,41 +115,42 @@ export function Piece({ set, color }: { set: TokenSet; color: Color }) {
         <path d="M28.4 21.4 C30 23 31.6 24.6 34 25" stroke={goldH} strokeWidth="1.4" fill="none" />
       </>; break;
     case "ambaro":
-      /* The Ambaro elephant from the logo: a faceted emerald elephant with gold anklets and headdress, trunk raised,
-         a jhool (blanket) in the player's colour with a gold medallion, and a golden ambari whose canopy is in the
+      /* The Ambaro elephant from the logo: a faceted ivory elephant with gold anklets and headdress, trunk raised,
+         a ruby-red jhool with a gold lotus with a gold medallion, and a golden ambari whose canopy is in the
          player's colour. */
       art = <>
-        <path d="M6.4 23.4 C4.4 25.6 3.8 29 4.6 32.2" stroke="#0e5a3a" strokeWidth="1.3" fill="none" strokeLinecap="round" />
+        <path d="M6.4 23.4 C4.4 25.6 3.8 29 4.6 32.2" stroke="#b69a72" strokeWidth="1.3" fill="none" strokeLinecap="round" />
         <path d="M4.6 32.2 l-1 2.4 l2.2 -.8 Z" fill={gold} />
         {[8.8, 14.4, 25.6, 31.2].map((x, i) => <g key={x}>
-          <path d={`M${x} 29 h5.4 l-.3 13.6 h-4.8 Z`} fill={i % 3 ? "url(#ldp-jade-d)" : "url(#ldp-jade)"} stroke="#0a4630" strokeWidth=".4" />
+          <path d={`M${x} 29 h5.4 l-.3 13.6 h-4.8 Z`} fill="url(#ldp-coat)" stroke="#b69a72" strokeWidth=".4" />
           <rect x={x - .3} y="38.4" width="6" height="1.8" rx=".5" fill={goldH} /><rect x={x - .2} y="41.6" width="5.8" height="1.4" rx=".5" fill={gold} />
         </g>)}
-        <path d="M6.4 22 C7.4 15.8 13 13.6 20.4 13.6 C28.6 13.6 34.4 16.4 35.2 23.4 C35.8 30.6 30 35.4 20.6 35.4 C11.4 35.4 5.6 30.4 6.4 22 Z" fill="url(#ldp-jade)" stroke="#0a4630" strokeWidth=".5" />
-        <path d="M9 30.6 L16 24 L22 33.8 Z M24 33.6 L30 25.4 L33.4 30.2 Z" fill="#0d5c3c" opacity=".55" />
-        <path d="M31.4 13.8 C35 11.6 40.6 12.6 41.8 17.4 C42.6 20.8 41.2 24.6 38.8 26 C36 27.6 32 26 30.4 22.6 Z" fill="url(#ldp-jade)" stroke="#0a4630" strokeWidth=".5" />
-        <path className="ld-trunk" d="M40.4 24.6 C43.4 23.8 45.6 20.6 45.2 16.4 C45 14.2 46.4 12.8 47.8 13.6" stroke="#18865a" strokeWidth="3.4" fill="none" strokeLinecap="round" />
-        <path d="M40.4 24.6 C43.4 23.8 45.6 20.6 45.2 16.4" stroke="#0a4630" strokeWidth=".5" fill="none" opacity=".6" />
+        <path d="M6.4 22 C7.4 15.8 13 13.6 20.4 13.6 C28.6 13.6 34.4 16.4 35.2 23.4 C35.8 30.6 30 35.4 20.6 35.4 C11.4 35.4 5.6 30.4 6.4 22 Z" fill="url(#ldp-coat)" stroke="#b69a72" strokeWidth=".5" />
+        <path d="M9 30.6 L16 24 L22 33.8 Z M24 33.6 L30 25.4 L33.4 30.2 Z" fill="#e7d8bd" opacity=".55" />
+        <path d="M31.4 13.8 C35 11.6 40.6 12.6 41.8 17.4 C42.6 20.8 41.2 24.6 38.8 26 C36 27.6 32 26 30.4 22.6 Z" fill="url(#ldp-coat)" stroke="#b69a72" strokeWidth=".5" />
+        <path className="ld-trunk" d="M40.4 24.6 C43.4 23.8 45.6 20.6 45.2 16.4 C45 14.2 46.4 12.8 47.8 13.6" stroke="#f1e3cc" strokeWidth="3.4" fill="none" strokeLinecap="round" />
+        <path d="M40.4 24.6 C43.4 23.8 45.6 20.6 45.2 16.4" stroke="#b69a72" strokeWidth=".5" fill="none" opacity=".6" />
         <path d="M38.2 25.6 C40.4 27.6 43.4 28 45.8 26.8" stroke="#fffaf0" strokeWidth="1.7" fill="none" strokeLinecap="round" />
-        <path d="M27.6 15.4 L34.8 14.4 L35.6 25 L30.6 28.6 L27 22.4 Z" fill="url(#ldp-jade-d)" stroke={gold} strokeWidth=".8" strokeLinejoin="round" />
-        <path d="M28.8 18 L33.6 17.2 L32.6 23.4 Z" fill="#36b67e" opacity=".7" />
-        <circle cx="38.6" cy="18.8" r=".85" fill="#1a120a" /><path d="M37.4 17.4 q1.3 -.7 2.6 0" stroke="#0a4630" strokeWidth=".5" fill="none" />
+        <g transform="translate(43 7) rotate(-12)"><path d="M0 1 L5 -1 L10 2 L5 5 Z" fill="#ffe58a" stroke="#9a6517" strokeWidth=".45"/><path d="M0 1 L5 5 L5 11 L0 7 Z" fill="#d99516" stroke="#9a6517" strokeWidth=".45"/><path d="M5 5 L10 2 L10 8 L5 11 Z" fill="#f5b92d" stroke="#9a6517" strokeWidth=".45"/><circle cx="2.4" cy="3.5" r=".55" fill="#38210a"/><circle cx="7.5" cy="4.2" r=".55" fill="#38210a"/><circle cx="7.5" cy="8.3" r=".55" fill="#38210a"/></g>
+        <path d="M27.6 15.4 L34.8 14.4 L35.6 25 L30.6 28.6 L27 22.4 Z" fill="url(#ldp-coat)" stroke={gold} strokeWidth=".8" strokeLinejoin="round" />
+        <path d="M28.8 18 L33.6 17.2 L32.6 23.4 Z" fill="#fff7e9" opacity=".7" />
+        <circle cx="38.6" cy="18.8" r=".85" fill="#1a120a" /><path d="M37.4 17.4 q1.3 -.7 2.6 0" stroke="#b69a72" strokeWidth=".5" fill="none" />
         <path d="M33.4 12.8 C36 10.6 40.4 10.8 42.6 13.6 L41.2 16.6 C39.4 15.2 36.4 14.8 34.2 15.8 Z" fill={gold} stroke="#7a5214" strokeWidth=".4" />
-        <path d="M38.4 11.6 l1.4 1.6 l-1.4 1.6 l-1.4 -1.6 Z" fill="#2fd08c" stroke="#7a5214" strokeWidth=".3" />
-        <path d="M8 16.8 C14 14.6 25 14.6 29.8 16.6 L30.4 32 L28.2 34.2 L26 32.2 L23.8 34.4 L21.6 32.2 L19.4 34.4 L17.2 32.2 L15 34.4 L12.8 32.2 L10.6 34.4 L8.4 32.2 L6.8 30 Z" fill={body} stroke={gold} strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M38.4 11.6 l1.4 1.6 l-1.4 1.6 l-1.4 -1.6 Z" fill="#159b67" stroke="#7a5214" strokeWidth=".3" />
+        <path d="M5.8 16 C2.2 14.8 1.8 20.8 5.8 25.8 L9.4 28.4 L11.2 19 Z" fill="url(#ldp-coat)" stroke="#b69a72" strokeWidth=".5" />
+        <path d="M8 16.8 C14 14.6 25 14.6 29.8 16.6 L30.4 32 L28.2 34.2 L26 32.2 L23.8 34.4 L21.6 32.2 L19.4 34.4 L17.2 32.2 L15 34.4 L12.8 32.2 L10.6 34.4 L8.4 32.2 L6.8 30 Z" fill="url(#ldp-red-v)" stroke={gold} strokeWidth=".9" strokeLinejoin="round" />
         <path d="M7.2 29.6 L30.4 29.6" stroke={goldH} strokeWidth="1.3" />
         <circle cx="18.6" cy="23" r="4.4" fill={gold} stroke="#7a5214" strokeWidth=".5" />
-        <circle cx="18.6" cy="23" r="3.2" fill="#1d3a2c" />
-        <rect x="16.6" y="21" width="1.9" height="1.9" fill="#d23a44" /><rect x="18.7" y="21" width="1.9" height="1.9" fill="#22a463" />
-        <rect x="16.6" y="23.1" width="1.9" height="1.9" fill="#2f63c4" /><rect x="18.7" y="23.1" width="1.9" height="1.9" fill="#f0b21f" />
+        <circle cx="18.6" cy="23" r="3.2" fill="#8f1520" />
+        <path d="M18.6 20.2 C16.2 21.6 16.1 23.1 18.6 25.6 C21.1 23.1 21 21.6 18.6 20.2 Z M18.6 21.2 C16.6 20.1 15.8 21.2 16.2 22.7 M18.6 21.2 C20.6 20.1 21.4 21.2 21 22.7" fill="#f5c94f" stroke="#fff0b2" strokeWidth=".35" />
         <rect x="9.6" y="12.2" width="18.6" height="3.4" rx=".6" fill={goldH} stroke="#7a5214" strokeWidth=".4" />
         <path d="M11 12.2 V5.6 M15.6 12.2 V5.6 M22.4 12.2 V5.6 M27 12.2 V5.6" stroke={gold} strokeWidth="1.1" />
-        <path d="M9.4 6.2 C10.6 0.4 15 -1.8 18.9 -1.8 C22.8 -1.8 27.2 0.4 28.4 6.2 Z" fill={v} stroke={gold} strokeWidth=".8" />
+        <path d="M9.4 6.2 C10.6 0.4 15 -1.8 18.9 -1.8 C22.8 -1.8 27.2 0.4 28.4 6.2 Z" fill="url(#ldp-red-v)" stroke={gold} strokeWidth=".8" />
         <path d="M13.6 5.8 C14.2 2 16.4 -.6 18.9 -1.2 M24.2 5.8 C23.6 2 21.4 -.6 18.9 -1.2" stroke={goldH} strokeWidth=".7" fill="none" />
         <path d="M9 6 h19.8" stroke={goldH} strokeWidth="1.4" />
         <path d="M18.9 -1.8 V-3.6" stroke={gold} strokeWidth="1" /><circle cx="18.9" cy="-3.6" r="1.1" fill={gold} />
         {[9.6, 28.2].map(x => <g key={x}><path d={`M${x} 6 V3.2`} stroke={gold} strokeWidth=".8" /><circle cx={x} cy="2.6" r=".9" fill={gold} /></g>)}
-        <path d="M17.6 13.6 l1.3 -1.4 l1.3 1.4 l-1.3 1.4 Z" fill="#2fd08c" stroke="#7a5214" strokeWidth=".3" />
+        <path d="M17.6 13.6 l1.3 -1.4 l1.3 1.4 l-1.3 1.4 Z" fill="#159b67" stroke="#7a5214" strokeWidth=".3" />
       </>; break;
     case "tiger":
       /* A lacquered Channapatna-style toy tiger painted in the player's colour, with dark stripes and a gold collar. */

@@ -137,7 +137,7 @@ export default function AppShell({ tab, onTab, onOpen, onJoin, profile }: AppShe
     <GameArtDefs />
     <Toast />
     <div className="rx-top">
-      {tab === "home" && <h1 className="rx-logo"><img src="/brand/ambaro-logo.webp" alt="Ambaro" width={1200} height={366} /></h1>}
+      {tab === "home" && <h1 className="rx-logo"><img src="/brand/ambaro-logo.webp" alt="Ambaro" width={960} height={326} /></h1>}
       <Hud onTab={onTab} />
     </div>
     <main className="rx-main">

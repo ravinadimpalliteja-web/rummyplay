@@ -63,7 +63,7 @@
 .ld-bay-edge{stroke:#c9a14e;stroke-width:.07;fill:none}
 .ld-bay-frame{fill:none;stroke:#c9a14e;stroke-width:.08}
 /* the Ambaro elephant medallion in the centre: stays upright however the board is turned */
-.ld-centre{position:absolute;left:50%;top:50%;width:calc(100% / 15 * 1.9);aspect-ratio:1;border-radius:50%;overflow:hidden;pointer-events:none;
+.ld-centre{position:absolute;left:50%;top:50%;width:calc(100% / 15 * 2.35);aspect-ratio:1;border-radius:50%;overflow:hidden;pointer-events:none;
   transform:translate(-50%,-50%) rotate(calc(-1 * var(--rot,0deg)));
   box-shadow:0 0 0 1.5px #fff3c0,0 0 0 3px #c9a14e,0 0 0 4px #7a5214,0 3px 8px rgba(0,0,0,.45)}
 .ld-centre img{display:block;width:100%;height:100%;object-fit:cover;-webkit-user-drag:none}

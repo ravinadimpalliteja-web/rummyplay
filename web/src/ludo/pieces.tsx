@@ -212,8 +212,9 @@ export function Piece({ set, color }: { set: TokenSet; color: Color }) {
         </g>
       </>;
   }
-  return <svg className="ld-piece" viewBox="0 -3 48 50" aria-hidden="true" focusable="false">
+  return <svg className="ld-piece" viewBox="0 -4 55 53" aria-hidden="true" focusable="false">
     <ellipse cx="22" cy="44.6" rx="16" ry="2.2" fill="rgba(0,0,0,.3)" />
+    {set === "ambaro" && <ellipse cx="22" cy="43.7" rx="14.8" ry="1.65" fill="none" stroke={TONES[color].base} strokeWidth="1.8" />}
     <g className="ld-art">{art}</g>
   </svg>;
 }

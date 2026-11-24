@@ -1,6 +1,6 @@
 'use strict';
 /**
- * Saves room results to the player's Royal Club account.
+ * Saves room results to the player's Ambaro account.
  *
  * Today: a 1st-place finish in a room game against at least one other real (signed-in) player adds one to that
  * player's wins for the game, in Supabase table `player_game_wins` (see supabase/migrations/*_player_game_wins.sql).

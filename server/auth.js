@@ -3,7 +3,7 @@
  * Player sign-in check for creating and joining rooms.
  *
  * The website sends the player's Supabase access token with `create` / `join`. We ask Supabase who it belongs to,
- * then read that player's Royal Club username (row-level security lets a player read only their own profile).
+ * then read that player's Ambaro username (row-level security lets a player read only their own profile).
  * Guests (anonymous sign-ins) and accounts without a username are turned away.
  *
  * Settings (environment):
@@ -35,10 +35,10 @@ async function getJson(url, token) {
 async function supabaseVerify(token) {
   const user = await getJson(`${SUPABASE_URL}/auth/v1/user`, token);
   if (!user || !user.id) throw new AuthError('Your sign-in has expired. Please sign in again.');
-  if (user.is_anonymous) throw new AuthError('Create a Royal Club username to play with friends.');
+  if (user.is_anonymous) throw new AuthError('Create a Ambaro username to play with friends.');
   const rows = await getJson(`${SUPABASE_URL}/rest/v1/player_profiles?select=username&user_id=eq.${encodeURIComponent(user.id)}`, token);
   const username = Array.isArray(rows) && rows[0] && rows[0].username;
-  if (!username) throw new AuthError('Pick your Royal Club username to play with friends.');
+  if (!username) throw new AuthError('Pick your Ambaro username to play with friends.');
   return { id: user.id, username: String(username) };
 }
 
@@ -50,7 +50,7 @@ function setVerifier(fn) { verifier = fn || supabaseVerify; cache.clear(); }
 async function playerFor(m) {
   if (!required()) return null;
   const token = typeof m.auth === 'string' ? m.auth.trim() : '';
-  if (!token || token.length > 4096) throw new AuthError('Sign in with your Royal Club username to play with friends.');
+  if (!token || token.length > 4096) throw new AuthError('Sign in with your Ambaro username to play with friends.');
   const hit = cache.get(token);
   if (hit && hit.until > Date.now()) return hit.user;
   const user = await verifier(token);

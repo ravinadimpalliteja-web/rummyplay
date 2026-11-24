@@ -7,7 +7,7 @@ import elephantMark from "../brand/badge-logo-small.webp";
 import { GameArtDefs, EkahArt, LudoArt, SnakesArt, ChessArt, SudokuArt, WordArt } from "./GameArt";
 import LearnRow from "./LearnRow";
 
-/* Royal Club home ("FINAL" design): mood shortcuts, a featured EKAH tile, full-art game tiles,
+/* Ambaro home ("FINAL" design): mood shortcuts, a featured EKAH tile, full-art game tiles,
    resume card, a room-code box and the free-to-play promise. All artwork is original. */
 
 type Mood = "friends" | "quick" | "classics" | "computer";
@@ -180,10 +180,10 @@ export default function Home({ onOpen, onJoin, onProfile }: HomeProps) {
           </ol>
         </div>
         <div className="rc-card rc-promise">
-          <span className="rc-promise-mark"><img src={elephantMark} alt="" width={320} height={224} /></span>
-          <span><strong>Free to play. Always.</strong><small>No real money, no betting, no deposits. Royal Club for Android is coming soon.</small></span>
+          <span className="rc-promise-mark"><img src={elephantMark} alt="" width={320} height={269} /></span>
+          <span><strong>Free to play. Always.</strong><small>No real money, no betting, no deposits. Ambaro for Android is coming soon.</small></span>
         </div>
-        <nav className="rc-info-links" aria-label="About Royal Club">
+        <nav className="rc-info-links" aria-label="About Ambaro">
           <a href={pageHref("/about/")}>About</a><a href={pageHref("/contact/")}>Contact</a><a href={pageHref("/privacy/")}>Privacy</a><a href={pageHref("/terms/")}>Terms</a>
         </nav>
       </section>

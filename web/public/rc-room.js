@@ -1,5 +1,5 @@
 /* Royal Club rooms for the plain-HTML games (Chess): the room server address, this device's seat token, the signed-in
-   Royal Club account (rooms need a username) and a connection that reconnects to the same seat after a drop.
+   Ambaro account (rooms need a username) and a connection that reconnects to the same seat after a drop.
    Same rules as EKAH's client.js and the React games (src/domain/online.ts). Needs /ekah/config.js loaded first. */
 (function () {
   'use strict';

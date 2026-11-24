@@ -1,5 +1,5 @@
 /**
- * The player's Royal Club account, shared by the header, the sign-in dialog and the room screens.
+ * The player's Ambaro account, shared by the header, the sign-in dialog and the room screens.
  *
  * Username accounts are Supabase email/password accounts under a private address made from the username
  * (`<username>@players.royalclubgames.com`), so players never type or need an email. Every account — username or
@@ -133,7 +133,7 @@ export function openAuth(reason: AuthReason = "signin") {
   window.dispatchEvent(new CustomEvent<AuthReason>("rc:auth", { detail: reason }));
 }
 
-export const ROOM_SIGNIN_MSG = "Sign in with your Royal Club username to play with friends.";
+export const ROOM_SIGNIN_MSG = "Sign in with your Ambaro username to play with friends.";
 
 /**
  * What a room create/join needs: a fresh sign-in token and the username. When the player is a guest, signed out or

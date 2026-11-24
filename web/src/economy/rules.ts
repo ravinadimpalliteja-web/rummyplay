@@ -40,7 +40,9 @@ export const MISSION_BONUS = 100;                                     // all thr
 const GAME_PAY: Record<string, { coins: number; xp: number }> = {
   win: { coins: 25, xp: 50 }, lose: { coins: 10, xp: 20 }, draw: { coins: 15, xp: 30 }, done: { coins: 10, xp: 20 }, daily: { coins: 50, xp: 60 },
 };
-export const FREE_LOOKS = ["bg-emerald", "bg-ruby", "bg-indigo"];
+/* Free looks. bg-cream (Festive Cream) is free in the app only: the database's save_wallet() list doesn't have it, so it
+   drops it from the saved copy, and readWallet() adds every free look back on load. */
+export const FREE_LOOKS = ["bg-emerald", "bg-ruby", "bg-cream", "bg-indigo"];
 
 export interface ShopItem { id: string; name: string; price: number; level: number }
 /** Looks that cost coins, or come free at a level. Ludo token sets ("ludo-…") are bought with coins only (level 999

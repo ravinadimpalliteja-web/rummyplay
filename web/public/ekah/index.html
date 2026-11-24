@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="/app-mode.js"></script>
     <script>try{var t=localStorage.getItem("ekahTable");if(t==="kesari"||t==="emerald")document.documentElement.dataset.table=t}catch(e){}</script>
-<title>Royal Club EKAH</title>
-<meta name="description" content="EKAH, the Indian matching card game on Royal Club. Free to play against the computer or with friends.">
+<title>EKAH · Ambaro</title>
+<meta name="description" content="EKAH, the Indian matching card game on Ambaro. Free to play against the computer or with friends.">
 <meta name="theme-color" content="#1C103A">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Inter:wght@400;600;700&display=swap">
@@ -19,8 +19,8 @@
   <div class="rc-watermark" aria-hidden="true"></div>
   <div class="home-wrap">
     <div class="home-top">
-      <span class="club-lead"><a class="club-back" href="/" aria-label="Back to Royal Club">←</a>
-      <span class="club-brand"><img class="club-el" src="../brand/badge-logo-small.webp" alt="" width="320" height="224"><span><strong>ROYAL CLUB</strong><small>EKAH</small></span></span></span>
+      <span class="club-lead"><a class="club-back" href="/" aria-label="Back to Ambaro">←</a>
+      <span class="club-brand"><img class="club-el" src="../brand/badge-logo-small.webp" alt="" width="320" height="269"><span><strong>AMBARO</strong><small>EKAH</small></span></span></span>
       <span class="tag">FREE TO PLAY</span>
     </div>
     <div class="hero">
@@ -167,7 +167,7 @@
 <section id="game" class="screen hidden">
   <div class="topbar rc-bar dark">
     <button class="rc-bar-back" id="leaveGame" type="button" aria-label="Leave the game">←</button>
-    <span class="rc-bar-brand"><img src="../brand/badge-logo-small.webp" alt="" width="320" height="224"><span class="rc-bar-name"><strong>EKAH</strong><small id="meta"></small></span></span>
+    <span class="rc-bar-brand"><img src="../brand/badge-logo-small.webp" alt="" width="320" height="269"><span class="rc-bar-name"><strong>EKAH</strong><small id="meta"></small></span></span>
     <span class="rc-bar-tools">
       <button class="rc-ibtn" id="helpBtn" type="button" aria-label="How to play" title="How to play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.2a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.7"/><path d="M12 17h.01"/></svg></button>
       <button class="rc-ibtn" id="muteBtn" type="button" aria-label="Sound" aria-pressed="true"></button>
@@ -249,13 +249,13 @@
 <div class="fx" id="fx" aria-hidden="true"></div>
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
-<!-- Royal Club app only: the Android back button returns to the Royal Club home screen (asking first) instead of closing the app. -->
+<!-- Royal Club app only: the Android back button returns to the Ambaro home screen (asking first) instead of closing the app. -->
 <script>
   (function () {
     var C = window.Capacitor;
     if (!C || !C.isNativePlatform || !C.isNativePlatform() || !C.Plugins || !C.Plugins.App) return;
     C.Plugins.App.addListener('backButton', function () {
-      if (window.confirm('Leave EKAH and go back to Royal Club?')) location.href = '/';
+      if (window.confirm('Leave EKAH and go back to Ambaro?')) location.href = '/';
     });
   })();
 </script>

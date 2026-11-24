@@ -25,7 +25,7 @@ export function joinLink(game: "ludo" | "snakes", code: string, pass: string): s
 }
 
 export function inviteText(gameName: string, game: "ludo" | "snakes", code: string, pass: string): string {
-  return `Join my Royal Club ${gameName} room!\nRoom code: ${code}\nPasscode: ${pass}\nTap to join: ${joinLink(game, code, pass)}`;
+  return `Join my Ambaro ${gameName} room!\nRoom code: ${code}\nPasscode: ${pass}\nTap to join: ${joinLink(game, code, pass)}`;
 }
 
 export function shareOnWhatsApp(text: string) {

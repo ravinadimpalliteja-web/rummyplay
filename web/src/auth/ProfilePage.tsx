@@ -12,7 +12,7 @@ export default function ProfilePage({ onBack }: { onBack: () => void }) {
   const shell = (body: ReactNode) => <section className="mode-page rs-page pf-page">
     <button className="back-link" onClick={onBack}>← Back</button>
     <div className="rs-head">
-      <div className="eyebrow">ROYAL CLUB · PROFILE</div>
+      <div className="eyebrow">AMBARO · PROFILE</div>
       <h1>Your profile</h1>
     </div>
     <div className="rs-stack">{body}</div>
@@ -22,7 +22,7 @@ export default function ProfilePage({ onBack }: { onBack: () => void }) {
   if (!ready) return shell(<div className="rs-panel"><p className="rs-note">Loading…</p></div>);
   if (!session || guest) return shell(<div className="rs-panel">
     <h2>{guest ? "Playing as a guest" : "Not signed in"}</h2>
-    <p className="rs-note">{guest ? "Guest games stay on this device. " : ""}Create a free Royal Club username to play with friends and keep your profile.</p>
+    <p className="rs-note">{guest ? "Guest games stay on this device. " : ""}Create a free Ambaro username to play with friends and keep your profile.</p>
     <button className="gold-button rs-wide" onClick={() => openAuth("signin")}>Sign in or create an account</button>
   </div>);
 
@@ -91,7 +91,7 @@ function DeletePanel({ username, onDone }: { username: string | null; onDone: ()
   return <div className="rs-panel pf-danger">
     <h2>Delete account</h2>
     {!open ? <>
-      <p className="rs-note">Permanently delete your Royal Club account, username and saved games. This can't be undone.</p>
+      <p className="rs-note">Permanently delete your Ambaro account, username and saved games. This can't be undone.</p>
       <button className="ghost-button rs-wide pf-danger-btn" onClick={() => setOpen(true)}>Delete my account…</button>
     </> : <>
       <p className="rs-note">Type <b>{word}</b> to confirm. Your username becomes free for someone else to take.</p>

@@ -1,4 +1,4 @@
-name: Royal Club Android app
+name: Ambaro Android app
 
 # Builds the Royal Club Android app (APK) in the cloud, so no Android Studio is needed.
 # Two APKs come out of every run (download them from the run's "Artifacts" section):
@@ -95,7 +95,7 @@ jobs:
           # App icon and splash screen from web/assets/
           npx --yes @capacitor/assets@3 generate --android \
             --iconBackgroundColor '#0F4D3A' --iconBackgroundColorDark '#0F4D3A' \
-            --splashBackgroundColor '#FAF5E9' --splashBackgroundColorDark '#0F4D3A'
+            --splashBackgroundColor '#0B3B2D' --splashBackgroundColorDark '#0B3B2D'
           # Each build gets a higher version number, so a new APK installs over the old one.
           sed -i -E "s/versionCode( =)? [0-9]+/versionCode\\1 ${{ github.run_number }}/; s/versionName( =)? \"[^\"]+\"/versionName\\1 \"0.1.${{ github.run_number }}\"/" android/app/build.gradle
           grep -E "versionCode|versionName|targetSdk" android/app/build.gradle android/variables.gradle || true
@@ -160,6 +160,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view test-app >/dev/null 2>&1 || gh release create test-app --prerelease --title "Royal Club test app" \
-            --notes "Latest test build of the Royal Club Android app. Install RoyalClub-test.apk on your phone."
+          gh release view test-app >/dev/null 2>&1 || gh release create test-app --prerelease --title "Ambaro test app" \
+            --notes "Latest test build of the Ambaro Android app. Install RoyalClub-test.apk on your phone."
           gh release upload test-app ../apk/RoyalClub-test.apk ../apk/RoyalClub-offline.apk --clobber

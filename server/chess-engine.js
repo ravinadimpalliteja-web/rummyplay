@@ -308,7 +308,7 @@
       const d = new Date(), pad = (n) => String(n).padStart(2, '0');
       const st = this.status();
       const res = result || st.result;
-      const h = { Event: 'Royal Club Chess', Site: 'Royal Club', Date: `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`,
+      const h = { Event: 'Ambaro Chess', Site: 'Ambaro', Date: `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`,
         Round: '-', White: 'White', Black: 'Black', ...headers, Result: res };
       if (this.startFen !== START) { h.SetUp = '1'; h.FEN = this.startFen; }
       const tags = Object.entries(h).map(([k, v]) => `[${k} "${String(v).replace(/"/g, "'")}"]`).join('\n');

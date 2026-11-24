@@ -38,7 +38,7 @@ export default function ProtectPrompt({ onProfile }: { onProfile: () => void }) 
   };
   return createPortal(<div className="auth-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) close(false); }}>
     <section className="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="protect-title">
-      <div className="auth-kicker">ROYAL CLUB GAMES</div>
+      <div className="auth-kicker">AMBARO</div>
       <h2 id="protect-title">Protect your account</h2>
       <p className="auth-intro">Add a recovery email so you can reset your password if you ever forget it. You'll still sign in as <b>{username}</b> — your email stays private.</p>
       <button className="auth-option auth-primary" onClick={() => { close(false); onProfile(); }}>Add recovery email</button>

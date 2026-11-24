@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="/app-mode.js"></script>
-<title>Royal Club Sudoku</title>
+<title>Sudoku · Ambaro</title>
 <meta name="theme-color" content="#FBF7EE">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -236,10 +236,10 @@ html body .brand .rc-el + span strong{display:none}
 <div class="app">
   <header class="top">
     <span class="lead">
-      <a class="club-back" id="clubLink" href="/" hidden aria-label="Back to Royal Club">←</a>
+      <a class="club-back" id="clubLink" href="/" hidden aria-label="Back to Ambaro">←</a>
       <button class="brand" id="homeBtn" type="button" aria-label="Sudoku menu">
-        <span class="brand-mark rc-el"><img src="../brand/badge-logo-small.webp" alt="" width="320" height="224"></span>
-        <span><strong>ROYAL CLUB</strong><small>SUDOKU</small></span>
+        <span class="brand-mark rc-el"><img src="../brand/badge-logo-small.webp" alt="" width="320" height="269"></span>
+        <span><strong>AMBARO</strong><small>SUDOKU</small></span>
       </button>
     </span>
     <span class="tools-top">
@@ -251,7 +251,7 @@ html body .brand .rc-el + span strong{display:none}
   <!-- Menu: daily puzzle, continue, levels, stats -->
   <section class="setup rc-wm-host" id="setup">
     <div class="rc-watermark" aria-hidden="true"></div>
-    <p class="eyebrow">Royal Club · Puzzles</p>
+    <p class="eyebrow">Ambaro · Puzzles</p>
     <h1>Sudoku</h1>
     <p class="lede">Fill every row, column and box with 1 to 9. A fresh daily puzzle every day.</p>
 
@@ -456,7 +456,7 @@ html body .brand .rc-el + span strong{display:none}
     stopTimer();
     $('setup').hidden = false; $('game').hidden = true; $('lobby').hidden = true; $('newBtn').hidden = true; closeSheet();
     raceCard();
-    $('clubLink').hidden = !inClub; $('clubLink').setAttribute('aria-label', 'Back to Royal Club');
+    $('clubLink').hidden = !inClub; $('clubLink').setAttribute('aria-label', 'Back to Ambaro');
     const st = stats(), today = S.dateKey(), lvl = ['expert', 'easy', 'easy', 'medium', 'medium', 'hard', 'hard'][new Date().getDay()];
     const doneMs = st.dailyDone[today];
     $('dailyTitle').textContent = new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
@@ -495,7 +495,7 @@ html body .brand .rc-el + span strong{display:none}
     sheet(`<h2>${title}</h2><p>Your unfinished ${S.LEVELS[game.level].name} game will be replaced.</p><button class="btn primary" type="button" data-act="replace">Yes, start</button><button class="btn ghost" type="button" data-act="keep">Keep my game</button>`);
   }
   $('resumeBtn').addEventListener('click', () => { if (game && !game.race) openGame(); });
-  /* Back from a game goes to the Sudoku menu (not the Royal Club home). Opening a game adds a history step,
+  /* Back from a game goes to the Sudoku menu (not the Ambaro home). Opening a game adds a history step,
      so the phone's back button and the browser's back button do the same. */
   const inClub = /\/sudoku\//.test(location.pathname);
   const inGame = () => !$('game').hidden;
@@ -770,7 +770,7 @@ html body .brand .rc-el + span strong{display:none}
   }
   function randomPasscode() { const b = new Uint32Array(1); crypto.getRandomValues(b); return String(b[0] % 10000).padStart(4, '0'); }
 
-  /* ---------- Royal Club account: rooms need a signed-in username (same sign-in as the main site and EKAH) ---------- */
+  /* ---------- Ambaro account: rooms need a signed-in username (same sign-in as the main site and EKAH) ---------- */
   const SB_URL = String(window.RC_SUPABASE_URL || ''), SB_KEY = String(window.RC_SUPABASE_KEY || '');
   const SB_STORE = SB_URL ? 'sb-' + SB_URL.replace(/^https:\/\//, '').split('.')[0] + '-auth-token' : '';
   const SIGNIN_URL = '/?signin=rooms';
@@ -797,7 +797,7 @@ html body .brand .rc-el + span strong{display:none}
   }
   function showWho() {
     const name = roomUser();
-    $('roomWho').innerHTML = name ? `Playing as <b>${esc(name)}</b>` : `Sign in with your Royal Club username to race with friends. <a href="${SIGNIN_URL}">Sign in</a>`;
+    $('roomWho').innerHTML = name ? `Playing as <b>${esc(name)}</b>` : `Sign in with your Ambaro username to race with friends. <a href="${SIGNIN_URL}">Sign in</a>`;
   }
 
   /* ---------- connection (reconnects and takes back the same seat after a refresh or a dropped line) ---------- */
@@ -895,7 +895,7 @@ html body .brand .rc-el + span strong{display:none}
   $('startRace').addEventListener('click', () => { $('lobbyErr').textContent = ''; rc && rc.send({ t: 'start' }); });
   $('leaveRoom').addEventListener('click', leaveRoom);
   $('copyInvite').addEventListener('click', () => {
-    const text = `Race me at Sudoku on Royal Club! Room code ${room.code}, passcode ${room.passcode} — ${location.origin}/sudoku/?room=${room.code}`;
+    const text = `Race me at Sudoku on Ambaro! Room code ${room.code}, passcode ${room.passcode} — ${location.origin}/sudoku/?room=${room.code}`;
     const done = () => { $('lobbyErr').textContent = ''; $('copyInvite').textContent = 'Copied ✓'; setTimeout(() => { $('copyInvite').textContent = 'Copy invite'; }, 1800); };
     try { navigator.clipboard.writeText(text).then(done, () => { $('lobbyErr').textContent = text; }); } catch { $('lobbyErr').textContent = text; }
   });

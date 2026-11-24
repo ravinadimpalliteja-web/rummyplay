@@ -20,6 +20,16 @@
 <!-- trunk raised and curled, empty -->
 <path d="M342 259 Q397 265 405 215 Q413 165 376 132 Q359 116 378 98 Q398 82 421 105 Q460 145 445 212 Q432 292 368 307" fill="none" stroke="url(#ivory)" stroke-width="43" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M342 259 Q397 265 405 215 Q413 165 376 132" fill="none" stroke="#c7a77c" stroke-width="3" stroke-linecap="round"/>
+<!-- the golden dice held by the raised trunk -->
+<g transform="translate(408 74) rotate(-10)">
+ <path d="M0 17 L35 0 L72 18 L37 38Z" fill="#ffe38a" stroke="#9a6418" stroke-width="3"/>
+ <path d="M0 17 L37 38 L37 82 L0 59Z" fill="#d99416" stroke="#9a6418" stroke-width="3"/>
+ <path d="M37 38 L72 18 L72 61 L37 82Z" fill="#f5b72b" stroke="#9a6418" stroke-width="3"/>
+ <g fill="#2c1b0a">
+  <circle cx="20" cy="26" r="4"/><circle cx="54" cy="30" r="4"/><circle cx="54" cy="56" r="4"/>
+  <circle cx="18" cy="50" r="4"/><circle cx="37" cy="59" r="4"/>
+ </g>
+</g>
 <!-- tusk -->
 <path d="M347 273 Q371 304 409 293 Q382 325 352 309Z" fill="#fff8e8" stroke="#b99767" stroke-width="3"/>
 <!-- eye -->

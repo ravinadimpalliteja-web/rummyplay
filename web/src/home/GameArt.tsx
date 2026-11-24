@@ -128,12 +128,14 @@ const SnakeHead = () => (
     <path d={HEAD} fill="url(#rcg-scales)" opacity="0.6" />
     <path d="M -9 -29 Q 0 -24 9 -29 Q 6 -19 0 -16 Q -6 -19 -9 -29 Z" fill="#0F6A3A" opacity="0.8" />
     <path d="M -22 -14 Q -14 -20 -6 -16 M 22 -14 Q 14 -20 6 -16" stroke="#0A4A2A" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.7" />
-    <circle cx="-12" cy="-5" r="7" fill="#FFF" stroke="#0A4A2A" strokeWidth="1.6" /><circle cx="12" cy="-5" r="7" fill="#FFF" stroke="#0A4A2A" strokeWidth="1.6" />
-    <circle cx="-11" cy="-4" r="4.6" fill="url(#rcg-iris)" /><circle cx="13" cy="-4" r="4.6" fill="url(#rcg-iris)" />
-    <circle cx="-10.6" cy="-3.6" r="2.8" fill="#141414" /><circle cx="13.4" cy="-3.6" r="2.8" fill="#141414" />
-    <circle cx="-9.4" cy="-5.6" r="1.3" fill="#FFF" /><circle cx="14.6" cy="-5.6" r="1.3" fill="#FFF" />
-    <ellipse cx="-4.5" cy="11" rx="1.5" ry="1" fill="#0A4A2A" /><ellipse cx="4.5" cy="11" rx="1.5" ry="1" fill="#0A4A2A" />
-    <path d="M -9 16 Q 0 21 9 16" stroke="#0A4A2A" strokeWidth="2" fill="none" strokeLinecap="round" />
+    <circle cx="-13" cy="-4" r="10.5" fill="#FFF" stroke="#0A4A2A" strokeWidth="1.8" /><circle cx="13" cy="-4" r="10.5" fill="#FFF" stroke="#0A4A2A" strokeWidth="1.8" />
+    <circle cx="-12" cy="-3" r="7.5" fill="url(#rcg-iris)" /><circle cx="14" cy="-3" r="7.5" fill="url(#rcg-iris)" />
+    <circle cx="-11.5" cy="-2.5" r="4.6" fill="#141414" /><circle cx="14.5" cy="-2.5" r="4.6" fill="#141414" />
+    <circle cx="-9.5" cy="-5.5" r="2.2" fill="#FFF" /><circle cx="16.5" cy="-5.5" r="2.2" fill="#FFF" />
+    <ellipse cx="-21" cy="10" rx="5.5" ry="3.2" fill="#FF6F86" opacity="0.6" /><ellipse cx="21" cy="10" rx="5.5" ry="3.2" fill="#FF6F86" opacity="0.6" />
+    <ellipse cx="-4.5" cy="12" rx="1.6" ry="1.1" fill="#0A4A2A" /><ellipse cx="4.5" cy="12" rx="1.6" ry="1.1" fill="#0A4A2A" />
+    <path d="M -13 15 Q 0 24 13 15" stroke="#0A4A2A" strokeWidth="2.4" fill="none" strokeLinecap="round" />
+    <path d="M 0 21 C 0 27 1 30 0 33 M 0 33 L -4.5 38 M 0 33 L 4.5 38" stroke="#F0405E" strokeWidth="2.6" strokeLinecap="round" fill="none" />
     <ellipse cx="-11" cy="-24" rx="9" ry="3.5" fill="#FFF" opacity="0.32" />
   </g>
 );
@@ -185,7 +187,7 @@ export const SudokuArt = () => (
   </Frame>
 );
 
-/* Chess: a gold horse-head knight as the hero, framed by a bishop and a rook. */
+/* Chess: a gold horse-head knight as the hero, framed by a bishop, a rook and a big pawn behind. */
 const CHESS_DARK = [[-76, -76], [0, -76], [-38, -38], [38, -38], [-76, 0], [0, 0], [-38, 38], [38, 38]];
 const CHESS_LIGHT = [[-38, -76], [38, -76], [-76, -38], [0, -38], [-38, 0], [38, 0], [-76, 38], [0, 38]];
 
@@ -196,15 +198,14 @@ const Knight = ({ x, y, s }: { x: number; y: number; s: number }) => (
     <rect x="-40" y="-24" width="80" height="13" rx="4" fill="url(#rcg-sph-gold)" stroke="#8F600A" strokeWidth="1.5" />
     <rect x="-33" y="-32" width="66" height="9" rx="3" fill="#C08A12" stroke="#8F600A" strokeWidth="1" />
     <g transform="translate(-60 -158) scale(1.28)">
-      <path d="M 80 100 C 86 78 87 56 79 40 C 75 31 69 24 62 20 L 65 5 L 55 15 C 47 13 39 15 33 21 C 25 29 17 40 11 51 C 7 58 7 64 11 68 C 15 72 21 73 27 71 C 31 70 35 70 39 72 C 45 76 46 81 42 87 C 38 93 34 97 32 100 Z" fill="url(#rcg-sph-gold)" stroke="#7A5508" strokeWidth="1.3" strokeLinejoin="round" />
-      <path d="M 66 22 C 74 30 79 42 80 56 C 81 70 79 86 77 100" stroke="#B9820F" strokeWidth="5" fill="none" strokeLinecap="round" opacity="0.75" />
-      <path d="M 68 28 l 6 -3 M 72 37 l 7 -2 M 75 47 l 7 -1 M 77 58 l 7 0 M 78 70 l 7 1 M 78 82 l 7 2" stroke="#8F600A" strokeWidth="1.6" strokeLinecap="round" />
-      <path d="M 33 23 C 26 31 19 41 14 51" stroke="#FFF6C4" strokeWidth="2.2" strokeLinecap="round" fill="none" opacity="0.75" />
-      <path d="M 36 36 Q 42 31 48 35" stroke="#7A5508" strokeWidth="1.4" fill="none" strokeLinecap="round" />
-      <ellipse cx="42" cy="37" rx="3" ry="2.2" fill="#2A1A06" />
-      <ellipse cx="13" cy="60" rx="2" ry="1.4" transform="rotate(-30 13 60)" fill="#2A1A06" />
-      <path d="M 14 67 Q 20 69 26 68" stroke="#2A1A06" strokeWidth="1.2" fill="none" strokeLinecap="round" />
-      <path d="M 40 72 C 47 66 52 58 52 48" stroke="#A8740C" strokeWidth="1.4" fill="none" strokeLinecap="round" opacity="0.7" />
+      <polygon points="64,24 74,28 71,33 80,40 76,45 84,54 79,58 86,70 81,73 86,86 81,89 84,100 78,100 70,40" fill="#B9820F" stroke="#7A5508" strokeWidth="1" strokeLinejoin="round" />
+      <path d="M 78 100 C 84 72 82 46 66 26 Q 66 14 60 4 Q 54 10 52 18 L 48 12 Q 44 16 44 22 C 38 22 33 26 30 30 C 24 38 16 46 11 54 C 6 62 8 71 16 73 L 24 72 C 28 72 30 70 32 70 C 40 70 46 66 48 60 C 54 64 54 74 46 84 C 40 90 34 95 30 100 Z" fill="url(#rcg-sph-gold)" stroke="#7A5508" strokeWidth="1.2" strokeLinejoin="round" />
+      <path d="M 59 9 Q 58 14 57 19" stroke="#A8740C" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+      <path d="M 45 48 Q 51 54 48 60" stroke="#B9820F" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+      <path d="M 30 32 C 24 40 17 48 13 55" stroke="#FFF6C4" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.75" />
+      <ellipse cx="38" cy="33" rx="3.4" ry="2.3" transform="rotate(-25 38 33)" fill="#2A1A06" />
+      <circle cx="13.5" cy="61" r="1.9" fill="#2A1A06" />
+      <path d="M 16 70 Q 21 69 26 69.5" stroke="#2A1A06" strokeWidth="1.2" fill="none" strokeLinecap="round" />
     </g>
   </g>
 );
@@ -235,6 +236,17 @@ const Rook = ({ x, y, s }: { x: number; y: number; s: number }) => (
   </g>
 );
 
+const Pawn = ({ x, y, s }: { x: number; y: number; s: number }) => (
+  <g filter="url(#rcg-shadow)" transform={`translate(${x} ${y}) scale(${s})`}>
+    <ellipse cx="0" cy="0" rx="46" ry="11" fill="#6E4E08" />
+    <path d="M -44 -2 L 44 -2 L 36 -18 L -36 -18 Z" fill="url(#rcg-gold)" stroke="#8F600A" strokeWidth="1.5" strokeLinejoin="round" />
+    <path d="M -24 -18 Q -13 -56 -13 -72 L 13 -72 Q 13 -56 24 -18 Z" fill="url(#rcg-sph-gold)" stroke="#8F600A" strokeWidth="1.5" />
+    <ellipse cx="0" cy="-74" rx="25" ry="7" fill="#C08A12" stroke="#8F600A" strokeWidth="1.2" />
+    <circle cx="0" cy="-102" r="27" fill="url(#rcg-sph-gold)" stroke="#8F600A" strokeWidth="1.5" />
+    <ellipse cx="-10" cy="-112" rx="7" ry="4.5" fill="#FFF" opacity="0.7" />
+  </g>
+);
+
 export const ChessArt = () => (
   <Frame>
     <Backdrop jewel="onyx" />
@@ -244,6 +256,7 @@ export const ChessArt = () => (
       <g fill="#E9D9AE">{CHESS_LIGHT.map(([x, y]) => <rect key={`l${x}${y}`} x={x} y={y} width="38" height="38" />)}</g>
     </g>
     <circle cx="120" cy="104" r="64" fill="#FFD36B" opacity="0.4" filter="url(#rcg-glow)" />
+    <Pawn x={120} y={182} s={0.98} />
     <Bishop x={52} y={230} s={0.8} />
     <Rook x={190} y={230} s={0.64} />
     <Knight x={118} y={238} s={0.98} />

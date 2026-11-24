@@ -1,7 +1,7 @@
 /* Royal Club game art — "Royal Gold, jewel colours" set (polished lineup).
    One jewel colour per game (EKAH ruby, Ludo emerald, Snakes & Ladders sapphire, Sudoku amethyst, Chess onyx,
    Word Puzzle citrine),
-   shared gold, crowns and a soft sunburst so the five read as one family. All artwork is original.
+   shared gold, the Ambaro lotus and a soft sunburst so the five read as one family. All artwork is original.
    <GameArtDefs /> must be rendered once on the page; every art piece below points at its gradients and filters. */
 import type { ReactNode } from "react";
 
@@ -15,10 +15,14 @@ export const GameArtDefs = () => (
   <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden="true" focusable="false">
     <defs>
       <g id="rcg-rays">{RAYS.map(p => <polygon key={p} points={p} />)}</g>
-      <g id="rcg-crown">
-        <polygon points="-20,10 -26,-12 -10,-2 0,-20 10,-2 26,-12 20,10" fill="url(#rcg-gold)" stroke="#7A5508" strokeWidth="2" strokeLinejoin="round" />
-        <rect x="-21" y="8" width="42" height="8" rx="3" fill="url(#rcg-gold)" stroke="#7A5508" strokeWidth="2" />
-        <circle cx="0" cy="-20" r="3.5" fill="#E0303F" /><circle cx="-26" cy="-12" r="3" fill="#22B573" /><circle cx="26" cy="-12" r="3" fill="#3B7BFF" />
+      <g id="rcg-crown">{/* Ambaro emblem: a gold lotus with an emerald (was a crown; the id stays so every placement keeps working) */}
+        <path d="M-6,12 C-20,12 -28,6 -30,-2 C-20,-2 -12,4 -6,12Z" fill="url(#rcg-gold)" stroke="#7A5508" strokeWidth="2" strokeLinejoin="round" />
+        <path d="M6,12 C20,12 28,6 30,-2 C20,-2 12,4 6,12Z" fill="url(#rcg-gold)" stroke="#7A5508" strokeWidth="2" strokeLinejoin="round" />
+        <path d="M-3,11 C-15,7 -21,-3 -19,-14 C-9,-10 -3,-1 -3,11Z" fill="url(#rcg-gold)" stroke="#7A5508" strokeWidth="2" strokeLinejoin="round" />
+        <path d="M3,11 C15,7 21,-3 19,-14 C9,-10 3,-1 3,11Z" fill="url(#rcg-gold)" stroke="#7A5508" strokeWidth="2" strokeLinejoin="round" />
+        <path d="M0,-23 C10,-12 10,1 0,11 C-10,1 -10,-12 0,-23Z" fill="url(#rcg-gold)" stroke="#7A5508" strokeWidth="2" strokeLinejoin="round" />
+        <rect x="-18" y="10" width="36" height="7" rx="3.5" fill="url(#rcg-gold)" stroke="#7A5508" strokeWidth="2" />
+        <path d="M0,-7 L4.5,-1.5 L0,4 L-4.5,-1.5Z" fill="#22B573" stroke="#0B5A33" strokeWidth="1.2" />
       </g>
       <filter id="rcg-shadow" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="0" dy="8" stdDeviation="7" floodColor="#000" floodOpacity="0.4" /></filter>
       <filter id="rcg-glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="11" /></filter>

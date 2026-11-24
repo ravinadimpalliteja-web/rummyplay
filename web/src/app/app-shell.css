@@ -28,8 +28,10 @@
 .rx-btn:disabled{filter:grayscale(.7) brightness(.7);cursor:default}
 .rx-btn small{font-size:14px;font-weight:700;opacity:.8}
 .rx-saffron{--edge:var(--rx-saffron-dark);background:linear-gradient(180deg,#FFAE55,var(--rx-saffron) 55%,#D9711A);color:var(--rx-ink)}
-.rx-green{--edge:#0B4A36;background:linear-gradient(180deg,#2C9A72,#1B7A5A);color:var(--rx-ivory)}
-.rx-blue{--edge:#163A78;background:linear-gradient(180deg,#4A86E8,#2F6FD6);color:#fff}
+.rx-green{--edge:#0B4A36;background:linear-gradient(180deg,#2C9A72,#1B7A5A);color:#FFF8EA}
+/* "With friends" and Join: Ambaro maroon with a gold rim (one colour story: emerald = play alone, maroon = friends,
+   saffron = the main PLAY, gold = rewards). The class keeps its old name. */
+.rx-blue{--edge:#3A040C;background:linear-gradient(180deg,#9A2236,#6E0A1C);color:#FFF8EA;box-shadow:0 5px 0 var(--edge),inset 0 0 0 2px rgba(233,196,106,.55),inset 0 3px 0 rgba(255,255,255,.2)}
 .rx-big{width:100%;height:64px;border-radius:30px;font-size:24px;--edge:#8A4207;box-shadow:0 6px 0 var(--edge),inset 0 3px 0 rgba(255,255,255,.35)}
 .rx-wide{width:100%;margin-top:12px}
 .rx-sm{height:38px;padding:0 12px;border-radius:16px;font-size:15px;gap:5px}
@@ -314,3 +316,6 @@
   .rx-light .rx-top{border-radius:0 0 0 26px}
 }
 .rx-light .rx-badge{color:#FFF8EA}
+
+/* Game medals under the stage: zoom into each art's hero so the small circles are easy to tell apart */
+.rx-medal>svg{transform:scale(1.45) translateY(4%)}

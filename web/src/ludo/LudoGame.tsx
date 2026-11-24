@@ -11,7 +11,7 @@ import { unlockLook, useWallet, useWalletReady } from "../economy/wallet";
 import { useRealWins } from "./realWins";
 import { celebrate } from "../snakes/confetti";
 import { Celebration } from "./Celebration";
-import ambaroMedallion from "../brand/ambaro-medallion.webp";
+import ambaroMedallion from "../brand/ambaro-ludo-centre.svg";
 import { motionReduced, setMotionReduced } from "../lib/motion";
 import { inviteText } from "../lib/share";
 import { SAVE_KEYS, loadGame, saveGame, clearGame } from "../lib/localSave";

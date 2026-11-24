@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<defs>
+ <linearGradient id="ivory" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fffaf0"/><stop offset=".52" stop-color="#f0dfc2"/><stop offset="1" stop-color="#d6b98f"/></linearGradient>
+ <linearGradient id="gold" x1="0" y1="0" x2="0.9" y2="1"><stop stop-color="#fff0a6"/><stop offset=".45" stop-color="#e7ad27"/><stop offset="1" stop-color="#9b5d12"/></linearGradient>
+ <linearGradient id="ruby" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#e53c42"/><stop offset="1" stop-color="#790c1c"/></linearGradient>
+ <linearGradient id="jade" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#6ce0a5"/><stop offset="1" stop-color="#08784f"/></linearGradient>
+</defs>
+<ellipse cx="254" cy="457" rx="192" ry="18" fill="#7c551d" opacity=".2"/>
+<!-- elephant body and legs -->
+<path d="M105 280 Q105 207 183 194 L300 195 Q365 209 377 280 L369 405 Q364 430 337 430 L315 430 Q298 424 300 405 L298 326 L260 326 L257 408 Q254 432 229 432 L207 430 Q190 423 194 404 L191 325 L153 327 L149 405 Q145 430 121 430 L99 428 Q83 419 90 398Z" fill="url(#ivory)" stroke="#b28a54" stroke-width="4"/>
+<!-- ears -->
+<path d="M180 236 Q100 158 55 205 Q28 244 78 324 Q114 365 174 310Z" fill="url(#ivory)" stroke="#c4a477" stroke-width="5"/>
+<path d="M158 250 Q105 203 78 226 Q62 249 100 302 Q123 322 157 292Z" fill="#f3d7b7"/>
+<!-- head -->
+<path d="M180 195 Q193 126 271 126 Q350 126 374 192 Q389 235 359 286 Q332 325 270 322 Q205 318 178 270 Q160 235 180 195Z" fill="url(#ivory)" stroke="#b28a54" stroke-width="4"/>
+<!-- forehead facets -->
+<path d="M206 173 L269 132 L326 173 L286 220 L232 218Z" fill="#fff9eb" opacity=".8"/>
+<path d="M206 173 L232 218 L187 250 L180 207Z" fill="#ead5b7"/>
+<path d="M326 173 L356 205 L346 253 L286 220Z" fill="#e2c7a2"/>
+<!-- trunk raised and curled, empty -->
+<path d="M342 259 Q397 265 405 215 Q413 165 376 132 Q359 116 378 98 Q398 82 421 105 Q460 145 445 212 Q432 292 368 307" fill="none" stroke="url(#ivory)" stroke-width="43" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M342 259 Q397 265 405 215 Q413 165 376 132" fill="none" stroke="#c7a77c" stroke-width="3" stroke-linecap="round"/>
+<!-- the golden dice held by the raised trunk -->
+<g transform="translate(408 74) rotate(-10)">
+ <path d="M0 17 L35 0 L72 18 L37 38Z" fill="#ffe38a" stroke="#9a6418" stroke-width="3"/>
+ <path d="M0 17 L37 38 L37 82 L0 59Z" fill="#d99416" stroke="#9a6418" stroke-width="3"/>
+ <path d="M37 38 L72 18 L72 61 L37 82Z" fill="#f5b72b" stroke="#9a6418" stroke-width="3"/>
+ <g fill="#2c1b0a">
+  <circle cx="20" cy="26" r="4"/><circle cx="54" cy="30" r="4"/><circle cx="54" cy="56" r="4"/>
+  <circle cx="18" cy="50" r="4"/><circle cx="37" cy="59" r="4"/>
+ </g>
+</g>
+<!-- tusk -->
+<path d="M347 273 Q371 304 409 293 Q382 325 352 309Z" fill="#fff8e8" stroke="#b99767" stroke-width="3"/>
+<!-- eye -->
+<path d="M319 221 Q339 203 357 221 Q339 240 319 221Z" fill="#fffdf6" stroke="#9b713d" stroke-width="3"/>
+<ellipse cx="340" cy="221" rx="7" ry="10" fill="#4a2817"/><circle cx="343" cy="217" r="3" fill="#fff"/>
+<path d="M316 208 Q338 192 361 207" fill="none" stroke="#6c3a20" stroke-width="5" stroke-linecap="round"/>
+<!-- red royal cloth and lotus -->
+<path d="M117 271 Q185 293 265 270 Q337 291 369 265 L358 374 Q252 417 129 374Z" fill="url(#ruby)" stroke="url(#gold)" stroke-width="10"/>
+<path d="M140 291 Q246 316 346 289 L339 362 Q246 394 148 361Z" fill="none" stroke="#f5ca58" stroke-width="3"/>
+<g transform="translate(248 337)" fill="url(#gold)" stroke="#fff0a6" stroke-width="2">
+ <path d="M0 -36 Q-29 -10 0 14 Q29 -10 0 -36Z"/>
+ <path d="M-5 -19 Q-48 -43 -47 -4 Q-26 18 -5 5Z"/>
+ <path d="M5 -19 Q48 -43 47 -4 Q26 18 5 5Z"/>
+ <path d="M-17 0 Q-55 -5 -43 22 Q-22 35 -4 13Z"/>
+ <path d="M17 0 Q55 -5 43 22 Q22 35 4 13Z"/>
+ <path d="M0 8 L10 28 L0 42 L-10 28Z"/>
+</g>
+<!-- royal ambari canopy -->
+<path d="M145 195 Q150 116 245 101 Q338 116 347 195Z" fill="url(#ruby)" stroke="url(#gold)" stroke-width="12"/>
+<path d="M174 177 Q191 126 245 119 Q301 126 319 177" fill="none" stroke="#f4c64e" stroke-width="8"/>
+<path d="M151 193 L342 193 L342 215 L151 215Z" fill="url(#gold)" stroke="#9c6418" stroke-width="4"/>
+<path d="M171 214 L171 264 M316 214 L316 264" stroke="url(#gold)" stroke-width="10"/>
+<!-- canopy finials -->
+<g fill="url(#gold)" stroke="#9c6418" stroke-width="3"><path d="M238 99 L245 63 L252 99Z"/><circle cx="245" cy="57" r="9"/><path d="M146 137 L154 108 L162 137Z"/><circle cx="154" cy="103" r="7"/><path d="M328 137 L336 108 L344 137Z"/><circle cx="336" cy="103" r="7"/></g>
+<!-- green gems -->
+<path d="M245 142 L260 158 L245 176 L230 158Z" fill="url(#jade)" stroke="#f8d66a" stroke-width="4"/>
+<path d="M180 193 L191 205 L180 217 L169 205Z M310 193 L321 205 L310 217 L299 205Z" fill="url(#jade)" stroke="#f8d66a" stroke-width="3"/>
+<!-- gold leg anklets -->
+<path d="M89 393 Q119 405 151 392 L149 411 Q116 423 88 410Z M190 393 Q225 406 258 393 L257 412 Q223 425 190 411Z M298 391 Q336 405 370 391 L368 411 Q333 424 298 410Z" fill="url(#gold)" stroke="#9b6419" stroke-width="3"/>
+</svg>

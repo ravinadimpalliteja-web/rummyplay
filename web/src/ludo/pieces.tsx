@@ -1,6 +1,10 @@
 /* Royal Club Ludo: token sets and dice finishes. Purely visual; chosen per device and remembered. */
 import type { Color } from "./engine";
 import { SHOP } from "../economy/rules";
+import ambaroRed from "./art/ambaro-red.webp";
+import ambaroGreen from "./art/ambaro-green.webp";
+import ambaroYellow from "./art/ambaro-yellow.webp";
+import ambaroBlue from "./art/ambaro-blue.webp";
 
 export const TOKEN_SETS = [
   { id: "ambaro", name: "Ambaro elephants", note: "The Ambaro elephant, carrying its golden ambari" },
@@ -48,9 +52,6 @@ export function PieceDefs() {
       <linearGradient id="ldp-gold-h" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#8a5f18" /><stop offset=".35" stopColor="#f6dc8e" /><stop offset=".6" stopColor="#fff3c0" /><stop offset="1" stopColor="#9a6c1e" /></linearGradient>
       <linearGradient id="ldp-coat" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fffaf0" /><stop offset=".6" stopColor="#efe4cf" /><stop offset="1" stopColor="#cdbd9c" /></linearGradient>
       <linearGradient id="ldp-hide" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#a8a29c" /><stop offset=".6" stopColor="#8b847e" /><stop offset="1" stopColor="#625c57" /></linearGradient>
-      <linearGradient id="ldp-ivy" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fffbf1" /><stop offset=".55" stopColor="#f2e4c8" /><stop offset="1" stopColor="#d6bf96" /></linearGradient>
-      <linearGradient id="ldp-ivy-d" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#efe0c2" /><stop offset="1" stopColor="#c9ae80" /></linearGradient>
-      <linearGradient id="ldp-ear" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fffaf0" /><stop offset=".55" stopColor="#f6e3b4" /><stop offset="1" stopColor="#e8b948" /></linearGradient>
       <radialGradient id="ldp-pearl" cx=".38" cy=".32" r=".7"><stop offset="0" stopColor="#ffffff" /><stop offset=".6" stopColor="#efe6d2" /><stop offset="1" stopColor="#b9a87e" /></radialGradient>
       {COLS.map(c => <g key={c}>
         <radialGradient id={`ldp-${c}-ball`} cx=".36" cy=".3" r=".75"><stop offset="0" stopColor={TONES[c].hi} /><stop offset=".45" stopColor={TONES[c].base} /><stop offset="1" stopColor={TONES[c].lo} /></radialGradient>
@@ -63,6 +64,8 @@ export function PieceDefs() {
 
 /** One token drawn in the chosen set, in the player's colour. Animals face right (towards the token they attack).
     Each piece's art sits in a group (.ld-art) so the capture animations can move parts of it. */
+const AMBARO_ART: Record<Color, string> = { red: ambaroRed, green: ambaroGreen, yellow: ambaroYellow, blue: ambaroBlue };
+
 export function Piece({ set, color }: { set: TokenSet; color: Color }) {
   const ball = `url(#ldp-${color}-ball)`, body = `url(#ldp-${color}-body)`, v = `url(#ldp-${color}-v)`, t = TONES[color];
   const gold = "url(#ldp-gold)", goldH = "url(#ldp-gold-h)";
@@ -116,52 +119,9 @@ export function Piece({ set, color }: { set: TokenSet; color: Color }) {
         <path d="M28.4 21.4 C30 23 31.6 24.6 34 25" stroke={goldH} strokeWidth="1.4" fill="none" />
       </>; break;
     case "ambaro":
-      /* The Ambaro elephant from the logo: an ivory, faceted elephant, trunk raised, with gold anklets, toenails, tusks,
-         ear trim and a gold headdress set with emeralds; a jhool (blanket) in the player's colour with a gold border,
-         gold tassels and the gold lotus in a laurel; and a golden ambari whose canopy is in the player's colour. */
-      art = <>
-        <path d="M6.6 23.2 C4.4 25.4 3.8 28.8 4.6 32" stroke="#e8d6b2" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-        <path d="M4.6 31.4 C3 33 3 35 4 36.4 C4.6 35 5.8 34 6.2 32.4 Z" fill={gold} stroke="#9c7a44" strokeWidth=".3" />
-        {[8.8, 14.4, 25.6, 31.2].map((x, i) => <g key={x}>
-          <path d={`M${x} 29 h5.4 l-.3 13.6 h-4.8 Z`} fill={i % 3 ? "url(#ldp-ivy-d)" : "url(#ldp-ivy)"} stroke="#9c7a44" strokeWidth=".4" />
-          <rect x={x - .3} y="36.6" width="6" height="1.9" rx=".5" fill={goldH} stroke="#9c7a44" strokeWidth=".25" />
-          {[.9, 2.5, 4.1].map(d => <ellipse key={d} cx={x + d + .2} cy="42.4" rx=".75" ry=".6" fill={gold} />)}
-        </g>)}
-        <path d="M6.4 22 C7.4 15.8 13 13.6 20.4 13.6 C28.6 13.6 34.4 16.4 35.2 23.4 C35.8 30.6 30 35.4 20.6 35.4 C11.4 35.4 5.6 30.4 6.4 22 Z" fill="url(#ldp-ivy)" stroke="#9c7a44" strokeWidth=".5" />
-        <path d="M9 30.6 L16 24 L22 33.8 Z M24 33.6 L30 25.4 L33.4 30.2 Z" fill="#c9ae80" opacity=".45" />
-        <path d="M31.4 13.8 C35 11.6 40.6 12.6 41.8 17.4 C42.6 20.8 41.2 24.6 38.8 26 C36 27.6 32 26 30.4 22.6 Z" fill="url(#ldp-ivy)" stroke="#9c7a44" strokeWidth=".5" />
-        <path className="ld-trunk" d="M40.4 24.6 C43.4 23.8 45.6 20.6 45.2 16.4 C45 14.2 46.4 12.8 47.8 13.6" stroke="#f1e3c6" strokeWidth="3.4" fill="none" strokeLinecap="round" />
-        <path d="M40.4 24.6 C43.4 23.8 45.6 20.6 45.2 16.4" stroke="#9c7a44" strokeWidth=".5" fill="none" opacity=".7" />
-        <path d="M38.2 25.6 C40.4 27.6 43.4 28 45.8 26.8" stroke={gold} strokeWidth="1.8" fill="none" strokeLinecap="round" />
-        <path d="M38.6 26.2 l1.2 .8" stroke="#7a5214" strokeWidth=".9" strokeLinecap="round" />
-        <path d="M27.6 15.4 L34.8 14.4 L35.6 25 L30.6 28.6 L27 22.4 Z" fill="url(#ldp-ear)" stroke={gold} strokeWidth=".8" strokeLinejoin="round" />
-        <path d="M28.8 18 L33.6 17.2 L32.6 23.4 Z" fill="#fffdf6" opacity=".8" />
-        <circle cx="38.6" cy="18.8" r=".85" fill="#3a2410" /><path d="M37.4 17.4 q1.3 -.7 2.6 0" stroke="#9c7a44" strokeWidth=".5" fill="none" />
-        <path d="M33.4 12.8 C36 10.6 40.4 10.8 42.6 13.6 L41.2 16.6 C39.4 15.2 36.4 14.8 34.2 15.8 Z" fill={gold} stroke="#7a5214" strokeWidth=".4" />
-        <path d="M38.4 11.6 l1.4 1.6 l-1.4 1.6 l-1.4 -1.6 Z" fill="#1fb36e" stroke="#7a5214" strokeWidth=".3" />
-        <path d="M30.8 27.4 C32.6 29.6 35.4 30.4 37.6 29.4" stroke={gold} strokeWidth="1.2" fill="none" />
-        <path d="M34.2 29.4 l1.2 1.4 l-1.2 1.4 l-1.2 -1.4 Z" fill="#1fb36e" stroke="#7a5214" strokeWidth=".3" />
-        <path d="M8 16.8 C14 14.6 25 14.6 29.8 16.6 L30.4 31.6 C24 33.4 14 33.4 7 31.4 Z" fill={body} stroke={gold} strokeWidth="1" strokeLinejoin="round" />
-        <path d="M7.4 30.2 C14 32 24 32 30.2 30.2" stroke={goldH} strokeWidth="1.2" fill="none" />
-        {[10, 14.6, 19.2, 23.8, 28.2].map(x => <path key={x} d={`M${x} 32 v1 l-.8 1.6 h1.6 l-.8 -1.6`} fill={gold} stroke={gold} strokeWidth=".4" />)}
-        <path d="M13.6 26.4 C12.4 24 12.6 21.2 14.2 19.4 M23.6 26.4 C24.8 24 24.6 21.2 23 19.4" stroke={goldH} strokeWidth=".8" fill="none" strokeDasharray=".9 .5" />
-        <g fill={goldH} stroke="#7a5214" strokeWidth=".25">
-          <path d="M18.6 19.6 C19.8 21.2 19.8 23.6 18.6 25.4 C17.4 23.6 17.4 21.2 18.6 19.6 Z" />
-          <path d="M18.4 25.4 C16.6 25 15.4 23.2 15.6 21.4 C17 22 18.2 23.4 18.4 25.4 Z" />
-          <path d="M18.8 25.4 C20.6 25 21.8 23.2 21.6 21.4 C20.2 22 19 23.4 18.8 25.4 Z" />
-          <path d="M18.2 25.6 C16.6 25.8 15 25 14.4 23.8 C16 23.6 17.4 24.4 18.2 25.6 Z" />
-          <path d="M19 25.6 C20.6 25.8 22.2 25 22.8 23.8 C21.2 23.6 19.8 24.4 19 25.6 Z" />
-        </g>
-        <rect x="9.6" y="12.2" width="18.6" height="3.4" rx=".6" fill={goldH} stroke="#7a5214" strokeWidth=".4" />
-        <path d="M18.9 12.6 l1.2 1.3 l-1.2 1.3 l-1.2 -1.3 Z" fill="#1fb36e" stroke="#7a5214" strokeWidth=".3" />
-        <path d="M11 12.2 V5.6 M15.6 12.2 V5.6 M22.4 12.2 V5.6 M27 12.2 V5.6" stroke={gold} strokeWidth="1.1" />
-        <path d="M9.4 6.2 C10.6 0.4 15 -1.8 18.9 -1.8 C22.8 -1.8 27.2 0.4 28.4 6.2 Z" fill={v} stroke={gold} strokeWidth=".8" />
-        <path d="M13.6 5.8 C14.2 2 16.4 -.6 18.9 -1.2 M24.2 5.8 C23.6 2 21.4 -.6 18.9 -1.2" stroke={goldH} strokeWidth=".7" fill="none" />
-        <path d="M9 6 h19.8" stroke={goldH} strokeWidth="1.4" />
-        <path d="M18.9 2.4 l1.1 1.2 l-1.1 1.2 l-1.1 -1.2 Z" fill="#1fb36e" stroke="#7a5214" strokeWidth=".3" />
-        <path d="M18.9 -1.8 V-3" stroke={gold} strokeWidth="1" /><path d="M18.9 -5.2 l1.2 1.2 l-1.2 1.2 l-1.2 -1.2 Z" fill={goldH} stroke="#7a5214" strokeWidth=".3" />
-        {[9.6, 28.2].map(x => <g key={x}><path d={`M${x} 6 V3.4`} stroke={gold} strokeWidth=".8" /><path d={`M${x} 1.4 l.9 1 l-.9 1 l-.9 -1 Z`} fill={goldH} stroke="#7a5214" strokeWidth=".25" /></g>)}
-      </>; break;
+      /* The Ambaro elephant itself: the logo artwork (ivory elephant, golden ambari, gold lotus on the blanket), cut out
+         and with the blanket and canopy recoloured to each player's colour (art/ambaro-<colour>.webp). */
+      art = <image href={AMBARO_ART[color]} x="-1" y="2" width="50" height="43.1" preserveAspectRatio="xMidYMax meet" />; break;
     case "tiger":
       /* A lacquered Channapatna-style toy tiger painted in the player's colour, with dark stripes and a gold collar. */
       art = <>

@@ -66,7 +66,8 @@ export function PieceDefs() {
     Each piece's art sits in a group (.ld-art) so the capture animations can move parts of it. */
 const AMBARO_ART: Record<Color, string> = { red: ambaroRed, green: ambaroGreen, yellow: ambaroYellow, blue: ambaroBlue };
 
-export function Piece({ set, color }: { set: TokenSet; color: Color }) {
+/** A token. `bare`: the Ambaro elephant without its game-piece base (for the 1st-place procession). */
+export function Piece({ set, color, bare }: { set: TokenSet; color: Color; bare?: boolean }) {
   const ball = `url(#ldp-${color}-ball)`, body = `url(#ldp-${color}-body)`, v = `url(#ldp-${color}-v)`, t = TONES[color];
   const gold = "url(#ldp-gold)", goldH = "url(#ldp-gold-h)";
   if (set === "sentry") {
@@ -121,7 +122,17 @@ export function Piece({ set, color }: { set: TokenSet; color: Color }) {
     case "ambaro":
       /* The Ambaro elephant itself: the logo artwork (ivory elephant, golden ambari, gold lotus on the blanket), cut out
          and with the blanket and canopy recoloured to each player's colour (art/ambaro-<colour>.webp). */
-      art = <image href={AMBARO_ART[color]} x="-1" y="2" width="50" height="43.1" preserveAspectRatio="xMidYMax meet" />; break;
+      /* stood on a round gold base with the player's colour around its rim, like a carved game piece */
+      if (bare) return <svg className="ld-piece" viewBox="0 0 48 41.4" aria-hidden="true" focusable="false"><image href={AMBARO_ART[color]} x="0" y="0" width="48" height="41.4" /></svg>;
+      return <svg className="ld-piece" viewBox="0 -3 48 52" aria-hidden="true" focusable="false">
+        <ellipse cx="24" cy="46.2" rx="19" ry="3.2" fill="rgba(0,0,0,.3)" />
+        <g className="ld-art">
+          <path d="M6.5 41.9 V43.6 A17.5 4.2 0 0 0 41.5 43.6 V41.9 Z" fill={body} stroke="#6e4a14" strokeWidth=".45" />
+          <ellipse cx="24" cy="41.9" rx="17.5" ry="3.7" fill={goldH} stroke="#8a5f18" strokeWidth=".4" />
+          <ellipse cx="24" cy="41.7" rx="14.2" ry="2.5" fill="none" stroke="rgba(255,243,192,.75)" strokeWidth=".5" />
+          <image href={AMBARO_ART[color]} x="2" y="4.4" width="44" height="38" preserveAspectRatio="xMidYMax meet" />
+        </g>
+      </svg>;
     case "tiger":
       /* A lacquered Channapatna-style toy tiger painted in the player's colour, with dark stripes and a gold collar. */
       art = <>

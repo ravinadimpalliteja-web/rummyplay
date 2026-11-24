@@ -71,7 +71,7 @@ export function Celebration({ place, color, name, onDone }: { place: number; col
       <em>{you ? "You win!" : `${name} wins!`}</em>
     </div>
     <div className="ld-cel-road" />
-    <div className="ld-cel-walk"><div className="ld-cel-bob"><Piece set="ambaro" color={color} /></div></div>
+    <div className="ld-cel-walk"><div className="ld-cel-bob"><Piece set="ambaro" color={color} bare /></div></div>
   </div>;
   if (place === 1) return <div className="ld-cel ld-cel-2" aria-hidden="true">
     <div className="ld-cel-label"><strong>2nd place</strong><em>{you ? "Well played!" : name}</em></div>

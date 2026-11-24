@@ -3,7 +3,7 @@ import type { Color } from "./engine";
 import { SHOP } from "../economy/rules";
 
 export const TOKEN_SETS = [
-  { id: "ambaro", name: "Ambaro elephants", note: "The Ambaro elephant, carrying its golden ambari" },
+  { id: "ambaro", name: "Ambaro elephants", note: "The ivory Ambaro elephant with its ruby-red and gold ambari" },
   { id: "sentry", name: "Indian sentries", note: "Palace guards in turbans, with spear and shield" },
   { id: "horse", name: "Royal horses", note: "White Marwari horses in coloured caparisons" },
   { id: "tiger", name: "Toy tigers", note: "Lacquered Channapatna-style tigers" },
@@ -115,7 +115,7 @@ export function Piece({ set, color }: { set: TokenSet; color: Color }) {
         <path d="M28.4 21.4 C30 23 31.6 24.6 34 25" stroke={goldH} strokeWidth="1.4" fill="none" />
       </>; break;
     case "ambaro":
-      /* The Ambaro elephant from the logo: a faceted ivory elephant with gold anklets and headdress, trunk raised,
+      /* The Ambaro elephant from the logo: a faceted ivory elephant with gold anklets and headdress, trunk raised and empty (no dice),
          a ruby-red jhool with a gold lotus with a gold medallion, and a golden ambari whose canopy is in the
          player's colour. */
       art = <>
@@ -131,7 +131,6 @@ export function Piece({ set, color }: { set: TokenSet; color: Color }) {
         <path className="ld-trunk" d="M40.4 24.6 C43.4 23.8 45.6 20.6 45.2 16.4 C45 14.2 46.4 12.8 47.8 13.6" stroke="#f1e3cc" strokeWidth="3.4" fill="none" strokeLinecap="round" />
         <path d="M40.4 24.6 C43.4 23.8 45.6 20.6 45.2 16.4" stroke="#b69a72" strokeWidth=".5" fill="none" opacity=".6" />
         <path d="M38.2 25.6 C40.4 27.6 43.4 28 45.8 26.8" stroke="#fffaf0" strokeWidth="1.7" fill="none" strokeLinecap="round" />
-        <g transform="translate(43 7) rotate(-12)"><path d="M0 1 L5 -1 L10 2 L5 5 Z" fill="#ffe58a" stroke="#9a6517" strokeWidth=".45"/><path d="M0 1 L5 5 L5 11 L0 7 Z" fill="#d99516" stroke="#9a6517" strokeWidth=".45"/><path d="M5 5 L10 2 L10 8 L5 11 Z" fill="#f5b92d" stroke="#9a6517" strokeWidth=".45"/><circle cx="2.4" cy="3.5" r=".55" fill="#38210a"/><circle cx="7.5" cy="4.2" r=".55" fill="#38210a"/><circle cx="7.5" cy="8.3" r=".55" fill="#38210a"/></g>
         <path d="M27.6 15.4 L34.8 14.4 L35.6 25 L30.6 28.6 L27 22.4 Z" fill="url(#ldp-coat)" stroke={gold} strokeWidth=".8" strokeLinejoin="round" />
         <path d="M28.8 18 L33.6 17.2 L32.6 23.4 Z" fill="#fff7e9" opacity=".7" />
         <circle cx="38.6" cy="18.8" r=".85" fill="#1a120a" /><path d="M37.4 17.4 q1.3 -.7 2.6 0" stroke="#b69a72" strokeWidth=".5" fill="none" />

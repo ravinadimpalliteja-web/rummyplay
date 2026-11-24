@@ -602,7 +602,7 @@ html.rc-app .ld-screen .ld-board-wrap{filter:drop-shadow(0 18px 30px rgba(0,0,0,
 .ld-petals{position:fixed;inset:0;width:100vw;height:100vh;z-index:1001;pointer-events:none}
 .ld-cel{position:fixed;inset:0;z-index:1000;pointer-events:none;overflow:hidden;font-family:'Cinzel','Playfair Display',Georgia,serif}
 /* 1st: the Ambari procession */
-.ld-cel-1{background:radial-gradient(ellipse at 50% 55%,rgba(6,38,28,.55),rgba(3,20,14,.82));animation:ldCelFade 4.6s ease forwards}
+.ld-cel-1{background:radial-gradient(ellipse at 50% 55%,rgba(110,8,24,.55),rgba(48,0,8,.84));animation:ldCelFade 4.6s ease forwards}
 .ld-cel-title{position:absolute;left:50%;top:18%;transform:translateX(-50%);display:grid;justify-items:center;gap:2px;text-align:center;white-space:nowrap;
   animation:ldCelRise .7s cubic-bezier(.2,.8,.3,1.2) .15s both}
 .ld-cel-crown{font-size:clamp(40px,11vmin,84px);line-height:1;color:#f6d36b;text-shadow:0 0 18px rgba(246,211,107,.75),0 3px 0 #8a5f18;animation:ldCelCrown 1.6s ease-in-out .8s infinite alternate}

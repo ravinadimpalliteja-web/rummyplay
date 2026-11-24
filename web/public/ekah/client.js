@@ -695,7 +695,7 @@
     }
     celebrated = key;
     winnerPi = v.winner;
-    if (v.phase === 'matchOver' && !first && window.rcReport) window.rcReport('ekah', v.winner === v.you ? 'win' : 'lose');
+    if (v.phase === 'matchOver' && !first && window.rcReport) window.rcReport('ekah', v.winner === v.you ? 'win' : 'lose', { online: !!(ctrl && ctrl.online), score: v.players[v.you] ? v.players[v.you].score : undefined });
     renderSeats(v); renderMe(v); layout();
     if (first || !prev || prev.phase !== 'play') { showResults(v, false); return; }
     celebrateTimers.push(setTimeout(() => celebrate(v), 500));

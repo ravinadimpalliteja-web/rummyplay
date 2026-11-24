@@ -1,4 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from "react";
+import StatsPanel from "./StatsPanel";
 import "../room/room.css";
 import { supabase } from "../lib/supabase";
 import { isUsernameAccount, openAuth, pendingEmail, recoveryEmail, setRecoveryEmail, useAccount } from "./account";
@@ -37,6 +38,7 @@ export default function ProfilePage({ onBack }: { onBack: () => void }) {
       </div>
       {!username && <button className="gold-button" onClick={() => openAuth("username")}>Pick username</button>}
     </div>
+    <StatsPanel userId={session.user.id} />
     {isUsernameAccount(session) && <PasswordPanel />}
     {google
       ? <div className="rs-panel"><h2>Recovery email</h2><p className="rs-note">Your account is protected by Google. If you lose access, sign in with Google again.</p></div>

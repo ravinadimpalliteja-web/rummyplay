@@ -126,3 +126,18 @@
 .rs-wa { background: #1f8f4e !important; color: #fff !important; border-color: #1f8f4e !important; }
 .rs-level button{display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1;min-height:50px;font-size:15px}
 .rs-level button small{font-size:11px;font-weight:600;opacity:.75}
+
+/* Your stats (src/auth/StatsPanel.tsx) */
+.st-panel{gap:12px}
+.st-total{margin:0;font-size:15px;color:var(--rs-ink)}
+.st-total b{color:var(--rs-emerald)}
+.st-game{display:flex;flex-direction:column;gap:6px;padding:12px 0 0;border-top:1px solid var(--rs-line)}
+.st-game>strong{font:700 15px/1.2 'Cinzel','Playfair Display',Georgia,serif;color:var(--rs-emerald)}
+.st-line{display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px;align-items:baseline;font-size:14px}
+.st-mode{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--rs-gold-text)}
+.st-practice .st-mode{color:var(--rs-muted)}
+.st-nums{display:flex;flex-direction:column;gap:2px;color:var(--rs-ink)}
+.st-nums b{color:var(--rs-emerald)}
+.st-nums small,.st-pct{color:var(--rs-muted);font-size:12.5px}
+.st-foot{font-size:12px}
+@media (max-width:360px){.st-line{grid-template-columns:minmax(0,1fr)}}

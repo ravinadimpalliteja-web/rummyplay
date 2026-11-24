@@ -831,7 +831,7 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
     if (!table || table.phase !== "gameEnd") { reported.current = false; return; }
     if (!showEnd || reported.current) return;
     reported.current = true;
-    reportGame("snakes", table.finished[0] === table.you ? "win" : "lose");
+    reportGame("snakes", table.finished[0] === table.you ? "win" : "lose", { online, place: table.finished.indexOf(table.you) + 1, players: table.finished.length });
   }, [showEnd, table?.phase]);
   const chooseModel = (m: ModelId) => { setModel(m); keep(MODEL_KEY, m); };
   const chooseTheme = (t: ThemeId) => { setTheme(t); keep(THEME_KEY, t); };

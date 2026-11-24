@@ -3,16 +3,53 @@
    - html.rc-app class for app-only styles (no website footer or top-bar links, no text selection or long-press
      menus, no tap flash, no overscroll bounce)
    - navigator.vibrate goes through the Haptics plugin, so the games' existing buzzes work on Android phones */
-/* Finished games, for coins and XP: every game calls rcReport(game, result) once when a game ends
+/* Finished games, for coins and XP: every game calls rcReport(game, result, info) once when a game ends
    (result: "win", "lose", "draw" or "done" for pass & play). The app's Rewards (src/economy) collects the list
-   when the home screen opens. Kept on this device in localStorage rc-game-events, newest 50. */
-window.rcReport = function (game, result) {
+   when the home screen opens. Kept on this device in localStorage rc-game-events, newest 50.
+   Stats: a finished practice game (against the computer, or a solo puzzle) also goes to the player's account as
+   running totals (Supabase record_my_practice) when they're signed in. Room games pass info.online and are
+   left to the room server, which records them itself. info: { online, place, players, score, timeMs }. */
+window.rcReport = function (game, result, info) {
   try {
     var k = 'rc-game-events', list = JSON.parse(window.localStorage.getItem(k) || '[]');
     if (!Array.isArray(list)) list = [];
     list.push({ g: String(game), r: String(result), at: Date.now() });
     window.localStorage.setItem(k, JSON.stringify(list.slice(-50)));
   } catch (e) { /* storage off */ }
+  window.rcPractice(game, result, info);
+};
+/* Practice stats (same rules as src/lib/report.ts for the React games). Never throws; quietly skips when signed out. */
+window.rcPractice = function (game, result, info) {
+  info = info || {};
+  var outcome = { win: 'win', daily: 'win', lose: 'loss', draw: 'draw' }[result];
+  var url = String(window.RC_SUPABASE_URL || ''), key = String(window.RC_SUPABASE_KEY || '');
+  if (!outcome || info.online || !url || !key || !/^[a-z][a-z0-9]{1,19}$/.test(String(game))) return;
+  var store = 'sb-' + url.replace(/^https:\/\//, '').split('.')[0] + '-auth-token';
+  var num = function (v) { return typeof v === 'number' && isFinite(v) ? Math.round(v) : null; };
+  var body = JSON.stringify({ p_game: String(game), p_outcome: outcome,
+    p_place: (info.players || 0) >= 3 ? num(info.place) : null, p_score: num(info.score), p_time_ms: outcome === 'win' ? num(info.timeMs) : null });
+  function session() { try { var x = JSON.parse(window.localStorage.getItem(store) || 'null'); return x && x.access_token && !(x.user && x.user.is_anonymous) ? x : null; } catch (e) { return null; } }
+  function fresh() {
+    var x = session();
+    if (!x) return Promise.resolve(null);
+    if (x.expires_at && x.expires_at * 1000 > Date.now() + 60000) return Promise.resolve(x.access_token);
+    return fetch(url + '/auth/v1/token?grant_type=refresh_token', { method: 'POST', headers: { apikey: key, 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: x.refresh_token }) })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (n) {
+        if (!n || !n.access_token) return null;
+        if (!n.expires_at && n.expires_in) n.expires_at = Math.floor(Date.now() / 1000) + n.expires_in;
+        try { window.localStorage.setItem(store, JSON.stringify(n)); } catch (e) { /* storage off */ }
+        return n.access_token;
+      });
+  }
+  function send(tries) {
+    fresh().then(function (tok) {
+      if (!tok) return;
+      return fetch(url + '/rest/v1/rpc/record_my_practice', { method: 'POST', headers: { apikey: key, Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' }, body: body })
+        .then(function (r) { if (r.status >= 500 && tries > 0) setTimeout(function () { send(tries - 1); }, 4000); });
+    }).catch(function () { if (tries > 0) setTimeout(function () { send(tries - 1); }, 4000); });
+  }
+  send(1);
 };
 (function () {
   var C = window.Capacitor;

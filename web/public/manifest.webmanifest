@@ -1,7 +1,7 @@
 {
   "name": "Ambaro",
   "short_name": "Ambaro",
-  "description": "Free family games: Ludo, Snakes & Ladders, EKAH, Chess, Sudoku and more. No real money.",
+  "description": "Climb aboard, play together.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0B3B2D",

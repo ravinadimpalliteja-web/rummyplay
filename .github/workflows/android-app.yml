@@ -94,7 +94,7 @@ jobs:
           fi
           # App icon and splash screen from web/assets/
           npx --yes @capacitor/assets@3 generate --android \
-            --iconBackgroundColor '#0F4D3A' --iconBackgroundColorDark '#0F4D3A' \
+            --iconBackgroundColor '#4F020D' --iconBackgroundColorDark '#4F020D' \
             --splashBackgroundColor '#FAF5E9' --splashBackgroundColorDark '#0F4D3A'
           # Each build gets a higher version number, so a new APK installs over the old one.
           sed -i -E "s/versionCode( =)? [0-9]+/versionCode\\1 ${{ github.run_number }}/; s/versionName( =)? \"[^\"]+\"/versionName\\1 \"0.1.${{ github.run_number }}\"/" android/app/build.gradle
@@ -160,6 +160,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view test-app >/dev/null 2>&1 || gh release create test-app --prerelease --title "Royal Club test app" \
-            --notes "Latest test build of the Royal Club Android app. Install RoyalClub-test.apk on your phone."
-          gh release upload test-app ../apk/RoyalClub-test.apk ../apk/RoyalClub-offline.apk --clobber
+          gh release view ambaro-icon-preview >/dev/null 2>&1 || gh release create ambaro-icon-preview --prerelease --target ambaro-icon-preview --title "Ambaro icon preview" \
+            --notes "Preview build with the new Ambaro elephant app icon. Not the shared test-app link."
+          gh release upload ambaro-icon-preview ../apk/RoyalClub-test.apk ../apk/RoyalClub-offline.apk --clobber

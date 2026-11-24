@@ -137,7 +137,7 @@ export default function AppShell({ tab, onTab, onOpen, onJoin, profile }: AppShe
     <GameArtDefs />
     <Toast />
     <div className="rx-top">
-      {tab === "home" && <h1 className="rx-logo"><img src="/brand/ambaro-logo.webp" alt="Ambaro by Royal Club Games" width={960} height={326} /></h1>}
+      {tab === "home" && <h1 className="rx-logo"><img src="/brand/ambaro-logo.webp" alt="Ambaro" width={960} height={326} /></h1>}
       <Hud onTab={onTab} />
     </div>
     <main className="rx-main">
@@ -472,6 +472,6 @@ function SettingsTab() {
       <LinkRow label="Terms of Service" href="/terms/" />
       <LinkRow label="Delete my account" href="/delete-account/" />
     </section>
-    <p className="rx-note">Ambaro by Royal Club Games{version ? ` · version ${version}` : ""}</p>
+    <p className="rx-note">Ambaro{version ? ` · version ${version}` : ""}</p>
   </div>;
 }

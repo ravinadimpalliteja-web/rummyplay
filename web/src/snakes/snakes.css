@@ -112,7 +112,22 @@
 @media (prefers-reduced-motion:reduce){.sl-gl-wait{animation:none}}
 
 /* ===== the 2D die on its gold-rimmed pedestal, and its five finishes ===== */
-.sl-right{grid-area:right;display:grid;grid-template-columns:64px minmax(0,1fr) 64px;grid-template-areas:"rules roll chat" "rules last chat";align-items:center;justify-items:center;gap:4px 8px;position:relative}
+.sl-right{grid-area:right;display:grid;grid-template-columns:60px minmax(0,1fr) 60px;grid-template-areas:"rules last chat" "rules me chat";align-items:end;justify-items:center;gap:4px 8px;position:relative}
+/* your own card and dice, at the bottom between Rules and Chat (bigger, it's the one you tap) */
+.sl-me{grid-area:me;width:100%;grid-template-columns:minmax(0,1fr) !important;--pds:56px}
+.sl-me li{padding:8px 10px;font-size:14px}
+.sl-me .sl-avatar{width:46px !important;height:46px !important}
+.sl-me .sl-name{font-size:16px}
+.sl-me .sl-bubble{top:auto;bottom:calc(100% + 6px)}
+.sl-me .sl-bubble::before{top:auto;bottom:-6px}
+/* opponents across the top: one fills the row, three sit side by side in compact cards */
+.sl-left .sl-players.opp-1{grid-template-columns:minmax(0,1fr)}
+.sl-left .sl-players.opp-3{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;--pds:32px}
+.sl-left .sl-players.opp-3 li{grid-template-columns:auto minmax(0,1fr);gap:5px;padding:5px 6px;font-size:11.5px}
+.sl-left .sl-players.opp-3 .sl-avatar{width:30px;height:30px;border-width:2px}
+.sl-left .sl-players.opp-3 .sl-pdie{grid-row:auto;grid-column:1 / -1;justify-self:center}
+/* a player who has not rolled yet shows a faded one-dot die, not an empty square */
+.sl-pdie.unrolled .sl-face{opacity:.32 !important}
 .sl-tray{grid-area:tray;position:relative;width:calc(var(--ds) * 2.3);height:calc(var(--ds) * 1.42);display:block;margin:0;padding:0;border:0;border-radius:50% / 40%;background:none;color:inherit;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 /* the die is the roll button: on your turn the pedestal glows and the die bobs gently, inviting a tap */
 .sl-tray:enabled{cursor:pointer}.sl-tray:disabled{cursor:default}
@@ -122,6 +137,7 @@
 @keyframes slTrayGlow{0%,100%{box-shadow:inset 0 0 0 3px #e9c46a,inset 0 0 0 4.5px #7a5214,inset 0 -6px 12px rgba(0,0,0,.45)}50%{box-shadow:inset 0 0 0 3px #ffe08a,inset 0 0 0 4.5px #7a5214,inset 0 -6px 12px rgba(0,0,0,.45),0 0 22px 6px rgba(255,214,110,.7)}}
 @keyframes slDieBob{0%,100%{translate:0 0}50%{translate:0 -6%}}
 .sl-roll-hint{grid-area:roll;min-height:1.3em;font-size:13px;font-weight:800;letter-spacing:.02em;color:var(--sl-muted);text-align:center}
+.sl-right .sl-msg{min-height:0}
 .sl-roll-hint.ready{color:#ffe08a}
 .sl-pedestal{position:absolute;left:0;right:0;bottom:2px;height:calc(var(--ds) * .74)}
 .sl-pedestal::before,.sl-pedestal::after{content:"";position:absolute;left:0;right:0;border-radius:50%}
@@ -175,6 +191,7 @@
 .sl-small{margin:0;text-align:center;color:var(--sl-gold);font-size:12px}
 .sl-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .timer-chip{position:absolute;top:0;right:0;line-height:0}
+.sl-right>.timer-chip{top:auto;bottom:calc(100% - 4px);right:66px;z-index:13}
 .sl-head.rc-bar{display:flex;padding:0;min-height:44px}
 
 /* sheets: settings, rules and chat open over the game */
@@ -229,7 +246,8 @@
 /* short phones held upright: one control row, so the board keeps its size */
 @media (orientation:portrait) and (max-height:700px){
   .sl-screen{--ds:44px;gap:4px}
-  .sl-right{grid-template-columns:56px minmax(0,1fr) 56px;grid-template-areas:"rules roll chat" "rules last chat"}
+  .sl-right{grid-template-columns:56px minmax(0,1fr) 56px;grid-template-areas:"rules last chat" "rules me chat"}
+  .sl-me{--pds:48px}.sl-me .sl-avatar{width:40px !important;height:40px !important}
   .sl-roll{min-width:0;padding:0 16px;font-size:15px}
   .sl-act{width:54px}
   .sl-msg{min-height:2.6em;font-size:12.5px}
@@ -253,6 +271,8 @@
   .sl-sq{font-size:15px}.sl-dot{width:11px;height:11px}
   .sl-turn-tag{font-size:11.5px;padding:2px 9px}
   .sl-right{grid-template-columns:110px minmax(0,1fr) 110px;max-width:720px;width:100%;margin:0 auto;gap:8px 14px}
+  .sl-me{--pds:72px}.sl-me .sl-avatar{width:68px !important;height:68px !important}.sl-me .sl-name{font-size:20px}
+  .sl-left .sl-players.opp-3{--pds:48px}.sl-left .sl-players.opp-3 .sl-avatar{width:46px;height:46px}
   .sl-roll{min-height:66px;font-size:22px;min-width:320px}
   .sl-act{width:100px;font-size:15px}.sl-act svg{width:60px;height:60px;padding:15px}
   .sl-msg{font-size:17px}
@@ -281,7 +301,16 @@
   .sl-bubble{left:calc(100% + 10px);top:50%;transform:translateY(-50%);animation-name:slBubbleSide}
   .sl-bubble::before{left:-5px;top:50%;transform:translateY(-50%) rotate(45deg)}
   @keyframes slBubbleSide{0%{opacity:0;transform:translateY(-50%) scale(.8)}8%{opacity:1;transform:translateY(-50%) scale(1.05)}14%{transform:translateY(-50%) scale(1)}85%{opacity:1}100%{opacity:0}}
-  .sl-right{align-self:center;grid-template-columns:1fr 1fr;grid-template-areas:"roll roll" "last last" "rules chat";gap:10px 8px}
+  .sl-right{align-self:end;grid-template-columns:1fr 1fr;grid-template-areas:"last last" "me me" "rules chat";gap:10px 8px}
+  /* the side column is narrow: token and dice side by side, the name and square underneath */
+  .sl-me li{grid-template-columns:auto auto;grid-template-areas:"av die" "info info";justify-content:space-around;justify-items:center;gap:6px 8px;padding:8px;border:1.5px solid rgba(233,200,119,.45);border-radius:16px;background:linear-gradient(180deg,rgba(10,54,37,.92),rgba(3,26,17,.92))}
+  .sl-me li>.sl-avatar{grid-area:av}.sl-me li>.sl-info{grid-area:info;justify-items:center}.sl-me li>.sl-pdie{grid-area:die;grid-row:auto;grid-column:auto}
+  .sl-me{--pds:clamp(44px,4.6vw,60px)}
+  .sl-left .sl-players.opp-1,.sl-left .sl-players.opp-3{grid-template-columns:minmax(0,1fr)}
+  .sl-left .sl-players.opp-3 li{grid-template-columns:auto minmax(0,1fr) auto;font-size:inherit}
+  .sl-left .sl-players.opp-3 .sl-pdie{grid-column:3;grid-row:1}
+  .sl-left .sl-players.opp-3 .sl-avatar{width:clamp(38px,4.4vw,58px);height:clamp(38px,4.4vw,58px)}
+  .sl-right>.timer-chip{position:static;grid-column:1 / -1}
   .sl-roll{width:100%;min-width:0;padding:0 12px;font-size:clamp(15px,1.6vw,20px);min-height:clamp(46px,5vw,58px)}
   .sl-last{padding:10px 12px;border:1.5px solid var(--sl-gold2);border-radius:16px;background:linear-gradient(180deg,rgba(10,54,37,.88),rgba(3,26,17,.88));gap:6px;box-shadow:0 10px 24px rgba(0,0,0,.4)}
   .sl-last-title{display:block;font:600 clamp(13px,1.4vw,18px) 'Playfair Display',serif;color:#ffe9a8;padding-bottom:5px;border-bottom:1px solid var(--sl-line);width:100%;text-align:center}

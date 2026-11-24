@@ -269,9 +269,24 @@ function scholar() {
 }
 
 /* ---------- animals ---------- */
-const stripes = () => painted("tiger", .7, (g) => {
-  g.fillStyle = "#e8892e"; g.fillRect(0, 0, 256, 128); g.fillStyle = "#1f140c";
-  for (let i = 0; i < 14; i++) { const x = i * 18.3 + 6; g.beginPath(); g.moveTo(x, 8); g.quadraticCurveTo(x + 8, 40, x - 2, 64); g.quadraticCurveTo(x + 6, 90, x + 1, 120); g.lineTo(x + 5, 120); g.quadraticCurveTo(x + 11, 90, x + 4, 64); g.quadraticCurveTo(x + 13, 40, x + 5, 8); g.closePath(); g.fill(); }
+/** A Bengal tiger's coat: orange darkening along the back and fading to cream below, with narrow, uneven black stripes
+    running across the body, some doubled or broken, each tapering at both ends. */
+const tigerCoat = () => painted("tigerN", .72, (g) => {
+  const W = 256, H = 128;
+  const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, "#c8651f"); gr.addColorStop(.55, "#de8432"); gr.addColorStop(1, "#efc28a");
+  g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  let seed = 11; const r = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+  g.fillStyle = "#1a0f08";
+  for (let y = 6; y < H - 10; y += 7 + r() * 4) {
+    for (let seg = 0; seg < 3; seg++) {
+      const x0 = r() * W, len = 40 + r() * 70, th = 1.2 + r() * 2.2, wob = 2 + r() * 3, ph = r() * 6, pts = 14;
+      g.beginPath();
+      for (let i = 0; i <= pts; i++) { const t = i / pts, yy = y + Math.sin(t * 4 + ph) * wob, w = th * Math.sin(Math.PI * t); g.lineTo((x0 + len * t) % W, yy - w); }
+      for (let i = pts; i >= 0; i--) { const t = i / pts, yy = y + Math.sin(t * 4 + ph) * wob, w = th * Math.sin(Math.PI * t); g.lineTo((x0 + len * t) % W, yy + w); }
+      g.closePath(); g.fill();
+      if (r() < .45) { g.save(); g.translate(0, 3.2); g.fill(); g.restore(); }
+    }
+  }
 });
 const spots = () => painted("chital", .68, (g) => {
   g.fillStyle = "#c27a3c"; g.fillRect(0, 0, 256, 128);
@@ -289,25 +304,87 @@ function sitting(G: Obj, o: Sit): V3 {
   for (const s of [-1, 1]) { limb(G, o.fur, [s * .04, .3, .07], [s * .038, .07, .085], .023, .019); ball(G, o.paws ?? o.fur, [s * .038, .05, .098], [.023, .016, .032]); }   // front legs
   return [0, .5, .06];
 }
+/** Amber eyes with a dark round pupil, set under the brow. */
+const amberEye = (G: Obj, p: V3, rr: number, ang = 0) => {
+  ball(G, gloss("#c58a1c", .12), p, [rr, rr * .8, rr * .55], [0, ang, 0]);
+  ball(G, gloss("#120a05", .1), [p[0], p[1], p[2] + rr * .3], [rr * .42, rr * .55, rr * .3], [0, ang, 0]);
+  ball(G, mat("#ffffff", .2), [p[0] + rr * .25, p[1] + rr * .3, p[2] + rr * .5], rr * .2);
+};
+/** The big cats sit like palace statues: deep chest, strong shoulders, thick forelegs bending at the elbow, big paws,
+    haunches curving into the body, and the head forward on a real neck. Returns the head's centre. */
+function catBody(G: Obj, fur: Obj, belly: Obj, paw: Obj): V3 {
+  base(G);
+  ball(G, fur, [0, .15, -.06], [.1, .1, .12]);                                                           // haunches
+  for (const s of [-1, 1]) {
+    ball(G, fur, [s * .072, .14, -.03], [.046, .09, .1], [.3, 0, 0]);                                    // thighs
+    ball(G, paw, [s * .078, .052, .07], [.03, .02, .048]);                                             // hind paws
+  }
+  ball(G, fur, [0, .29, 0], [.086, .15, .088], [-.38, 0, 0]);                                          // torso, leaning forward
+  ball(G, belly, [0, .3, .062], [.064, .115, .046], [-.3, 0, 0]);                                      // chest
+  for (const s of [-1, 1]) {
+    ball(G, fur, [s * .057, .34, .045], [.044, .078, .056], [-.2, 0, s * .1]);                         // shoulders
+    limb(G, fur, [s * .052, .32, .075], [s * .05, .2, .092], .037, .031);                              // upper foreleg
+    limb(G, fur, [s * .05, .2, .092], [s * .048, .075, .106], .031, .027);                             // lower foreleg
+    ball(G, paw, [s * .048, .052, .12], [.036, .023, .044]);                                           // big front paws
+    for (const t of [-1, 0, 1]) ball(G, paw, [s * .048 + t * .015, .048, .156], [.012, .012, .013]);   // toes
+  }
+  ball(G, fur, [0, .425, .07], [.058, .075, .058], [-.5, 0, 0]);                                         // neck
+  return [0, .5, .12];
+}
 function lion() {
-  const G = new THREE.Group(), fur = furry("#d9a14a", .7), mane = furry("#a8571f", .85), light = furry("#f1cf8a", .65);
-  const [hx, hy, hz] = sitting(G, { fur, chest: light });
-  for (let i = 0; i < 18; i++) { const a = (i / 18) * Math.PI * 2; ball(G, mane, [hx + Math.cos(a) * .072, hy + Math.sin(a) * .078, hz - .03], .042); }   // mane
-  ball(G, mane, [hx, hy - .02, hz - .05], [.09, .105, .065]);
-  ball(G, fur, [hx, hy, hz], [.064, .068, .064]);
-  ball(G, light, [hx, hy - .028, hz + .05], [.036, .027, .028]);                                      // muzzle
-  ball(G, gloss("#5a2e1a", .3), [hx, hy - .008, hz + .073], [.014, .009, .009]);                      // nose
-  for (const s of [-1, 1]) { eye(G, [hx + s * .025, hy + .018, hz + .055], .009); ball(G, fur, [hx + s * .05, hy + .056, hz - .005], [.018, .018, .011]); }
-  tube(G, fur, [[.04, .08, -.12], [.13, .06, -.1], [.17, .1, -.02], [.15, .16, .03]], .011); ball(G, mane, [.15, .17, .035], .024);
+  const G = new THREE.Group(), fur = furry("#c99a55", .72), belly = furry("#e6c690", .7), paw = furry("#d2a868", .72);
+  const [hx, hy, hz] = catBody(G, fur, belly, paw);
+  // the mane: many fine tufts hanging part outward, part down, golden near the face darkening to brown behind, longer
+  // below the face so it flows over the chest; a dark mass behind fills the gaps
+  let seed = 5; const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+  ball(G, hairy("#5e3417"), [hx, hy - .03, hz - .045], [.105, .12, .07]);
+  const tones = ["#d6a050", "#b97a35", "#9a5c26", "#6e3d1b"];
+  for (let layer = 3; layer >= 0; layer--) {
+    const n = 44 + layer * 10;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + rnd() * .25, below = Math.max(0, -Math.sin(a));
+      const R = (.052 + layer * .012) * (1 + .45 * below), x = hx + Math.cos(a) * R, y = hy - .02 + Math.sin(a) * R;
+      const tilt = Math.atan2(Math.sin(a) * .55 - .45, Math.cos(a) * .55) - Math.PI / 2;
+      const len = (.032 + layer * .007 + rnd() * .014) * (1 + .45 * below), wid = .0105 + rnd() * .006;
+      const tone = tones[Math.min(3, Math.max(0, layer + (rnd() < .3 ? 1 : 0) - (rnd() < .25 ? 1 : 0)))];
+      ball(G, hairy(tone), [x, y, hz - .014 - layer * .015 + rnd() * .008], [wid, len, wid * 1.25], [-.2 - .2 * below, (rnd() - .5) * .3, tilt + (rnd() - .5) * .35]);
+    }
+  }
+  ball(G, fur, [hx, hy, hz], [.066, .064, .064]);                                                     // face
+  ball(G, belly, [hx, hy - .03, hz + .047], [.04, .029, .037]);                                        // muzzle
+  ball(G, fur, [hx, hy - .006, hz + .055], [.024, .026, .03], [-.45, 0, 0]);                           // broad bridge of the nose
+  ball(G, gloss("#3a2016", .3), [hx, hy - .016, hz + .086], [.015, .009, .009]);                       // nose
+  ball(G, belly, [hx, hy - .05, hz + .036], [.022, .012, .02]);                                        // chin
+  for (const s of [-1, 1]) {
+    amberEye(G, [hx + s * .024, hy + .01, hz + .057], .0098, s * .3);
+    ball(G, fur, [hx + s * .025, hy + .021, hz + .055], [.017, .006, .01]);                            // heavy brow
+    ball(G, fur, [hx + s * .046, hy + .048, hz - .005], [.015, .015, .008]);                           // small round ears
+  }
+  tube(G, fur, [[.03, .08, -.14], [.12, .06, -.12], [.16, .07, -.02], [.14, .07, .07]], .011);         // tail round the paws
+  ball(G, hairy("#4a2a14"), [.138, .07, .085], [.02, .018, .026]);                                     // dark tail tuft
   return G;
 }
 function tiger() {
-  const G = new THREE.Group(), fur = stripes(), white = furry("#f6efe4", .65);
-  const [hx, hy, hz] = sitting(G, { fur, chest: white, paws: white });
-  ball(G, fur, [hx, hy, hz], [.07, .066, .066]);
-  for (const s of [-1, 1]) { ball(G, white, [hx + s * .033, hy - .028, hz + .05], [.031, .025, .025]); eye(G, [hx + s * .027, hy + .017, hz + .058], .009); ball(G, fur, [hx + s * .053, hy + .053, hz - .005], [.02, .02, .011]); ball(G, white, [hx + s * .053, hy + .053, hz + .004], [.011, .011, .005]); }
-  ball(G, gloss("#c9566a", .3), [hx, hy - .009, hz + .073], [.012, .009, .009]);
-  tube(G, fur, [[.04, .08, -.12], [.14, .05, -.09], [.17, .1, 0], [.15, .17, .04]], .013); ball(G, furry("#1f140c", .7), [.148, .18, .045], .015);
+  const G = new THREE.Group(), coat = tigerCoat(), white = furry("#f5efe3", .7), dark = furry("#1a0f08", .7);
+  const [hx, hy, hz] = catBody(G, coat, white, white);
+  ball(G, coat, [hx, hy, hz], [.074, .064, .07]);                                                     // skull
+  ball(G, white, [hx, hy - .032, hz + .058], [.04, .027, .044]);                                       // longer muzzle
+  ball(G, coat, [hx, hy - .008, hz + .066], [.022, .024, .036], [-.4, 0, 0]);                          // bridge of the nose
+  ball(G, gloss("#9e4a58", .3), [hx, hy - .015, hz + .098], [.016, .009, .009]);                       // nose
+  for (const s of [-1, 1]) {
+    ball(G, white, [hx + s * .058, hy - .03, hz + .008], [.026, .018, .022], [0, 0, s * .55]);         // cheek ruffs
+    ball(G, white, [hx + s * .066, hy - .042, hz], [.016, .012, .014], [0, 0, s * .8]);
+    ball(G, white, [hx + s * .027, hy + .027, hz + .056], [.017, .009, .01]);                          // white patch above the eye
+    amberEye(G, [hx + s * .025, hy + .01, hz + .061], .0105, s * .3);
+    ball(G, dark, [hx + s * .025, hy + .021, hz + .06], [.016, .004, .006], [0, 0, s * -.15]);         // brow line
+    ball(G, coat, [hx + s * .045, hy + .05, hz - .01], [.018, .02, .009], [0, 0, s * -.3]);            // ears, black backs, white spot
+    ball(G, dark, [hx + s * .046, hy + .051, hz - .016], [.015, .017, .005], [0, 0, s * -.3]);
+    ball(G, white, [hx + s * .045, hy + .061, hz - .019], [.006, .006, .004]);
+    for (const k of [0, 1, 2]) ball(G, dark, [hx + s * (.045 + k * .006), hy - .03 - k * .008, hz + .02 + k * .004], [.004, .014, .004], [0, 0, s * .9]);   // cheek stripes
+  }
+  for (const k of [-1, 0, 1]) ball(G, dark, [hx + k * .012, hy + .038, hz + .045], [.003, .011, .004], [-.6, 0, k * .2]);   // forehead marks
+  tube(G, coat, [[.03, .08, -.14], [.12, .06, -.12], [.16, .07, -.02], [.14, .07, .07]], .013);         // ringed tail round the paws
+  ball(G, dark, [.138, .07, .08], [.016, .014, .02]);                                                  // black tip
   return G;
 }
 function fox() {

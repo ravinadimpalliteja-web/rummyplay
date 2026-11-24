@@ -261,7 +261,10 @@ export class BoardScene {
     }
   }
   /** Palm leaves at the corners (the classic tray only). */
+  /** The corner leaves (hidden on phones held upright, where the board fills the width and they would be cut off). */
+  private leafGroup: Obj = new THREE.Group();
   private leaves(B: Obj) {
+    B.add(this.leafGroup);
     const leafShape = new THREE.Shape(); leafShape.moveTo(0, 0); leafShape.quadraticCurveTo(.5, .2, 1, 0); leafShape.quadraticCurveTo(.5, -.16, 0, 0);
     const leafG = new THREE.ShapeGeometry(leafShape, 10), leafMs = ["#2f8a27", "#3f9a2c", "#246f1f"].map(c => new THREE.MeshStandardMaterial({ color: c, roughness: .55, side: THREE.DoubleSide }));
     for (const [cx, cz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
@@ -270,7 +273,7 @@ export class BoardScene {
         const lf = new THREE.Mesh(leafG, leafMs[i % 3]), ang = out + (i - 2.5) * .32, l = 1.2 - Math.abs(i - 2.5) * .12;
         lf.scale.set(l, l, l); lf.rotation.set(-Math.PI / 2, 0, 0);
         const holder = new THREE.Group(); holder.add(lf); holder.rotation.set(0, -ang, .22 + (i % 2) * .12);
-        holder.position.set(cx * (HALF - .1), BASE + .25, cz * (HALF - .1)); lf.castShadow = true; B.add(holder);
+        holder.position.set(cx * (HALF - .1), BASE + .25, cz * (HALF - .1)); lf.castShadow = true; this.leafGroup.add(holder);
       }
     }
   }
@@ -304,6 +307,7 @@ export class BoardScene {
     // frame the camera on the whole board (frame included); on narrow (upright) screens only its top face is fitted, with a
     // thin margin at the screen edges
     const pts: Obj[] = [], narrow = aspect < 1.02, ex = narrow ? HALF + .06 : HALF;
+    this.leafGroup.visible = !narrow;
     for (const x of [-ex, ex]) for (const z of [-ex, ex]) { pts.push(new THREE.Vector3(x, RIM_TOP, z)); if (!narrow) pts.push(new THREE.Vector3(x, BASE, z)); }
     if (!narrow) for (const x of [-4.5, 4.5]) pts.push(new THREE.Vector3(x, FIG * .8, -4.5));   // tokens standing on the back row (upright phones have height to spare)
     const extent = (d: number) => {

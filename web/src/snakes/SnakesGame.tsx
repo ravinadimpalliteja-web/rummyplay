@@ -817,7 +817,7 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
   useEffect(() => {
     if (sub !== "table" || !myTurn || online) return;
     const id = window.setTimeout(() => void coach("snakes", [
-      { title: "Your dice", text: `Your dice sits next to your name, like in Ludo. Tap it to roll${local?.quick ? "." : ". In a Classic game you need a <b>6</b> to enter the board."}`, target: ".sl-pdie.ready" },
+      { title: "Your dice", text: `Your dice sits next to your name at the bottom, right under your thumb. Tap it to roll${local?.quick ? "." : ". In a Classic game you need a <b>6</b> to enter the board."}`, target: ".sl-pdie.ready" },
       { title: "Ladders and snakes", text: "Land at the foot of a ladder to climb it. Land on a snake's head and it swallows you down to its tail.", target: ".sl-stage", pad: 0 },
       { title: "Winning", text: "Land <b>exactly</b> on 100 to win. A 6 rolls again, but three 6s in a row cancel the turn.", target: ".sl-stage", pad: 0 },
     ]), 600);
@@ -895,10 +895,27 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
 
   /* table */
   if (!table) return <section className="mode-page sl-mode"><button className="back-link" onClick={() => setSub("lobby")}>← Back</button><p className="room-note">Loading the board…</p></section>;
-  const turnName = table.names[table.turn];
   const rankOf = (s: number) => { const i = table.finished.indexOf(s); return i < 0 ? 0 : i + 1; };
   const playing = table.phase === "playing";
-  const rollLabel = table.phase === "gameEnd" ? "Game over" : myTurn ? (table.streak > 0 ? "Roll again" : "Roll dice") : animating ? "Rolling…" : rankOf(table.you) ? "You've finished" : `${turnName}'s turn`;
+  const playerCard = (s: number) => {
+    const r = rankOf(s), b = bubbles[s], now = rolling !== null ? rolling === s : playing && table.turn === s;
+    return <li key={s} className={(now ? "turn " : "") + (r ? "done" : "")} aria-current={now ? "true" : undefined}>
+      <span className="sl-avatar" style={{ borderColor: COLORS[s] }}><img src={pieceUrl(table.pieces[s])} alt={pieceById(table.pieces[s]).name} /></span>
+      <span className="sl-info">
+        <span className="sl-name">{label(table.names[s])}{table.away[s] && <em> · away</em>}</span>
+        <span className="sl-sq"><i className="sl-dot" style={{ background: COLORS[s] }} />{r ? `${MEDAL[r - 1]} ${PLACE[r - 1]}` : table.pos[s] ? table.pos[s] : "Start"}</span>
+      </span>
+      {now && <span className="sl-turn-tag">{s === table.you ? "Your turn" : "Turn"}</span>}
+      {/* each player's die: yours glows on your turn and is the roll button (or press Space / Enter) */}
+      <button type="button" ref={el => { dieEls.current[s] = el; }} className={`sl-pdie d-${dice}${myTurn && s === table.you ? " ready" : ""}${now ? " live" : ""}${lastDie[s] ? "" : " unrolled"}`}
+        disabled={!(myTurn && s === table.you)} onClick={doRoll}
+        aria-label={myTurn && s === table.you ? (table.streak > 0 ? "Roll the dice again" : "Roll the dice") : `${table.names[s]}'s dice${lastDie[s] ? `, showing ${lastDie[s]}` : ""}`}>
+        <span className="sl-face flat"><Face v={lastDie[s] ?? 1} /></span>
+      </button>
+      {b && <span key={b.id} className={`sl-bubble ${[...b.text].length <= 2 ? "emoji" : ""}`} role="status">{b.text}</span>}
+    </li>;
+  };
+  const mine = table.order.includes(table.you), others = mine ? table.order.filter(s => s !== table.you) : table.order;
   const where = online && view ? `Room ${view.code}` : "You vs Comp";
   return <section className={`sl-screen table-${tableColour} ${view3d === "flat" ? "flat" : ""}`}>
     <GameBar game="Snakes & Ladders" where={online && view ? `Room ${view.code}` : "Vs Computer"} onBack={() => setSub(online ? "room" : "lobby")} backLabel={online ? "Back to the room" : "Back to the lobby"} dark className="sl-head">
@@ -908,25 +925,9 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
 
     <aside className="sl-left" aria-label="Players">
       <div className="sl-side-title"><b>Players ({table.order.length})</b><small>{where}</small></div>
-      <ul className="sl-players">
-        {table.order.map(s => {
-          const r = rankOf(s), b = bubbles[s], now = rolling !== null ? rolling === s : playing && table.turn === s;
-          return <li key={s} className={(now ? "turn " : "") + (r ? "done" : "")} aria-current={now ? "true" : undefined}>
-            <span className="sl-avatar" style={{ borderColor: COLORS[s] }}><img src={pieceUrl(table.pieces[s])} alt={pieceById(table.pieces[s]).name} /></span>
-            <span className="sl-info">
-              <span className="sl-name">{label(table.names[s])}{table.away[s] && <em> · away</em>}</span>
-              <span className="sl-sq"><i className="sl-dot" style={{ background: COLORS[s] }} />{r ? `${MEDAL[r - 1]} ${PLACE[r - 1]}` : table.pos[s] ? table.pos[s] : "Start"}</span>
-            </span>
-            {now && <span className="sl-turn-tag">{s === table.you ? "Your turn" : "Turn"}</span>}
-            {/* each player's die: yours glows on your turn and is the roll button (or press Space / Enter) */}
-            <button type="button" ref={el => { dieEls.current[s] = el; }} className={`sl-pdie d-${dice}${myTurn && s === table.you ? " ready" : ""}${now ? " live" : ""}`}
-              disabled={!(myTurn && s === table.you)} onClick={doRoll}
-              aria-label={myTurn && s === table.you ? (table.streak > 0 ? "Roll the dice again" : "Roll the dice") : `${table.names[s]}'s dice${lastDie[s] ? `, showing ${lastDie[s]}` : ""}`}>
-              <span className="sl-face flat"><Face v={lastDie[s] ?? 0} /></span>
-            </button>
-            {b && <span key={b.id} className={`sl-bubble ${[...b.text].length <= 2 ? "emoji" : ""}`} role="status">{b.text}</span>}
-          </li>;
-        })}
+      {/* everyone else across the top (or down the side); your own card and dice sit at the bottom, under your thumb */}
+      <ul className={`sl-players opp-${others.length}`}>
+        {others.map(playerCard)}
       </ul>
     </aside>
 
@@ -954,9 +955,9 @@ export default function SnakesGame({ onHome, joinCode, joinPass }: { onHome: () 
       </div>}
     </div>
 
-    <aside className="sl-right" aria-label="Dice and actions">
-      <span className={`sl-roll-hint ${myTurn ? "ready" : ""}`} aria-hidden="true">{myTurn ? (table.streak > 0 ? "Tap your dice to roll again" : "Tap your dice to roll") : rollLabel}</span>
-      {myTurn && <span className="timer-chip"><TurnTimer secs={secsLeft} onDark /></span>}
+    <aside className="sl-right" aria-label="Your dice and actions">
+      {mine && <ul className="sl-players sl-me">{playerCard(table.you)}</ul>}
+      {myTurn && secsLeft !== null && <span className="timer-chip"><TurnTimer secs={secsLeft} onDark /></span>}
       <div className="sl-last">
         <b className="sl-last-title">{table.last ? "Last turn" : "Ready"}</b>
         {table.last && <div className="sl-last-roll"><span className={`sl-mini d-${dice}`}><span className="sl-face"><Face v={dieValue} /></span></span><strong>{animating ? "…" : dieValue}</strong></div>}

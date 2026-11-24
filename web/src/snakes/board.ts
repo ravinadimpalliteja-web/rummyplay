@@ -426,8 +426,8 @@ export const numberAt = (n: number, size = 19): Pt => { const p = center(n); ret
 /** The 3D board's numbers are larger: its tokens stand in the middle of their squares, clear of the corner. */
 export const NUM_FONT_3D = "800 18px 'DM Sans', system-ui, sans-serif";
 export const numberAt3D = (n: number) => numberAt(n, 18);
-/** The square numbers, made to read at a glance: each sits on a soft light label (so marble veins, wood grain or a
-    snake passing underneath never muddle it), with a crisp light outline around dark, heavy digits. */
+/** The square numbers, made to read at a glance: each sits on a soft light halo (so marble veins, wood grain, a ladder
+    or a snake passing underneath never muddle it), embossed in dark, heavy digits. */
 function numbers(g: CanvasRenderingContext2D, pal: Pal, font = NUM_FONT) {
   g.save();
   g.textAlign = "left"; g.textBaseline = "alphabetic"; g.lineJoin = "round"; g.font = font;
@@ -440,8 +440,10 @@ function numbers(g: CanvasRenderingContext2D, pal: Pal, font = NUM_FONT) {
     }
     // embossed into the board, with no background: a soft shadow below-right, a light edge above-left (light comes from
     // the top left), then the digits themselves in the board's ink, slightly see-through so the surface shows
-    void tw;
-    const o = Math.max(.6, size * .05);
+    // a soft light halo behind the digits, so a ladder rail or a snake passing underneath never hides the number
+    const o = Math.max(.6, size * .05), hx = x - size * .16, hy = y - size * .84, hw = tw + size * .32, hh = size * 1.02, hr = size * .32;
+    g.save(); g.shadowColor = "rgba(255,250,236,.9)"; g.shadowBlur = size * .45; g.fillStyle = "rgba(255,250,236,.5)";
+    g.beginPath(); g.roundRect(hx, hy, hw, hh, hr); g.fill(); g.restore();
     g.fillStyle = "rgba(0,0,0,.32)"; g.fillText(t, x + o, y + o);
     g.fillStyle = "rgba(255,255,255,.85)"; g.fillText(t, x - o * .8, y - o * .8);
     g.fillStyle = rgba(pal.ink.startsWith("#") ? pal.ink : "#2a1d10", .8); g.fillText(t, x, y);
@@ -588,9 +590,15 @@ export function paintBase(g: CanvasRenderingContext2D, P: ProjFn, look: Look = D
     g.restore();
     g.strokeStyle = `rgba(255,232,190,${.35 * light})`; g.lineWidth = 1.2 * u; g.beginPath(); g.moveTo(pts[0].x, pts[0].y); g.lineTo(pts[1].x, pts[1].y); g.stroke();
   }
-  // palm leaves peeking out from behind the four corners
+  // palm leaves peeking out from behind the four corners, only where the whole cluster fits on screen (on a phone held
+  // upright the board fills the width, and leaves cut off at the screen edge looked like a drawing mistake)
   const corners: [number, number, number][] = [[0, 0, -2.4], [W, 0, -.74], [0, W, 2.5], [W, W, .64]];
-  for (const [x, y, out] of corners) { const p = P(x, y, -T * .5); leaves(g, p.x, p.y, out, 66 * p.u); }
+  const m = g.getTransform(), cw = g.canvas.width / (m.a || 1), ch = g.canvas.height / (m.d || 1);
+  for (const [x, y, out] of corners) {
+    const p = P(x, y, -T * .5), size = 66 * p.u, reach = size * .95;
+    if (p.x - reach < 0 || p.x + reach > cw || p.y - reach < 0 || p.y + reach > ch) continue;
+    leaves(g, p.x, p.y, out, size);
+  }
 }
 function leaves(g: CanvasRenderingContext2D, x: number, y: number, out: number, size: number) {
   for (const [k, l] of [[-1.05, .7], [-.55, .92], [0, 1], [.55, .92], [1.05, .7]] as [number, number][]) {

@@ -6,7 +6,7 @@ import { PAD, THICK, W } from "./board";
    nothing here touches the game state. */
 /** k: how much taller than wide the board is drawn (1 = square; upright phones use their spare height, up to MAX_STRETCH). */
 export type View = { B: number; left: number; top: number; A: number; D: number; m: DOMMatrix; sw: number; sh: number; k: number };
-export const MAX_STRETCH = 1.18;
+export const MAX_STRETCH = 1.3;
 
 /** Camera distance, in board widths: lower is a stronger perspective. */
 const DIST = 2.4;

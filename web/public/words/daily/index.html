@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<script src="/app-mode.js"></script>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ambaro">
+<meta property="og:title" content="Ambaro">
+<meta property="og:description" content="Climb aboard, play together.">
+<meta property="og:image" content="https://test.royalclubgames.com/brand/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<title>Word Puzzle · Ambaro</title>
+<meta name="theme-color" content="#0B3B2D">
+<meta name="description" content="A new word every day: guess it in 6 tries, learn its meaning, and compare with your family.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Ambaro Word Puzzle — the emerald room of the other games, gold tiles, saffron only on what you tap. */
+:root{
+  --bg1:#0B3B2D; --bg2:#06261C;
+  --gold:#e3b54a; --gold2:#f6d77e; --goldDeep:#a67a1c;
+  --saffron:#ff9933; --saffronDeep:#e0761a;
+  --hit:#13a36e; --hitDeep:#0a6d48; --miss:#2f3d39; --missDeep:#1d2826;
+  --ink:#fdf6e3; --muted:#e6c9a3;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{font-family:Poppins,system-ui,sans-serif;color:var(--ink);
+  background:radial-gradient(120% 80% at 50% 0%,#1B6B50 0%,var(--bg1) 45%,var(--bg2) 100%);
+  display:flex;justify-content:center;overflow:hidden;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.07;
+  background-image:radial-gradient(circle at 25% 25%,var(--gold) 1.5px,transparent 2px),radial-gradient(circle at 75% 75%,var(--gold) 1.5px,transparent 2px);background-size:28px 28px}
+button{font-family:inherit}
+.app{width:100%;max-width:520px;height:100%;display:flex;flex-direction:column;position:relative}
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px 4px}
+/* Back button and brand: the same as EKAH, Sudoku and Chess (36px, gold arrow, Royal Club badge, game name below). */
+.club-lead{display:flex;align-items:center;gap:10px;min-width:0}
+.club-back{flex:none;width:36px;height:36px;display:grid;place-items:center;border:1px solid rgba(243,217,138,.35);border-radius:10px;background:rgba(255,255,255,.06);color:var(--gold);text-decoration:none;font-size:18px;line-height:1}
+.club-back:hover{border-color:var(--gold)}
+.club-back:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.brand{display:flex;align-items:center;gap:8px;min-width:0}
+.brand-mark{width:46px;height:34px;display:grid;place-items:center;flex:none}
+.brand-mark img{width:46px;height:auto;display:block}
+.brand-text{line-height:1.1;min-width:0}
+.brand-text strong{display:block;font:700 14px/1.1 Cinzel,serif;letter-spacing:.14em;color:var(--gold2);white-space:nowrap}
+.brand-text small{display:block;font-size:9px;font-weight:700;letter-spacing:.26em;color:var(--muted);white-space:nowrap;margin-top:2px}
+.tools-top{display:flex;gap:6px;flex:none}
+.iconbtn{width:36px;height:36px;border-radius:10px;border:1px solid rgba(227,181,74,.35);flex:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(0,0,0,.15));color:var(--gold2);display:grid;place-items:center;cursor:pointer;font-size:16px;font-weight:700}
+.iconbtn:active{transform:scale(.94)}
+.sheet .iconbtn.x{position:absolute;right:12px;top:12px}
+.strip{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:6px 12px 2px}
+.tabs{display:flex;background:rgba(0,0,0,.25);border:1px solid rgba(227,181,74,.25);border-radius:999px;padding:3px}
+.tab{border:0;background:none;color:var(--muted);font:600 12px Poppins;padding:6px 11px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.tab.on{background:linear-gradient(180deg,var(--gold2),var(--gold));color:#3b2a05}
+.chips{display:flex;gap:5px}
+.chip{display:flex;align-items:center;gap:4px;font:600 12px Poppins;padding:5px 9px;border-radius:999px;background:rgba(0,0,0,.28);border:1px solid rgba(227,181,74,.3)}
+.chip b{color:var(--gold2)}
+.chip.bump{animation:pop .35s}
+/* the Ambaro coin: gold with the lotus */
+.coin{width:24px;height:24px;border-radius:50%;flex:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='%235a3d06'%3E%3Cpath d='M12 5.6c1.5 1.6 2.1 3.6 0 7.4-2.1-3.8-1.5-5.8 0-7.4z'/%3E%3Cpath d='M6.6 8.9c2.1.2 3.8 1.5 5 4.6-3.2-.6-4.6-2.3-5-4.6z'/%3E%3Cpath d='M17.4 8.9c-.4 2.3-1.8 4-5 4.6 1.2-3.1 2.9-4.4 5-4.6z'/%3E%3Cpath d='M6.8 14.2c1.6 1.4 3.3 1.9 5.2 1.9s3.6-.5 5.2-1.9c-.9 2-2.8 3.2-5.2 3.2s-4.3-1.2-5.2-3.2z'/%3E%3C/g%3E%3C/svg%3E") center/82% no-repeat,radial-gradient(circle at 35% 30%,#fff3c4,var(--gold) 50%,var(--goldDeep));
+  display:grid;place-items:center;font:800 11px Cinzel;color:#5a3d06;box-shadow:0 2px 0 #6b4c0e}
+.coin.s{width:16px;height:16px;font-size:8px;box-shadow:none}
+/* clue bar */
+.cluebar{margin:6px 12px 0;padding:8px 10px;border-radius:14px;background:rgba(0,0,0,.22);border:1px solid rgba(227,181,74,.22);display:flex;align-items:center;gap:8px}
+.theme{flex:1;min-width:0}
+.theme span{display:block;font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted)}
+.theme b{font-size:14px;color:var(--gold2)}
+.hint{border:1px solid rgba(227,181,74,.45);background:rgba(227,181,74,.1);color:var(--gold2);border-radius:10px;padding:6px 8px;cursor:pointer;font:600 11px Poppins;display:flex;align-items:center;gap:4px;white-space:nowrap}
+.hint:disabled{opacity:.4;cursor:default}
+.hint .coin{width:14px;height:14px;font-size:7px;box-shadow:none}
+.meaning{margin:6px 12px 0;padding:8px 12px;border-radius:12px;background:rgba(255,153,51,.12);border:1px dashed rgba(255,153,51,.6);font-size:12.5px;display:none;animation:up .25s}
+.meaning.show{display:block}
+.meaning b{color:var(--saffron)}
+.puzzleno{text-align:center;font-size:10.5px;color:var(--muted);letter-spacing:1px;margin:6px 0 0}
+/* board */
+.boardwrap{flex:1;display:flex;align-items:center;justify-content:center;padding:6px 12px;min-height:0}
+.board{display:grid;grid-template-rows:repeat(6,1fr);gap:6px;height:100%;max-height:380px}
+.row{display:grid;gap:6px}
+.tile{position:relative;perspective:600px}
+.tile .in{position:absolute;inset:0;border-radius:11px;display:grid;place-items:center;font:700 clamp(20px,6.5vw,32px) Cinzel,serif;text-transform:uppercase;
+  background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(0,0,0,.18));border:2px solid rgba(227,181,74,.22)}
+.tile.ghost .in{color:rgba(111,227,180,.45)}
+.tile.filled .in{border-color:var(--gold);color:var(--ink);animation:pop .12s}
+.tile.hit .in{background:linear-gradient(180deg,#22c487,var(--hit) 55%,var(--hitDeep));border-color:#6fe3b4;box-shadow:0 4px 0 #06402b;color:var(--ink)}
+.tile.near .in{background:linear-gradient(180deg,var(--gold2),var(--gold) 55%,var(--goldDeep));border-color:#fff0bd;color:#3b2a05;box-shadow:0 4px 0 #6b4c0e}
+.tile.miss .in{background:linear-gradient(180deg,#3d4d48,var(--miss) 60%,var(--missDeep));border-color:#4a5c56;color:#c9d6d1;box-shadow:0 4px 0 #121a18}
+.tile.flip .in{animation:flip .5s ease forwards}
+.tile.win .in{animation:bounce .5s ease}
+.row.shake{animation:shake .4s}
+@keyframes pop{50%{transform:scale(1.12)}}
+@keyframes flip{0%{transform:rotateX(0)}50%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}
+@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+@keyframes bounce{40%{transform:translateY(-16px)}70%{transform:translateY(4px)}}
+@keyframes up{from{transform:translateY(30px);opacity:0}}
+/* keyboard */
+.kb{padding:4px 5px 10px;display:flex;flex-direction:column;gap:6px;user-select:none}
+.kr{display:flex;gap:5px;justify-content:center}
+.key{flex:1;max-width:44px;height:52px;border-radius:10px;border:0;cursor:pointer;font:600 15px Poppins;color:var(--ink);text-transform:uppercase;
+  background:linear-gradient(180deg,#8a4a18,#5e2e0a);box-shadow:0 3px 0 #2e1303,inset 0 1px 0 rgba(255,255,255,.12)}
+.key:active{transform:translateY(2px);box-shadow:0 1px 0 #2e1303}
+.key.wide{max-width:70px;flex:1.5;font-size:12px}
+.key.enter{background:linear-gradient(180deg,#ffb15c,var(--saffron) 55%,var(--saffronDeep));color:#3a1d00;box-shadow:0 3px 0 #8a4508}
+.key.hit{background:linear-gradient(180deg,#22c487,var(--hitDeep));box-shadow:0 3px 0 #06402b}
+.key.near{background:linear-gradient(180deg,var(--gold2),var(--goldDeep));color:#3b2a05;box-shadow:0 3px 0 #6b4c0e}
+.key.miss{background:#3d2a1e;color:#a08672;box-shadow:0 3px 0 #121a18}
+.toast{position:absolute;top:150px;left:50%;transform:translateX(-50%) translateY(-10px);opacity:0;pointer-events:none;
+  background:var(--ink);color:#1b2a24;font:600 14px Poppins;padding:10px 16px;border-radius:12px;transition:.2s;z-index:60;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* sheets */
+.scrim{position:fixed;inset:0;background:rgba(24,8,0,.74);display:none;align-items:flex-end;justify-content:center;z-index:40}
+.scrim.show{display:flex}
+@media(min-width:600px){.scrim{align-items:center}}
+.sheet{width:100%;max-width:440px;max-height:92vh;overflow:auto;background:linear-gradient(180deg,#6e3510,#3c1a05);
+  border:1px solid rgba(227,181,74,.45);border-radius:22px 22px 0 0;padding:20px 18px 24px;position:relative;animation:up .25s ease}
+@media(min-width:600px){.sheet{border-radius:22px}}
+.sheet h2{font-family:Cinzel,serif;color:var(--gold2);text-align:center;margin:4px 0 6px;letter-spacing:2px;font-size:22px}
+.sheet .x{position:absolute;right:12px;top:12px}
+.sub{text-align:center;color:var(--muted);font-size:13px;margin:0 0 12px}
+.sec{font:600 11.5px Poppins;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin:16px 0 8px}
+/* word card */
+.wcard{border-radius:18px;padding:14px 16px;background:linear-gradient(160deg,#fdf6e3,#f3e3b8);color:#2a2414;position:relative;overflow:hidden;box-shadow:0 6px 0 #a67a1c}
+.wcard::after{content:"";position:absolute;right:-30px;top:-30px;width:110px;height:110px;border-radius:50%;background:rgba(19,163,110,.12)}
+.wcard .tag{display:inline-block;font:600 10px Poppins;letter-spacing:1px;text-transform:uppercase;background:#0a6d48;color:#fdf6e3;padding:3px 8px;border-radius:999px}
+.wcard h3{font:800 28px Cinzel,serif;letter-spacing:4px;margin:8px 0 2px;color:#0a6d48;display:flex;align-items:center;gap:10px}
+.say{border:0;background:#0a6d48;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px}
+.wcard p{margin:6px 0 0;font-size:13.5px;line-height:1.5}
+.wcard .ex{font-style:italic;color:#5b4d2a}
+.wcard .new{position:absolute;right:12px;top:12px;font:700 10px Poppins;color:#a67a1c;letter-spacing:1px}
+.result{display:flex;align-items:center;justify-content:center;gap:10px;margin:12px auto 0;padding:10px 12px;border-radius:14px;background:rgba(0,0,0,.25);border:1px dashed rgba(227,181,74,.5);font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.stat{background:rgba(0,0,0,.22);border-radius:12px;padding:9px 4px;text-align:center}
+.stat b{display:block;font:700 21px Cinzel;color:var(--gold2)}
+.stat span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.bar{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:12px}
+.bar i{font-style:normal;width:10px;color:var(--muted)}
+.bar div{height:19px;min-width:22px;border-radius:6px;background:#2f3d39;text-align:right;padding:0 7px;font-weight:600;line-height:19px}
+.bar div.me{background:linear-gradient(90deg,var(--hitDeep),var(--hit))}
+.lb{display:flex;flex-direction:column;gap:5px}
+.lbrow{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:12px;background:rgba(0,0,0,.2);font-size:13px}
+.lbrow.me{background:rgba(255,153,51,.16);border:1px solid rgba(255,153,51,.5)}
+.av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font:700 12px Poppins;color:#fff;flex:none}
+.lbrow .nm{flex:1}
+.lbrow .dots{letter-spacing:-1px;font-size:10px}
+.lbrow .sc{font:700 14px Cinzel;color:var(--gold2);width:34px;text-align:right}
+.demo-note{font-size:10.5px;color:var(--muted);text-align:center;margin-top:6px}
+.foot{display:flex;gap:10px;margin-top:16px;align-items:stretch}
+.next{flex:1;text-align:center;background:rgba(0,0,0,.22);border-radius:12px;padding:8px}
+.next span{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.next b{display:block;font:700 19px Cinzel;color:var(--gold2);letter-spacing:1px}
+.btn{flex:1;border:0;border-radius:14px;cursor:pointer;font:700 14px Poppins;padding:12px;
+  background:linear-gradient(180deg,#ffb15c,var(--saffron) 55%,var(--saffronDeep));color:#3a1d00;box-shadow:0 4px 0 #8a4508}
+.btn:active{transform:translateY(2px);box-shadow:0 2px 0 #8a4508}
+.btn.ghost{background:rgba(0,0,0,.25);color:var(--gold2);box-shadow:none;border:1px solid rgba(227,181,74,.4)}
+.btnrow{display:flex;gap:10px;margin-top:10px}
+.btn.more{display:block;width:100%;margin-top:12px;min-height:52px;font-size:17px;font-weight:800}
+/* word book */
+.level{display:flex;align-items:center;gap:12px;padding:12px;border-radius:16px;background:rgba(0,0,0,.25);border:1px solid rgba(227,181,74,.35)}
+.badge{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;font-size:26px;background:linear-gradient(180deg,var(--gold2),var(--goldDeep));flex:none;box-shadow:0 3px 0 #6b4c0e}
+.level b{font:700 16px Cinzel;color:var(--gold2)}
+.prog{height:8px;border-radius:99px;background:rgba(255,255,255,.1);margin-top:6px;overflow:hidden}
+.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--saffron),var(--gold2));border-radius:99px}
+.filters{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-top:12px}
+.filters button{flex:none;border:1px solid rgba(227,181,74,.35);background:rgba(0,0,0,.2);color:var(--muted);border-radius:999px;padding:5px 11px;font:600 11px Poppins;cursor:pointer}
+.filters button.on{background:var(--gold);color:#3b2a05;border-color:var(--gold)}
+.wlist{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.witem{padding:10px 12px;border-radius:12px;background:rgba(0,0,0,.2);cursor:pointer}
+.witem b{font:700 15px Cinzel;letter-spacing:2px;color:var(--gold2)}
+.witem small{float:right;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-top:3px}
+.witem p{margin:3px 0 0;font-size:12.5px;color:#dfeae5}
+.witem .ex{display:none;font-style:italic;color:var(--muted)}
+.witem.open .ex{display:block}
+.empty{text-align:center;color:var(--muted);font-size:13px;padding:20px}
+.howto p{font-size:13px;line-height:1.55;margin:0 0 10px;color:#e6efe9}
+.ex2{display:flex;gap:5px;margin:6px 0 4px}
+.ex2 .t{width:34px;height:36px;border-radius:8px;display:grid;place-items:center;font:700 17px Cinzel;border:2px solid rgba(227,181,74,.25);background:rgba(0,0,0,.15)}
+.ex2 .t.hit{background:linear-gradient(180deg,#22c487,var(--hitDeep));border-color:#6fe3b4}
+.ex2 .t.near{background:linear-gradient(180deg,var(--gold2),var(--goldDeep));color:#3b2a05;border-color:#fff0bd}
+.ex2 .t.miss{background:#2f3d39;border-color:#4a5c56;color:#c9d6d1}
+.link{font-size:11px;color:var(--muted);background:none;border:0;text-decoration:underline;cursor:pointer;display:block;margin:14px auto 0}
+.confetti{position:fixed;top:-10px;width:8px;height:12px;z-index:55;pointer-events:none;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(105vh) rotate(720deg)}}
+.lenpick{display:none;gap:4px}
+.lenpick.show{display:flex}
+.lenpick button{border:1px solid rgba(227,181,74,.35);background:rgba(0,0,0,.2);color:var(--muted);border-radius:8px;padding:4px 8px;font:600 11px Poppins;cursor:pointer}
+.lenpick button.on{background:var(--gold);color:#3b2a05}
+@media(max-width:380px){.top{gap:4px;padding:8px 8px 4px}.brand-mark{display:none}.tools-top{gap:4px}}
+@media(max-height:700px){.key{height:44px}.cluebar{padding:6px 8px}}
+
+a.iconbtn{text-decoration:none}
+[hidden]{display:none!important}
+.addf{display:flex;gap:8px;margin-bottom:8px}
+.addf input{flex:1;min-width:0;border-radius:12px;border:1px solid rgba(227,181,74,.45);background:rgba(0,0,0,.25);color:var(--ink);font:500 14px Poppins;padding:10px 12px}
+.addf .btn{flex:none;padding:10px 16px}
+.btn.small{flex:none;padding:6px 12px;font-size:12px;box-shadow:0 2px 0 #8a4508}
+.empty a,.demo-note a{color:var(--gold2)}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <span class="club-lead">
+      <a class="club-back" id="backBtn" href="../" aria-label="Back to Word Puzzle">←</a>
+      <span class="brand">
+        <span class="brand-mark"><img src="../../brand/badge-logo-small.webp" alt="" width="320" height="269"></span>
+        <span class="brand-text"><strong>AMBARO</strong><small>TODAY'S WORD</small></span>
+      </span>
+    </span>
+    <span class="tools-top">
+      <button class="iconbtn" id="bookBtn" aria-label="Word Book" title="Word Book">📖</button>
+      <button class="iconbtn" id="lbBtn" aria-label="Family Board" title="Family Board">🏆</button>
+      <button class="iconbtn" id="statsBtn" aria-label="Stats and help" title="Stats">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="6" width="4" height="15" rx="1"/><rect x="17" y="9" width="4" height="12" rx="1"/></svg>
+      </button>
+    </span>
+  </header>
+  <div class="strip">
+    <div class="tabs">
+      <button class="tab" data-mode="easy">Easy · 4</button>
+      <button class="tab on" data-mode="classic">Classic · 5</button>
+      <button class="tab" data-mode="practice">Unlimited ∞</button>
+    </div>
+    <div class="chips">
+      <div class="chip" title="Daily streak">🔥<b id="streakChip">0</b></div>
+      <div class="chip" id="coinChipBox" title="Your coins"><span class="coin s" aria-hidden="true"></span><b id="coinChip">0</b></div>
+    </div>
+  </div>
+  <div class="cluebar">
+    <div class="theme"><span id="themeLbl">Theme</span><b id="themeTxt">—</b></div>
+    <div class="lenpick" id="lenPick"><button data-len="4">4</button><button data-len="5" class="on">5</button></div>
+    <button class="hint" id="hintMeaning" title="Show the meaning">💡 Meaning <span class="coin" aria-hidden="true"></span>15</button>
+    <button class="hint" id="hintLetter" title="Reveal one letter">🔤 Letter <span class="coin" aria-hidden="true"></span>25</button>
+  </div>
+  <div class="meaning" id="meaningBox"></div>
+  <div class="puzzleno" id="puzzleNo"></div>
+  <div class="boardwrap" id="game"><div class="board" id="board"></div></div>
+  <div class="kb" id="kb"></div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<!-- end of round -->
+<div class="scrim" id="endModal"><div class="sheet">
+  <button class="iconbtn x" data-close aria-label="Close">✕</button>
+  <h2 id="endTitle">Royal!</h2>
+  <p class="sub" id="endSub"></p>
+  <div class="sec" style="margin-top:4px">Today's word card</div>
+  <div class="wcard" id="wordCard"></div>
+  <div class="result" id="reward"></div>
+  <div id="endLbWrap"><div class="sec">Family & friends today</div><div class="lb" id="endLb"></div></div>
+  <div class="foot">
+    <div class="next" id="nextBox"><span>Next word in</span><b class="cd">--:--:--</b></div>
+    <button class="btn" id="shareBtn">Copy result</button>
+  </div>
+  <button class="btn more" id="practiceBtn">Play another word</button>
+  <div class="btnrow"><button class="btn ghost" id="otherBtn">Play Easy</button></div>
+</div></div>
+
+<!-- stats -->
+<div class="scrim" id="statsModal"><div class="sheet">
+  <button class="iconbtn x" data-close aria-label="Close">✕</button>
+  <h2>Your Stats</h2>
+  <p class="sub" id="statsSub">Classic daily</p>
+  <div class="stats" id="statsGrid"></div>
+  <div class="sec">Guess distribution</div><div id="dist"></div>
+  <div class="foot"><div class="next"><span>Next word in</span><b class="cd">--:--:--</b></div></div>
+  <div class="btnrow"><button class="btn ghost" id="helpBtn">How to play</button></div>
+  <p class="demo-note" id="syncNote"></p>
+</div></div>
+
+<!-- family board -->
+<div class="scrim" id="lbModal"><div class="sheet">
+  <button class="iconbtn x" data-close aria-label="Close">✕</button>
+  <h2>Family Board</h2>
+  <p class="sub" id="lbSub">Today's word: fewest guesses wins</p>
+  <div class="lb" id="lbList"></div>
+  <div id="crownWrap"></div>
+  <div id="friendsWrap"></div>
+</div></div>
+
+<!-- word book -->
+<div class="scrim" id="bookModal"><div class="sheet">
+  <button class="iconbtn x" data-close aria-label="Close">✕</button>
+  <h2>Word Book</h2>
+  <p class="sub">Every word you play is saved here to revise</p>
+  <div class="level" id="levelBox"></div>
+  <div class="filters" id="filters"></div>
+  <div class="wlist" id="wlist"></div>
+</div></div>
+
+<!-- help -->
+<div class="scrim" id="helpModal"><div class="sheet howto">
+  <button class="iconbtn x" data-close aria-label="Close">✕</button>
+  <h2>How to Play</h2>
+  <p class="sub">Guess the hidden word in 6 tries</p>
+  <p>Type any real word and press <b>Enter</b>. The tiles change colour to show how close you are.</p>
+  <div class="ex2"><div class="t hit">C</div><div class="t">R</div><div class="t">O</div><div class="t">W</div><div class="t">N</div></div>
+  <p><b style="color:#6fe3b4">Emerald</b>: the letter is in the word and in the right spot.</p>
+  <div class="ex2"><div class="t">P</div><div class="t near">E</div><div class="t">A</div><div class="t">R</div><div class="t">L</div></div>
+  <p><b style="color:var(--gold2)">Gold</b>: the letter is in the word, but in a different spot.</p>
+  <div class="ex2"><div class="t">T</div><div class="t">I</div><div class="t">G</div><div class="t miss">E</div><div class="t">R</div></div>
+  <p><b style="color:#c9d6d1">Slate</b>: the letter is not in the word.</p>
+  <div class="sec">Modes</div>
+  <p><b>Easy · 4</b>: a new 4-letter word every day. Great for kids and beginners.<br><b>Classic · 5</b>: the main daily 5-letter word.<br><b>Unlimited ∞</b>: as many words as you like, any time of day, in 4 or 5 letters. Each solve earns coins; your daily streak is not affected.</p>
+  <div class="sec">Clues & learning</div>
+  <p>The <b>Theme</b> (Food, Animals, Sports…) is a free clue. Stuck? Spend coins on 💡 <b>Meaning</b> or 🔤 <b>Letter</b>.</p>
+  <p>After every round you get a <b>Word Card</b> with the meaning and an example sentence, saved to your 📖 <b>Word Book</b>.</p>
+  <div class="sec">Rewards</div>
+  <p>Solve the daily word for coins and XP, and come back every day to grow your 🔥 streak. Sign in to keep your streak on every phone and to see your family's scores on the 🏆 Family Board.</p>
+</div></div>
+
+<script src="../../ekah/config.js" onerror="void 0"></script>
+<script src="words-data.js"></script>
+<script>
+/* Royal Club Word Puzzle. Two ways to play the daily words:
+   - signed in and online: the Supabase functions (word_today / word_guess / word_hint) check every guess, keep the
+     streak, stats and Word Book on the account and feed the Family Board (supabase/migrations: royal_word_*);
+   - guests, or no connection: the same daily words from words-data.js, kept on this phone.
+   Coins and XP go through rcReport like every other game; hints are paid from the same wallet ("spend" events). */
+(function () {
+  'use strict';
+  const D = window.RC_WORDS;
+  const $ = (id) => document.getElementById(id);
+  const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const IST = 5.5 * 3600 * 1000, DAY = 86400000;
+  const EPOCH = Math.floor(Date.parse(D.start + 'T00:00:00Z') / DAY);
+  const istDay = (t = Date.now()) => Math.floor((t + IST) / DAY);
+  const dayNo = () => istDay() - EPOCH;
+  const isoOf = (d) => new Date(d * DAY).toISOString().slice(0, 10);
+  const CAT_ICON = { 'Food': '🍲', 'Animals': '🐯', 'Nature': '🌿', 'Feelings': '💛', 'Fun & Games': '🎲', 'Sports': '🏏', 'Science': '🔬', 'Home': '🏠', 'Places': '🗺️', 'Actions': '🏃', 'Everyday': '☀️' };
+  const decode = (s) => { try { return decodeURIComponent(escape(atob(s))).split('').reverse().join('').split(' '); } catch { return []; } };
+  const SCHED = { 4: decode(D.s4), 5: decode(D.s5) };
+  const VALID = { 4: new Set(D.v4.split(' ')), 5: new Set(D.v5.split(' ')) };
+  const LOOKUP = {}; Object.keys(D.e).forEach((w) => { const r = D.e[w]; LOOKUP[w] = { w, cat: D.cats[r[0]], mean: r[1], ex: r[2] }; });
+  const POOL = { 4: Object.keys(LOOKUP).filter((w) => w.length === 4), 5: Object.keys(LOOKUP).filter((w) => w.length === 5) };
+  Object.values(SCHED).forEach((s) => s.forEach((w) => VALID[w.length] && VALID[w.length].add(w)));
+  const dailyWord = (n) => { const s = SCHED[n]; return s.length ? s[((dayNo() % s.length) + s.length) % s.length] : POOL[n][0]; };
+
+  /* ---------- storage ---------- */
+  const raw = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch { /* off */ } } };
+  const store = { get(k, d) { try { const v = raw.get('rc-words:' + k); return v ? JSON.parse(v) : d; } catch { return d; } }, set(k, v) { raw.set('rc-words:' + k, JSON.stringify(v)); } };
+  const blankStats = () => ({ played: 0, wins: 0, streak: 0, best: 0, lastWin: null, dist: [0, 0, 0, 0, 0, 0] });
+  let S = store.get('local', null) || { stats: { easy: blankStats(), classic: blankStats() }, book: {} };
+  const saveS = () => store.set('local', S);
+
+  /* ---------- Ambaro account (same sign-in as the main site, EKAH and Sudoku) ---------- */
+  const SB_URL = String(window.RC_SUPABASE_URL || ''), SB_KEY = String(window.RC_SUPABASE_KEY || '');
+  const SB_STORE = SB_URL ? 'sb-' + SB_URL.replace(/^https:\/\//, '').split('.')[0] + '-auth-token' : '';
+  function readSession() { try { const x = JSON.parse(raw.get(SB_STORE) || 'null'); return x && x.access_token ? x : null; } catch { return null; } }
+  const signedIn = () => { const x = readSession(); return !!(x && x.user && !x.user.is_anonymous && SB_URL); };
+  async function token() {
+    let x = readSession();
+    if (!x || !SB_URL) return null;
+    if (!x.expires_at || x.expires_at * 1000 < Date.now() + 60000) {
+      try {
+        const res = await fetch(SB_URL + '/auth/v1/token?grant_type=refresh_token', { method: 'POST', headers: { apikey: SB_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: x.refresh_token }) });
+        if (!res.ok) return null;
+        const fresh = await res.json();
+        if (!fresh.access_token) return null;
+        if (!fresh.expires_at && fresh.expires_in) fresh.expires_at = Math.floor(Date.now() / 1000) + fresh.expires_in;
+        x = fresh; raw.set(SB_STORE, JSON.stringify(fresh));
+      } catch { return null; }
+    }
+    return x.access_token;
+  }
+  async function rpc(name, args) {
+    const t = await token();
+    if (!t) throw new Error('auth');
+    const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 9000);
+    try {
+      const res = await fetch(SB_URL + '/rest/v1/rpc/' + name, { method: 'POST', signal: ctl.signal, headers: { apikey: SB_KEY, Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' }, body: JSON.stringify(args || {}) });
+      if (!res.ok) throw new Error('http ' + res.status);
+      return await res.json();
+    } finally { clearTimeout(timer); }
+  }
+
+  /* ---------- coins: the Royal Club wallet on this phone (src/economy/wallet.ts) ---------- */
+  function walletCoins() {
+    const x = readSession(), uid = x && x.user && !x.user.is_anonymous ? x.user.id : null;
+    let coins = 250;   // a new wallet (rules.ts WELCOME_COINS)
+    try { const w = JSON.parse(raw.get('rc-wallet:' + (uid || 'guest')) || 'null'); if (w && typeof w.coins === 'number') coins = w.coins; } catch { /* none yet */ }
+    try { const ev = JSON.parse(raw.get('rc-game-events') || '[]'); if (Array.isArray(ev)) ev.forEach((e) => { if (e && e.r === 'spend') coins -= Number(e.c) || 0; }); } catch { /* none */ }
+    return Math.max(0, coins);
+  }
+  function spend(n) {
+    if (walletCoins() < n) { toast('Not enough coins. Win games to earn more'); return false; }
+    try {
+      const k = 'rc-game-events', list = JSON.parse(raw.get(k) || '[]');
+      const l = Array.isArray(list) ? list : [];
+      l.push({ g: 'words', r: 'spend', c: n, at: Date.now() });
+      raw.set(k, JSON.stringify(l.slice(-50)));
+    } catch { return false; }
+    updChips(true);
+    return true;
+  }
+  const report = (r) => { if (window.rcReport) window.rcReport('words', r); };
+
+  /* ---------- sound and voice ---------- */
+  let ac;
+  function beep(f = 600, d = 0.04, type = 'triangle', v = 0.05) {
+    if (raw.get('rc-sound') === 'off') return;
+    try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); const o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.value = f; g.gain.value = v; o.connect(g); g.connect(ac.destination); o.start(); g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + d); o.stop(ac.currentTime + d); } catch { /* no audio */ }
+  }
+  const canSpeak = 'speechSynthesis' in window && typeof window.SpeechSynthesisUtterance === 'function';
+  function speak(w) { try { const u = new SpeechSynthesisUtterance(w); u.lang = 'en-IN'; u.rate = 0.85; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch { toast('Sound not available here'); } }
+  const buzz = (p) => { try { if (navigator.vibrate) navigator.vibrate(p); } catch { /* none */ } };
+
+  /* ---------- round state ---------- */
+  // rows: [{g, sc}] — sc is the colour list (from the server, or worked out here)
+  let mode = 'classic', len = 5, practiceLen = 5, entry = null, answer = '', server = false;
+  let rows = [], cur = '', over = false, busy = false, solved = false;
+  let hints = { meaning: null, letters: [] };   // letters: [{i, ch}]
+  let srvStats = null, theme = '', festival = null, puzzleNo = 0;
+
+  const board = $('board'), kb = $('kb');
+  function buildBoard() {
+    board.innerHTML = ''; board.style.aspectRatio = len + '/6';
+    for (let r = 0; r < 6; r++) {
+      const row = document.createElement('div'); row.className = 'row'; row.style.gridTemplateColumns = 'repeat(' + len + ',1fr)';
+      for (let c = 0; c < len; c++) row.insertAdjacentHTML('beforeend', '<div class="tile"><div class="in"></div></div>');
+      board.appendChild(row);
+    }
+  }
+  ['qwertyuiop', 'asdfghjkl', '+zxcvbnm-'].forEach((line) => {
+    const r = document.createElement('div'); r.className = 'kr';
+    [...line].forEach((ch) => {
+      const b = document.createElement('button'); b.className = 'key'; b.type = 'button';
+      if (ch === '+') { b.textContent = 'Enter'; b.classList.add('wide', 'enter'); b.dataset.k = 'enter'; }
+      else if (ch === '-') { b.textContent = '⌫'; b.classList.add('wide'); b.dataset.k = 'back'; b.setAttribute('aria-label', 'Delete'); }
+      else { b.textContent = ch; b.dataset.k = ch; }
+      r.appendChild(b);
+    });
+    kb.appendChild(r);
+  });
+  kb.addEventListener('click', (e) => { const b = e.target.closest('.key'); if (b) press(b.dataset.k); });
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey || e.metaKey || e.altKey || document.querySelector('.scrim.show') || e.target.closest('input')) return;
+    if (e.key === 'Enter') press('enter'); else if (e.key === 'Backspace') press('back'); else if (/^[a-zA-Z]$/.test(e.key)) press(e.key.toLowerCase());
+  });
+
+  function press(k) {
+    if (over || busy) return;
+    if (k === 'enter') return void submit();
+    if (k === 'back') { if (cur) { cur = cur.slice(0, -1); beep(380); paintRow(); } return; }
+    if (cur.length < len) { cur += k; beep(640); paintRow(); }
+  }
+  const rowEl = (i) => board.children[i];
+  function paintRow() {
+    if (rows.length >= 6) return;
+    const row = rowEl(rows.length);
+    [...row.children].forEach((t, i) => {
+      const ch = cur[i], h = hints.letters.find((x) => x.i === i), ghost = !ch && !!h;
+      t.firstChild.textContent = ch || (ghost ? h.ch : '');
+      t.classList.toggle('filled', !!ch); t.classList.toggle('ghost', ghost);
+    });
+  }
+  function score(g, a) {
+    const res = Array(a.length).fill('miss'), pool = {};
+    for (let i = 0; i < a.length; i++) { if (g[i] === a[i]) res[i] = 'hit'; else pool[a[i]] = (pool[a[i]] || 0) + 1; }
+    for (let i = 0; i < a.length; i++) { if (res[i] !== 'hit' && pool[g[i]]) { res[i] = 'near'; pool[g[i]]--; } }
+    return res;
+  }
+  function toast(m, ms = 1700) { const t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), ms); }
+  function shake(row) { row.classList.remove('shake'); void row.offsetWidth; row.classList.add('shake'); beep(180, 0.12, 'sawtooth', 0.03); buzz(40); }
+
+  async function submit() {
+    const row = rowEl(rows.length);
+    if (cur.length < len) { shake(row); toast('Not enough letters'); return; }
+    if (!VALID[len].has(cur)) { shake(row); toast('Not in word list'); return; }
+    const g = cur; busy = true;
+    let sc, fin = false, ok = false;
+    if (server) {
+      try {
+        const r = await rpc('word_guess', { p_mode: mode, p_guess: g });
+        if (r.error === 'NOT_IN_LIST') { shake(row); toast('Not in word list'); busy = false; return; }
+        if (r.error === 'ALREADY_FINISHED') { busy = false; await loadDaily(); return; }
+        if (r.error) throw new Error(r.error);
+        sc = r.score; fin = !!r.finished; ok = !!r.solved;
+        if (r.card) entry = { w: r.card.word, cat: r.card.theme, mean: r.card.meaning, ex: r.card.example };
+        if (srvStats && typeof r.streak === 'number') srvStats.streak = r.streak;
+        if (srvStats && r.finished) { srvStats.played++; if (r.solved) { srvStats.wins++; srvStats.dist = (srvStats.dist || [0, 0, 0, 0, 0, 0]).slice(); srvStats.dist[rows.length]++; srvStats.best = Math.max(srvStats.best || 0, srvStats.streak || 0); } else srvStats.streak = 0; }
+      } catch { busy = false; toast('No connection. Try again'); return; }
+    } else {
+      sc = score(g, answer); ok = g === answer; fin = ok || rows.length + 1 >= 6;
+    }
+    rows.push({ g, sc }); cur = '';
+    if (!server) saveRound();
+    reveal(rows.length - 1, true, () => { busy = false; if (fin) { over = true; solved = ok; if (!server) saveRound(); finish(true); } else paintRow(); updHintBtns(); });
+  }
+  const RANK = { miss: 0, near: 1, hit: 2 };
+  function setKey(ch, st) {
+    const b = kb.querySelector('[data-k="' + ch + '"]'); if (!b) return;
+    const old = ['hit', 'near', 'miss'].find((c) => b.classList.contains(c));
+    if (!old || RANK[st] > RANK[old]) { b.classList.remove('hit', 'near', 'miss'); b.classList.add(st); }
+  }
+  function reveal(ri, anim, done) {
+    const { g, sc } = rows[ri], row = rowEl(ri);
+    [...row.children].forEach((t, i) => {
+      t.classList.remove('ghost'); t.firstChild.textContent = g[i]; t.classList.add('filled');
+      const apply = () => { t.classList.add(sc[i]); setKey(g[i], sc[i]); };
+      if (anim) setTimeout(() => { t.classList.add('flip'); setTimeout(apply, 250); beep(sc[i] === 'hit' ? 880 : sc[i] === 'near' ? 700 : 300, 0.08); }, i * 240); else apply();
+    });
+    if (done) setTimeout(done, anim ? len * 240 + 300 : 0);
+  }
+
+  /* ---------- hints ---------- */
+  const openSpots = () => [...Array(len).keys()].filter((i) => !hints.letters.some((x) => x.i === i) && !rows.some((r) => r.sc[i] === 'hit'));
+  function updHintBtns() {
+    $('hintMeaning').disabled = over || !!hints.meaning;
+    $('hintLetter').disabled = over || openSpots().length <= 1 || hints.letters.length >= 2;
+    const mb = $('meaningBox');
+    if (hints.meaning) { mb.innerHTML = '<b>💡 Meaning:</b> ' + esc(hints.meaning); mb.classList.add('show'); } else mb.classList.remove('show');
+  }
+  $('hintMeaning').addEventListener('click', async () => {
+    if (over || hints.meaning || busy) return;
+    if (walletCoins() < 15) { toast('Not enough coins. Win games to earn more'); return; }
+    if (server) {
+      busy = true;
+      try { const r = await rpc('word_hint', { p_mode: mode, p_kind: 'meaning' }); busy = false; if (!r.meaning) return; hints.meaning = r.meaning; }
+      catch { busy = false; toast('No connection. Try again'); return; }
+    } else hints.meaning = entry.mean;
+    spend(15); beep(990, 0.1, 'sine'); if (!server) saveRound(); updHintBtns();
+  });
+  $('hintLetter').addEventListener('click', async () => {
+    if (over || busy) return;
+    const left = openSpots(); if (left.length <= 1 || hints.letters.length >= 2) return;
+    if (walletCoins() < 25) { toast('Not enough coins. Win games to earn more'); return; }
+    let h;
+    if (server) {
+      busy = true;
+      try { const r = await rpc('word_hint', { p_mode: mode, p_kind: 'letter' }); busy = false; if (typeof r.i !== 'number') return; h = { i: r.i, ch: r.ch }; }
+      catch { busy = false; toast('No connection. Try again'); return; }
+    } else { const i = left[Math.floor(Math.random() * left.length)]; h = { i, ch: answer[i] }; }
+    hints.letters.push(h); spend(25); setKey(h.ch, 'hit'); beep(990, 0.1, 'sine'); if (!server) saveRound(); paintRow(); updHintBtns();
+    toast('Letter ' + (h.i + 1) + ' is "' + h.ch.toUpperCase() + '"');
+  });
+
+  /* ---------- end of a round ---------- */
+  function finish(fresh) {
+    if (solved) [...rowEl(rows.length - 1).children].forEach((t, i) => setTimeout(() => { t.classList.remove('flip'); t.classList.add('win'); }, i * 90));
+    const daily = mode !== 'practice';
+    let isNew = false;
+    if (fresh && entry) {
+      isNew = !S.book[entry.w];
+      S.book[entry.w] = S.book[entry.w] || { d: istDay(), solved: false };
+      if (solved) S.book[entry.w].solved = true;
+      if (daily && !server) {
+        const st = S.stats[mode], today = istDay(); st.played++;
+        if (solved) { st.wins++; st.dist[rows.length - 1]++; st.streak = st.lastWin === today - 1 ? st.streak + 1 : 1; st.lastWin = today; st.best = Math.max(st.best, st.streak); }
+        else st.streak = 0;
+      }
+      saveS();
+      report(daily ? (solved ? 'daily' : 'lose') : (solved ? 'win' : 'lose'));
+      if (daily) store.set('done:' + mode + ':' + istDay(), { isNew, solved });
+    } else if (daily) isNew = !!(store.get('done:' + mode + ':' + istDay(), {}).isNew);
+    updChips(false); updHintBtns();
+    if (solved && fresh) { confetti(); [523, 659, 784].forEach((f, i) => setTimeout(() => beep(f, 0.18, 'sine', 0.07), i * 150)); buzz([30, 40, 30]); }
+    setTimeout(() => showEnd(isNew, fresh), fresh ? (solved ? 1100 : 600) : 0);
+  }
+  function wordCardHTML(e, isNew) {
+    return (isNew ? '<span class="new">+ NEW WORD</span>' : '') + '<span class="tag">' + (CAT_ICON[e.cat] || '') + ' ' + esc(e.cat) + '</span>'
+      + '<h3>' + esc(e.w.toUpperCase()) + (canSpeak ? ' <button class="say" data-say="' + esc(e.w) + '" aria-label="Hear it">🔊</button>' : '') + '</h3>'
+      + '<p>' + esc(e.mean) + '.</p><p class="ex">“' + esc(e.ex) + '”</p>';
+  }
+  document.addEventListener('click', (e) => { const s = e.target.closest('[data-say]'); if (s) { e.stopPropagation(); speak(s.dataset.say); } });
+
+  function curStats() { return server && srvStats ? srvStats : (mode === 'easy' ? S.stats.easy : S.stats.classic); }
+  function liveStreak() {
+    if (server && srvStats) return srvStats.streak || 0;
+    const st = mode === 'easy' ? S.stats.easy : S.stats.classic;
+    return st.lastWin != null && st.lastWin >= istDay() - 1 ? st.streak : 0;
+  }
+  function showEnd(isNew, fresh) {
+    const titles = ['Genius!', 'Magnificent!', 'Royal!', 'Splendid!', 'Well played!', 'Phew!'];
+    const used = !!hints.meaning || hints.letters.length > 0;
+    $('endTitle').textContent = solved ? titles[rows.length - 1] : 'So close!';
+    $('endSub').textContent = solved ? 'Solved in ' + rows.length + '/6' + (used ? ' with hints' : '') : "Here's the word. Now you know it!";
+    $('wordCard').innerHTML = entry ? wordCardHTML(entry, isNew) : '';
+    const daily = mode !== 'practice';
+    const pay = daily ? (solved ? [50, 60] : [10, 20]) : (solved ? [25, 50] : [10, 20]);
+    $('reward').innerHTML = (fresh ? '<span class="coin" aria-hidden="true"></span><div><b style="color:var(--gold2)">+' + pay[0] + ' coins · +' + pay[1] + ' XP</b><br><span style="color:var(--muted)">' : '<div><span style="color:var(--muted)">')
+      + (daily ? (solved ? '🔥 ' + liveStreak() + '-day ' + (mode === 'easy' ? 'Easy' : 'Classic') + ' streak' : 'Streak reset. Come back tomorrow!') : "Unlimited words don't change your daily streak") + '</span></div>';
+    $('endLbWrap').hidden = !daily;
+    if (daily) loadBoard($('endLb'));
+    $('nextBox').hidden = !daily;
+    const other = mode === 'classic' ? 'easy' : 'classic';
+    $('otherBtn').hidden = !daily;
+    $('otherBtn').textContent = other === 'easy' ? 'Play Easy · 4' : 'Play Classic · 5';
+    $('otherBtn').onclick = () => { close('endModal'); setMode(other); };
+    $('practiceBtn').textContent = mode === 'practice' ? 'Next word ▶' : 'Play another word ▶';
+    open('endModal');
+  }
+
+  /* ---------- Family Board (signed-in players and their Royal Club friends) ---------- */
+  const COLORS = ['#c2185b', '#6a1b9a', '#1565c0', '#00838f', '#ef6c00', '#2e7d32', '#ad1457', '#4527a0'];
+  async function loadBoard(el) {
+    const key = mode === 'easy' ? 'easy' : 'classic';
+    if (!signedIn()) { el.innerHTML = '<div class="empty">Sign in to see how your family and friends did today. <a href="/?signin=rooms">Sign in</a></div>'; return; }
+    el.innerHTML = '<div class="empty">Loading…</div>';
+    try {
+      const r = await rpc('word_friends_board', { p_mode: key });
+      if (r.locked) { el.innerHTML = '<div class="empty">Finish today\'s ' + (key === 'easy' ? 'Easy' : 'Classic') + ' word to see everyone\'s scores. No spoilers!</div>'; return; }
+      const ps = r.players || [];
+      el.innerHTML = ps.map((p, i) => '<div class="lbrow ' + (p.me ? 'me' : '') + '"><span style="width:16px;color:var(--muted);font-weight:700">' + (i === 0 && p.tries ? '🏆' : i + 1) + '</span><span class="av" style="background:' + (p.me ? '#ff9933' : COLORS[i % COLORS.length]) + '">' + esc((p.name || '?')[0].toUpperCase()) + '</span><span class="nm">' + esc(p.me ? 'You' : p.name) + '</span><span class="sc">' + (p.tries ? p.tries + '/6' : p.finished ? 'X' : '—') + '</span></div>').join('')
+        + (ps.length <= 1 ? '<div class="demo-note">Add family and friends on the 🏆 Family Board to compare scores.</div>' : '');
+    } catch { el.innerHTML = '<div class="empty">Could not load the board. Check your connection.</div>'; }
+  }
+  async function loadCrown() {
+    const el = $('crownWrap'); el.innerHTML = '';
+    if (!signedIn()) return;
+    try {
+      const list = await rpc('word_weekly_crown', { p_mode: mode === 'easy' ? 'easy' : 'classic' });
+      if (!Array.isArray(list) || list.length < 2) return;
+      el.innerHTML = '<div class="sec">This week\'s top player 🏆</div><div class="lb">' + list.slice(0, 5).map((p, i) => '<div class="lbrow"><span style="width:16px;color:var(--muted);font-weight:700">' + (i === 0 ? '🏆' : i + 1) + '</span><span class="nm">' + esc(p.name) + '</span><span class="sc">' + p.total + '</span></div>').join('') + '</div><div class="demo-note">Fewest guesses over the last 7 days (an unsolved day counts 7).</div>';
+    } catch { /* offline */ }
+  }
+  async function loadFriends() {
+    const el = $('friendsWrap');
+    if (!signedIn()) { el.innerHTML = ''; return; }
+    el.innerHTML = '<div class="sec">Family & friends</div><form id="addFriend" class="addf"><input id="friendName" maxlength="16" autocomplete="off" autocapitalize="off" placeholder="Their Ambaro username"><button class="btn" type="submit">Add</button></form><div class="lb" id="friendList"></div>';
+    $('addFriend').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = $('friendName').value.trim();
+      if (!/^[A-Za-z0-9_]{3,16}$/.test(name)) { toast('Usernames are 3–16 letters, numbers or _'); return; }
+      try {
+        const r = await rpc('friend_request', { p_username: name });
+        toast(r === 'SENT' ? 'Request sent to ' + name : r === 'ACCEPTED' ? 'You are now friends with ' + name : r === 'SELF' ? "That's you!" : 'No player called ' + name);
+        $('friendName').value = ''; listFriends();
+      } catch { toast('No connection. Try again'); }
+    });
+    listFriends();
+  }
+  async function listFriends() {
+    const el = $('friendList'); if (!el) return;
+    try {
+      const list = await rpc('friend_list', {});
+      el.innerHTML = (Array.isArray(list) && list.length) ? list.map((f) => '<div class="lbrow"><span class="nm">' + esc(f.name) + '</span>' + (f.status === 'incoming' ? '<button class="btn small" data-accept="' + esc(f.id) + '">Accept</button>' : '<span class="sc" style="width:auto;font:600 11px Poppins;color:var(--muted)">' + (f.status === 'friend' ? 'Friend ✓' : 'Request sent') + '</span>') + '</div>').join('')
+        : '<div class="demo-note">No friends yet. Add them by their Ambaro username.</div>';
+    } catch { el.innerHTML = ''; }
+  }
+  $('friendsWrap').addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-accept]'); if (!b) return;
+    try { await rpc('friend_accept', { p_from: b.dataset.accept }); toast('Friend added'); listFriends(); loadBoard($('lbList')); } catch { toast('No connection. Try again'); }
+  });
+
+  /* ---------- stats ---------- */
+  function fillStats() {
+    const key = mode === 'easy' ? 'easy' : 'classic', st = curStats();
+    $('statsSub').textContent = key === 'easy' ? 'Easy daily (4 letters)' : 'Classic daily (5 letters)';
+    const pct = st.played ? Math.round(st.wins / st.played * 100) : 0;
+    $('statsGrid').innerHTML = [[st.played, 'Played'], [pct, 'Win %'], [liveStreak(), 'Streak'], [st.best, 'Best']].map(([v, l]) => '<div class="stat"><b>' + v + '</b><span>' + l + '</span></div>').join('');
+    const dist = st.dist || [0, 0, 0, 0, 0, 0], mx = Math.max(1, ...dist);
+    $('dist').innerHTML = dist.map((n, i) => '<div class="bar"><i>' + (i + 1) + '</i><div style="width:' + (8 + n / mx * 84) + '%">' + n + '</div></div>').join('');
+    $('syncNote').innerHTML = server ? 'Saved to your Ambaro account.' : signedIn() ? 'Offline: saved on this phone for now.' : 'Saved on this phone. <a href="/?signin=rooms">Sign in</a> to keep your streak on every device.';
+  }
+
+  /* ---------- Word Book ---------- */
+  const LEVELS = [[0, 'Word Seeker', '🌱'], [5, 'Word Explorer', '🧭'], [15, 'Word Wizard', '🪄'], [40, 'Word Master', '🏆'], [100, 'Word Legend', '🌟']];
+  let bookFilter = 'All';
+  async function renderBook() {
+    const book = Object.assign({}, S.book);
+    if (signedIn()) {
+      try { const list = await rpc('word_book', {}); if (Array.isArray(list)) list.forEach((x) => { const d = Math.floor(Date.parse(x.date + 'T00:00:00Z') / DAY); book[x.word] = { d: Math.max(d, (book[x.word] || {}).d || 0), solved: x.solved || (book[x.word] || {}).solved }; }); } catch { /* offline: this phone's list */ }
+    }
+    const words = Object.keys(book).filter((w) => LOOKUP[w]).sort((a, b) => book[b].d - book[a].d), n = words.length;
+    let li = 0; LEVELS.forEach((l, i) => { if (n >= l[0]) li = i; });
+    const L = LEVELS[li], N = LEVELS[li + 1];
+    $('levelBox').innerHTML = '<div class="badge">' + L[2] + '</div><div style="flex:1"><b>' + L[1] + '</b><div style="font-size:12px;color:var(--muted)">' + n + ' word' + (n === 1 ? '' : 's') + ' learned' + (N ? ' · ' + (N[0] - n) + ' more to <b style="font:600 12px Poppins;color:var(--saffron)">' + N[1] + '</b>' : '') + '</div><div class="prog"><i style="width:' + (N ? Math.round((n - L[0]) / (N[0] - L[0]) * 100) : 100) + '%"></i></div></div>';
+    const cats = ['All', ...new Set(words.map((w) => LOOKUP[w].cat))]; if (!cats.includes(bookFilter)) bookFilter = 'All';
+    $('filters').innerHTML = cats.map((c) => '<button class="' + (c === bookFilter ? 'on' : '') + '" data-f="' + esc(c) + '">' + (c === 'All' ? 'All' : (CAT_ICON[c] || '') + ' ' + esc(c)) + '</button>').join('');
+    const list = words.filter((w) => bookFilter === 'All' || LOOKUP[w].cat === bookFilter);
+    $('wlist').innerHTML = list.length ? list.map((w) => { const e = LOOKUP[w]; return '<div class="witem"><small>' + (book[w].solved ? '✓ solved' : 'learned') + '</small><b>' + esc(w.toUpperCase()) + '</b>' + (canSpeak ? ' <button class="say" data-say="' + esc(w) + '" style="width:24px;height:24px;font-size:11px;vertical-align:middle;background:rgba(255,255,255,.12)" aria-label="Hear it">🔊</button>' : '') + '<p>' + esc(e.mean) + '.</p><p class="ex">“' + esc(e.ex) + '”</p></div>'; }).join('')
+      : '<div class="empty">No words yet. Play a round and your first word card lands here 📖</div>';
+  }
+  $('filters').addEventListener('click', (e) => { const b = e.target.closest('[data-f]'); if (b) { bookFilter = b.dataset.f; renderBook(); } });
+  $('wlist').addEventListener('click', (e) => { const it = e.target.closest('.witem'); if (it && !e.target.closest('[data-say]')) it.classList.toggle('open'); });
+
+  /* ---------- share ---------- */
+  function share() {
+    const grid = rows.map((r) => r.sc.map((s) => (s === 'hit' ? '🟢' : s === 'near' ? '🟡' : '⚫')).join('')).join('\n');
+    const res = solved ? rows.length : 'X';
+    const head = mode === 'practice' ? 'RCG Word Puzzle practice ' + res + '/6' : 'RCG Word Puzzle ' + (mode === 'easy' ? 'Easy' : 'Classic') + ' #' + puzzleNo + ' ' + res + '/6 🔥' + liveStreak();
+    const txt = head + '\nTheme: ' + theme + '\n' + grid + '\nCan you beat me? royalclubgames.com';
+    const done = () => toast('Copied. Paste it in your family group!');
+    try { navigator.clipboard.writeText(txt).then(done, () => fallbackCopy(txt) ? done() : toast("Couldn't copy here")); } catch { if (fallbackCopy(txt)) done(); else toast("Couldn't copy here"); }
+  }
+  function fallbackCopy(t) { try { const a = document.createElement('textarea'); a.value = t; a.style.position = 'fixed'; a.style.opacity = '0'; document.body.appendChild(a); a.select(); const ok = document.execCommand('copy'); a.remove(); return ok; } catch { return false; } }
+  function confetti() {
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const cols = ['#f6d77e', '#e3b54a', '#22c487', '#ff9933', '#fdf6e3'];
+    for (let i = 0; i < 60; i++) { const c = document.createElement('div'); c.className = 'confetti'; c.style.left = Math.random() * 100 + 'vw'; c.style.background = cols[i % 5]; c.style.animationDuration = (1.6 + Math.random() * 1.6) + 's'; c.style.animationDelay = Math.random() * 0.4 + 's'; document.body.appendChild(c); setTimeout(() => c.remove(), 3800); }
+  }
+
+  /* ---------- sheets ---------- */
+  function open(id) { $(id).classList.add('show'); }
+  function close(id) { $(id).classList.remove('show'); }
+  document.querySelectorAll('.scrim').forEach((s) => s.addEventListener('click', (e) => { if (e.target === s || e.target.closest('[data-close]')) s.classList.remove('show'); }));
+  $('helpBtn').onclick = () => { close('statsModal'); open('helpModal'); };
+  $('statsBtn').onclick = () => { fillStats(); open('statsModal'); };
+  $('bookBtn').onclick = () => { renderBook(); open('bookModal'); };
+  $('lbBtn').onclick = () => {
+    const key = mode === 'easy' ? 'easy' : 'classic';
+    $('lbSub').textContent = "Today's " + (key === 'easy' ? 'Easy' : 'Classic') + ' word: fewest guesses wins';
+    loadBoard($('lbList')); loadCrown(); loadFriends(); open('lbModal');
+  };
+  $('shareBtn').onclick = share;
+  $('practiceBtn').onclick = () => { close('endModal'); setMode('practice'); };
+  document.querySelectorAll('.tab').forEach((t) => (t.onclick = () => setMode(t.dataset.mode)));
+  $('lenPick').addEventListener('click', (e) => { const b = e.target.closest('[data-len]'); if (!b) return; practiceLen = +b.dataset.len; setMode('practice'); });
+  /* Android back button / the ← link: close a sheet first. */
+  window.addEventListener('popstate', () => { const s = document.querySelector('.scrim.show'); if (s) s.classList.remove('show'); });
+  /* In the Android app (app-mode.js): back closes an open sheet (results, Word Book, Family Board, stats, help);
+     otherwise it goes straight to the Ambaro home. Word Puzzle is saved as you play, so it never asks
+     "Leave this game?". */
+  window.rcAppBack = () => {
+    const s = document.querySelector('.scrim.show');
+    if (s) { s.classList.remove('show'); return true; }
+    window.location.href = $('backBtn').getAttribute('href') || '../';
+    return true;
+  };
+
+  function updChips(bump) {
+    $('streakChip').textContent = mode === 'practice' ? liveStreakFor('classic') : liveStreak();
+    $('coinChip').textContent = walletCoins().toLocaleString('en-IN');
+    if (bump) { const c = $('coinChipBox'); c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump'); }
+  }
+  function liveStreakFor(k) { const st = S.stats[k]; return st.lastWin != null && st.lastWin >= istDay() - 1 ? st.streak : 0; }
+
+  /* ---------- local daily progress (guests / offline) ---------- */
+  function saveRound() {
+    if (mode === 'practice' || server) return;
+    store.set('round:' + mode + ':' + istDay(), { rows: rows.map((r) => r.g), hints: { meaning: !!hints.meaning, letters: hints.letters }, done: over, solved });
+  }
+
+  /* ---------- modes ---------- */
+  function resetBoard() {
+    rows = []; cur = ''; over = false; busy = false; solved = false; hints = { meaning: null, letters: [] };
+    kb.querySelectorAll('.key').forEach((k) => k.classList.remove('hit', 'near', 'miss'));
+    buildBoard();
+  }
+  function header() {
+    $('themeTxt').textContent = (CAT_ICON[theme] || '') + ' ' + theme;
+    $('themeLbl').textContent = festival ? festival[1] + ' ' + festival[0] + ' special' : 'Theme';
+    const date = new Date(istDay() * DAY).toLocaleDateString('en-IN', { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' });
+    $('puzzleNo').textContent = mode === 'practice' ? 'UNLIMITED · ' + len + ' letters · play as many as you like'
+      : (mode === 'easy' ? 'EASY' : 'CLASSIC') + ' #' + puzzleNo + ' · ' + date + (festival ? ' · ' + festival[1] + ' ' + festival[0].toUpperCase() : '');
+  }
+  function startLocalDaily() {
+    server = false; srvStats = null;
+    answer = dailyWord(len); entry = LOOKUP[answer]; theme = entry.cat; puzzleNo = dayNo() + 1;
+    const f = D.fest[isoOf(istDay())]; festival = f || null;
+    header();
+    const sv = store.get('round:' + mode + ':' + istDay(), null);
+    if (sv && Array.isArray(sv.rows)) {
+      rows = sv.rows.map((g) => ({ g, sc: score(g, answer) })); rows.forEach((_, i) => reveal(i, false));
+      if (sv.hints) { hints.meaning = sv.hints.meaning ? entry.mean : null; hints.letters = Array.isArray(sv.hints.letters) ? sv.hints.letters.filter((h) => h && typeof h.i === 'number') : []; hints.letters.forEach((h) => setKey(h.ch, 'hit')); }
+      if (sv.done) { over = true; solved = !!sv.solved; setTimeout(() => finish(false), 300); }
+    }
+    paintRow(); updHintBtns(); updChips(false);
+  }
+  async function loadDaily() {
+    const want = mode;
+    resetBoard();
+    try {
+      const r = await rpc('word_today', { p_mode: want });
+      if (mode !== want) return;
+      server = true; answer = ''; entry = null; theme = r.theme; puzzleNo = r.puzzle_no;
+      festival = r.festival ? [r.festival, r.festival_emoji || ''] : null;
+      srvStats = r.stats ? { played: r.stats.played, wins: r.stats.wins, best: r.stats.best, streak: r.stats.streak, dist: r.stats.dist } : { played: 0, wins: 0, best: 0, streak: r.streak || 0, dist: [0, 0, 0, 0, 0, 0] };
+      header();
+      rows = (r.guesses || []).map((g, i) => ({ g, sc: (r.scores || [])[i] || [] })); rows.forEach((_, i) => reveal(i, false));
+      hints.meaning = r.hint_meaning && !r.finished ? r.hint_meaning : null;
+      hints.letters = (r.hint_letters || []).map((h) => ({ i: h.i, ch: h.ch })); hints.letters.forEach((h) => setKey(h.ch, 'hit'));
+      if (r.card) entry = { w: r.card.word, cat: r.card.theme, mean: r.card.meaning, ex: r.card.example };
+      if (r.finished) { over = true; solved = !!r.solved; setTimeout(() => finish(false), 300); }
+      paintRow(); updHintBtns(); updChips(false);
+    } catch {
+      if (mode !== want) return;
+      resetBoard(); startLocalDaily();
+    }
+  }
+  function setMode(m) {
+    mode = m;
+    document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('on', t.dataset.mode === m));
+    $('lenPick').classList.toggle('show', m === 'practice');
+    document.querySelectorAll('#lenPick button').forEach((b) => b.classList.toggle('on', +b.dataset.len === practiceLen));
+    if (m === 'practice') {
+      len = practiceLen; server = false; srvStats = null; resetBoard();
+      answer = POOL[len][Math.floor(Math.random() * POOL[len].length)]; entry = LOOKUP[answer]; theme = entry.cat; festival = null; puzzleNo = 0;
+      header(); paintRow(); updHintBtns(); updChips(false);
+      return;
+    }
+    len = m === 'easy' ? 4 : 5;
+    if (signedIn() && navigator.onLine !== false) {
+      server = true; theme = '…'; festival = null; puzzleNo = dayNo() + 1; resetBoard(); header(); updHintBtns();
+      loadDaily();
+    } else { resetBoard(); startLocalDaily(); }
+  }
+
+  /* New day while the page is open: start the new word. */
+  let shownDay = istDay();
+  function tick() {
+    const now = Date.now(), next = (istDay(now) + 1) * DAY - IST, s = Math.max(0, Math.floor((next - now) / 1000));
+    const f = [Math.floor(s / 3600), Math.floor(s / 60) % 60, s % 60].map((x) => String(x).padStart(2, '0')).join(':');
+    document.querySelectorAll('.cd').forEach((el) => (el.textContent = f));
+    if (istDay() !== shownDay) { shownDay = istDay(); if (mode !== 'practice' && !busy) setMode(mode); }
+  }
+  setInterval(tick, 1000); tick();
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) updChips(false); });
+
+  setMode('classic');
+  if (!store.get('seenHelp', false)) { store.set('seenHelp', true); setTimeout(() => open('helpModal'), 400); }
+})();
+</script>
+</body>
+</html>

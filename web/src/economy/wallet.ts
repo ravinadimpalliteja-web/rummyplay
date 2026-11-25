@@ -101,9 +101,9 @@ export function collectGames(): Earned {
   if (!events.length) return none;
   const before = R.levelOf(wallet.xp).level;
   const r = R.applyGames(wallet, events, Date.now());
-  if (!r.games && !r.spent) return none;
+  if (!r.games && !r.spent && !r.bonus) return none;
   commit(r.w);
-  if (!r.games) return none;                             // only hints bought: nothing to celebrate
+  if (!r.games) return none;                             // only hints bought or in-game prizes: nothing to celebrate
   const after = R.levelOf(r.w.xp).level;
   return { coins: r.coins, xp: r.xp, games: r.games, wins: r.wins, levelUp: after > before ? after : null };
 }

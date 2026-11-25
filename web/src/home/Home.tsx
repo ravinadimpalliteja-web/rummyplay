@@ -21,7 +21,7 @@ export const TILES: Tile[] = [
   { id: "snakes", name: "Snakes & Ladders", sub: "Race to 100 · roll a six to start", moods: ["friends", "quick", "classics", "computer"] },
   { id: "chess", name: "Chess", sub: "A friend on one phone, or the computer", moods: ["classics", "computer"] },
   { id: "sudoku", name: "Sudoku", sub: "Daily puzzle · race your friends", moods: ["friends", "quick", "classics", "computer"] },
-  { id: "words", name: "Word Puzzle", sub: "A new word every day · learn as you play", moods: ["quick", "classics"] },
+  { id: "words", name: "Word Puzzle", sub: "Swipe letters into the crossword · 300 levels and a daily puzzle", moods: ["quick", "classics"] },
 ];
 
 const MOODS: { id: Mood; label: string; note: string }[] = [

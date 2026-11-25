@@ -25,8 +25,8 @@ const ART: Record<GameId, () => ReactNode> = {
   ekah: () => <EkahArt />, ludo: () => <LudoArt />, snakes: () => <SnakesArt />, chess: () => <ChessArt />, sudoku: () => <SudokuArt />, words: () => <WordArt />,
   spades: () => <EkahArt />, rummy: () => <EkahArt />,
 };
-const PLAYERS: Partial<Record<GameId, string>> = { ekah: "2–6 players", ludo: "2–4 players", snakes: "2–4 players", chess: "2 players", sudoku: "Solo or race", words: "Daily word" };
-const SOLO: Partial<Record<GameId, string>> = { sudoku: "Play solo", chess: "vs Computer", words: "Play today's word" };
+const PLAYERS: Partial<Record<GameId, string>> = { ekah: "2–6 players", ludo: "2–4 players", snakes: "2–4 players", chess: "2 players", sudoku: "Solo or race", words: "300 levels" };
+const SOLO: Partial<Record<GameId, string>> = { sudoku: "Play solo", chess: "vs Computer", words: "Play" };
 const SAVED: Partial<Record<GameId, () => boolean>> = {
   ludo: () => hasSavedGame(SAVE_KEYS.ludo), ekah: () => hasSavedGame(SAVE_KEYS.ekah), snakes: () => hasSavedGame(SAVE_KEYS.snakes),
   chess: chessInProgress, sudoku: sudokuInProgress,

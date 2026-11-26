@@ -19,7 +19,7 @@ import "./app-shell.css";
    Settings. Phones: bottom bar. Tablets (840px+): side rail. Only used inside the app; the website keeps its own
    home page, and the games open full screen outside this shell. Name and logo are placeholders until final. */
 
-export type AppTab = "home" | "friends" | "rewards" | "profile" | "settings";
+export type AppTab = "home" | "games" | "friends" | "learn" | "profile" | "settings";
 
 const ART: Record<GameId, () => ReactNode> = {
   ekah: () => <EkahArt />, ludo: () => <LudoArt />, snakes: () => <SnakesArt />, chess: () => <ChessArt />, sudoku: () => <SudokuArt />, words: () => <WordArt />,
@@ -31,11 +31,10 @@ const SAVED: Partial<Record<GameId, () => boolean>> = {
   ludo: () => hasSavedGame(SAVE_KEYS.ludo), ekah: () => hasSavedGame(SAVE_KEYS.ekah), snakes: () => hasSavedGame(SAVE_KEYS.snakes),
   chess: chessInProgress, sudoku: sudokuInProgress,
 };
-const GAME_KEY = "rc-app-game";
 const fmtCoins = (n: number) => n.toLocaleString("en-IN");
 
 /* ---------- small pieces ---------- */
-type IconName = "home" | "friends" | "gift" | "user" | "gear" | "plus" | "play" | "bot" | "fire" | "check" | "lock" | "chevron" | "trophy" | "star";
+type IconName = "home" | "friends" | "gift" | "user" | "gear" | "plus" | "play" | "bot" | "fire" | "check" | "lock" | "chevron" | "trophy" | "star" | "games" | "book" | "bell" | "bolt" | "layers";
 export function Icon({ name, size = 22 }: { name: IconName; size?: number }) {
   const p = { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2.2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
   switch (name) {
@@ -52,6 +51,11 @@ export function Icon({ name, size = 22 }: { name: IconName; size?: number }) {
     case "lock": return <svg {...p}><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>;
     case "trophy": return <svg {...p}><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z" /><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3" /></svg>;
     case "star": return <svg {...p}><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z" fill="currentColor" stroke="none" /></svg>;
+    case "games": return <svg {...p}><path d="M6 8h12a4 4 0 0 1 3.8 5.2l-1 3.4a2.5 2.5 0 0 1-4.2 1L15 16H9l-1.6 1.6a2.5 2.5 0 0 1-4.2-1l-1-3.4A4 4 0 0 1 6 8Z"/><path d="M7 11v4M5 13h4M16.5 12h.01M18.5 14h.01"/></svg>;
+    case "book": return <svg {...p}><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21z"/><path d="M4 5.5V21M8 7h8M8 11h8"/></svg>;
+    case "bell": return <svg {...p}><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>;
+    case "bolt": return <svg {...p}><path d="M13 2 4.8 13h6.1L10 22l9.2-12h-6.4z" fill="currentColor" stroke="none"/></svg>;
+    case "layers": return <svg {...p}><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5"/></svg>;
     default: return <svg {...p}><path d="M9 6l6 6-6 6" /></svg>;
   }
 }
@@ -115,45 +119,38 @@ export interface AppShellProps {
   profile: ReactNode;
 }
 
-const NAV: { id: AppTab | "play"; label: string; icon: IconName }[] = [
-  { id: "home", label: "Home", icon: "home" }, { id: "friends", label: "Friends", icon: "friends" }, { id: "play", label: "PLAY", icon: "play" },
-  { id: "rewards", label: "Rewards", icon: "gift" }, { id: "profile", label: "Profile", icon: "user" },
+const NAV: { id: AppTab; label: string; icon: IconName }[] = [
+  { id: "home", label: "Home", icon: "home" }, { id: "games", label: "Games", icon: "games" },
+  { id: "friends", label: "Friends", icon: "friends" }, { id: "learn", label: "Learn", icon: "book" },
+  { id: "profile", label: "Profile", icon: "user" },
 ];
 
 export default function AppShell({ tab, onTab, onOpen, onJoin, profile }: AppShellProps) {
   const w = useWallet();
   const bg = useBg();
-  const shown = w.owned.includes(bg) ? bg : BGS[0].id;            // a colour this account hasn't unlocked falls back to Emerald
-  const games = TILES.filter(t => isListed(t.id));
-  const [game, setGame] = useState<GameId>(() => { try { const v = window.localStorage.getItem(GAME_KEY) as GameId | null; return v && games.some(g => g.id === v) ? v : (games.find(g => g.id === "ludo") ?? games[0]).id; } catch { return games[0].id; } });
-  const pickGame = (id: GameId) => { setGame(id); try { window.localStorage.setItem(GAME_KEY, id); } catch { /* storage off */ } };
+  const shown = w.owned.includes(bg) ? bg : BGS[0].id;
+  const games = TILES.filter(t => isListed(t.id) && t.id !== "sudoku");
   const [earned, setEarned] = useState<Earned | null>(null);
-  const [friendGame, setFriendGame] = useState<RoomGame | null>(null);
 
   const ready = useWalletReady();
   useEffect(() => { if (!ready) return; refreshDay(); const e = collectGames(); if (e.games) setEarned(e); }, [ready]);
 
-  return <div className={`rx${isCream(shown) ? " rx-light" : ""}`} style={shellVars(shown) as CSSProperties}>
+  return <div className={`rx rx-reference${isCream(shown) ? " rx-light" : ""}`} style={shellVars(shown) as CSSProperties}>
     <GameArtDefs />
     <Toast />
-    <div className="rx-top">
-      {tab === "home" && <h1 className="rx-logo"><img src="/brand/ambaro-logo.webp" alt="Ambaro" width={960} height={326} /></h1>}
-      <Hud onTab={onTab} />
-    </div>
+    <div className="rx-top"><Hud onTab={onTab} /></div>
     <main className="rx-main">
-      {tab === "home" && <HomeStage games={games.map(g => g.id)} game={game} onPick={pickGame} onOpen={onOpen} onTab={onTab} onFriends={g => { setFriendGame(g); onTab("friends"); }} />}
-      {tab === "friends" && <FriendsTab onOpen={onOpen} onJoin={onJoin} initial={friendGame} />}
-      {tab === "rewards" && <RewardsTab />}
-      {tab === "profile" && <ProfileTab profile={profile} />}
+      {tab === "home" && <HomeStage games={games.map(g => g.id)} game="ludo" onOpen={onOpen} onTab={onTab} />}
+      {tab === "games" && <GamesTab games={games.map(g => g.id)} onOpen={onOpen} />}
+      {tab === "friends" && <FriendsTab onOpen={onOpen} onJoin={onJoin} initial={null} />}
+      {tab === "learn" && <RewardsTab />}
+      {tab === "profile" && <ProfileTab profile={profile} onSettings={() => onTab("settings")} />}
       {tab === "settings" && <SettingsTab />}
     </main>
     <nav className="rx-nav" aria-label="Main">
-      <span className="rx-rail-mark" aria-hidden="true"><img src="/brand/ambaro-elephant.webp" alt="" width={480} height={403} /></span>
-      {NAV.map(n => n.id === "play"
-        ? <button key="play" type="button" className="rx-navplay" aria-label={`Play ${games.find(g => g.id === game)?.name ?? ""}`} onClick={() => onOpen(game)}><Icon name="play" size={28} />PLAY</button>
-        : <button key={n.id} type="button" className={`rx-navbtn${tab === n.id ? " on" : ""}`} aria-current={tab === n.id ? "page" : undefined} onClick={() => onTab(n.id as AppTab)}>
-            <Icon name={n.icon} size={25} />{n.label}{n.id === "rewards" && <RewardsDot />}
-          </button>)}
+      {NAV.map(n => <button key={n.id} type="button" className={`rx-navbtn${tab === n.id ? " on" : ""}`} aria-current={tab === n.id ? "page" : undefined} onClick={() => onTab(n.id)}>
+          <Icon name={n.icon} size={25} />{n.label}{n.id === "learn" && <RewardsDot />}
+        </button>)}
     </nav>
     {earned && <EarnedDialog e={earned} onClose={() => setEarned(null)} />}
   </div>;
@@ -169,84 +166,96 @@ function RewardsDot() {
 function Hud({ onTab }: { onTab: (t: AppTab) => void }) {
   const w = useWallet();
   const { username, guest, session } = useAccount();
-  const lv = R.levelOf(w.xp);
   const name = username ?? (session && !guest ? "Player" : "Guest");
   return <header className="rx-hud">
-    <button type="button" className="rx-me" onClick={() => onTab("profile")} aria-label={`Your profile, level ${lv.level}`}>
-      <span className="rx-avatar"><span>{name.slice(0, 1).toUpperCase()}</span><b>{lv.level}</b></span>
-      <span className="rx-me-text"><strong>{name}</strong><span className="rx-xpbar" aria-hidden="true"><span style={{ width: `${Math.round(lv.pct * 100)}%` }} /></span></span>
+    <img className="rx-brand-logo" src="/brand/ambaro-logo.webp" alt="Ambaro" width={960} height={326} />
+    <span className="rx-brand-spacer" />
+    <button type="button" className="rx-brand-coins" onClick={() => onTab("learn")} aria-label={`${w.coins} coins`}>
+      <Coin size={25} /><span>{fmtCoins(w.coins)}<small>COINS</small></span>
     </button>
-    <button type="button" className="rx-coins" onClick={() => onTab("rewards")} aria-label={`${w.coins} coins. Earn more in Rewards`}>
-      <Coin size={26} /><span>{fmtCoins(w.coins)}</span>
-    </button>
-    <button type="button" className="rx-gear" onClick={() => onTab("settings")} aria-label="Settings"><Icon name="gear" size={22} /></button>
+    <button type="button" className="rx-brand-action" onClick={() => onTab("learn")} aria-label="Notifications"><Icon name="bell" size={21} /><i /></button>
+    <button type="button" className="rx-brand-action" onClick={() => onTab("profile")} aria-label={`Profile for ${name}`}><Icon name="user" size={22} /></button>
   </header>;
 }
 
-/* ---------- home: the Game Stage ---------- */
-function HomeStage({ games, game, onPick, onOpen, onTab, onFriends }: {
-  games: GameId[]; game: GameId; onPick: (id: GameId) => void; onOpen: (id: GameId) => void; onTab: (t: AppTab) => void; onFriends: (g: RoomGame) => void;
+/* ---------- Ambaro mobile home ---------- */
+const APP_GAME_NAMES: Partial<Record<GameId, string>> = { ludo: "Ludo", snakes: "Snakes & Ladders", chess: "Chess", ekah: "EKAH", words: "Tap Quest" };
+const APP_GAME_BLURBS: Partial<Record<GameId, string>> = {
+  ludo: "Classic fun with friends", snakes: "Roll, climb and win", chess: "Strategy. Skill. Victory.",
+  ekah: "Match, play and be first!", words: "Discover words · 300 levels",
+};
+type LibraryFilter = "all" | "board" | "card" | "strategy" | "word";
+const appCategory = (id: GameId): LibraryFilter => id === "ludo" || id === "snakes" ? "board" : id === "ekah" ? "card" : id === "chess" ? "strategy" : "word";
+const APP_FEATURES: GameId[] = ["ekah", "ludo", "words"];
+
+function HomeStage({ games, game, onOpen, onTab }: {
+  games: GameId[]; game: GameId; onOpen: (id: GameId) => void; onTab: (t: AppTab) => void;
 }) {
-  const w = useWallet(), now = useNow();
-  const tile = TILES.find(t => t.id === game)!;
+  const [filter, setFilter] = useState<LibraryFilter>("all");
+  const [featured, setFeatured] = useState(0);
+  const [touchX, setTouchX] = useState<number | null>(null);
   const resume = findResume();
-  const room = resume && resume.code && resume.id === game ? resume : null;
-  const saved = !room && (SAVED[game]?.() ?? false);
-  const chest = R.chestStatus(w, now), daily = R.dailyStatus(w, now), missions = R.missionView(w, now);
-  const done = missions.list.filter(m => m.claimed).length;
-  const roomGame = RESUME.some(r => r.id === game && isListed(r.id)) ? (game as RoomGame) : null;
+  const featureId = APP_FEATURES[featured];
+  const featureName = APP_GAME_NAMES[featureId] ?? featureId;
+  const playFeatured = () => onOpen(featureId);
+  const swipeFeatured = (x: number) => {
+    if (touchX === null || Math.abs(x - touchX) < 36) return;
+    setFeatured(i => (i + (x < touchX ? 1 : -1) + APP_FEATURES.length) % APP_FEATURES.length);
+    setTouchX(null);
+  };
 
   return <div className="rx-page rx-home">
-    <div className="rx-chips">
-      <button type="button" className={`rx-chip${chest.ready ? " ready" : ""}`} onClick={() => chest.ready ? earn(claimChest(), "free gift") : onTab("rewards")}>
-        <span className="rx-chip-ico gold"><Icon name="gift" size={19} /></span>
-        <span><strong>Free gift</strong><small>{chest.ready ? "Open now!" : chest.nextAt ? left(chest.nextAt - now) : ""}</small></span>
-      </button>
-      <button type="button" className={`rx-chip${daily.done ? "" : " ready"}`} onClick={() => onTab("rewards")}>
-        <span className="rx-chip-ico saffron"><Icon name="fire" size={19} /></span>
-        <span><strong>{daily.done ? "Streak" : "Daily gift"}</strong><small>{daily.done ? `${w.streak} day${w.streak === 1 ? "" : "s"}` : `Day ${daily.index + 1} ready`}</small></span>
-      </button>
-      <button type="button" className="rx-chip" onClick={() => onTab("rewards")}>
-        <span className="rx-chip-ico green"><Icon name="trophy" size={19} /></span>
-        <span><strong>Missions</strong><small>{done}/3 done</small></span>
-      </button>
-    </div>
+    <section className="rx-quick-actions" aria-label="Quick play">
+      <button type="button" onClick={() => onTab("friends")}><Icon name="friends" size={27} /><strong>With Friends</strong></button>
+      <button type="button" onClick={() => onOpen(game)}><Icon name="bolt" size={29} /><strong>Quick Game</strong></button>
+      <button type="button" onClick={() => onTab("games")}><Icon name="layers" size={27} /><strong>Classics</strong></button>
+    </section>
 
-    <Glider items={games} selected={game} label={id => TILES.find(t => t.id === id)?.name ?? id}
-      onSelect={id => { onPick(id); buzz(8); }} onOpen={onOpen}
-      render={id => {
-        const name = TILES.find(t => t.id === id)?.name ?? id;
-        const r = resume && resume.code && resume.id === id ? resume : null;
-        const sv = !r && (SAVED[id]?.() ?? false);
-        return <>
-          <span className="rx-card-art">{ART[id]()}</span>
-          <span className="rx-card-shade" aria-hidden="true" />
-          {(r || sv) && <span className="rx-badge green">● {r ? `Room ${r.code}` : "Saved game"}</span>}
-          <span className="rx-badge dark">{PLAYERS[id]}</span>
-          <span className="rx-ribbon"><span>{name}</span></span>
-        </>;
-      }} />
-    <div className="rx-medals" role="tablist" aria-label="Games">
-      {games.map(g => <button key={g} type="button" role="tab" aria-selected={g === game} aria-label={TILES.find(t => t.id === g)?.name} className={`rx-medal${g === game ? " on" : ""}`} onClick={() => { onPick(g); buzz(8); }}>{ART[g]()}</button>)}
-    </div>
-
-    <div className="rx-actions">
-      <button type="button" className="rx-go" onClick={() => onOpen(game)}>
-        <span className="rx-go-shine" aria-hidden="true" />
-        <span className="rx-go-thumb" aria-hidden="true">{ART[game]()}</span>
-        <span className="rx-go-text">
-          <strong>{room ? "BACK TO ROOM" : saved ? `CONTINUE ${tile.name.toUpperCase()}` : `PLAY ${tile.name.toUpperCase()}`}</strong>
-          <small>{room ? `Room ${room.code} · tap to return` : saved ? "Saved game · pick up where you left" : "Tap the card or here to start"}</small>
-        </span>
-        <span className="rx-go-play" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor" /></svg></span>
-      </button>
-      <div className="rx-two">
-        <button type="button" className="rx-btn rx-green" onClick={() => onOpen(game)}><Icon name="bot" size={20} />{SOLO[game] ?? "vs Computer"}</button>
-        <button type="button" className="rx-btn rx-blue" disabled={!roomGame} onClick={() => roomGame && onFriends(roomGame)}><Icon name="friends" size={20} />With Friends</button>
+    <section className={`rx-feature-banner rx-feature-${featureId}`} aria-label="Featured game" onTouchStart={e => setTouchX(e.changedTouches[0]?.screenX ?? null)} onTouchEnd={e => swipeFeatured(e.changedTouches[0]?.screenX ?? 0)}>
+      <div className="rx-feature-copy"><small>{featureId === "ekah" ? "AMBARO ORIGINAL" : featureId === "ludo" ? "FRIENDS · 2–4 PLAYERS" : "WORD PUZZLE · 300 LEVELS"}</small>
+        <h1>{featureId === "ekah" ? "EKAH" : featureName}</h1>
+        <p>{featureId === "ekah" ? <>Our own card game<br />Agni · Vayu · Prithvi · Jal</> : featureId === "ludo" ? <>Bring your people to the table.<br />Classic fun, one more round.</> : <>Follow the trail of letters.<br />Find the word. Unlock the next.</>}</p>
+        <button className="rx-feature-play" type="button" onClick={playFeatured}>Play Now <Icon name="chevron" size={16} /></button>
       </div>
+      {featureId === "ekah" ? <div className="rx-elemental-cards" aria-hidden="true"><span className="fire">♨</span><span className="water">≈</span><span className="leaf">♧</span><span className="drop">◉</span></div>
+        : <div className="rx-feature-art" aria-hidden="true">{ART[featureId]?.()}</div>}
+      <div className="rx-feature-dots" role="tablist" aria-label="Featured games">{APP_FEATURES.map((id, i) => <button key={id} type="button" role="tab" aria-label={APP_GAME_NAMES[id]} aria-selected={i === featured} className={i === featured ? "on" : ""} onClick={() => setFeatured(i)} />)}</div>
+    </section>
+
+    <div className="rx-section-heading"><h2>Continue Playing</h2><button type="button" onClick={() => onTab("games")}>See all <span aria-hidden="true">›</span></button></div>
+    <div className="rx-recent-row" aria-label="Continue playing">
+      {(["ludo", "snakes"] as GameId[]).map((id, i) => {
+        const saved = SAVED[id]?.() ?? false;
+        const live = resume?.id === id && !!resume.code;
+        return <article className="rx-recent-card" key={id}>
+          <span className="rx-recent-art">{ART[id]()}</span><span className="rx-recent-copy"><strong>{APP_GAME_NAMES[id]}</strong><small>{live ? `Room ${resume?.code}` : saved ? "Saved game · continue" : i === 0 ? "Play a classic with friends" : "A family favorite"}</small></span>
+          <button type="button" onClick={() => onOpen(id)}>{live || saved ? "Resume" : "Play"} <span aria-hidden="true">›</span></button>
+        </article>;
+      })}
     </div>
-    <p className="rx-promise">Free to play · Coins are for fun only, never real money</p>
+
+    <GameLibrary games={games} onOpen={onOpen} filter={filter} onFilter={setFilter} compact />
+    <p className="rx-promise">Free to play · Coins are for fun only</p>
   </div>;
+}
+
+function GameLibrary({ games, onOpen, filter, onFilter, compact = false }: { games: GameId[]; onOpen: (id: GameId) => void; filter: LibraryFilter; onFilter: (f: LibraryFilter) => void; compact?: boolean }) {
+  const filters: { id: LibraryFilter; label: string }[] = [{ id: "all", label: "All" }, { id: "board", label: "Board" }, { id: "card", label: "Card" }, { id: "strategy", label: "Strategy" }, { id: "word", label: "Word" }];
+  const items = games.filter(id => filter === "all" || appCategory(id) === filter);
+  return <section className={`rx-library${compact ? " compact" : ""}`} aria-label="Our games">
+    <div className="rx-games-heading"><h2>{compact ? "Our Games" : "Choose your game"}</h2>
+      <div className="rx-game-filters" role="group" aria-label="Filter games">{filters.map(f => <button key={f.id} type="button" aria-pressed={filter === f.id} onClick={() => onFilter(f.id)}>{f.label}</button>)}</div>
+    </div>
+    <div className="rx-game-grid">{items.map(id => <button type="button" className={`rx-app-game rx-app-game-${id}`} key={id} onClick={() => onOpen(id)}>
+      <span className="rx-app-game-art">{ART[id]()}</span><span className="rx-app-game-shade" />
+      <span className="rx-app-game-copy"><span><strong>{APP_GAME_NAMES[id] ?? id}</strong><small>{APP_GAME_BLURBS[id]}</small></span><i>Play <b>›</b></i></span>
+    </button>)}</div>
+  </section>;
+}
+
+function GamesTab({ games, onOpen }: { games: GameId[]; onOpen: (id: GameId) => void }) {
+  const [filter, setFilter] = useState<LibraryFilter>("all");
+  return <div className="rx-page rx-games-tab"><GameLibrary games={games} onOpen={onOpen} filter={filter} onFilter={setFilter} /></div>;
 }
 
 function EarnedDialog({ e, onClose }: { e: Earned; onClose: () => void }) {
@@ -272,7 +281,7 @@ function RewardsTab() {
   const daily = R.dailyStatus(w, now), chest = R.chestStatus(w, now), m = R.missionView(w, now);
   const next = R.SHOP.filter(s => s.id.startsWith("bg-") && !w.owned.includes(s.id)).sort((a, b) => a.level - b.level)[0];
   return <div className="rx-page rx-rewards">
-    <h1 className="rx-title">Rewards</h1>
+    <h1 className="rx-title">Learn &amp; Earn</h1>
 
     <section className="rx-card-box rx-level" aria-label="Your level">
       <span className="rx-level-badge"><small>LEVEL</small>{lv.level}</span>
@@ -358,12 +367,12 @@ function LookPicker() {
 }
 
 /* ---------- profile ---------- */
-function ProfileTab({ profile }: { profile: ReactNode }) {
+function ProfileTab({ profile, onSettings }: { profile: ReactNode; onSettings: () => void }) {
   const w = useWallet();
   const lv = R.levelOf(w.xp);
   const NAMES: Record<string, string> = { ekah: "EKAH", ludo: "Ludo", snakes: "Snakes & Ladders", chess: "Chess", sudoku: "Sudoku", words: "Word Puzzle" };
   return <div className="rx-page rx-profile">
-    <h1 className="rx-title">Profile</h1>
+    <div className="rx-page-title"><h1 className="rx-title">Profile</h1><button type="button" className="rx-profile-settings" onClick={onSettings}><Icon name="gear" size={21}/>Settings</button></div>
     <section className="rx-stats" aria-label="Your stats">
       <div><b>{lv.level}</b><small>Level</small></div>
       <div><b>{fmtCoins(w.life.played)}</b><small>Games</small></div>

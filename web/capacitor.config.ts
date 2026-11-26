@@ -1,15 +1,16 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
-/* Ambaro Android app (Capacitor). The app id stays com.royalclubgames.app (changing it would make a different app).
+/* Ambaro Android app (Capacitor). The design branch uses its own app id so it can be installed beside the existing app.
    - Default ("bundled"): the games ship inside the app from dist/, so vs-computer play works offline.
    - Test build: the GitHub workflow sets CAP_SERVER_URL=https://test.royalclubgames.com, so the test app
      opens the test site directly and picks up every game change without a new APK. */
 declare const process: { env: Record<string, string | undefined> };
 const liveUrl = (process.env.CAP_SERVER_URL ?? "").trim();
 const appName = (process.env.ANDROID_APP_NAME ?? "Ambaro").trim() || "Ambaro";
+const appId = (process.env.ANDROID_APP_ID ?? "com.royalclubgames.app").trim() || "com.royalclubgames.app";
 
 const config: CapacitorConfig = {
-  appId: "com.royalclubgames.app",
+  appId,
   appName,
   webDir: "dist",
   /* Shown behind the status and navigation bars (and while a page loads): the app's dark night-green. */

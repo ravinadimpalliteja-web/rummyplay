@@ -4,7 +4,7 @@ name: Ambaro Android app
 # Two APKs come out of every run (download them from the run's "Artifacts" section):
 #   RoyalClub-test.apk    – opens test.royalclubgames.com, so every game change shows up without a new APK.
 #   RoyalClub-offline.apk – the games are packaged inside the app (works offline); this is the shape of the Play Store app.
-# Both use the same app id, so install one of them at a time.
+# The chatgpt-design branch uses a separate package id so its APK can sit beside the existing Ambaro app.
 #   RoyalClub-play.aab    – the Play Store bundle (games packaged inside), signed with the upload key from the
 #                           repository secrets. Upload it in Play Console. Built only when those secrets exist.
 
@@ -36,10 +36,11 @@ jobs:
       VITE_ROOM_SERVER_URL: ${{ vars.VITE_ROOM_SERVER_URL || 'wss://royal-club-rooms.ravi-nadimpalli-teja.workers.dev' }}
       TEST_SITE_URL: ${{ vars.TEST_SITE_URL || 'https://test.royalclubgames.com' }}
       ANDROID_APP_NAME: ${{ github.ref == 'refs/heads/chatgpt-design' && 'Ambaro Design' || 'Ambaro' }}
-      HAS_UPLOAD_KEY: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_B64 != '' }}
+      ANDROID_APP_ID: ${{ github.ref == 'refs/heads/chatgpt-design' && 'com.royalclubgames.chatgptdesign' || 'com.royalclubgames.app' }}
+      HAS_UPLOAD_KEY: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_B64 != '' && github.ref != 'refs/heads/chatgpt-design' }}
       # Crash reports (Firebase Crashlytics) are added only when the GOOGLE_SERVICES_JSON secret holds the
       # google-services.json file from the Firebase project (Android app id com.royalclubgames.app).
-      HAS_FIREBASE: ${{ secrets.GOOGLE_SERVICES_JSON != '' }}
+      HAS_FIREBASE: ${{ secrets.GOOGLE_SERVICES_JSON != '' && github.ref != 'refs/heads/chatgpt-design' }}
     steps:
       - uses: actions/checkout@v5
 

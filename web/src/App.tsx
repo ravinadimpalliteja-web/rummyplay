@@ -16,10 +16,10 @@ import AppShell, { RxDialog } from "./app/AppShell";
 import { App as NativeApp } from "@capacitor/app";
 import { takeJoinLink } from "./lib/share";
 import {botMove,glyph,goBlind,legal,newMatch,nextRound,playHuman,red,resumeAfterTrick,seeCards,submitBid,timeoutAction,type Card,type Match} from "./domain/spades";
-type Screen="home"|"lobby"|"room"|"table"|"snakes"|"ludo"|"profile"|"friends"|"rewards"|"settings";
+type Screen="home"|"games"|"learn"|"lobby"|"room"|"table"|"snakes"|"ludo"|"profile"|"friends"|"rewards"|"settings";
 /* Inside the Android app the home, friends, profile and settings screens use the app layout (AppShell); games open full screen. */
 const NATIVE=isNativeApp();
-const isTab=(s:Screen):s is "home"|"friends"|"rewards"|"profile"|"settings"=>s==="home"||s==="friends"||s==="rewards"||s==="profile"||s==="settings";
+const isTab=(s:Screen):s is "home"|"games"|"learn"|"friends"|"profile"|"settings"=>s==="home"||s==="games"||s==="learn"||s==="friends"||s==="profile"||s==="settings";
 function PlayingCard({card,onClick,disabled=false,small=false}:{card:Card;onClick?:()=>void;disabled?:boolean;small?:boolean}){return <button className={`playing-card ${red(card.suit)?"red":"black"} ${small?"small":""} ${disabled?"disabled":""}`} disabled={disabled||!onClick} onClick={onClick}><span>{card.rank}<i>{glyph[card.suit]}</i></span><b>{glyph[card.suit]}</b><span className="flip">{card.rank}<i>{glyph[card.suit]}</i></span></button>}
 export default function App(){const[navSection,setNavSection]=useState<"home"|"games"|"learn"|"friends">("home"),[screen,setScreen]=useState<Screen>("home"),[mode,setMode]=useState<PlayMode>("practice"),[local,setMatch]=useState<Match|null>(null),[bid,setBid]=useState("0"),[scores,setScores]=useState(false),[roundCountdown,setRoundCountdown]=useState(15),[roundStage,setRoundStage]=useState<"review"|"starting">("review"),[timeLeft,setTimeLeft]=useState<number|null>(null),[pick,setPick]=useState<"practice"|"online"|"room">("practice"),[roomTab,setRoomTab]=useState<"create"|"join">("create"),[roomCode,setRoomCode]=useState(""),[roomPass,setRoomPass]=useState(""),[roomMsg,setRoomMsg]=useState(""),[view,setView]=useState<View|null>(null),[net,setNet]=useState<NetStatus>("idle"),[,setTick]=useState(0);
 const[joinCode,setJoinCode]=useState<string|undefined>(undefined),[joinPass,setJoinPass]=useState<string|undefined>(undefined);

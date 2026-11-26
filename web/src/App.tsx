@@ -30,7 +30,7 @@ const openGame=(id:GameId)=>{if(id==="chess"){window.location.href=pageHref("/ch
 const screenRef=useRef<Screen>("home");screenRef.current=screen;
 const[ask,setAsk]=useState<null|"exit"|"leave">(null),askRef=useRef(ask);askRef.current=ask;
 /* App only: the Android back button never drops you out. Tabs go to Home, Home asks before closing the app, and a game in progress asks before leaving. */
-useEffect(()=>onNativeBack(()=>{const s=screenRef.current;if(askRef.current){setAsk(null);return true}if(s==="home"){setAsk("exit");return true}if((s==="snakes"||s==="ludo")&&document.querySelector(".al-page")){setJoinCode(undefined);setScreen("home");return true}if(s==="snakes"||s==="ludo"||s==="table"){setAsk("leave");return true}setJoinCode(undefined);setScreen(s==="room"?"lobby":"home");return true}),[]);
+useEffect(()=>onNativeBack(()=>{const s=screenRef.current;if(askRef.current){setAsk(null);return true}if(s==="home"){setAsk("exit");return true}if((s==="snakes"||s==="ludo")&&document.querySelector(".amb-lobby")){setJoinCode(undefined);setScreen("home");return true}if(s==="snakes"||s==="ludo"||s==="table"){setAsk("leave");return true}setJoinCode(undefined);setScreen(s==="room"?"lobby":"home");return true}),[]);
 const clientRef=useRef<RoomClient|null>(null),skew=useRef(0),lastPhase=useRef<string|null>(null);
 const online=!!view&&view.phase!=="lobby",match=useMemo<Match|null>(()=>online&&view?toMatch(view):local,[view,local,online]);
 const send=(o:object)=>clientRef.current?.send(o);

@@ -1,20 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
   <defs>
-    <radialGradient id="bg" cx="50%" cy="35%" r="78%"><stop stop-color="#146247"/><stop offset="1" stop-color="#03271E"/></radialGradient>
-    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFF1B2"/><stop offset=".32" stop-color="#E8C05C"/><stop offset=".68" stop-color="#B87C22"/><stop offset="1" stop-color="#FFE78B"/></linearGradient>
-    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#21815B"/><stop offset="1" stop-color="#06412F"/></linearGradient>
-    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="26" stdDeviation="22" flood-color="#001A13" flood-opacity=".7"/></filter>
+    <radialGradient id="green" cx="48%" cy="22%" r="88%"><stop stop-color="#176848"/><stop offset="1" stop-color="#042b20"/></radialGradient>
+    <linearGradient id="cream" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff8df"/><stop offset="1" stop-color="#e8d8ad"/></linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2=".9" y2="1"><stop stop-color="#ffed9e"/><stop offset=".52" stop-color="#e7b94f"/><stop offset="1" stop-color="#aa6b19"/></linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="28" stdDeviation="25" flood-color="#00180f" flood-opacity=".62"/></filter>
   </defs>
-  <rect width="1024" height="1024" rx="230" fill="url(#bg)"/>
-  <circle cx="512" cy="512" r="395" fill="none" stroke="#D4AC50" stroke-opacity=".22" stroke-width="2"/>
-  <g filter="url(#shadow)" transform="rotate(45 512 512)">
-    <rect x="232" y="232" width="560" height="560" rx="145" fill="url(#gold)"/>
-    <rect x="254" y="254" width="516" height="516" rx="126" fill="url(#tile)" stroke="#FFF0B2" stroke-opacity=".72" stroke-width="5"/>
-    <rect x="278" y="278" width="468" height="468" rx="108" fill="none" stroke="#DCC36E" stroke-opacity=".38" stroke-width="3"/>
+  <rect width="1024" height="1024" rx="230" fill="url(#green)"/>
+  <path d="M0 790c210-108 360-2 533-93 167-88 310-91 491-2v329H0z" fill="#04271e" opacity=".6"/>
+  <circle cx="512" cy="450" r="340" fill="none" stroke="#e9ca79" stroke-opacity=".2" stroke-width="5"/>
+  <g filter="url(#shadow)">
+    <rect x="245" y="194" width="535" height="650" rx="78" transform="rotate(8 245 194)" fill="#7c1d26" stroke="url(#gold)" stroke-width="20"/>
+    <rect x="246" y="165" width="535" height="650" rx="78" transform="rotate(-7 246 165)" fill="url(#cream)" stroke="url(#gold)" stroke-width="22"/>
+    <rect x="294" y="212" width="440" height="553" rx="47" transform="rotate(-7 294 212)" fill="none" stroke="#176343" stroke-opacity=".5" stroke-width="8"/>
+    <path d="M512 315c-71 90-80 168 0 248 80-80 71-158 0-248Z" fill="#0e5a3b"/>
+    <path d="M512 364v302" stroke="url(#gold)" stroke-width="22" stroke-linecap="round"/>
+    <path d="M400 476c42 0 78 35 78 78 0 45-35 80-78 80m224-158c-42 0-78 35-78 78 0 45 35 80 78 80" fill="none" stroke="#0e5a3b" stroke-width="24" stroke-linecap="round"/>
+    <circle cx="400" cy="634" r="26" fill="url(#gold)"/><circle cx="624" cy="634" r="26" fill="url(#gold)"/>
   </g>
-  <g fill="url(#gold)" stroke="#81591D" stroke-opacity=".65" stroke-width="4" stroke-linejoin="round">
-    <path d="M512 328c-48 60-55 111 0 169 55-58 48-109 0-169Z"/><path d="M696 512c-60-48-111-55-169 0 58 55 109 48 169 0Z"/>
-    <path d="M512 696c48-60 55-111 0-169-55 58-48 109 0 169Z"/><path d="M328 512c60 48 111 55 169 0-58-55-109-48-169 0Z"/>
-  </g>
-  <g fill="#FFF5D1" stroke="#8E6928" stroke-width="4"><circle cx="474" cy="474" r="18"/><circle cx="550" cy="474" r="18"/><circle cx="474" cy="550" r="18"/><circle cx="550" cy="550" r="18"/></g>
 </svg>

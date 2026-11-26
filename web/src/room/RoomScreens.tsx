@@ -4,6 +4,7 @@ import { openAuth, useAccount } from "../auth/account";
 import { copyText, shareOnWhatsApp } from "../lib/share";
 import { isNativeApp } from "../lib/native";
 import AppLobby from "../app/AppLobby";
+import AmbaroWaitingRoom from "../app/AmbaroWaitingRoom";
 
 /* The Royal Club room format, shared by every game (modelled on EKAH). Use these two screens for any new game:
 
@@ -167,6 +168,10 @@ export type WaitProps = {
 };
 
 export function WaitingRoom(p: WaitProps) {
+  return NATIVE ? <AmbaroWaitingRoom p={p} /> : <WebWaitingRoom p={p} />;
+}
+
+function WebWaitingRoom(p: WaitProps) {
   const seated = p.seats.filter(Boolean) as WaitSeat[];
   const humansOk = seated.filter(s => !s.bot).every(s => s.connected);
   const ready = seated.length >= 2 && humansOk;

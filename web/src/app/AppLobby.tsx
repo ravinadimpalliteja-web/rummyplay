@@ -1,130 +1,32 @@
-/* The app-style game lobby (Android app only; the website keeps <PlayStart>'s page). Same props as <PlayStart>, so
-   every game that uses it gets this lobby: big artwork with a back arrow and a rules button, the game's name, a
-   "Continue your game" card when there is one, "How do you want to play?" mode cards (vs Computer, Pass & Play when the
-   game has it, With Friends), that mode's own options, the game's extra options (token sets, dice, start rule…) and a
-   big PLAY button at the bottom. Nothing the game offers is removed: the same controls, laid out like an app. */
+/* Standalone Ambaro game lobby. Game rules and room actions arrive through StartProps; this file owns only the app UI. */
 import { useState } from "react";
-import { GameArtDefs } from "../home/GameArt";
 import { CPU_LEVELS, RoomAccountLine, type StartProps } from "../room/RoomScreens";
-import { bgVars, useBg } from "./theme";
-import "./app-lobby.css";
+import "./independent-app.css";
 
-type Mode = "computer" | "pass" | "friends";
-const MODE_KEY = (game: string) => `rc-tab-${game.toLowerCase().replace(/[^a-z]+/g, "-")}`;
-
-const I = {
-  back: <path d="M15 5l-7 7 7 7" />,
-  help: <><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6" /><circle cx="12" cy="17" r=".6" fill="currentColor" /></>,
-  bot: <><rect x="4" y="7" width="16" height="12" rx="3" /><path d="M12 7V4" /><circle cx="9" cy="13" r="1.3" fill="currentColor" /><circle cx="15" cy="13" r="1.3" fill="currentColor" /></>,
-  phone: <><rect x="7" y="2.5" width="10" height="19" rx="2.5" /><path d="M11 18.5h2" /></>,
-  friends: <><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5" /><circle cx="17" cy="9" r="2.5" /><path d="M17 14c2.3.2 4 1.8 4.5 4.5" /></>,
-  play: <path d="M8 5.5v13l10.5-6.5z" fill="currentColor" stroke="none" />,
-  close: <><path d="M6 6l12 12" /><path d="M18 6L6 18" /></>,
-};
-const Ico = ({ d, size = 24 }: { d: keyof typeof I; size?: number }) =>
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.3} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{I[d]}</svg>;
-
-export default function AppLobby(p: StartProps) {
-  const f = p.friends;
-  const hasPass = !!p.passPlay && !!p.passStart;
-  const [mode, setModeState] = useState<Mode>(() => {
-    if (p.msg) return "friends";
-    try {
-      const t = window.localStorage.getItem(MODE_KEY(p.game));
-      return t === "friends" ? "friends" : t === "pass" && hasPass ? "pass" : "computer";
-    } catch { return "computer"; }
-  });
-  const setMode = (m: Mode) => { setModeState(m); try { window.localStorage.setItem(MODE_KEY(p.game), m); } catch { /* storage off */ } };
-  const [rules, setRules] = useState(false);
-  const bg = useBg();
-
-  const card = (m: Mode, icon: keyof typeof I, title: string, sub: string) =>
-    <button type="button" role="radio" aria-checked={mode === m} className={`al-mode${mode === m ? " on" : ""}`} onClick={() => setMode(m)}>
-      <span className="al-mode-ico"><Ico d={icon} /></span>
-      <span className="al-mode-txt"><strong>{title}</strong><small>{sub}</small></span>
-      <span className="al-check" aria-hidden="true">{mode === m ? "✓" : ""}</span>
-    </button>;
-
-  const play = mode === "computer" ? { label: p.vsComputer.playLabel?.replace(/\s*→$/, "") ?? "START GAME", go: p.vsComputer.onPlay, busy: false }
-    : mode === "pass" ? { label: "START GAME", go: p.passStart!, busy: false }
-    : { label: f.busy ? "Connecting…" : "CREATE A ROOM", go: f.onCreate, busy: f.busy };
-
-  return <section className="al-page" style={bgVars(bg)}>
-    <GameArtDefs />
-    <div className="al-scroll">
-      <header className="al-hero">
-        <div className="al-hero-bg" aria-hidden="true">{p.art}</div>
-        <div className="al-hero-art" aria-hidden="true">{p.art}</div>
-        <div className="al-hero-shade" aria-hidden="true" />
-        <div className="al-hero-top">
-          <button type="button" className="al-round" onClick={p.onBack} aria-label="Back"><Ico d="back" /></button>
-          {p.rules && <button type="button" className="al-round" onClick={() => setRules(true)} aria-label="How to play" aria-haspopup="dialog"><Ico d="help" size={22} /></button>}
-        </div>
-        <div className="al-hero-title">
-          <h1>{p.game}</h1>
-          <p>{p.meta ?? p.tagline}</p>
-        </div>
-      </header>
-
-      <div className="al-body">
-        {p.extra && <div className="al-extra">{p.extra}</div>}
-
-        <p className="al-kicker" id="al-modes">HOW DO YOU WANT TO PLAY?</p>
-        <div className="al-modes" role="radiogroup" aria-labelledby="al-modes">
-          {card("computer", "bot", "vs Computer", "Play anytime · works offline")}
-          {hasPass && card("pass", "phone", "Pass & Play", "One phone, take turns")}
-          {card("friends", "friends", "With Friends", "Create a room or join with a code")}
-        </div>
-
-        {mode === "computer" && <div className="al-box">
-          <div className="al-row">
-            <span className="al-row-label">Opponents</span>
-            <div className="al-seg" role="group" aria-label="Computer players">
-              {p.vsComputer.options.map(n => <button key={n} type="button" className={p.vsComputer.count === n ? "on" : ""} aria-pressed={p.vsComputer.count === n} onClick={() => p.vsComputer.onCount(n)}>{n}</button>)}
-            </div>
-          </div>
-          {p.vsComputer.level && <div className="al-row al-row-level">
-            <span className="al-row-label">Level</span>
-            <div className="al-seg al-level" role="radiogroup" aria-label="Computer level">
-              {CPU_LEVELS.map(l => <button key={l.id} type="button" role="radio" className={p.vsComputer.level!.value === l.id ? "on" : ""} aria-checked={p.vsComputer.level!.value === l.id} onClick={() => p.vsComputer.level!.onLevel(l.id)}>{l.name}<small>{l.note}</small></button>)}
-            </div>
-          </div>}
-        </div>}
-
-        {mode === "pass" && <div className="al-box al-pass">{p.passPlay}</div>}
-
-        {mode === "friends" && <div className="al-box al-friends">
-          <RoomAccountLine />
-          <p className="al-or"><span>Join a friend's room</span></p>
-          <div className="al-join">
-            <input value={f.code} maxLength={4} autoCapitalize="characters" autoComplete="off" aria-label="Room code" placeholder="Code" onChange={e => f.onCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))} />
-            <input value={f.pass} maxLength={4} inputMode="numeric" autoComplete="off" aria-label="Passcode" placeholder="Passcode" onChange={e => f.onPass(e.target.value.replace(/\D/g, ""))} />
-            <button type="button" className="al-join-btn" disabled={f.busy} onClick={f.onJoin}>Join</button>
-          </div>
-          <p className="al-note">Or create your own room with the button below and share the code. Empty seats can be filled with computer players.</p>
-        </div>}
-
-        {p.msg && <p className="al-msg" role="alert">{p.msg}</p>}
-
-        {p.after && <>
-          <p className="al-kicker">YOUR STYLE &amp; OPTIONS</p>
-          <div className="al-after">{p.after}</div>
-        </>}
-      </div>
+type Mode="computer"|"pass"|"friends";
+const MODE_KEY=(game:string)=>`ambaro-mode-${game.toLowerCase().replace(/[^a-z]+/g,"-")}`;
+function Mark({mode}:{mode:Mode}){return <svg viewBox="0 0 32 32" aria-hidden="true" className="amb-mark" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">{mode==="computer"?<><rect x="5" y="8" width="22" height="17" rx="5"/><path d="M16 8V4m-5 12h.1m9.8 0h.1M11 25v3m10-3v3"/><path d="M12 21h8"/></>:mode==="pass"?<><rect x="8" y="3" width="16" height="26" rx="3"/><path d="M13 24h6m-3-17v7m-3-3 3 3 3-3"/></>:<><circle cx="12" cy="11" r="5"/><circle cx="23" cy="13" r="4"/><path d="M3 28c.5-5 3.8-8 9-8s8.5 3 9 8m-1-7c4.8-.7 7.6 1.8 8 6"/></>}</svg>}
+function Arrow(){return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6"/></svg>}
+export default function AppLobby(p:StartProps){
+  const f=p.friends,hasPass=!!p.passPlay&&!!p.passStart;
+  const[mode,setMode]=useState<Mode>(()=>{if(p.msg)return"friends";try{const v=localStorage.getItem(MODE_KEY(p.game));return v==="friends"?"friends":v==="pass"&&hasPass?"pass":"computer"}catch{return"computer"}});
+  const[rules,setRules]=useState(false);
+  const choose=(m:Mode)=>{setMode(m);try{localStorage.setItem(MODE_KEY(p.game),m)}catch{}}
+  const play=mode==="computer"?{label:p.vsComputer.playLabel?.replace(/\s*→$/," ").trim()??"Play game",go:p.vsComputer.onPlay,busy:false}:mode==="pass"?{label:"Start pass & play",go:p.passStart!,busy:false}:{label:f.busy?"Connecting…":"Create a friends table",go:f.onCreate,busy:f.busy};
+  const modes:[Mode,string,string][]=[["computer","Quick game","Play against computer players"],...(hasPass?[["pass","Pass & play","Take turns on this phone"] as [Mode,string,string]]:[]),["friends","With friends","Create a table or join by code"]];
+  return <section className="amb-lobby">
+    <header className="amb-lobby-head"><button className="amb-icon-button" onClick={p.onBack} aria-label="Back"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><div><small>AMBARO · GAME ROOM</small><h1>{p.game}</h1></div><button className="amb-icon-button" onClick={()=>setRules(true)} aria-label="Game rules"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.6 2.6 0 1 1 3.5 2.5c-.8.4-1 1-1 2M12 17.5h.01"/></svg></button></header>
+    <div className="amb-lobby-scroll">
+      <div className="amb-lobby-hero"><div className="amb-lobby-orbit"/><div className="amb-lobby-symbol" aria-hidden="true"><span>{p.game.slice(0,1).toUpperCase()}</span></div><div className="amb-lobby-herotext"><span>{p.meta??p.tagline}</span><strong>Ready when<br/>you are.</strong></div><div className="amb-lobby-stat"><b>{p.meta?.split("·")[0]?.trim()??"Play your way"}</b><small>Choose a table below</small></div></div>
+      {p.extra&&<div className="amb-lobby-extras">{p.extra}</div>}
+      <div className="amb-section-heading"><span>CHOOSE YOUR TABLE</span><button onClick={()=>setRules(true)}>Rules <b>↗</b></button></div>
+      <div className="amb-mode-grid" role="radiogroup" aria-label="Game mode">{modes.map(([id,title,sub])=><button key={id} type="button" role="radio" aria-checked={mode===id} className={`amb-mode-card${mode===id?" selected":""}`} onClick={()=>choose(id)}><span className="amb-mode-icon"><Mark mode={id}/></span><b>{title}</b><small>{sub}</small><i>{mode===id?"✓":""}</i></button>)}</div>
+      {mode==="computer"&&<div className="amb-options"><div className="amb-option-row"><b>Computer players</b><div className="amb-chips">{p.vsComputer.options.map(n=><button key={n} className={p.vsComputer.count===n?"active":""} aria-pressed={p.vsComputer.count===n} onClick={()=>p.vsComputer.onCount(n)}>{n}</button>)}</div></div>{p.vsComputer.level&&<div className="amb-option-row"><b>Difficulty</b><div className="amb-difficulty">{CPU_LEVELS.map(l=><button key={l.id} className={p.vsComputer.level!.value===l.id?"active":""} onClick={()=>p.vsComputer.level!.onLevel(l.id)}><b>{l.name}</b><small>{l.note}</small></button>)}</div></div>}</div>}
+      {mode==="pass"&&<div className="amb-options">{p.passPlay}</div>}
+      {mode==="friends"&&<div className="amb-options amb-friends"><RoomAccountLine/><div className="amb-divider"><span>OR JOIN A FRIEND</span></div><div className="amb-code-row"><input value={f.code} maxLength={4} autoCapitalize="characters" autoComplete="off" aria-label="Room code" placeholder="ROOM CODE" onChange={e=>f.onCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,""))}/><input value={f.pass} maxLength={4} inputMode="numeric" autoComplete="off" aria-label="Passcode" placeholder="PIN" onChange={e=>f.onPass(e.target.value.replace(/\D/g,""))}/><button type="button" onClick={f.onJoin} disabled={f.busy}>Join <Arrow/></button></div>{p.msg&&<p className="amb-error" role="alert">{p.msg}</p>}</div>}
+      {p.after&&<details className="amb-customize"><summary>Customize your game <span>＋</span></summary><div>{p.after}</div></details>}
     </div>
-
-    <div className="al-foot">
-      <button type="button" className="al-play" disabled={play.busy} onClick={play.go}>
-        <Ico d="play" size={24} />{play.label.toUpperCase()}
-      </button>
-    </div>
-
-    {rules && p.rules && <div className="al-sheet-scrim" role="presentation" onClick={() => setRules(false)}>
-      <div className="al-sheet" role="dialog" aria-modal="true" aria-labelledby="al-rules-t" onClick={e => e.stopPropagation()}>
-        <div className="al-sheet-head"><h2 id="al-rules-t">How to play {p.game}</h2>
-          <button type="button" className="al-round small" onClick={() => setRules(false)} aria-label="Close" autoFocus><Ico d="close" size={20} /></button></div>
-        <div className="al-sheet-body">{p.rules}</div>
-      </div>
-    </div>}
-  </section>;
+    <footer className="amb-lobby-footer"><button className="amb-play-button" disabled={play.busy} onClick={play.go}>{play.label}<Arrow/></button></footer>
+    {rules&&p.rules&&<div className="amb-rules-scrim" onClick={()=>setRules(false)}><section className="amb-rules-sheet" role="dialog" aria-modal="true" aria-label={`Rules for ${p.game}`} onClick={e=>e.stopPropagation()}><header><div><small>AMBARO · RULEBOOK</small><h2>How to play</h2></div><button className="amb-icon-button" onClick={()=>setRules(false)} aria-label="Close rules">×</button></header><div className="amb-rules-copy">{p.rules}</div><button className="amb-play-button" onClick={()=>setRules(false)}>Got it <Arrow/></button></section></div>}
+  </section>
 }

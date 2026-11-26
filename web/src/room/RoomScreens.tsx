@@ -168,7 +168,7 @@ export type WaitProps = {
 };
 
 export function WaitingRoom(p: WaitProps) {
-  return NATIVE ? <AmbaroWaitingRoom {...p} /> : <WebWaitingRoom p={p} />;
+  return NATIVE ? <AmbaroWaitingRoom {...p} /> : <WebWaitingRoom {...p} />;
 }
 
 function WebWaitingRoom(p: WaitProps) {

@@ -6,10 +6,11 @@ import type { CapacitorConfig } from "@capacitor/cli";
      opens the test site directly and picks up every game change without a new APK. */
 declare const process: { env: Record<string, string | undefined> };
 const liveUrl = (process.env.CAP_SERVER_URL ?? "").trim();
+const appName = (process.env.ANDROID_APP_NAME ?? "Ambaro").trim() || "Ambaro";
 
 const config: CapacitorConfig = {
   appId: "com.royalclubgames.app",
-  appName: "Ambaro",
+  appName,
   webDir: "dist",
   /* Shown behind the status and navigation bars (and while a page loads): the app's dark night-green. */
   backgroundColor: "#06140F",

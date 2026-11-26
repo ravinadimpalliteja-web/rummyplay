@@ -10,7 +10,7 @@ name: Ambaro Android app
 
 on:
   push:
-    branches: [main]
+    branches: [main, chatgpt-design]
     paths:
       - "web/**"
       - ".github/workflows/android-app.yml"
@@ -35,6 +35,7 @@ jobs:
       VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_o89SjkD_5i4ay4JdKhVydw_VzNWbi8G' }}
       VITE_ROOM_SERVER_URL: ${{ vars.VITE_ROOM_SERVER_URL || 'wss://royal-club-rooms.ravi-nadimpalli-teja.workers.dev' }}
       TEST_SITE_URL: ${{ vars.TEST_SITE_URL || 'https://test.royalclubgames.com' }}
+      ANDROID_APP_NAME: ${{ github.ref == 'refs/heads/chatgpt-design' && 'Ambaro Design' || 'Ambaro' }}
       HAS_UPLOAD_KEY: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_B64 != '' }}
       # Crash reports (Firebase Crashlytics) are added only when the GOOGLE_SERVICES_JSON secret holds the
       # google-services.json file from the Firebase project (Android app id com.royalclubgames.app).
@@ -136,13 +137,13 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: RoyalClub-test-apk
+          name: ${{ github.ref_name == 'chatgpt-design' && 'Ambaro-ChatGPT-Design-test-apk' || 'RoyalClub-test-apk' }}
           path: apk/RoyalClub-test.apk
           retention-days: 30
 
       - uses: actions/upload-artifact@v4
         with:
-          name: RoyalClub-offline-apk
+          name: ${{ github.ref_name == 'chatgpt-design' && 'Ambaro-ChatGPT-Design-offline-apk' || 'RoyalClub-offline-apk' }}
           path: apk/RoyalClub-offline.apk
           retention-days: 30
 
@@ -156,7 +157,7 @@ jobs:
       # Fixed phone-friendly link (no GitHub sign-in needed):
       # https://github.com/<owner>/<repo>/releases/download/test-app/RoyalClub-test.apk
       - name: Publish the test APK to the "test-app" release
-        if: github.event_name != 'pull_request'   # only merged code goes to the shared link
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'   # only main updates the shared link
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

@@ -245,6 +245,7 @@ const THEMES = [
   { id: "royal", name: "Ambaro Royal", note: "Ivory squares in an emerald and gold frame" },
   { id: "dasara", name: "Dasara Night", note: "Indigo night, lamp-lit gold" },
   { id: "marble", name: "Palace Marble", note: "White marble with gold inlay" },
+  { id: "courtyard", name: "Lotus Courtyard", note: "Warm ivory, lotus red and carved gold" },
 ] as const;
 type ThemeId = typeof THEMES[number]["id"];
 const THEME_KEY = "rc-ludo-theme";

@@ -163,6 +163,16 @@ jobs:
           path: apk/RoyalClub-play.aab
           retention-days: 90
 
+      # Stable direct download for the separate design app. This release tag never replaces the main app's test APK.
+      - name: Publish the Ambaro Playhouse APK
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/chatgpt-design'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view chatgpt-design-apk >/dev/null 2>&1 || gh release create chatgpt-design-apk --prerelease --title "Ambaro Playhouse Android app" \
+            --notes "Latest standalone Ambaro Playhouse APK from the chatgpt-design branch."
+          gh release upload chatgpt-design-apk ../apk/RoyalClub-offline.apk --clobber
+
       # Fixed phone-friendly link (no GitHub sign-in needed):
       # https://github.com/<owner>/<repo>/releases/download/test-app/RoyalClub-test.apk
       - name: Publish the test APK to the "test-app" release

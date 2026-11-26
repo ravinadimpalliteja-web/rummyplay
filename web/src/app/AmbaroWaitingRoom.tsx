@@ -3,7 +3,7 @@ import type { WaitProps, WaitSeat } from "../room/RoomScreens";
 import { copyText, shareOnWhatsApp } from "../lib/share";
 import "./independent-app.css";
 
-export default function AmbaroWaitingRoom({p}:{p:WaitProps}){
+export default function AmbaroWaitingRoom(p:WaitProps){
   const seated=p.seats.filter(Boolean) as WaitSeat[];
   const humansOk=seated.filter(s=>!s.bot).every(s=>s.connected),ready=seated.length>=2&&humansOk;
   const full=seated.length>=p.seats.length,anyBot=seated.some(s=>s.bot),hostSeat=p.hostSeat??(p.isHost?p.you:undefined);

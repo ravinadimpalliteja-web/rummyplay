@@ -56,6 +56,13 @@ window.rcPractice = function (game, result, info) {
   if (!C || typeof C.isNativePlatform !== 'function' || !C.isNativePlatform()) return;
   var root = document.documentElement;
   root.classList.add('rc-app');
+  if (!document.getElementById('ambaro-native-skin')) {
+    var nativeSkin = document.createElement('link');
+    nativeSkin.id = 'ambaro-native-skin';
+    nativeSkin.rel = 'stylesheet';
+    nativeSkin.href = '/app-native.css';
+    document.head.appendChild(nativeSkin);
+  }
 
   var css = [
     'html.rc-app{-webkit-tap-highlight-color:transparent;overscroll-behavior:none}',

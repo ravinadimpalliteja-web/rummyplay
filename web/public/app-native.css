@@ -1,0 +1,24 @@
+/* Shared mobile visual system for Ambaro's small standalone games when opened inside the Android app. */
+html.rc-app{
+  --room:#073d2d;--room-2:#0e5a3f;--panel:#fffaf0;--line:#d8c495;--ivory:#fff8e7;--muted:#657366;
+  --gold:#d39b31;--gold-2:#f1d27c;--emerald:#0f5b3e;--saffron:#e87813;
+}
+html.rc-app body{background:linear-gradient(180deg,#f7efdc 0%,#fff9ea 58%,#f0dfb8 100%) fixed!important;color:#183e2e!important}
+html.rc-app :is(.top,.home-top){background:linear-gradient(105deg,#06402d,#0b563b 70%,#06402d)!important;color:#fff7df!important;border-bottom:2px solid #d7b95b!important;box-shadow:0 5px 14px #153d2d22}
+html.rc-app :is(.brand-mark.rc-el,.club-el){width:120px!important;height:42px!important;display:block!important;overflow:hidden;background:url('/brand/ambaro-logo.webp') left center/contain no-repeat!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+html.rc-app :is(.brand-mark.rc-el,.club-el) img{width:1px!important;height:1px!important;opacity:0!important}
+html.rc-app :is(.brand strong,.club-brand strong){color:#fff4d7!important;font-family:Georgia,'Times New Roman',serif!important;letter-spacing:.03em}
+html.rc-app :is(.brand small,.club-brand small){color:#f0d27e!important}
+html.rc-app :is(.setup,.home-wrap,.screen,.stage){color:#183e2e}
+html.rc-app :is(.setup,.home-wrap){background:#fff9ea!important;border:1px solid #e0d1ad!important;border-radius:20px!important;box-shadow:0 8px 24px #25442b17}
+html.rc-app :is(.setup h1,.setup h2,.home-wrap h1,.home-wrap h2){color:#124b35!important}
+html.rc-app :is(.setup p,.home-wrap p,.setup .note){color:#667366!important}
+html.rc-app :is(.mode,.mode-card,.theme-card,.daily,.race-card,.multiplayer-panel,.field,.names input){background:#fffdf7!important;border-color:#dcc99a!important;color:#183e2e!important;box-shadow:0 3px 10px #3a432214}
+html.rc-app :is(.mode[aria-pressed=true],.mode-card[aria-pressed=true],.theme-card[aria-pressed=true]){border:2px solid #0f5b3e!important;background:#edf4e9!important}
+html.rc-app :is(.gold,.gold-button,.big,.pill,.ph-primary){background:linear-gradient(180deg,#f59b22,#d85f0a)!important;color:white!important;border:0!important;box-shadow:0 4px 0 #a54d0a,0 7px 14px #8d460c25!important}
+html.rc-app :is(.ghost,.ghost-button,.chip,.gbtn){background:#fff8e6!important;border:1px solid #d6c18a!important;color:#15543a!important;box-shadow:none!important}
+html.rc-app :is(input,textarea,select){background:#fffdf7!important;border:1px solid #d8c495!important;color:#183e2e!important}
+html.rc-app :is(.coin,.wallet,.coin-pill){border-color:#d4a842!important;background:#fff2c7!important;color:#174c37!important}
+html.rc-app :is(.eyebrow,.tag){color:#aa6612!important}
+html.rc-app .rc-watermark{opacity:.06!important}
+@media(max-width:430px){html.rc-app :is(.brand-mark.rc-el,.club-el){width:96px!important;height:35px!important}}

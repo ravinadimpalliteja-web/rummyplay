@@ -2,6 +2,8 @@
    a square ← button, the Royal Club badge with the game's name and where you are (room code, practice…),
    then square icon buttons (sound, settings, rules). */
 import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import { isNativeApp } from "../lib/native";
+import { useWallet } from "../economy/wallet";
 
 export const SoundIcon = ({ on }: { on: boolean }) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" />{on ? <path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" /> : <path d="M17 9l5 6M22 9l-5 6" />}</svg>;
 export const GearIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2.5 12H5M19 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8" /></svg>;
@@ -10,9 +12,12 @@ export const ScoresIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="cur
 export const PaletteIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1.2 0 1.8-.8 1.8-1.7 0-1-.8-1.4-.8-2.4 0-1 .8-1.6 1.8-1.6H17a4 4 0 0 0 4-4C21 6.6 17 3 12 3z" /><circle cx="7.5" cy="11" r="1.2" /><circle cx="10.5" cy="7" r="1.2" /><circle cx="15" cy="7.5" r="1.2" /></svg>;
 
 export function GameBar(p: { game: string; where?: string; onBack: () => void; backLabel: string; dark?: boolean; children?: ReactNode; className?: string }) {
+  const native = isNativeApp();
+  const wallet = useWallet();
   return <header className={`rc-bar${p.dark ? " dark" : ""}${p.className ? " " + p.className : ""}`}>
     <button type="button" className="rc-bar-back" onClick={p.onBack} aria-label={p.backLabel}>←</button>
-    <span className="rc-bar-brand"><img src="/brand/badge-logo-small.webp" alt="" width="320" height="269" /><span className="rc-bar-name"><strong>{p.game}</strong>{p.where && <small>{p.where}</small>}</span></span>
+    <span className={`rc-bar-brand${native ? " amb-game-brand" : ""}`}>{native ? <img src="/brand/ambaro-logo.webp" alt="Ambaro" className="amb-game-logo" /> : <img src="/brand/badge-logo-small.webp" alt="" width="320" height="269" />}<span className="rc-bar-name"><strong>{p.game}</strong>{p.where && <small>{p.where}</small>}</span></span>
+    {native && <span className="amb-game-coins" aria-label={`${wallet.coins.toLocaleString("en-IN")} coins`}><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 5v14m3-10c-.8-1-1.7-1.4-3-1.4-1.6 0-2.8.8-2.8 2s1.1 1.9 2.8 2.3 2.8 1.1 2.8 2.3-1.2 2.1-2.8 2.1c-1.4 0-2.5-.5-3.2-1.6"/></svg>{wallet.coins.toLocaleString("en-IN")}</span>}
     {p.children && <span className="rc-bar-tools">{p.children}</span>}
   </header>;
 }

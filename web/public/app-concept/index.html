@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b3025">
+<meta name="description" content="Ambaro app design concept">
+<title>Ambaro — App Concept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <button class="brand" data-page="home" aria-label="Ambaro home"><img src="/brand/ambaro-logo.webp" alt="Ambaro"></button>
+    <div class="top-actions">
+      <button class="coin-pill" data-page="rewards" aria-label="View coins"><span class="coin">✦</span><b id="coin-count">1,250</b><span class="plus">+</span></button>
+      <button class="avatar" data-page="profile" aria-label="Profile">R</button>
+    </div>
+  </header>
+
+  <main id="view">
+    <section class="page active" id="page-home">
+      <div class="welcome-row"><div><p class="eyebrow">YOUR GAME ROOM</p><h1>Good afternoon<span class="gold-dot">.</span></h1><p class="subtle">A little play goes a long way.</p></div><button class="streak" data-page="rewards"><span>✦</span><b>3 day</b><small>streak</small></button></div>
+      <button class="daily-card" data-action="claim"><span class="daily-icon">✧</span><span class="daily-copy"><small>DAILY GIFT</small><strong>Today's coins are waiting</strong><em>Tap to collect your reward</em></span><span class="daily-cta" id="gift-state">Collect <b>›</b></span></button>
+      <div class="section-head"><div><p class="eyebrow">PICK UP THE PACE</p><h2>Play your way</h2></div><button class="text-link" data-page="games">All games <span>→</span></button></div>
+      <div class="mode-grid">
+        <button class="mode-tile mode-solo" data-action="quick"><span class="mode-icon">◈</span><span><b>Quick Play</b><small>Solo games, anytime</small></span><i>→</i></button>
+        <button class="mode-tile mode-friends" data-page="friends"><span class="mode-icon">♧</span><span><b>Play Together</b><small>Bring your people</small></span><i>→</i></button>
+      </div>
+      <div class="section-head games-heading"><div><p class="eyebrow">MADE FOR ONE MORE ROUND</p><h2>Featured games</h2></div><span class="tiny-note">6 to explore</span></div>
+      <div class="featured-grid">
+        <button class="game-card featured" data-game="ekah"><span class="game-art"><img src="/art/ekah.svg" alt=""></span><span class="game-meta"><span class="tag">AMBARO ORIGINAL</span><b>EKAH</b><small>A fresh card game for your circle</small></span><span class="arrow">↗</span></button>
+        <button class="game-card" data-game="ludo"><span class="game-art"><img src="/art/ludo.svg" alt=""></span><span class="game-meta"><b>Ludo</b><small>Roll, race, repeat</small></span><span class="arrow">↗</span></button>
+        <button class="game-card" data-game="snakes"><span class="game-art"><img src="/art/snakes.svg" alt=""></span><span class="game-meta"><b>Snakes &amp; Ladders</b><small>Race to one hundred</small></span><span class="arrow">↗</span></button>
+        <button class="game-card" data-game="chess"><span class="game-art"><img src="/art/chess.svg" alt=""></span><span class="game-meta"><b>Chess</b><small>Think a move ahead</small></span><span class="arrow">↗</span></button>
+        <button class="game-card" data-game="sudoku"><span class="game-art"><img src="/art/sudoku.svg" alt=""></span><span class="game-meta"><b>Sudoku</b><small>Find your focus</small></span><span class="arrow">↗</span></button>
+        <button class="game-card" data-game="words"><span class="game-art"><img src="/art/words.svg" alt=""></span><span class="game-meta"><b>Word Puzzle</b><small>Make every letter count</small></span><span class="arrow">↗</span></button>
+      </div>
+      <div class="resume-card"><span class="resume-symbol">↻</span><span><small>READY WHEN YOU ARE</small><b>Make time for one more game</b></span><button data-action="quick">Continue →</button></div>
+    </section>
+
+    <section class="page" id="page-games">
+      <div class="page-intro"><p class="eyebrow">THE AMBARO COLLECTION</p><h1>Find your game<span class="gold-dot">.</span></h1><p class="subtle">Classics, quick challenges and something new.</p></div>
+      <div class="filter-row"><button class="filter active" data-filter="all">All games</button><button class="filter" data-filter="quick">Quick play</button><button class="filter" data-filter="together">With friends</button></div>
+      <div class="game-list">
+        <button class="list-game" data-game="ekah" data-kind="together"><img src="/art/ekah.svg" alt=""><span><b>EKAH</b><small>Ambaro original · Card game</small></span><i>›</i></button>
+        <button class="list-game" data-game="ludo" data-kind="together"><img src="/art/ludo.svg" alt=""><span><b>Ludo</b><small>Classic · 2–4 players</small></span><i>›</i></button>
+        <button class="list-game" data-game="snakes" data-kind="together"><img src="/art/snakes.svg" alt=""><span><b>Snakes &amp; Ladders</b><small>Classic · Race to 100</small></span><i>›</i></button>
+        <button class="list-game" data-game="chess" data-kind="together"><img src="/art/chess.svg" alt=""><span><b>Chess</b><small>Strategy · Learn and play</small></span><i>›</i></button>
+        <button class="list-game" data-game="sudoku" data-kind="quick"><img src="/art/sudoku.svg" alt=""><span><b>Sudoku</b><small>Daily puzzle · Solo or race</small></span><i>›</i></button>
+        <button class="list-game" data-game="words" data-kind="quick"><img src="/art/words.svg" alt=""><span><b>Word Puzzle</b><small>Daily word challenge</small></span><i>›</i></button>
+      </div>
+    </section>
+
+    <section class="page" id="page-friends">
+      <div class="page-intro"><p class="eyebrow">BETTER TOGETHER</p><h1>Your people<span class="gold-dot">.</span></h1><p class="subtle">Make a room and bring everyone in.</p></div>
+      <div class="friends-hero"><div class="friends-orbit">♧</div><h2>Good games need good company.</h2><p>Create a private room or join a friend with their room code.</p><button class="primary-btn" data-action="create-room">Create a room <span>→</span></button></div>
+      <div class="section-head"><div><p class="eyebrow">GOT AN INVITE?</p><h2>Join a room</h2></div></div>
+      <div class="join-panel"><label for="room-code">4-letter room code</label><div class="join-row"><input id="room-code" maxlength="4" placeholder="e.g. K7QM" autocomplete="off"><button class="dark-btn" data-action="join-room">Join room</button></div><small id="join-message">Ask your friend for their room code.</small></div>
+      <div class="section-head"><div><p class="eyebrow">COMING UP IN YOUR CIRCLE</p><h2>Friends activity</h2></div></div>
+      <div class="empty-state"><span>✧</span><b>Your circle starts here</b><p>Invite a friend to make your first game together.</p></div>
+    </section>
+
+    <section class="page" id="page-rewards">
+      <div class="page-intro"><p class="eyebrow">LITTLE WINS ADD UP</p><h1>Your rewards<span class="gold-dot">.</span></h1><p class="subtle">Play more. Collect more. Keep it fun.</p></div>
+      <div class="wallet"><span class="wallet-coin">✦</span><small>YOUR COIN BALANCE</small><strong id="wallet-count">1,250</strong><span>Ambaro coins</span></div>
+      <div class="section-head"><div><p class="eyebrow">TODAY'S MILESTONES</p><h2>Daily missions</h2></div><span class="tiny-note">0 / 3 complete</span></div>
+      <div class="mission"><span class="mission-icon">🎲</span><span><b>Play your first game</b><small>Any game counts</small></span><strong>+50</strong></div>
+      <div class="mission"><span class="mission-icon">♟</span><span><b>Try a new game</b><small>Explore something different</small></span><strong>+30</strong></div>
+      <div class="mission"><span class="mission-icon">♧</span><span><b>Play with a friend</b><small>Good company, extra coins</small></span><strong>+70</strong></div>
+      <button class="daily-card reward-claim" data-action="claim"><span class="daily-icon">✧</span><span class="daily-copy"><small>DAILY GIFT</small><strong>Collect your daily coins</strong><em>One small reward every day</em></span><span class="daily-cta" id="gift-state-2">Collect ›</span></button>
+    </section>
+
+    <section class="page" id="page-profile">
+      <div class="page-intro"><p class="eyebrow">YOUR AMBARO ID</p><h1>Player profile<span class="gold-dot">.</span></h1></div>
+      <div class="profile-card"><div class="profile-avatar">R</div><h2>Ravi</h2><p>Guest player</p><span class="level-pill">LEVEL 1 · EXPLORER</span></div>
+      <div class="profile-stats"><div><b>0</b><small>Games played</small></div><div><b>0</b><small>Wins</small></div><div><b>3</b><small>Day streak</small></div></div>
+      <div class="settings-list"><button><span>♙</span>Account and sign-in<i>›</i></button><button><span>♧</span>Friends and invites<i>›</i></button><button><span>◉</span>Sound and appearance<i>›</i></button><button><span>ⓘ</span>Help and support<i>›</i></button></div>
+      <p class="prototype-note">Design concept · Profile details shown for preview only.</p>
+    </section>
+
+    <section class="page" id="page-setup">
+      <button class="back-link" data-action="back">← Back</button>
+      <div class="setup-hero"><img id="setup-art" src="/art/ludo.svg" alt=""><div><p class="eyebrow">LET'S PLAY</p><h1 id="setup-title">Ludo</h1><p id="setup-sub" class="subtle">Choose how you want to play.</p></div></div>
+      <div class="setup-panel"><p class="eyebrow">CHOOSE YOUR MODE</p><div class="choice-grid" id="mode-choices"><button class="choice selected" data-mode="computer"><b>Vs Computer</b><small>Play at your pace</small></button><button class="choice" data-mode="friends"><b>With Friends</b><small>Create or join a room</small></button><button class="choice" data-mode="local"><b>Pass &amp; Play</b><small>Share one device</small></button></div><div class="setup-options"><label for="players">Players</label><select id="players"><option>2 players</option><option>3 players</option><option>4 players</option></select></div><button class="primary-btn full" data-action="start-game">Start a demo game <span>→</span></button><small class="demo-disclaimer">This is a clickable design preview. It does not start a live match or connect to rooms.</small></div>
+    </section>
+
+    <section class="page" id="page-demo">
+      <button class="back-link" data-action="back">← Back to Ambaro</button>
+      <div class="demo-board-wrap"><p class="eyebrow">DESIGN PREVIEW</p><h1 id="demo-title">Ludo</h1><div class="demo-board" id="demo-board"><span>✦</span><span>AMBARO</span><span>✦</span></div><p class="demo-message">This is a sample game screen to show the transition from lobby to play.</p><button class="primary-btn full" data-action="back">Back to games <span>→</span></button></div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Main navigation">
+    <button class="nav-item active" data-page="home"><span>⌂</span><small>Home</small></button>
+    <button class="nav-item" data-page="friends"><span>♧</span><small>Friends</small></button>
+    <button class="play-nav" data-action="play"><span>✦</span><small>PLAY</small></button>
+    <button class="nav-item" data-page="rewards"><span>✧</span><small>Rewards</small></button>
+    <button class="nav-item" data-page="profile"><span>◉</span><small>Profile</small></button>
+  </nav>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

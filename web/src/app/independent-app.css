@@ -63,6 +63,47 @@
 .playhouse .ph-text-action{color:#526456}
 .playhouse .ph-toast{border-color:#d3a84a;background:#fff2cc;color:#143f2e}
 .playhouse .ph-original-art{display:block;width:100%;height:100%}
+.playhouse .ph-quick-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:14px 0 15px;padding:10px;border-radius:22px;background:#f2e6c9}
+.playhouse .ph-quick-actions button{display:flex;min-height:77px;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:1px solid #d98e2c;border-radius:17px;background:#fff9e9;color:#123f2e;box-shadow:0 3px 7px #51331c22}
+.playhouse .ph-quick-actions svg{width:26px;height:26px;color:#0d5238;stroke-width:2.5}
+.playhouse .ph-quick-actions b{font-family:Georgia,'Times New Roman',serif;font-size:clamp(11px,3.2vw,15px)}
+.playhouse .ph-showcase{min-height:205px}
+.playhouse .ph-showcase-copy{max-width:59%;padding:17px}
+.playhouse .ph-showcase-copy h2{font-size:clamp(28px,8vw,38px)}
+.playhouse .ph-showcase-art{inset:0 0 0 31%}
+.playhouse .ph-showcase-art svg{width:100%;height:100%;object-fit:cover}
+.playhouse .ph-showcase-ekah{background:linear-gradient(120deg,#4d0e17,#79171f 65%,#350b15)}
+.playhouse .ph-heading h2{margin:0;font-size:24px}
+.playhouse .ph-continue-section{margin-top:20px}
+.playhouse .ph-continue-section .ph-heading{align-items:center;margin-bottom:9px}
+.playhouse .ph-continue-section .ph-heading>button{font-size:13px}
+.playhouse .ph-resume-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.playhouse .ph-resume-card{display:flex;min-width:0;align-items:center;gap:8px;padding:8px;border:1px solid #e2d1aa;border-radius:16px;background:#fff9e9;color:#143f2e;text-align:left;box-shadow:0 4px 10px #51331c1e}
+.playhouse .ph-resume-art{display:block;width:50px;height:50px;flex:none;overflow:hidden;border-radius:12px;background:#0d5238}
+.playhouse .ph-resume-art svg{width:100%;height:100%;object-fit:cover}
+.playhouse .ph-resume-copy{display:flex;min-width:0;flex:1;flex-direction:column;gap:3px}
+.playhouse .ph-resume-copy b{font-family:Georgia,'Times New Roman',serif;font-size:13px;line-height:1.1}
+.playhouse .ph-resume-copy small{overflow:hidden;color:#667167;font-size:9px;text-overflow:ellipsis;white-space:nowrap}
+.playhouse .ph-mini-play{display:flex;flex:none;align-items:center;gap:3px;padding:8px;border-radius:18px;background:linear-gradient(#f59a20,#d65d08);color:white;font-size:10px;font-weight:850}
+.playhouse .ph-mini-play b{font-size:16px;line-height:.7}
+.playhouse .ph-our-games{margin-top:20px}
+.playhouse .ph-our-games .ph-heading{margin-bottom:9px}
+.playhouse .ph-our-games .ph-filter-row{margin:0 0 11px}
+.playhouse .ph-our-games .ph-filter-row button{padding:7px 13px;font-size:11px}
+.playhouse .ph-home-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.playhouse .ph-home-game{position:relative;display:block;aspect-ratio:1.06;min-width:0;overflow:hidden;padding:0;border:1.5px solid #c88728;border-radius:20px;background:#0d5238;color:#fff8e6;text-align:left;box-shadow:0 5px 12px #51331c2a}
+.playhouse .ph-home-game-art{position:absolute;inset:0;display:block}
+.playhouse .ph-home-game-art svg{width:100%;height:100%;object-fit:cover}
+.playhouse .ph-home-game-shade{position:absolute;inset:35% 0 0;background:linear-gradient(transparent,#052c20 25%,#041f18eF)}
+.playhouse .ph-home-game-copy{position:absolute;right:0;bottom:0;left:0;display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:11px}
+.playhouse .ph-home-game-copy>b{font-family:Georgia,'Times New Roman',serif;font-size:20px;line-height:1.05;text-shadow:0 2px 4px #0008}
+.playhouse .ph-home-game-copy>small{min-height:24px;color:#f6eed9;font-size:10px;line-height:1.2}
+.playhouse .ph-home-game-copy>i{display:flex;min-width:80px;align-items:center;justify-content:center;gap:5px;align-self:flex-end;padding:7px 12px;border-radius:20px;background:linear-gradient(#f59a20,#d65d08);color:white;font-size:12px;font-style:normal;font-weight:850}
+.playhouse .ph-home-game-copy>i>b{font-size:17px;line-height:.8}
+.playhouse .ph-showcase-ekah .ph-showcase-art{inset:0 0 0 40%}
+.playhouse .ph-showcase-ekah .ph-showcase-copy{max-width:64%}
+.playhouse .ph-showcase-ekah .ph-showcase-art svg{transform:scale(1.12)}
+@media(max-width:370px){.playhouse .ph-resume-card{gap:5px;padding:6px}.playhouse .ph-resume-art{width:42px;height:42px}.playhouse .ph-mini-play{padding:7px}.playhouse .ph-home-game-copy{padding:8px}.playhouse .ph-home-game-copy>b{font-size:17px}}
 
 /* Original game lobby used by every Android game's existing rule and room handlers. */
 .amb-lobby{--am-ink:#123e2e;--am-muted:#697367;--am-green:#073e2c;--am-gold:#d9aa42;--am-orange:#df7411;position:fixed;z-index:5;inset:0;display:flex;flex-direction:column;background:#fbf3df;color:var(--am-ink);font-family:Inter,system-ui,-apple-system,sans-serif}

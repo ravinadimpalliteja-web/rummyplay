@@ -17,11 +17,11 @@ const ART: Record<GameId, () => ReactNode> = {
 };
 const TITLES: Partial<Record<GameId, string>> = { ludo: "Ludo", snakes: "Snakes & Ladders", chess: "Chess", ekah: "EKAH", sudoku: "Sudoku", words: "Word Quest" };
 const DETAILS: Partial<Record<GameId, string>> = { ludo: "Bring your crew to the board.", snakes: "Climb higher. Watch the tail.", chess: "Make every move count.", ekah: "Four elements. One last card.", sudoku: "A quiet puzzle, every day.", words: "Find today's hidden word." };
-const FEATURED: GameId[] = ["ludo", "ekah", "chess", "words"];
+const FEATURED: GameId[] = ["ekah", "ludo", "chess", "words"];
 const GAME_IDS = TILES.filter(g => isListed(g.id)).map(g => g.id);
 const fmt = (n: number) => n.toLocaleString("en-IN");
 function Coin({size=22}:{size?:number}){return <svg className="ph-coin" width={size} height={size} viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="7.6"/><path d="M12 5.5c1.7 1.9 1.8 3.5 0 6.1-1.8-2.6-1.7-4.2 0-6.1ZM7.2 9c2 .4 3.3 1.7 4 4.3-2.8-.5-4-1.8-4-4.3Zm9.6 0c0 2.5-1.2 3.8-4 4.3.7-2.6 2-3.9 4-4.3ZM7.6 14.4c2.9 1.8 6 1.8 8.8 0-.9 2.3-2.4 3.5-4.4 3.5s-3.5-1.2-4.4-3.5Z"/></svg>}
-function BadgeIcon({kind}:{kind:"people"|"spark"|"reward"|"back"}){return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{kind==="people"?<><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20c.5-3.5 2.3-5.2 5.5-5.2s5 1.7 5.5 5.2m1-4.2c3.8-.4 6.1 1.1 6.8 4.2"/></>:kind==="spark"?<><path d="m12 2 1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/><path d="m19 16 .8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/></>:kind==="reward"?<><path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h4"/><path d="M3 7v13a2 2 0 0 0 2 2h12"/></>:<path d="m15 5-7 7 7 7"/>}</svg>}
+function BadgeIcon({kind}:{kind:"people"|"spark"|"reward"|"back"|"bolt"|"layers"}){return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{kind==="people"?<><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20c.5-3.5 2.3-5.2 5.5-5.2s5 1.7 5.5 5.2m1-4.2c3.8-.4 6.1 1.1 6.8 4.2"/></>:kind==="spark"?<><path d="m12 2 1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/><path d="m19 16 .8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/></>:kind==="reward"?<><path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h4"/><path d="M3 7v13a2 2 0 0 0 2 2h12"/></>:kind==="bolt"?<path d="M13 2 5 13h6l-1 9 9-12h-6z"/>:kind==="layers"?<><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5"/></>:<path d="m15 5-7 7 7 7"/>}</svg>}
 function DockIcon({id}:{id:AppTab}){const d:Record<AppTab,ReactNode>={home:<><path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1z"/></>,games:<><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M8 9v6m-3-3h6m6-1h.01m2 3h.01"/></>,friends:<><circle cx="9" cy="9" r="3"/><circle cx="17" cy="10" r="2.5"/><path d="M3 20c.5-3.3 2.5-5 6-5s5.5 1.7 6 5m1-4c3.2-.4 5.1 1 5.7 4"/></>,learn:<><path d="M3 5.5c3-1.4 6-.8 9 1.1v13c-3-1.9-6-2.5-9-1.1zM21 5.5c-3-1.4-6-.8-9 1.1v13c3-1.9 6-2.5 9-1.1z"/></>,profile:<><circle cx="12" cy="8" r="4"/><path d="M4 21c.7-4.2 3.4-6.3 8-6.3s7.3 2.1 8 6.3"/></>,settings:<><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.2 2-2 2-2-1.2a8 8 0 0 1-1.5.6l-.6 2.3h-2.8l-.6-2.3a8 8 0 0 1-1.5-.6l-2 1.2-2-2 1.2-2a8 8 0 0 1-.6-1.5L4 12.9v-2.8l2.3-.6a8 8 0 0 1 .6-1.5l-1.2-2 2-2 2 1.2a8 8 0 0 1 1.5-.6l.6-2.3h2.8l.6 2.3a8 8 0 0 1 1.5.6l2-1.2 2 2-1.2 2a8 8 0 0 1 .6 1.5l2.3.6v2.8l-2.3.6a8 8 0 0 1-.7 1.5z"/></>};return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d[id]}</svg>}
 
 function AmbaroArt({game}:{game:GameId}) {
@@ -57,7 +57,7 @@ export default function PlayhouseShell({ tab, onTab, onOpen, onJoin, profile }: 
       <div className="ph-player"><span className="ph-avatar">{who.slice(0,1).toUpperCase()}</span><span className="ph-wallet"><Coin size={22}/>{fmt(wallet.coins)}</span></div>
     </header>
     <main className="ph-screen" key={tab}>
-      {tab === "home" && <PlayhouseHome who={who} wallet={wallet} onOpen={onOpen} onTab={onTab}/>}
+      {tab === "home" && <PlayhouseHome wallet={wallet} onOpen={onOpen} onTab={onTab}/>}
       {tab === "games" && <ArcadeHall onOpen={onOpen}/>}
       {tab === "friends" && <SocialTable onOpen={onOpen} onJoin={onJoin}/>}
       {tab === "learn" && <ProgressRoom wallet={wallet} earn={earn}/>}
@@ -72,24 +72,25 @@ export default function PlayhouseShell({ tab, onTab, onOpen, onJoin, profile }: 
   </div>;
 }
 
-function PlayhouseHome({ who, wallet, onOpen, onTab }: { who: string; wallet: ReturnType<typeof useWallet>; onOpen: (id: GameId) => void; onTab: (t: AppTab) => void }) {
+function PlayhouseHome({ wallet, onOpen, onTab }: { wallet: ReturnType<typeof useWallet>; onOpen: (id: GameId) => void; onTab: (t: AppTab) => void }) {
   const [featured, setFeatured] = useState(0);
+  const [filter,setFilter]=useState("All");
   const current = FEATURED[featured];
-  const lv = R.levelOf(wallet.xp);
   const resume = findResume();
   const lastGame = resume?.id ?? (hasSavedGame(SAVE_KEYS.ludo) ? "ludo" : chessInProgress() ? "chess" : "snakes");
   const saved = lastGame === "ludo" ? hasSavedGame(SAVE_KEYS.ludo) : lastGame === "snakes" ? hasSavedGame(SAVE_KEYS.snakes) : lastGame === "chess" ? chessInProgress() : !!resume;
-  const mission = R.missionView(wallet, Date.now()).list.find(m => !m.claimed);
+  const recent:GameId[]=[lastGame,lastGame==="ludo"?"snakes":"ludo"];
+  const labels=["All","Board","Card","Strategy"];
+  const visible=GAME_IDS.filter(id=>filter==="All"||(filter==="Board"&&["ludo","snakes"].includes(id))||(filter==="Card"&&id==="ekah")||(filter==="Strategy"&&["chess","sudoku","words"].includes(id)));
   return <div className="ph-home">
-    <section className="ph-greeting"><div><span className="ph-overline">YOUR TABLE IS READY</span><h1>Good to see you,<br/><b>{who}.</b></h1></div><button className="ph-level" onClick={() => onTab("learn")}><span>LVL</span><strong>{lv.level}</strong></button></section>
+    <section className="ph-quick-actions" aria-label="Quick play"><button onClick={()=>onTab("friends")}><BadgeIcon kind="people"/><b>With Friends</b></button><button onClick={()=>onOpen("ludo")}><BadgeIcon kind="bolt"/><b>Quick Game</b></button><button onClick={()=>onTab("games")}><BadgeIcon kind="layers"/><b>Classics</b></button></section>
     <section className={`ph-showcase ph-showcase-${current}`} onTouchStart={e => { (e.currentTarget as HTMLElement).dataset.touchX = String(e.touches[0]?.clientX ?? 0); }} onTouchEnd={e => { const x=Number((e.currentTarget as HTMLElement).dataset.touchX??0), dx=(e.changedTouches[0]?.clientX??x)-x; if(Math.abs(dx)>44)setFeatured(i=>(i+(dx<0?1:-1)+FEATURED.length)%FEATURED.length); }}>
       <div className="ph-showcase-art">{ART[current]()}</div><div className="ph-showcase-shade"/>
-      <div className="ph-showcase-copy"><span className="ph-overline">TONIGHT'S FEATURE</span><h2>{TITLES[current]}</h2><p>{DETAILS[current]}</p><button className="ph-primary" onClick={() => onOpen(current)}>Enter the table <b>↗</b></button></div>
+      <div className="ph-showcase-copy"><span className="ph-overline">AMBARO ORIGINAL</span><h2>{current==="ekah"?"EKAH":TITLES[current]}</h2><p>{current==="ekah"?"Four elements. One last card.":DETAILS[current]}</p><button className="ph-primary" onClick={() => onOpen(current)}>Play Now <b>›</b></button></div>
       <div className="ph-slider-controls" aria-label="Featured games">{FEATURED.map((id,i)=><button key={id} aria-label={`Show ${TITLES[id]}`} aria-pressed={featured===i} className={featured===i?"active":""} onClick={() => setFeatured(i)}/>)}</div>
     </section>
-    <div className="ph-home-tools"><button onClick={() => onTab("friends")}><span><BadgeIcon kind="people"/></span><b>Invite your people</b><small>Start a private table</small></button><button onClick={() => onTab("learn")}><span><BadgeIcon kind="spark"/></span><b>Today's challenge</b><small>{mission?.text ?? "Your daily reward is ready"}</small></button></div>
-    <section className="ph-section"><div className="ph-heading"><div><span className="ph-overline">PICK UP WHERE YOU LEFT OFF</span><h2>Back to the table</h2></div><button onClick={() => onTab("games")}>All games ↗</button></div><button className="ph-continue" onClick={() => onOpen(lastGame)}><span className={`ph-continue-art ph-art-${lastGame}`}>{ART[lastGame]()}</span><span className="ph-continue-copy"><b>{TITLES[lastGame]??lastGame}</b><small>{saved ? "A game is waiting for you" : "Your next favourite might be here"}</small></span><span className="ph-round-button">{saved?"↻":"→"}</span></button></section>
-    <section className="ph-section"><div className="ph-heading"><div><span className="ph-overline">THE AMBARO ARCADE</span><h2>Find your kind of fun</h2></div><button onClick={() => onTab("games")}>Explore ↗</button></div><div className="ph-shelf">{GAME_IDS.slice(0,5).map(id=><button key={id} className="ph-shelf-card" onClick={() => onOpen(id)}><span className="ph-shelf-art">{ART[id]()}</span><span><b>{TITLES[id]??id}</b><small>{DETAILS[id]}</small></span></button>)}</div></section>
+    <section className="ph-section ph-continue-section"><div className="ph-heading"><h2>Continue Playing</h2><button onClick={() => onTab("games")}>See all <b>›</b></button></div><div className="ph-resume-grid">{recent.map((id,i)=><button key={id} className="ph-resume-card" onClick={()=>onOpen(id)}><span className="ph-resume-art">{ART[id]()}</span><span className="ph-resume-copy"><b>{TITLES[id]??id}</b><small>{i===0&&saved?"Your game is saved":"Play with friends"}</small></span><span className="ph-mini-play">Play <b>›</b></span></button>)}</div></section>
+    <section className="ph-section ph-our-games"><div className="ph-heading"><h2>Our Games</h2></div><div className="ph-filter-row">{labels.map(x=><button key={x} className={filter===x?"active":""} onClick={()=>setFilter(x)}>{x}</button>)}</div><div className="ph-home-grid">{visible.map(id=><button key={id} className={`ph-home-game ph-game-${id}`} onClick={()=>onOpen(id)}><span className="ph-home-game-art">{ART[id]()}</span><span className="ph-home-game-shade"/><span className="ph-home-game-copy"><b>{TITLES[id]??id}</b><small>{DETAILS[id]}</small><i>Play <b>›</b></i></span></button>)}</div></section>
     <section className="ph-stats-strip"><span><b>{fmt(wallet.life.played)}</b><small>games played</small></span><i/><span><b>{fmt(wallet.life.wins)}</b><small>tables won</small></span><i/><span><b>{wallet.streak}</b><small>day streak</small></span></section>
   </div>;
 }

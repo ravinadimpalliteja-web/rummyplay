@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="35%" r="78%"><stop stop-color="#146247"/><stop offset="1" stop-color="#03271E"/></radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFF1B2"/><stop offset=".32" stop-color="#E8C05C"/><stop offset=".68" stop-color="#B87C22"/><stop offset="1" stop-color="#FFE78B"/></linearGradient>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#21815B"/><stop offset="1" stop-color="#06412F"/></linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="26" stdDeviation="22" flood-color="#001A13" flood-opacity=".7"/></filter>
+  </defs>
+  <rect width="1024" height="1024" rx="230" fill="url(#bg)"/>
+  <circle cx="512" cy="512" r="395" fill="none" stroke="#D4AC50" stroke-opacity=".22" stroke-width="2"/>
+  <g filter="url(#shadow)" transform="rotate(45 512 512)">
+    <rect x="232" y="232" width="560" height="560" rx="145" fill="url(#gold)"/>
+    <rect x="254" y="254" width="516" height="516" rx="126" fill="url(#tile)" stroke="#FFF0B2" stroke-opacity=".72" stroke-width="5"/>
+    <rect x="278" y="278" width="468" height="468" rx="108" fill="none" stroke="#DCC36E" stroke-opacity=".38" stroke-width="3"/>
+  </g>
+  <g fill="url(#gold)" stroke="#81591D" stroke-opacity=".65" stroke-width="4" stroke-linejoin="round">
+    <path d="M512 328c-48 60-55 111 0 169 55-58 48-109 0-169Z"/><path d="M696 512c-60-48-111-55-169 0 58 55 109 48 169 0Z"/>
+    <path d="M512 696c48-60 55-111 0-169-55 58-48 109 0 169Z"/><path d="M328 512c60 48 111 55 169 0-58-55-109-48-169 0Z"/>
+  </g>
+  <g fill="#FFF5D1" stroke="#8E6928" stroke-width="4"><circle cx="474" cy="474" r="18"/><circle cx="550" cy="474" r="18"/><circle cx="474" cy="550" r="18"/><circle cx="550" cy="550" r="18"/></g>
+</svg>

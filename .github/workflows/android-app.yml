@@ -35,7 +35,7 @@ jobs:
       VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_o89SjkD_5i4ay4JdKhVydw_VzNWbi8G' }}
       VITE_ROOM_SERVER_URL: ${{ vars.VITE_ROOM_SERVER_URL || 'wss://royal-club-rooms.ravi-nadimpalli-teja.workers.dev' }}
       TEST_SITE_URL: ${{ vars.TEST_SITE_URL || 'https://test.royalclubgames.com' }}
-      ANDROID_APP_NAME: ${{ github.ref == 'refs/heads/chatgpt-design' && 'Ambaro Design' || 'Ambaro' }}
+      ANDROID_APP_NAME: ${{ github.ref == 'refs/heads/chatgpt-design' && 'Ambaro Playhouse' || 'Ambaro' }}
       ANDROID_APP_ID: ${{ github.ref == 'refs/heads/chatgpt-design' && 'com.royalclubgames.chatgptdesign' || 'com.royalclubgames.app' }}
       HAS_UPLOAD_KEY: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_B64 != '' && github.ref != 'refs/heads/chatgpt-design' }}
       # Crash reports (Firebase Crashlytics) are added only when the GOOGLE_SERVICES_JSON secret holds the
@@ -94,10 +94,18 @@ jobs:
             echo "apply plugin: 'com.google.firebase.crashlytics'" >> android/app/build.gradle
             grep -n "crashlytics\|google-services" android/build.gradle android/app/build.gradle
           fi
-          # App icon and splash screen from web/assets/
-          npx --yes @capacitor/assets@3 generate --android \
-            --iconBackgroundColor '#0F4D3A' --iconBackgroundColorDark '#0F4D3A' \
-            --splashBackgroundColor '#0B3B2D' --splashBackgroundColorDark '#0B3B2D'
+          # The Playhouse gets its own launcher/splash emblem; the official Ambaro wordmark inside the app stays as-is.
+          if [ "$GITHUB_REF" = "refs/heads/chatgpt-design" ]; then
+            mkdir -p playhouse-assets
+            cp assets/playhouse-icon.svg playhouse-assets/logo.svg
+            npx --yes @capacitor/assets@3 generate --android --assetPath playhouse-assets \
+              --iconBackgroundColor '#06392C' --iconBackgroundColorDark '#06392C' \
+              --splashBackgroundColor '#05271F' --splashBackgroundColorDark '#05271F'
+          else
+            npx --yes @capacitor/assets@3 generate --android \
+              --iconBackgroundColor '#0F4D3A' --iconBackgroundColorDark '#0F4D3A' \
+              --splashBackgroundColor '#0B3B2D' --splashBackgroundColorDark '#0B3B2D'
+          fi
           # Each build gets a higher version number, so a new APK installs over the old one.
           sed -i -E "s/versionCode( =)? [0-9]+/versionCode\\1 ${{ github.run_number }}/; s/versionName( =)? \"[^\"]+\"/versionName\\1 \"0.1.${{ github.run_number }}\"/" android/app/build.gradle
           grep -E "versionCode|versionName|targetSdk" android/app/build.gradle android/variables.gradle || true

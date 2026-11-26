@@ -12,12 +12,12 @@ import ProtectPrompt from "./auth/ProtectPrompt";
 import { ROOM_SIGNIN_MSG, onRoomAuthError, roomAccount } from "./auth/account";
 import { RoomAccountLine } from "./room/RoomScreens";
 import { isNativeApp, onNativeBack, pageHref } from "./lib/native";
-import AppShell, { RxDialog } from "./app/AppShell";
+import PlayhouseShell, { PlayhouseDialog as RxDialog } from "./app/PlayhouseShell";
 import { App as NativeApp } from "@capacitor/app";
 import { takeJoinLink } from "./lib/share";
 import {botMove,glyph,goBlind,legal,newMatch,nextRound,playHuman,red,resumeAfterTrick,seeCards,submitBid,timeoutAction,type Card,type Match} from "./domain/spades";
-type Screen="home"|"games"|"learn"|"lobby"|"room"|"table"|"snakes"|"ludo"|"profile"|"friends"|"rewards"|"settings";
-/* Inside the Android app the home, friends, profile and settings screens use the app layout (AppShell); games open full screen. */
+type Screen="home"|"games"|"learn"|"lobby"|"room"|"table"|"snakes"|"ludo"|"profile"|"friends"|"settings";
+/* Android uses the separate Playhouse experience; the underlying game engines remain shared. */
 const NATIVE=isNativeApp();
 const isTab=(s:Screen):s is "home"|"games"|"learn"|"friends"|"profile"|"settings"=>s==="home"||s==="games"||s==="learn"||s==="friends"||s==="profile"||s==="settings";
 function PlayingCard({card,onClick,disabled=false,small=false}:{card:Card;onClick?:()=>void;disabled?:boolean;small?:boolean}){return <button className={`playing-card ${red(card.suit)?"red":"black"} ${small?"small":""} ${disabled?"disabled":""}`} disabled={disabled||!onClick} onClick={onClick}><span>{card.rank}<i>{glyph[card.suit]}</i></span><b>{glyph[card.suit]}</b><span className="flip">{card.rank}<i>{glyph[card.suit]}</i></span></button>}
@@ -58,7 +58,7 @@ useEffect(()=>{const on=()=>setScrolled(window.scrollY>4);on();window.addEventLi
 const navNow=screen==="home"?navSection:(["lobby","room","table","snakes","ludo"] as Screen[]).includes(screen)?"games":"";
 const goSection=(id:"home"|"games"|"learn"|"friends")=>{setNavSection(id);setScreen("home");window.setTimeout(()=>{const el=document.getElementById(id==="home"?"rc-top":id==="games"?"rc-games":id==="learn"?"rc-learn":"rc-friends");if(id==="home")window.scrollTo({top:0,behavior:"smooth"});else el?.scrollIntoView({behavior:"smooth",block:"start"})},60)};
 return <div className={`app-shell${screen!=="table"?" theme-ivory":""}`}>{!NATIVE&&<header className={`topbar${scrolled?" scrolled":""}`}><button className="brand" onClick={()=>setScreen("home")}><img className="brand-elephant brand-logo" src="/brand/ambaro-logo.webp" alt="Ambaro home" width={960} height={326}/></button><nav className="rc-nav" aria-label="Main">{([["home","Home"],["games","Games"],["learn","Learn"],["friends","Friends"]] as const).map(([id,label])=><button key={id} className={`rc-nav-item${navNow===id?" nav-active":""}`} aria-current={navNow===id?"page":undefined} onClick={()=>goSection(id)}>{label}</button>)}</nav><AuthPanel onProfile={()=>setScreen("profile")} /></header>}<main>
-{NATIVE&&isTab(screen)&&<AppShell tab={screen} onTab={t=>{setJoinCode(undefined);setScreen(t)}} onOpen={openGame} onJoin={(g,c)=>{setJoinCode(c);setScreen(g)}} profile={<ProfilePage onBack={()=>setScreen("home")}/>}/>}
+{NATIVE&&isTab(screen)&&<PlayhouseShell tab={screen} onTab={t=>{setJoinCode(undefined);setScreen(t)}} onOpen={openGame} onJoin={(g,c)=>{setJoinCode(c);setScreen(g)}} profile={<ProfilePage onBack={()=>setScreen("home")}/>}/>}
 {NATIVE&&<div className="ax-auth-host"><AuthPanel onProfile={()=>setScreen("profile")}/></div>}
 {NATIVE&&ask==="exit"&&<RxDialog tone="leave" title="Leave Ambaro?" text="Your games are saved. Come back soon for your daily gift!" yes="Close the app" no="STAY" onNo={()=>setAsk(null)} onYes={()=>{setAsk(null);void NativeApp.exitApp()}}/>}
 {NATIVE&&ask==="leave"&&<RxDialog tone="leave" title="Leave this game?" text="Games against the computer are saved, so you can continue later from Home." yes="Leave game" no="STAY & PLAY" onNo={()=>setAsk(null)} onYes={()=>{setAsk(null);setJoinCode(undefined);setScreen(screenRef.current==="table"?"lobby":"home")}}/>}

@@ -319,3 +319,75 @@
 
 /* Game medals under the stage: zoom into each picture so the small circles show just the game piece */
 .rx-medal>svg{transform:scale(1.35) translateY(5%)}
+
+
+/* ---------- Ambaro app refinement: preserve the native Game Stage, sharpen hierarchy ---------- */
+/* This is an app-shell refinement, not a web/portal layout. Keep the selected game as the hero
+   and make the daily actions, game selector and persistent Play action feel like one game surface. */
+.rx{
+  --rx-line:rgba(233,196,106,.30);
+  background:
+    radial-gradient(ellipse at 50% 20%,rgba(34,112,79,.32),transparent 54%),
+    radial-gradient(circle at 50% 50%,rgba(233,196,106,.065) 0 1.5px,transparent 2px) 0 0/26px 26px,
+    linear-gradient(180deg,var(--rx-mid),var(--rx-dark));
+}
+.rx-top{position:relative;z-index:2}
+.rx-logo{padding:5px 0 1px}
+.rx-logo img{height:52px;max-width:72%;object-fit:contain}
+.rx-hud{padding:9px 16px 10px;gap:12px}
+.rx-avatar{width:46px;height:46px;border-radius:15px}
+.rx-me-text strong{font-size:16px;letter-spacing:.01em}
+.rx-coins{height:40px;padding-right:14px;background:rgba(3,20,14,.48);border-color:rgba(233,196,106,.42);font-size:16px}
+.rx-gear{width:42px;height:42px;border-radius:14px;background:rgba(3,20,14,.42)}
+.rx-page{padding-left:16px;padding-right:16px}
+.rx-chips{gap:9px;margin:4px 2px 0}
+.rx-chip{min-height:70px;border-radius:17px;padding:8px 5px 7px;background:linear-gradient(160deg,rgba(255,255,255,.095),rgba(0,0,0,.25));}
+.rx-chip strong{font-size:14px;letter-spacing:.01em}
+.rx-chip small{font-size:11px}
+.rx-chip-ico{width:29px;height:29px;border-radius:11px}
+.rx-stage{height:min(82vw,390px);margin-top:15px}
+.rx-gc{border-radius:28px;box-shadow:0 8px 0 #3D2A08,0 20px 28px rgba(0,0,0,.42)}
+.rx-card-art{border-radius:24px}
+.rx-ribbon{bottom:23px;height:49px}
+.rx-medals{gap:13px;margin-top:16px}
+.rx-medal{width:48px;height:48px}
+.rx-medal.on{width:60px;height:60px}
+.rx-actions{gap:11px;margin-top:17px}
+.rx-go{height:62px;width:100%;border-radius:21px;padding:0 10px;background:linear-gradient(180deg,#FFD18A 0%,#F39A3C 58%,#D9781D 100%);box-shadow:0 4px 0 var(--rx-saffron-dark),0 9px 18px rgba(0,0,0,.25),inset 0 0 0 1.5px rgba(255,245,220,.62)}
+.rx-go-thumb{width:46px;height:46px;border-radius:15px}
+.rx-go-text strong{font-size:17px;letter-spacing:.035em}
+.rx-go-text small{font-size:11px}
+.rx-go-play{width:40px;height:40px;border-radius:14px;background:#44240B;color:#FFE3A7}
+.rx-actions .rx-two{width:100%;gap:11px}
+.rx-actions .rx-two .rx-btn{height:48px;border-radius:17px;font-size:15px}
+.rx-promise{margin-top:15px;font-size:11px;letter-spacing:.015em}
+.rx-nav{padding-top:8px;padding-bottom:calc(11px + env(safe-area-inset-bottom,0px));background:linear-gradient(180deg,#103F30,#08271E);border-top:1px solid rgba(233,196,106,.35);box-shadow:0 -8px 24px rgba(0,0,0,.18)}
+.rx-navbtn{font-size:12px;min-height:55px;gap:3px}
+.rx-navbtn svg{width:22px;height:22px}
+.rx-navplay{width:72px;height:72px;margin-top:-35px;font-size:14px;border:2px solid rgba(255,231,176,.75);box-shadow:0 5px 0 #7A3A05,0 0 0 5px var(--rx-dark),0 0 0 7px rgba(233,196,106,.55)}
+.rx-navplay svg{width:23px;height:23px}
+.rx-light .rx-nav{background:#FFFCF4;box-shadow:0 -8px 24px rgba(74,10,20,.08)}
+.rx-light .rx-navplay{box-shadow:0 5px 0 #7A3A05,0 0 0 5px #FFFCF4,0 0 0 7px rgba(176,122,30,.5)}
+@media(max-width:380px){
+  .rx-hud{padding-left:12px;padding-right:12px;gap:8px}
+  .rx-avatar{width:42px;height:42px}
+  .rx-coins{font-size:14px;padding-right:10px}
+  .rx-gear{width:39px;height:39px}
+  .rx-stage{height:82vw}
+  .rx-medals{gap:9px}
+  .rx-medal{width:42px;height:42px}
+  .rx-medal.on{width:54px;height:54px}
+  .rx-actions .rx-two .rx-btn{font-size:13px;padding:0 6px}
+}
+@media(min-width:600px) and (max-width:839px){
+  .rx-stage{height:390px}
+  .rx-page{max-width:680px}
+}
+@media(min-width:840px){
+  .rx-stage{height:430px}
+  .rx-page{max-width:780px}
+}
+@media(prefers-reduced-motion:reduce){
+  .rx-chip.ready{animation:none}
+  .rx-page{animation:none}
+}
